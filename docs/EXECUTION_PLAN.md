@@ -1,0 +1,478 @@
+# Claim Earth - Execution Plan
+
+## 1. Purpose
+
+This is the live implementation ledger for Claim Earth. It breaks the GDD and
+architecture into independently verifiable, commit-sized steps. The active agent
+must update this document during every step and include that update in the step's
+final commit.
+
+Product and technical decisions remain authoritative in:
+
+- `docs/GAME_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `agent.md`
+
+## 2. Status Protocol
+
+Allowed step states are `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, and `COMPLETE`.
+
+At the start of a step:
+
+1. Confirm every dependency is `COMPLETE`.
+2. Set exactly one step to `IN_PROGRESS`.
+3. Fill in its start date and assigned work lanes.
+4. Commit no code yet; the status change travels with the completed step commit.
+
+Before completing a step:
+
+1. Run all step gates and the full automated suite available at that point.
+2. Record concise evidence in the step's `Result` field.
+3. Set the step to `COMPLETE`, add completion date and final commit subject.
+4. Stage only files belonging to the step, including this document.
+5. Create one non-amended commit using the specified commit subject.
+6. After committing, write the resulting hash into the next step's start update. Do
+   not create a documentation-only follow-up merely to record the current hash.
+
+If blocked, set `BLOCKED`, record the exact failed gate and attempted remedies, and
+do not commit partial implementation as a completed step.
+
+## 3. Shared Worktree and Subagents
+
+All agents use this one worktree. Do not create worktrees, temporary branches, or
+agent-specific copies of tracked files.
+
+### Coordinator responsibilities
+
+- Own this execution ledger, cross-subsystem interfaces, integration, final tests,
+  and every Git operation.
+- Inspect uncommitted changes before assigning work.
+- Give each subagent an explicit, disjoint write set and acceptance result.
+- Never ask two agents to edit the same scene, resource, project configuration, or
+  plan file concurrently.
+- Integrate and review agent output before running gates. Subagents never commit.
+- Stop dispatching when a discovered interface change would invalidate parallel work.
+
+### Context-saving delegation
+
+- Use explorer agents for bounded read-only questions, such as locating a Godot API
+  pattern or reviewing one subsystem contract.
+- Use worker agents for isolated implementation slices with named file ownership.
+- Give agents only the relevant document sections, interfaces, and paths instead of
+  replaying the full project history.
+- Require workers to report changed files, tests run, assumptions, and unresolved
+  risks in their final response.
+- Prefer two or three meaningful lanes over many tiny tasks; coordination overhead is
+  part of the jam budget.
+
+### Parallel lane pattern
+
+Within a step, parallelize only after shared interfaces and resource schemas exist.
+A typical step uses:
+
+- **Lane A - Domain:** pure typed GDScript and unit tests.
+- **Lane B - Presentation:** scenes, rendering, UI, and assets using stable contracts.
+- **Lane C - Verification:** fixtures, integration tests, static checks, or docs.
+- **Coordinator - Integration:** composition, project settings, conflict resolution,
+  full gates, ledger update, and commit.
+
+## 4. Global Gates
+
+Every completed implementation step must satisfy all currently applicable gates:
+
+- Godot imports the project without parser or resource errors.
+- Relevant GUT tests pass; once the headless runner exists, the full suite passes.
+- No central terrain/item type branch is introduced.
+- New tuning values live in resources rather than unexplained code constants.
+- Deterministic failures print their seed.
+- The project remains launchable through its main scene after Step 2.
+- No test contacts the real SimpleBoards API.
+- Documentation is updated when behavior or architecture changes.
+
+The coordinator records exact runnable commands in `tools/README.md` once the Godot
+binary path and test installation are established. Until then, verification through
+the editor must be recorded explicitly rather than claimed as headless automation.
+
+## 5. Step Ledger
+
+| Step | Deliverable | Dependencies | State | Commit subject |
+| --- | --- | --- | --- | --- |
+| 0 | Repository and toolchain baseline | None | NOT_STARTED | `chore: establish web toolchain baseline` |
+| 1 | Core contracts, hex math, registries, and tests | 0 | NOT_STARTED | `feat: add core world and definition contracts` |
+| 2 | App shell, main scene, input map, and test harness | 1 | NOT_STARTED | `feat: add application shell and automated test harness` |
+| 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
+| 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
+| 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
+| 6 | Grappling hook and rope movement | 5 | NOT_STARTED | `feat: add grappling hook traversal` |
+| 7 | Item factory, projectiles, bombs, and mutations | 6 | NOT_STARTED | `feat: add configurable bombs and terrain mutation` |
+| 8 | Hazards, death, flag planting, and scoring | 7 | NOT_STARTED | `feat: complete run outcomes and flag scoring` |
+| 9 | Cooperative terrain simulation | 8 | NOT_STARTED | `feat: simulate sand water and lava` |
+| 10 | Menus, HUD, persistence, and score markers | 9 | NOT_STARTED | `feat: add complete local game flow and interface` |
+| 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
+| 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
+| 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
+
+Exactly one row may be `IN_PROGRESS` during execution. This document's initial
+planning commit precedes Step 0 and establishes the Git repository.
+
+## 6. Detailed Steps
+
+### Step 0 - Repository and Toolchain Baseline
+
+**Deliverables**
+
+- Verify the initialized Git baseline and record its commit hash.
+- Normalize the project for GDScript Web work: remove unused C# project settings,
+  select Compatibility rendering, and preserve Godot 4.6 feature metadata.
+- Confirm or document installation of Godot 4.6, export templates, and the command
+  used to launch it. Do not hard-code a developer-specific executable path in tracked
+  project files.
+- Add repository conventions, tool command documentation, and a Web export preset
+  skeleton when export templates are available.
+- Update this step with actual tool availability and initial commit reference.
+
+**Parallel lanes**
+
+- Lane A: inspect Godot/web project settings and propose the minimal configuration.
+- Lane B: inspect GUT 9.6 installation and headless invocation requirements.
+- Coordinator: apply configuration, validate, update the ledger, and commit.
+
+**Gates**
+
+- `git status` is clean after the step commit.
+- Project opens under Godot 4.6 without requiring a .NET SDK.
+- Renderer is Compatibility and the project contains no shipped C# source/project.
+- Tool limitations are stated truthfully in `Result`.
+
+**Tracking**
+
+- Started:
+- Completed:
+- Work lanes:
+- Previous commit: resolve the planning baseline with `git rev-parse HEAD`
+- Result: Planning documents exist. Godot executable was not discoverable on `PATH`
+  or common install locations during planning; validation must continue in this step.
+
+### Step 1 - Core Contracts, Hex Math, Registries, and Tests
+
+**Deliverables**
+
+- Establish source/test directories and naming conventions.
+- Implement `HexCoord`, `WorldDimensions`, packed `WorldGrid`, cell changes, dirty
+  regions, and deterministic seed helpers.
+- Implement terrain/item base definitions, strategy contracts, registries, startup
+  validation, and resource fixtures for all required types.
+- Add contract tests, hex/indexing tests, and a source check forbidding central type
+  branches.
+
+**Parallel lanes**
+
+- Lane A owns hex/world value objects and tests.
+- Lane B owns definition/strategy contracts, registries, and registry tests.
+- Lane C owns static architecture checks and test fixtures.
+- Coordinator owns shared interfaces and composition validation.
+
+**Gates**
+
+- All coordinates round-trip and edge indexing is tested.
+- Duplicate/missing definitions fail validation.
+- Required terrain/item resources load and pass common contracts.
+
+### Step 2 - App Shell, Main Scene, Input Map, and Test Harness
+
+**Deliverables**
+
+- Add `AppRoot`, scene navigation, run-state skeleton, and dependency composition.
+- Define every named input action from the GDD.
+- Install/pin GUT 9.6, add headless test scripts, and document commands.
+- Add a minimal main menu and gameplay placeholder proving scene transitions.
+- Establish CI configuration if a remote repository is available; otherwise provide
+  local CI-equivalent scripts without assuming a provider.
+
+**Parallel lanes**
+
+- Lane A owns run-state/application contracts and tests.
+- Lane B owns shell scenes and placeholder UI.
+- Lane C owns GUT installation, runners, and CI scripts.
+- Coordinator owns `project.godot`, main scene, and integration.
+
+**Gates**
+
+- Main scene launches and transitions menu -> generating -> playing placeholder.
+- Headless tests return a nonzero exit code on a deliberate temporary failure and
+  pass after it is removed.
+- Input actions exist and are addressed only by action name.
+
+### Step 3 - Deterministic Map Generation and Packed World Data
+
+**Deliverables**
+
+- Implement composable generation passes and `GenerationProfile` resources.
+- Generate base terrain, pockets, spawn chamber, sealed sides, and final stone rows.
+- Slice generation across frames with progress and deterministic retry/repair.
+- Add seed snapshots, distribution tests, spawn-safety tests, and debug seed display.
+
+**Parallel lanes**
+
+- Lane A owns noise and generation passes.
+- Lane B owns validation/repair and generation scheduling.
+- Lane C owns deterministic/property fixtures and map diagnostics.
+- Coordinator owns generator composition and profile resources.
+
+**Gates**
+
+- Same seed/profile produces the same world hash.
+- Every generated ID resolves through the terrain registry.
+- Dimensions, boundaries, final rows, spawn chamber, and distribution bounds pass.
+
+### Step 4 - Chunk Rendering, Outlines, and Collision Presentation
+
+**Deliverables**
+
+- Add chunk activity/dirty indexing and pooled visible chunk presenters.
+- Generate batched flat-top hex geometry by visual layer.
+- Add procedural terrain interiors and solid/passable transition outlines.
+- Build/rebuild near-player collision per dirty chunk and add debug overlays.
+
+**Parallel lanes**
+
+- Lane A owns chunk activity and dirty-region domain logic.
+- Lane B owns batched meshes, materials, outlines, and renderer pooling.
+- Lane C owns collision presentation and scene tests.
+- Coordinator owns lifecycle integration and performance instrumentation.
+
+**Gates**
+
+- No per-cell Nodes exist.
+- Only visible/dirty chunks rebuild.
+- Visual occupancy and collision agree on fixture maps.
+- A full static generated map remains responsive on the reference machine.
+
+### Step 5 - Player Movement and Descending Camera
+
+**Deliverables**
+
+- Add testable input frames, player component composition, grounded movement, jump,
+  coyote time, jump buffering, gravity, air control, and world bounds death.
+- Add the downward-only camera with top-third framing and map clamping.
+- Add placeholder vector character and state-driven animation hooks.
+
+**Parallel lanes**
+
+- Lane A owns motors/jump/input domain and unit tests.
+- Lane B owns player scene, collisions, and placeholder animation.
+- Lane C owns camera controller and scene tests.
+- Coordinator tunes initial resources and integrates with generated collision.
+
+**Gates**
+
+- Deterministic input tests cover ground, jump, coyote, buffer, and air states.
+- Camera never moves upward during play.
+- Movement is playable through generated terrain with no parser/runtime errors.
+
+### Step 6 - Grappling Hook and Rope Movement
+
+**Deliverables**
+
+- Add hook aiming, attach filtering, anchor loss, release, rope min/max adjustment,
+  radial constraint, and tangential momentum.
+- Add rope rendering, hook indicators, and placeholder effects/audio hooks.
+- Add deterministic hook and rope tests with fake input/world queries.
+
+**Parallel lanes**
+
+- Lane A owns grapple/rope math and tests.
+- Lane B owns hook projectile/query integration.
+- Lane C owns rope/anchor presentation.
+- Coordinator integrates player state transitions and tuning.
+
+**Gates**
+
+- Only hookable terrain attaches.
+- Releasing right mouse always detaches.
+- Rope constraints and `W/S/A/D` behavior pass automated tests.
+
+### Step 7 - Item Factory, Projectiles, Bombs, and Mutations
+
+**Deliverables**
+
+- Implement item definitions, factory/actions, selection, inventory, trajectory service,
+  and pooled projectiles.
+- Implement small/large bombs, fuse/impact/lava detonation, blast traversal, water
+  diffusion, chain reactions, and immediate world mutations.
+- Add temporary collision overlays and dirty propagation after blasts.
+
+**Parallel lanes**
+
+- Lane A owns item/inventory/trajectory domain and tests.
+- Lane B owns projectile scenes and throw integration.
+- Lane C owns explosion/reaction/mutation service and fixtures.
+- Coordinator owns shared contexts, resources, and cross-system integration.
+
+**Gates**
+
+- Initial inventory is 10 small and 2 large bombs plus one flag slot.
+- Nominal throw distances and all default terrain transformations are tested.
+- No item/terrain type branches appear in callers.
+- Visual and collision removal responds immediately to blasts.
+
+### Step 8 - Hazards, Death, Flag Planting, and Scoring
+
+**Deliverables**
+
+- Implement lava, water suffocation, sand burial, and bomb death through hazard
+  strategies and typed death causes.
+- Implement flag projectile, water pass-through, lava destruction, no-bounce landing,
+  run outcome gate, score depth, and editable prefilled name workflow.
+- Add end-state integration tests, including race and duplicate-confirm cases.
+
+**Parallel lanes**
+
+- Lane A owns hazards/environment status/death tests.
+- Lane B owns flag action/projectile and scoring tests.
+- Lane C owns name-entry modal and outcome scene tests.
+- Coordinator owns outcome gate and run-state integration.
+
+**Gates**
+
+- Every death cause discards the score.
+- Only a valid landing can enter name entry and create a score.
+- Death/flag races resolve once; repeated confirmation submits once.
+
+### Step 9 - Cooperative Terrain Simulation
+
+**Deliverables**
+
+- Implement the backend contract and cooperative chunk backend with frame budgets,
+  double buffering, intent resolution, sleeping/waking, and 0.5-second commits.
+- Implement sand fall/swaps, liquid fall/spread, and lava-water solidification through
+  compiled behaviors/pair interactions.
+- Add backend contract fixtures, cadence metrics, overrun handling, and worst-case
+  performance scenes.
+
+**Parallel lanes**
+
+- Lane A owns scheduling, buffers, commit protocol, and tests.
+- Lane B owns motion behavior compilation and pair interactions.
+- Lane C owns fixtures, metrics, and performance scenes.
+- Coordinator owns backend integration and immediate-mutation reconciliation.
+
+**Gates**
+
+- All textual fixtures produce deterministic expected buffers.
+- Sleeping chunks wake correctly after neighbor changes.
+- Player-critical mutations remain immediate.
+- Active-band commits meet 0.5 seconds on the reference machine or the step remains
+  incomplete with recorded profiling evidence.
+
+### Step 10 - Menus, HUD, Persistence, and Score Markers
+
+**Deliverables**
+
+- Complete main menu, pause, HUD, contextual warnings, result, and restart flows.
+- Add versioned local save, last editable name, personal best, pending submissions,
+  and unavailable-persistence messaging.
+- Add personal/global dashed depth markers and menu cave background.
+
+**Parallel lanes**
+
+- Lane A owns save repository/migrations/tests.
+- Lane B owns menu/HUD/result scenes.
+- Lane C owns depth markers and UI integration tests.
+- Coordinator owns full local run loop and responsive layout.
+
+**Gates**
+
+- Full offline menu -> run -> plant -> name -> result -> rerun loop passes.
+- Corrupt/missing/unavailable saves degrade safely.
+- Last name is prefilled but editable each successful run.
+
+### Step 11 - SimpleBoards and Leaderboard Workflow
+
+**Deliverables**
+
+- Implement interface, fake service, SimpleBoards HTTP adapter, DTO validation,
+  configuration, retries, and pending submissions.
+- Complete leaderboard UI and `Earth owned by` menu state.
+- Add timeout/offline/malformed/empty/success integration coverage.
+
+**Parallel lanes**
+
+- Lane A owns service contract/fake and tests.
+- Lane B owns HTTP adapter/DTO parsing with recorded fixture responses.
+- Lane C owns leaderboard/menu UI states.
+- Coordinator owns configuration, pending retry integration, and secret review.
+
+**Gates**
+
+- Automated tests make zero real network calls.
+- Local best survives failed online submission.
+- UI represents loading, empty, success, and failure explicitly.
+- No private credential is committed; acknowledge the public client-key model.
+
+### Step 12 - Final Vector Art, Procedural Materials, Audio, and Effects
+
+**Deliverables**
+
+- Replace placeholders with original SVG character, items, flag, menu, and UI assets.
+- Finalize procedural terrain palettes/textures/outlines and accessible hazard cues.
+- Add animation, particles, camera shake, sound, and music with pooling/preloading.
+- Complete visual/audio readability settings and asset attribution/license record.
+
+**Parallel lanes**
+
+- Lane A owns SVG/UI asset sets.
+- Lane B owns terrain shaders/materials and effects.
+- Lane C owns audio integration, animation state hooks, and presentation smoke tests.
+- Coordinator owns art direction consistency and browser import/performance checks.
+
+**Gates**
+
+- No diffusion-generated asset is present.
+- Hazard types remain distinguishable without color alone.
+- First-use spawning does not cause unacceptable browser stalls.
+- Gameplay remains clear during overlapping fluid and explosion effects.
+
+### Step 13 - Performance, Web Export, Browser Automation, and Itch.io Release
+
+**Deliverables**
+
+- Profile and optimize generation, simulation, rendering, collision, startup, and
+  memory without weakening domain contracts.
+- Finalize single-thread Web export, responsive embed dimensions, loading shell,
+  persistence warning, and release metadata.
+- Automate local Chromium and Firefox smoke flows and capture console failures.
+- Upload a release candidate to itch.io, verify supported launch path, leaderboard,
+  audio unlock, input, persistence behavior, and restart.
+- Perform design-only manual QA and tune resources; fix logic only with regressions.
+
+**Parallel lanes**
+
+- Lane A owns profiling and targeted optimization.
+- Lane B owns browser automation and export validation.
+- Lane C owns release checklist, itch.io page copy, and manual design QA log.
+- Coordinator owns release candidate, final gates, versioning, and commit.
+
+**Gates**
+
+- Full test suite, export check, and Chromium/Firefox smoke pass.
+- Target gameplay is 60 FPS and terrain commits within 0.5 seconds on the recorded
+  reference machine/browser.
+- No uncaught browser console errors occur in the smoke flow.
+- Itch.io build completes the full scoring loop with network failure fallback.
+- `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `agent.md`, and this ledger match the
+  shipped build.
+
+## 7. Release Risks and Fallbacks
+
+- **No Godot CLI/export templates:** continue editor validation, but Step 0 cannot be
+  complete until commands and templates are installed or their manual path is proven.
+- **Simulation misses cadence:** reduce active margin and visual work first; do not
+  remove terrain rules. Profile before considering optional web threads.
+- **Itch.io/browser thread incompatibility:** the release backend remains cooperative
+  single-threaded. Threaded work is never on the critical path.
+- **SimpleBoards unavailable:** preserve local best and pending submission; ship clear
+  offline states rather than blocking gameplay.
+- **Browser persistence unavailable:** retain session state and warn without failing.
+- **Schedule pressure:** reduce polish density and tuning variants before cutting any
+  mechanic explicitly required by the GDD.
