@@ -4,5 +4,9 @@
 
 [resource]
 script = ExtResource("1_3gn5s")
-blast_radius = 2
+blast_radius = 4
+lethal_radius = 3
 throw_distance_hint = 2.0
+fuse_seconds = 0.9
+gravity = 920.0
+projectile_color = Color(0.72, 0.31, 0.18, 1)

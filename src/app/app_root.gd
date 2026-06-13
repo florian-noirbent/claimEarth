@@ -6,6 +6,10 @@ signal generation_started
 signal gameplay_started
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
+const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
+const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
+const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
+const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
@@ -24,12 +28,16 @@ const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_an
 
 var _run_coordinator := RunCoordinator.new()
 var _terrain_registry := TerrainRegistry.new()
+var _item_registry := ItemRegistry.new()
 var _generation_task := WorldGenerationTask.new()
 var _last_generation_result: WorldGenerationResult
 var _current_seed := 0
 var _chunk_activity_index: ChunkActivityIndex
 var _player: PlayerController
 var _grapple_anchor_query = WorldGrappleAnchorQueryScript.new()
+var _item_inventory = ItemInventoryScript.new()
+var _trajectory_service = ItemTrajectoryServiceScript.new()
+var _explosion_service = ExplosionServiceScript.new()
 
 
 func _ready() -> void:
@@ -37,6 +45,9 @@ func _ready() -> void:
 	var terrain_catalog := load("res://config/terrain/catalog.tres") as TerrainCatalog
 	if not _terrain_registry.try_configure(terrain_catalog):
 		push_error("\n".join(_terrain_registry.validation_errors))
+	var item_catalog := load("res://config/items/catalog.tres") as ItemCatalog
+	if not _item_registry.try_configure(item_catalog):
+		push_error("\n".join(_item_registry.validation_errors))
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
 	menu_start_button.pressed.connect(_on_start_pressed)
@@ -135,6 +146,7 @@ func _process(_delta: float) -> void:
 	if _player == null or _last_generation_result == null or _run_coordinator.current_state != RunPhase.PLAYING:
 		return
 
+	_handle_item_input()
 	var player_row := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
 	world_presenter.refresh_visible_chunks(maxi(0, player_row - int(world_presenter.visible_row_count / 3)))
 
@@ -165,3 +177,77 @@ func _ensure_player() -> void:
 	var horizontal_zoom := maxf(1.0, map_width / maxf(1.0, viewport_size.x * 0.92))
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
+	_item_inventory.configure(_item_registry)
+	_refresh_play_status()
+
+
+func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) -> void:
+	if _last_generation_result == null or _chunk_activity_index == null:
+		return
+	_explosion_service.explode(
+		_last_generation_result.world,
+		_terrain_registry,
+		_chunk_activity_index,
+		impact_position,
+		world_presenter.hex_radius,
+		item_action.factory.blast_radius
+	)
+	_refresh_play_status()
+
+
+func resolve_flag_landing(_item_action, impact_position: Vector2, projectile) -> void:
+	projectile.queue_free()
+	play_status_label.text = "Flag flight placeholder at depth row %d" % [
+		HexMetrics.offset_for_world(impact_position, world_presenter.hex_radius).y,
+	]
+
+
+func _handle_item_input() -> void:
+	if Input.is_action_just_pressed(InputActions.SELECT_SMALL_BOMB):
+		_item_inventory.select_index(0)
+		_refresh_play_status()
+	if Input.is_action_just_pressed(InputActions.SELECT_LARGE_BOMB):
+		_item_inventory.select_index(1)
+		_refresh_play_status()
+	if Input.is_action_just_pressed(InputActions.SELECT_FLAG):
+		_item_inventory.select_index(2)
+		_refresh_play_status()
+	if Input.is_action_just_pressed(InputActions.THROW_SELECTED):
+		_throw_selected_item()
+
+
+func _throw_selected_item() -> void:
+	var definition := _item_inventory.selected_definition()
+	if definition == null or not _item_inventory.consume(definition):
+		return
+
+	var action = definition.action_factory.create_action(definition)
+	var projectile_data: Dictionary = action.create_projectile(
+		_player.global_position,
+		get_global_mouse_position(),
+		_trajectory_service,
+		_player.velocity
+	)
+	var projectile = ItemProjectileScript.new()
+	projectile.action = action
+	projectile.world = _last_generation_result.world
+	projectile.terrain_registry = _terrain_registry
+	projectile.hex_radius = world_presenter.hex_radius
+	projectile.global_position = _player.global_position
+	projectile.configure(projectile_data)
+	projectile.resolved.connect(func(resolved_projectile, impact_position: Vector2) -> void:
+		action.resolve(self, impact_position, resolved_projectile)
+	)
+	add_child(projectile)
+	_refresh_play_status()
+
+
+func _refresh_play_status() -> void:
+	var selected_definition := _item_inventory.selected_definition()
+	if selected_definition == null:
+		play_status_label.text = "No items configured"
+		return
+	var parts := PackedStringArray()
+	for definition in _item_inventory.definitions():
+		parts.append("%s:%d" % [definition.display_name, _item_inventory.count_for(definition)])
+	play_status_label.text = "Selected %s | %s" % [selected_definition.display_name, " | ".join(parts)]

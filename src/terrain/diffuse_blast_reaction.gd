@@ -7,3 +7,9 @@ extends BlastReaction
 
 func _init() -> void:
 	reaction_name = "diffuse"
+
+
+func resolve():
+	var effect = BlastEffectScript.new()
+	effect.propagation_multiplier = attenuation_multiplier
+	return effect

@@ -4,5 +4,9 @@
 
 [resource]
 script = ExtResource("1_ikmwl")
-blast_radius = 1
+blast_radius = 2
+lethal_radius = 2
 throw_distance_hint = 5.0
+fuse_seconds = 0.7
+gravity = 880.0
+projectile_color = Color(0.95, 0.56, 0.22, 1)

@@ -104,8 +104,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | COMPLETE | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | COMPLETE | `feat: add responsive player movement and camera` |
 | 6 | Grappling hook and rope movement | 5 | COMPLETE | `feat: add grappling hook traversal` |
-| 7 | Item factory, projectiles, bombs, and mutations | 6 | IN_PROGRESS | `feat: add configurable bombs and terrain mutation` |
-| 8 | Hazards, death, flag planting, and scoring | 7 | NOT_STARTED | `feat: complete run outcomes and flag scoring` |
+| 7 | Item factory, projectiles, bombs, and mutations | 6 | COMPLETE | `feat: add configurable bombs and terrain mutation` |
+| 8 | Hazards, death, flag planting, and scoring | 7 | IN_PROGRESS | `feat: complete run outcomes and flag scoring` |
 | 9 | Cooperative terrain simulation | 8 | NOT_STARTED | `feat: simulate sand water and lava` |
 | 10 | Menus, HUD, persistence, and score markers | 9 | NOT_STARTED | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
@@ -410,11 +410,19 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - item actions, projectile flow, terrain mutation, and
   integration tests.
-- Previous commit: `9854043`
-- Result: In progress.
+- Previous commit: `6c78288`
+- Final commit: `feat: add configurable bombs and terrain mutation`
+- Result: Added runtime item inventory and selection, polymorphic item actions from
+  the configured factories, a shared throw trajectory service, generic thrown
+  projectiles, and an explosion service that applies registered terrain blast
+  reactions immediately to the committed world while marking dirty chunks for
+  presentation rebuilds. App flow now loads the item registry, supports `1/2/3`
+  selection and left-click throwing during play, and updates the on-screen status
+  with current inventory. Added unit coverage for inventory setup/consumption and
+  terrain mutation behavior. `tools/ci.ps1` passes with 50/50 tests green.
 
 ### Step 8 - Hazards, Death, Flag Planting, and Scoring
 
@@ -438,6 +446,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Every death cause discards the score.
 - Only a valid landing can enter name entry and create a score.
 - Death/flag races resolve once; repeated confirmation submits once.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - hazards, outcome flow, local scoring, and UI tests.
+- Previous commit: `6c78288`
+- Result: In progress.
 
 ### Step 9 - Cooperative Terrain Simulation
 

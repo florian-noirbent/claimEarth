@@ -6,3 +6,6 @@
 script = ExtResource("1_pocku")
 ignores_water = true
 destroyed_by_lava = true
+throw_distance_hint = 5.5
+gravity = 860.0
+projectile_color = Color(0.97, 0.83, 0.25, 1)
