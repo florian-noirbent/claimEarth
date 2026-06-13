@@ -105,8 +105,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 5 | Player movement and descending camera | 4 | COMPLETE | `feat: add responsive player movement and camera` |
 | 6 | Grappling hook and rope movement | 5 | COMPLETE | `feat: add grappling hook traversal` |
 | 7 | Item factory, projectiles, bombs, and mutations | 6 | COMPLETE | `feat: add configurable bombs and terrain mutation` |
-| 8 | Hazards, death, flag planting, and scoring | 7 | IN_PROGRESS | `feat: complete run outcomes and flag scoring` |
-| 9 | Cooperative terrain simulation | 8 | NOT_STARTED | `feat: simulate sand water and lava` |
+| 8 | Hazards, death, flag planting, and scoring | 7 | COMPLETE | `feat: complete run outcomes and flag scoring` |
+| 9 | Cooperative terrain simulation | 8 | IN_PROGRESS | `feat: simulate sand water and lava` |
 | 10 | Menus, HUD, persistence, and score markers | 9 | NOT_STARTED | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
 | 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
@@ -450,10 +450,17 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - hazards, outcome flow, local scoring, and UI tests.
-- Previous commit: `6c78288`
-- Result: In progress.
+- Previous commit: `4afd348`
+- Final commit: `feat: complete run outcomes and flag scoring`
+- Result: Added hazard effect resolution, environment exposure tracking, typed death
+  causes, expanded run phases, terminal outcome locking, flag-specific resolution
+  handling, name entry, and result UI flow. The player now dies from lava contact,
+  water suffocation, sand burial, blast lethality, and bounds exit; valid planted
+  flags open editable prefilled name entry and update the in-memory personal best.
+  Added regression coverage for hazard timing and the full flag/death outcome loop.
+  `tools/ci.ps1` passes with 55/55 tests green.
 
 ### Step 9 - Cooperative Terrain Simulation
 
@@ -480,6 +487,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Player-critical mutations remain immediate.
 - Active-band commits meet 0.5 seconds on the reference machine or the step remains
   incomplete with recorded profiling evidence.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - backend contract, terrain stepping, and cadence tests.
+- Previous commit: `4afd348`
+- Result: In progress.
 
 ### Step 10 - Menus, HUD, Persistence, and Score Markers
 

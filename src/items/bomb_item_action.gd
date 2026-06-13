@@ -20,5 +20,5 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 	}
 
 
-func resolve(app_root, impact_position: Vector2, projectile) -> void:
+func resolve(app_root, impact_position: Vector2, projectile, _resolution_kind: StringName = &"impact") -> void:
 	app_root.resolve_bomb_explosion(self, impact_position, projectile)

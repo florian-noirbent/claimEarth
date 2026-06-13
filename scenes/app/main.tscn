@@ -89,3 +89,65 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 text = "Back to Menu"
+
+[node name="NameEntryPanel" type="VBoxContainer" parent="Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameEntryTitle" type="Label" parent="Center/Content/NameEntryPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 28
+text = "Plant Your Flag"
+horizontal_alignment = 1
+
+[node name="NameEntryStatus" type="Label" parent="Center/Content/NameEntryPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.78, 0.72, 1)
+text = "Depth: 0"
+horizontal_alignment = 1
+
+[node name="PlayerNameInput" type="LineEdit" parent="Center/Content/NameEntryPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Player"
+max_length = 20
+
+[node name="ConfirmScoreButton" type="Button" parent="Center/Content/NameEntryPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Confirm Score"
+
+[node name="ResultPanel" type="VBoxContainer" parent="Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ResultTitle" type="Label" parent="Center/Content/ResultPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 28
+text = "Run Complete"
+horizontal_alignment = 1
+
+[node name="ResultStatus" type="Label" parent="Center/Content/ResultPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.78, 0.72, 1)
+text = "Result placeholder"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="Center/Content/ResultPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start New Run"
+
+[node name="ResultMenuButton" type="Button" parent="Center/Content/ResultPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Main Menu"

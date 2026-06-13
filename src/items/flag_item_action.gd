@@ -21,5 +21,9 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 	}
 
 
-func resolve(app_root, impact_position: Vector2, projectile) -> void:
-	app_root.resolve_flag_landing(self, impact_position, projectile)
+func locks_throwing_until_resolved() -> bool:
+	return true
+
+
+func resolve(app_root, impact_position: Vector2, projectile, resolution_kind: StringName = &"impact") -> void:
+	app_root.resolve_flag_landing(self, impact_position, projectile, resolution_kind)

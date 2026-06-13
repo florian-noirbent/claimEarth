@@ -2,7 +2,7 @@ class_name ItemProjectile
 extends Node2D
 
 
-signal resolved(projectile: ItemProjectile, impact_position: Vector2)
+signal resolved(projectile: ItemProjectile, impact_position: Vector2, resolution_kind: StringName)
 
 
 var velocity := Vector2.ZERO
@@ -44,16 +44,16 @@ func _physics_process(delta: float) -> void:
 	var definition := _sample_terrain(global_position)
 	if definition != null:
 		if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately:
-			resolved.emit(self, global_position)
+			resolved.emit(self, global_position, &"lava")
 			queue_free()
 			return
 		if not definition.is_passable:
-			resolved.emit(self, previous_position)
+			resolved.emit(self, previous_position, &"impact")
 			queue_free()
 			return
 
 	if remaining_fuse <= 0.0:
-		resolved.emit(self, global_position)
+		resolved.emit(self, global_position, &"fuse")
 		queue_free()
 
 

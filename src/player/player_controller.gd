@@ -3,9 +3,12 @@ extends CharacterBody2D
 
 
 signal bounds_exited
+signal death_requested(cause: StringName)
 
 const GrappleModelScript = preload("res://src/player/grapple_model.gd")
 const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd")
+const EnvironmentStatusScript = preload("res://src/player/environment_status.gd")
+const DeathCauseScript = preload("res://src/player/death_cause.gd")
 
 @export var movement_config: PlayerMovementConfig = preload("res://config/player/default_movement.tres")
 @export var grapple_config = preload("res://config/player/default_grapple.tres")
@@ -18,6 +21,10 @@ const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd
 
 var _movement_model: PlayerMovementModel
 var _grapple_model
+var _environment_status = EnvironmentStatusScript.new()
+var _terrain_registry: TerrainRegistry
+var _world: WorldGrid
+var _hex_radius := 16.0
 
 
 func _ready() -> void:
@@ -37,7 +44,9 @@ func _physics_process(delta: float) -> void:
 	velocity = _movement_model.velocity
 	_update_visual_state()
 	_update_grapple_visuals()
+	_sample_environment(delta)
 	if global_position.y > world_bottom_y:
+		death_requested.emit(DeathCauseScript.BOUNDS)
 		bounds_exited.emit()
 
 
@@ -50,6 +59,13 @@ func set_spawn_position(world_position: Vector2) -> void:
 
 func configure_grapple_anchor_query(anchor_query) -> void:
 	_grapple_model.set_anchor_query(anchor_query)
+
+
+func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, hex_radius: float) -> void:
+	_world = world
+	_terrain_registry = terrain_registry
+	_hex_radius = hex_radius
+	_environment_status.reset()
 
 
 func is_grapple_attached() -> bool:
@@ -104,3 +120,34 @@ func _update_grapple_visuals() -> void:
 		to_local(_grapple_model.state.anchor.position),
 	])
 	hook_indicator.position = to_local(_grapple_model.state.anchor.position)
+
+
+func _sample_environment(delta: float) -> void:
+	if _world == null or _terrain_registry == null:
+		return
+	var effects: Array = []
+	for sample_position in _occupied_sample_positions():
+		var effect = _hazard_effect_at(sample_position)
+		if effect != null:
+			effects.append(effect)
+	var cause := _environment_status.evaluate(effects, delta)
+	if cause != DeathCauseScript.NONE:
+		death_requested.emit(cause)
+
+
+func _occupied_sample_positions() -> Array[Vector2]:
+	return [
+		global_position + Vector2(0.0, -10.0),
+		global_position,
+		global_position + Vector2(0.0, 10.0),
+	]
+
+
+func _hazard_effect_at(world_position: Vector2):
+	var offset := HexMetrics.offset_for_world(world_position, _hex_radius)
+	if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return null
+	var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+	if definition == null:
+		return null
+	return definition.hazard_behavior.resolve()
