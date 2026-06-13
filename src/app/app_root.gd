@@ -16,12 +16,14 @@ signal gameplay_started
 @onready var playing_panel: VBoxContainer = %PlayingPanel
 @onready var play_status_label: Label = %PlayStatus
 @onready var back_to_menu_button: Button = %BackToMenuButton
+@onready var world_presenter: WorldPresenter = %WorldPresenter
 
 var _run_coordinator := RunCoordinator.new()
 var _terrain_registry := TerrainRegistry.new()
 var _generation_task := WorldGenerationTask.new()
 var _last_generation_result: WorldGenerationResult
 var _current_seed := 0
+var _chunk_activity_index: ChunkActivityIndex
 
 
 func _ready() -> void:
@@ -84,6 +86,9 @@ func _apply_state(next_state: StringName) -> void:
 			if _last_generation_result == null:
 				play_status_label.text = "Gameplay placeholder - no generated run is attached yet."
 			else:
+				if _chunk_activity_index == null:
+					_chunk_activity_index = ChunkActivityIndex.new(_last_generation_result.world.dimensions)
+				world_presenter.configure(_last_generation_result.world, _terrain_registry, _chunk_activity_index)
 				play_status_label.text = "Gameplay placeholder | Seed %d | Hash %d" % [
 					_last_generation_result.final_seed,
 					_last_generation_result.world_hash,

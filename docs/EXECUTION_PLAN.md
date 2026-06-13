@@ -101,7 +101,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 1 | Core contracts, hex math, registries, and tests | 0 | COMPLETE | `feat: add core world and definition contracts` |
 | 2 | App shell, main scene, input map, and test harness | 1 | COMPLETE | `feat: add application shell and automated test harness` |
 | 3 | Deterministic map generation and packed world data | 2 | COMPLETE | `feat: generate deterministic hex cave worlds` |
-| 4 | Chunk rendering, outlines, and collision presentation | 3 | IN_PROGRESS | `feat: render and collide generated cave chunks` |
+| 4 | Chunk rendering, outlines, and collision presentation | 3 | COMPLETE | `feat: render and collide generated cave chunks` |
+| 5 | Player movement and descending camera | 4 | IN_PROGRESS | `feat: add responsive player movement and camera` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
@@ -304,11 +305,16 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - chunk activity, rendering, collision presentation,
   instrumentation, and scene tests.
-- Previous commit: record after Step 3 commit
-- Result: In progress.
+- Previous commit: `4db06ad`
+- Final commit: `feat: render and collide generated cave chunks`
+- Result: Added chunk activity indexing, one renderer node per visible chunk, one
+  collision body per chunk using combined exposed-edge segments, and world presenter
+  integration in the app shell. Added tests that guard against per-cell node creation
+  and verify collision edge output for solid cells. `tools/ci.ps1` passes with 30/30
+  tests green.
 
 ### Step 5 - Player Movement and Descending Camera
 
@@ -331,6 +337,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Deterministic input tests cover ground, jump, coyote, buffer, and air states.
 - Camera never moves upward during play.
 - Movement is playable through generated terrain with no parser/runtime errors.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - player movement domain, player scene, camera, and tests.
+- Previous commit: record after Step 4 commit
+- Result: In progress.
 
 ### Step 6 - Grappling Hook and Rope Movement
 

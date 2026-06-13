@@ -1,0 +1,61 @@
+class_name WorldChunkCollision
+extends StaticBody2D
+
+
+@onready var collision_shape: CollisionShape2D = CollisionShape2D.new()
+
+var chunk_coord := Vector2i.ZERO
+var chunk_rect := Rect2i()
+
+
+func _ready() -> void:
+	if collision_shape.get_parent() == null:
+		add_child(collision_shape)
+
+
+func configure(
+	world: WorldGrid,
+	terrain_registry: TerrainRegistry,
+	chunk_coord_value: Vector2i,
+	chunk_rect_value: Rect2i,
+	hex_radius: float = 16.0
+) -> void:
+	chunk_coord = chunk_coord_value
+	chunk_rect = chunk_rect_value
+	var shape := ConcavePolygonShape2D.new()
+	shape.segments = _build_segments(world, terrain_registry, hex_radius)
+	collision_shape.shape = shape
+
+
+func segment_count() -> int:
+	var shape := collision_shape.shape as ConcavePolygonShape2D
+	if shape == null:
+		return 0
+	return int(shape.segments.size() / 2)
+
+
+func _build_segments(world: WorldGrid, terrain_registry: TerrainRegistry, hex_radius: float) -> PackedVector2Array:
+	var corners := HexMetrics.corners(hex_radius)
+	var segments := PackedVector2Array()
+
+	for row in range(chunk_rect.position.y, chunk_rect.end.y):
+		for col in range(chunk_rect.position.x, chunk_rect.end.x):
+			var definition := terrain_registry.get_definition(world.get_committed_by_offset(col, row))
+			if definition == null or not definition.is_solid:
+				continue
+
+			var center := HexMetrics.center_for_offset(col, row, hex_radius)
+			var cell_coord := HexCoord.from_offset_odd_q(col, row)
+			for direction in range(6):
+				var neighbor_offset := cell_coord.neighbor(direction).to_offset_odd_q()
+				var add_edge := true
+				if world.dimensions.is_in_bounds_offset(neighbor_offset.x, neighbor_offset.y):
+					var neighbor_definition := terrain_registry.get_definition(
+						world.get_committed_by_offset(neighbor_offset.x, neighbor_offset.y)
+					)
+					add_edge = neighbor_definition == null or neighbor_definition.is_passable
+				if add_edge:
+					segments.append(center + corners[direction])
+					segments.append(center + corners[(direction + 1) % 6])
+
+	return segments

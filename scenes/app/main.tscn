@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
+[ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -10,6 +11,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
+
+[node name="WorldPresenter" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_world")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

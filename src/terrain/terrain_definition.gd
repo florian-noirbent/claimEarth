@@ -8,6 +8,7 @@ extends Resource
 @export var is_passable := false
 @export var is_hookable := false
 @export var is_destructible := false
+@export var debug_color := Color.WHITE
 @export var motion_behavior: TerrainMotionBehavior
 @export var hazard_behavior: TerrainHazardBehavior
 @export var blast_reaction: BlastReaction

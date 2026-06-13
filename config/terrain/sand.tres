@@ -13,6 +13,7 @@ is_solid = true
 is_passable = false
 is_hookable = false
 is_destructible = true
+debug_color = Color(0.89, 0.77, 0.46, 1)
 motion_behavior = ExtResource("2_xg05d")
 hazard_behavior = ExtResource("3_ch8dv")
 blast_reaction = ExtResource("4_gn7rd")
