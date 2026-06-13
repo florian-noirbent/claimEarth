@@ -11,7 +11,7 @@ Product and technical decisions remain authoritative in:
 
 - `docs/GAME_DESIGN.md`
 - `docs/ARCHITECTURE.md`
-- `agent.md`
+- `AGENTS.md`
 
 ## 2. Status Protocol
 
@@ -31,8 +31,8 @@ Before completing a step:
 3. Set the step to `COMPLETE`, add completion date and final commit subject.
 4. Stage only files belonging to the step, including this document.
 5. Create one non-amended commit using the specified commit subject.
-6. After committing, write the resulting hash into the next step's start update. Do
-   not create a documentation-only follow-up merely to record the current hash.
+6. At the start of the next step, record this resulting hash in that step's tracking
+   update. Do not create a documentation-only follow-up merely to record the hash.
 
 If blocked, set `BLOCKED`, record the exact failed gate and attempted remedies, and
 do not commit partial implementation as a completed step.
@@ -97,7 +97,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 
 | Step | Deliverable | Dependencies | State | Commit subject |
 | --- | --- | --- | --- | --- |
-| 0 | Repository and toolchain baseline | None | NOT_STARTED | `chore: establish web toolchain baseline` |
+| 0 | Repository and toolchain baseline | None | COMPLETE | `chore: establish web toolchain baseline` |
 | 1 | Core contracts, hex math, registries, and tests | 0 | NOT_STARTED | `feat: add core world and definition contracts` |
 | 2 | App shell, main scene, input map, and test harness | 1 | NOT_STARTED | `feat: add application shell and automated test harness` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
@@ -146,12 +146,21 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 **Tracking**
 
-- Started:
-- Completed:
-- Work lanes:
-- Previous commit: resolve the planning baseline with `git rev-parse HEAD`
-- Result: Planning documents exist. Godot executable was not discoverable on `PATH`
-  or common install locations during planning; validation must continue in this step.
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - toolchain, project configuration, GUT, smoke project,
+  validation, and Git.
+- Previous commit: `133bdd9`
+- Final commit: `chore: establish web toolchain baseline`
+- Result: Verified the supplied Mono editor, then installed the official standard
+  GDScript editor `4.6.3.stable.official.7d41c59c4` under `%LOCALAPPDATA%` because the
+  Mono editor reports a missing .NET SDK during import. The user-level `GODOT4`
+  variable points to the standard console executable. Installed official 4.6.3 Web
+  export templates and pinned GUT 9.6.0. Headless import passed, all 3 baseline tests
+  passed, the main scene started, and the non-threaded Web release exported. The
+  exported build loaded and rendered in installed Chrome using WebGL 2 Compatibility
+  with no runtime exceptions. Firefox is not installed locally, so Firefox smoke
+  remains a Step 13 release gate.
 
 ### Step 1 - Core Contracts, Hex Math, Registries, and Tests
 
@@ -460,7 +469,7 @@ planning commit precedes Step 0 and establishes the Git repository.
   reference machine/browser.
 - No uncaught browser console errors occur in the smoke flow.
 - Itch.io build completes the full scoring loop with network failure fallback.
-- `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `agent.md`, and this ledger match the
+- `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, and this ledger match the
   shipped build.
 
 ## 7. Release Risks and Fallbacks
