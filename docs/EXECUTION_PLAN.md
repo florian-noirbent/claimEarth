@@ -102,7 +102,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 2 | App shell, main scene, input map, and test harness | 1 | COMPLETE | `feat: add application shell and automated test harness` |
 | 3 | Deterministic map generation and packed world data | 2 | COMPLETE | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | COMPLETE | `feat: render and collide generated cave chunks` |
-| 5 | Player movement and descending camera | 4 | IN_PROGRESS | `feat: add responsive player movement and camera` |
+| 5 | Player movement and descending camera | 4 | COMPLETE | `feat: add responsive player movement and camera` |
+| 6 | Grappling hook and rope movement | 5 | IN_PROGRESS | `feat: add grappling hook traversal` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
@@ -341,10 +342,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - player movement domain, player scene, camera, and tests.
-- Previous commit: record after Step 4 commit
-- Result: In progress.
+- Previous commit: `274d964`
+- Final commit: `feat: add responsive player movement and camera`
+- Result: Added deterministic player movement/input models, placeholder `CharacterBody2D`
+  player scene, bounds-exit signaling, and a downward-only camera model/controller.
+  App flow now spawns a player into the generated world and configures camera/world
+  bounds from the generation result. `tools/ci.ps1` passes with 39/39 tests green.
 
 ### Step 6 - Grappling Hook and Rope Movement
 
@@ -367,6 +372,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Only hookable terrain attaches.
 - Releasing right mouse always detaches.
 - Rope constraints and `W/S/A/D` behavior pass automated tests.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - grapple math, rope presentation, and integration tests.
+- Previous commit: record after Step 5 commit
+- Result: In progress.
 
 ### Step 7 - Item Factory, Projectiles, Bombs, and Mutations
 

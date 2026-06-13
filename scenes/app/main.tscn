@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 [ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
+[ext_resource path="res://scenes/player/player.tscn" type="PackedScene" id="3_player"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -11,6 +12,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
+player_scene = ExtResource("3_player")
 
 [node name="WorldPresenter" type="Node2D" parent="."]
 unique_name_in_owner = true

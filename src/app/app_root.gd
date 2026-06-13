@@ -7,6 +7,7 @@ signal gameplay_started
 
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
+@export var player_scene: PackedScene
 
 @onready var title_label: Label = %Title
 @onready var status_label: Label = %Status
@@ -24,6 +25,7 @@ var _generation_task := WorldGenerationTask.new()
 var _last_generation_result: WorldGenerationResult
 var _current_seed := 0
 var _chunk_activity_index: ChunkActivityIndex
+var _player: PlayerController
 
 
 func _ready() -> void:
@@ -89,6 +91,7 @@ func _apply_state(next_state: StringName) -> void:
 				if _chunk_activity_index == null:
 					_chunk_activity_index = ChunkActivityIndex.new(_last_generation_result.world.dimensions)
 				world_presenter.configure(_last_generation_result.world, _terrain_registry, _chunk_activity_index)
+				_ensure_player()
 				play_status_label.text = "Gameplay placeholder | Seed %d | Hash %d" % [
 					_last_generation_result.final_seed,
 					_last_generation_result.world_hash,
@@ -112,3 +115,17 @@ func _begin_generation() -> void:
 
 func _on_generation_progress_changed(progress: float, label: String) -> void:
 	status_label.text = "%s %d%%" % [label, int(progress * 100.0)]
+
+
+func _ensure_player() -> void:
+	if player_scene == null or _last_generation_result == null:
+		return
+	if _player == null:
+		_player = player_scene.instantiate() as PlayerController
+		add_child(_player)
+	var spawn_col := _last_generation_result.spawn_rect.position.x + int(_last_generation_result.spawn_rect.size.x / 2)
+	var spawn_row := _last_generation_result.spawn_rect.position.y + 1
+	var spawn_position := HexMetrics.center_for_offset(spawn_col, spawn_row, world_presenter.hex_radius)
+	_player.world_bottom_y = HexMetrics.center_for_offset(0, generation_profile.depth + 6, world_presenter.hex_radius).y
+	_player.set_spawn_position(spawn_position)
+	_player.camera.configure_bounds(0.0, _player.world_bottom_y)

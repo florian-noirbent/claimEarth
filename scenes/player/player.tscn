@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
+radius = 14.0
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_player")
+collision_layer = 1
+collision_mask = 1
+
+[node name="BodyPolygon" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+color = Color(1, 0.8, 0.23, 1)
+polygon = PackedVector2Array(-10, -18, 10, -18, 14, 12, -14, 12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_f8kcc")
+
+[node name="FollowCamera" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position_smoothing_enabled = false
+enabled = true
+script = ExtResource("2_camera")
