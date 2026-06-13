@@ -10,6 +10,7 @@ const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
 const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
 const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
+const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
@@ -47,6 +48,8 @@ var _grapple_anchor_query = WorldGrappleAnchorQueryScript.new()
 var _item_inventory = ItemInventoryScript.new()
 var _trajectory_service = ItemTrajectoryServiceScript.new()
 var _explosion_service = ExplosionServiceScript.new()
+var _simulation_backend = CooperativeChunkBackendScript.new()
+var _simulation_accumulator := 0.0
 var _last_player_name := "Player"
 var _pending_score_depth := -1
 var _personal_best_depth := -1
@@ -198,6 +201,7 @@ func _begin_generation() -> void:
 	_terminal_outcome_locked = false
 	_pending_score_depth = -1
 	_active_flag_projectile = null
+	_simulation_accumulator = 0.0
 	_last_generation_result = await _generation_task.generate_async(
 		self,
 		generation_profile,
@@ -221,6 +225,13 @@ func _process(_delta: float) -> void:
 
 	_handle_item_input()
 	var player_row := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
+	_simulation_accumulator += _delta
+	if _simulation_accumulator >= _simulation_backend.commit_interval_seconds:
+		_simulation_accumulator = 0.0
+		_simulation_backend.advance(1000)
+		var commit = _simulation_backend.commit_if_ready()
+		if commit.did_commit and _chunk_activity_index != null:
+			_chunk_activity_index.mark_dirty_rect(commit.dirty_rect)
 	world_presenter.refresh_visible_chunks(maxi(0, player_row - int(world_presenter.visible_row_count / 3)))
 
 
@@ -245,6 +256,7 @@ func _ensure_player() -> void:
 	)
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_last_generation_result.world, _terrain_registry, world_presenter.hex_radius)
+	_simulation_backend.initialize(_last_generation_result.world, _terrain_registry, _last_generation_result.final_seed)
 	var left_edge := HexMetrics.center_for_offset(0, 0, world_presenter.hex_radius).x - world_presenter.hex_radius
 	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
 	var map_width := right_edge - left_edge

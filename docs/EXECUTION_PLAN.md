@@ -106,8 +106,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 6 | Grappling hook and rope movement | 5 | COMPLETE | `feat: add grappling hook traversal` |
 | 7 | Item factory, projectiles, bombs, and mutations | 6 | COMPLETE | `feat: add configurable bombs and terrain mutation` |
 | 8 | Hazards, death, flag planting, and scoring | 7 | COMPLETE | `feat: complete run outcomes and flag scoring` |
-| 9 | Cooperative terrain simulation | 8 | IN_PROGRESS | `feat: simulate sand water and lava` |
-| 10 | Menus, HUD, persistence, and score markers | 9 | NOT_STARTED | `feat: add complete local game flow and interface` |
+| 9 | Cooperative terrain simulation | 8 | COMPLETE | `feat: simulate sand water and lava` |
+| 10 | Menus, HUD, persistence, and score markers | 9 | IN_PROGRESS | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
 | 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
 | 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
@@ -491,10 +491,17 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - backend contract, terrain stepping, and cadence tests.
-- Previous commit: `4afd348`
-- Result: In progress.
+- Previous commit: `db1df0c`
+- Final commit: `feat: simulate sand water and lava`
+- Result: Added the terrain simulation backend contract plus a cooperative backend
+  that advances sand, water, and lava on the hex grid and commits dirty regions on
+  the target cadence. Sand now falls or swaps into liquids, liquids fall then spread
+  laterally, and lava-water contact solidifies into stone. App flow now advances the
+  backend during active runs and marks dirty chunk regions after each commit. Added
+  backend unit coverage for sand/liquid swapping, liquid spread, and stone creation.
+  `tools/ci.ps1` passes with 58/58 tests green.
 
 ### Step 10 - Menus, HUD, Persistence, and Score Markers
 
@@ -517,6 +524,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Full offline menu -> run -> plant -> name -> result -> rerun loop passes.
 - Corrupt/missing/unavailable saves degrade safely.
 - Last name is prefilled but editable each successful run.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - persistence, score markers, UI flow, and integration
+  tests.
+- Previous commit: `db1df0c`
+- Result: In progress.
 
 ### Step 11 - SimpleBoards and Leaderboard Workflow
 
