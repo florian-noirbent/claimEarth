@@ -109,7 +109,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 9 | Cooperative terrain simulation | 8 | COMPLETE | `feat: simulate sand water and lava` |
 | 10 | Menus, HUD, persistence, and score markers | 9 | COMPLETE | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | COMPLETE | `feat: integrate online leaderboard services` |
-| 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
+| 12 | Final vector art, procedural materials, audio, and effects | 11 | COMPLETE | `feat: complete cartoon presentation and feedback` |
 | 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
 
 Exactly one row may be `IN_PROGRESS` during execution. This document's initial
@@ -603,6 +603,21 @@ planning commit precedes Step 0 and establishes the Git repository.
 - First-use spawning does not cause unacceptable browser stalls.
 - Gameplay remains clear during overlapping fluid and explosion effects.
 
+**Tracking**
+
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - vector assets, procedural terrain styling, audiovisual
+  feedback, and presentation docs.
+- Previous commit: `fea6af6`
+- Final commit: `feat: complete cartoon presentation and feedback`
+- Result: Added original SVG jam art for the player and items, data-driven terrain
+  visual styles for readable stone/dirt/sand/water/lava cues, stylized projectile
+  silhouettes, synthesized audio cues, ring feedback, and camera shake. The player
+  scene now uses imported vector art, terrain rendering applies configurable pattern
+  overlays instead of flat debug fills, and asset provenance is recorded in
+  `docs/ASSET_NOTES.md`. `tools\test.ps1` passes with 67/67 tests green.
+
 ### Step 13 - Performance, Web Export, Browser Automation, and Itch.io Release
 
 **Deliverables**
@@ -632,6 +647,7 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Itch.io build completes the full scoring loop with network failure fallback.
 - `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, and this ledger match the
   shipped build.
+
 
 ## 7. Release Risks and Fallbacks
 

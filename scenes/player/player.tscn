@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
 [ext_resource type="Resource" path="res://config/player/default_grapple.tres" id="3_grapple"]
+[ext_resource type="Texture2D" path="res://assets/vector/player_body.svg" id="4_body"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
 radius = 14.0
@@ -13,10 +14,19 @@ collision_layer = 1
 collision_mask = 1
 grapple_config = ExtResource("3_grapple")
 
-[node name="BodyPolygon" type="Polygon2D" parent="."]
+[node name="BodyVisual" type="Node2D" parent="."]
 unique_name_in_owner = true
-color = Color(1, 0.8, 0.23, 1)
-polygon = PackedVector2Array(-10, -18, 10, -18, 14, 12, -14, 12)
+
+[node name="BodyPolygon" type="Polygon2D" parent="BodyVisual"]
+unique_name_in_owner = true
+color = Color(0.14, 0.08, 0.04, 0.28)
+polygon = PackedVector2Array(-14, -18, 14, -18, 18, 14, -18, 14)
+position = Vector2(0, 4)
+
+[node name="BodySprite" type="Sprite2D" parent="BodyVisual"]
+texture = ExtResource("4_body")
+position = Vector2(0, -2)
+scale = Vector2(0.3, 0.3)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_f8kcc")

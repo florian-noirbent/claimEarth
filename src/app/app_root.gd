@@ -51,6 +51,8 @@ const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simp
 @onready var leaderboard_back_button: Button = %LeaderboardBackButton
 @onready var world_presenter: WorldPresenter = %WorldPresenter
 @onready var depth_markers: Node2D = %DepthMarkers
+@onready var gameplay_feedback = %GameplayFeedback
+@onready var audio_director = %AudioDirector
 
 var _run_coordinator := RunCoordinator.new()
 var _terrain_registry := TerrainRegistry.new()
@@ -291,6 +293,10 @@ func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) 
 		world_presenter.hex_radius,
 		item_action.factory.blast_radius
 	)
+	audio_director.play_explosion(item_action.factory.blast_radius >= 4)
+	gameplay_feedback.spawn_ring(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius * world_presenter.hex_radius * 0.75)
+	if _player != null:
+		_player.camera.apply_shake(10.0 if item_action.factory.blast_radius >= 4 else 6.0)
 
 
 func resolve_flag_landing(_item_action, impact_position: Vector2, _projectile, resolution_kind: StringName) -> void:
@@ -304,6 +310,8 @@ func resolve_flag_landing(_item_action, impact_position: Vector2, _projectile, r
 		transition_to(RunPhase.PLAYING)
 		return
 	_pending_score_depth = HexMetrics.offset_for_world(impact_position, world_presenter.hex_radius).y
+	audio_director.play_flag_plant()
+	gameplay_feedback.spawn_ring(impact_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
 	transition_to(RunPhase.NAME_ENTRY)
 
 
@@ -345,6 +353,7 @@ func _throw_selected_item() -> void:
 		action.resolve(self, impact_position, resolved_projectile, resolution_kind)
 	)
 	add_child(projectile)
+	audio_director.play_throw()
 	if action.locks_throwing_until_resolved():
 		_active_flag_projectile = projectile
 		transition_to(RunPhase.FLAG_IN_FLIGHT)
@@ -373,6 +382,9 @@ func _refresh_play_status() -> void:
 
 
 func _on_player_death_requested(cause: StringName) -> void:
+	audio_director.play_death()
+	if _player != null:
+		_player.camera.apply_shake(14.0)
 	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH)
 
 
@@ -382,6 +394,7 @@ func _on_confirm_score_pressed() -> void:
 		name_entry_status.text = "Enter a name between 1 and 20 characters."
 		return
 	_last_player_name = trimmed_name.substr(0, 20)
+	audio_director.play_ui_confirm()
 	if _pending_score_depth > _personal_best_depth:
 		_personal_best_depth = _pending_score_depth
 	_update_depth_markers()

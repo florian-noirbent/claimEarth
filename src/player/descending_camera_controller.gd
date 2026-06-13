@@ -7,8 +7,10 @@ extends Camera2D
 @export var min_y := -10000.0
 @export var max_y := 100000.0
 @export var fixed_x := 0.0
+@export var shake_decay := 6.0
 
 var _model := DescendingCameraModel.new()
+var _shake_strength := 0.0
 
 
 func _ready() -> void:
@@ -22,7 +24,14 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if target == null:
 		return
-	global_position = _model.update(global_position, target.global_position, get_viewport_rect().size)
+	var target_position := _model.update(global_position, target.global_position, get_viewport_rect().size)
+	if _shake_strength > 0.001:
+		_shake_strength = maxf(0.0, _shake_strength - _delta * shake_decay)
+		target_position += Vector2(
+			randf_range(-_shake_strength, _shake_strength),
+			randf_range(-_shake_strength, _shake_strength)
+		)
+	global_position = target_position
 
 
 func configure_bounds(min_y_value: float, max_y_value: float) -> void:
@@ -36,3 +45,7 @@ func configure_horizontal_lock(fixed_x_value: float, zoom_value: Vector2) -> voi
 	fixed_x = fixed_x_value
 	_model.fixed_x = fixed_x_value
 	zoom = zoom_value
+
+
+func apply_shake(intensity: float) -> void:
+	_shake_strength = maxf(_shake_strength, intensity)

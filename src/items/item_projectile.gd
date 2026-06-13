@@ -17,12 +17,16 @@ var terrain_registry: TerrainRegistry
 var hex_radius := 16.0
 
 @onready var body: Polygon2D = Polygon2D.new()
+@onready var outline: Line2D = Line2D.new()
 
 
 func _ready() -> void:
 	if body.get_parent() == null:
 		body.polygon = PackedVector2Array([-6, -6, 6, -6, 6, 6, -6, 6])
 		add_child(body)
+	if outline.get_parent() == null:
+		outline.width = 2.0
+		add_child(outline)
 	remaining_fuse = fuse_seconds
 
 
@@ -33,12 +37,20 @@ func configure(config: Dictionary) -> void:
 	remaining_fuse = fuse_seconds
 	destroyed_by_lava = bool(config.get("destroyed_by_lava", true))
 	ignores_water = bool(config.get("ignores_water", false))
+	body.polygon = config.get("polygon", body.polygon)
 	body.color = config.get("color", Color.WHITE)
+	var outline_points := body.polygon.duplicate()
+	if outline_points.size() > 0:
+		outline_points.append(outline_points[0])
+	outline.points = outline_points
+	outline.default_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1))
 
 
 func _physics_process(delta: float) -> void:
 	remaining_fuse -= delta
 	velocity.y += gravity * delta
+	if velocity.length_squared() > 1.0:
+		rotation = velocity.angle()
 	var previous_position := global_position
 	global_position += velocity * delta
 	var definition := _sample_terrain(global_position)

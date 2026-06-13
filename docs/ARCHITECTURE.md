@@ -38,6 +38,7 @@ res://
   shaders/
   src/
     app/
+    audio/
     core/
     generation/
     items/
@@ -298,6 +299,8 @@ emit a typed death cause through `PlayerHealth`.
 - Build one batched mesh per terrain visual layer per visible chunk, not one node per
   cell.
 - Generate flat-top hex vertices procedurally.
+- Apply `TerrainVisualStyle` resources so fill, outline, and pattern cues stay data
+  driven instead of branching on terrain identity.
 - Procedural interior texture comes from shader-compatible noise or generated image
   textures supported by WebGL 2.
 - Boundary outlines are emitted only where a solid cell neighbors air/passable space.
@@ -319,6 +322,9 @@ upward during `PLAYING`.
 `DepthMarkerPresenter` renders personal and global best dashed lines based on depth
 values, independent of generated cell state. Markers remain readable but do not
 collide or affect gameplay.
+
+`AudioDirector` and `GameplayFeedback` are presentation-only companions that synthesize
+short cues, rings, and camera shake from gameplay events without owning game rules.
 
 ## 13. Persistence and SimpleBoards
 
@@ -446,4 +452,3 @@ building all infrastructure before validating the corresponding gameplay behavio
 - Performance instrumentation confirms 60 FPS gameplay target and 0.5-second terrain
   commits on the reference machine.
 - No known logic defect is left solely to manual reproduction.
-

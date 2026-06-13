@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 [ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
 [ext_resource path="res://scenes/player/player.tscn" type="PackedScene" id="3_player"]
 [ext_resource path="res://src/presentation/depth_marker_presenter.gd" type="Script" id="4_markers"]
+[ext_resource path="res://src/audio/audio_director.gd" type="Script" id="5_audio"]
+[ext_resource path="res://src/presentation/gameplay_feedback.gd" type="Script" id="6_feedback"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -22,6 +24,14 @@ script = ExtResource("2_world")
 [node name="DepthMarkers" type="Node2D" parent="."]
 unique_name_in_owner = true
 script = ExtResource("4_markers")
+
+[node name="GameplayFeedback" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_feedback")
+
+[node name="AudioDirector" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_audio")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

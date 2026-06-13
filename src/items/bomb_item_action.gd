@@ -16,6 +16,8 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"radius": factory.blast_radius,
 		"lethal_radius": factory.lethal_radius,
 		"color": factory.projectile_color,
+		"outline_color": factory.projectile_outline_color,
+		"polygon": factory.projectile_points,
 		"destroyed_by_lava": true,
 	}
 

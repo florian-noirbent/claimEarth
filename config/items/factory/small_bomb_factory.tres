@@ -10,3 +10,5 @@ throw_distance_hint = 5.0
 fuse_seconds = 0.7
 gravity = 880.0
 projectile_color = Color(0.95, 0.56, 0.22, 1)
+projectile_outline_color = Color(0.18, 0.07, 0.02, 1)
+projectile_points = PackedVector2Array(-7, -7, 7, -7, 7, 7, -7, 7)

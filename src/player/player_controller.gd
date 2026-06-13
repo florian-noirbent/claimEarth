@@ -15,6 +15,7 @@ const DeathCauseScript = preload("res://src/player/death_cause.gd")
 @export var world_bottom_y := 100000.0
 
 @onready var body_polygon: Polygon2D = %BodyPolygon
+@onready var body_visual: Node2D = %BodyVisual
 @onready var camera: DescendingCameraController = %FollowCamera
 @onready var rope_line: Line2D = %RopeLine
 @onready var hook_indicator: Polygon2D = %HookIndicator
@@ -95,16 +96,16 @@ func _create_input_frame():
 func _update_visual_state() -> void:
 	match _movement_model.current_state:
 		PlayerMovementState.RUN:
-			body_polygon.scale = Vector2(1.05, 0.95)
+			body_visual.scale = Vector2(1.05, 0.95)
 		PlayerMovementState.JUMP:
-			body_polygon.scale = Vector2(0.95, 1.08)
+			body_visual.scale = Vector2(0.95, 1.08)
 		PlayerMovementState.FALL:
-			body_polygon.scale = Vector2(0.98, 1.03)
+			body_visual.scale = Vector2(0.98, 1.03)
 		_:
-			body_polygon.scale = Vector2.ONE
+			body_visual.scale = Vector2.ONE
 
 	if absf(velocity.x) > 0.001:
-		body_polygon.scale.x = absf(body_polygon.scale.x) * signf(velocity.x)
+		body_visual.scale.x = absf(body_visual.scale.x) * signf(velocity.x)
 
 
 func _update_grapple_visuals() -> void:

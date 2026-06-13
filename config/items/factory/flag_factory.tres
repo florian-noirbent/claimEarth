@@ -9,3 +9,5 @@ destroyed_by_lava = true
 throw_distance_hint = 5.5
 gravity = 860.0
 projectile_color = Color(0.97, 0.83, 0.25, 1)
+projectile_outline_color = Color(0.16, 0.08, 0.04, 1)
+projectile_points = PackedVector2Array(-4, -10, 4, -10, 4, 10, -4, 10)

@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="TerrainDefinition" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="TerrainDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_1bi3n"]
 [ext_resource type="Resource" path="res://config/terrain/motion/stable_motion.tres" id="2_3htqf"]
 [ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_asv5i"]
 [ext_resource type="Resource" path="res://config/terrain/blast/no_blast_reaction.tres" id="4_7v0ht"]
+[ext_resource type="Resource" path="res://config/visual/air_style.tres" id="5_3xqma"]
 
 [resource]
 script = ExtResource("1_1bi3n")
@@ -14,6 +15,7 @@ is_passable = true
 is_hookable = false
 is_destructible = false
 debug_color = Color(0, 0, 0, 0)
+visual_style = ExtResource("5_3xqma")
 motion_behavior = ExtResource("2_3htqf")
 hazard_behavior = ExtResource("3_asv5i")
 blast_reaction = ExtResource("4_7v0ht")
