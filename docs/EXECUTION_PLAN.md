@@ -107,7 +107,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 7 | Item factory, projectiles, bombs, and mutations | 6 | COMPLETE | `feat: add configurable bombs and terrain mutation` |
 | 8 | Hazards, death, flag planting, and scoring | 7 | COMPLETE | `feat: complete run outcomes and flag scoring` |
 | 9 | Cooperative terrain simulation | 8 | COMPLETE | `feat: simulate sand water and lava` |
-| 10 | Menus, HUD, persistence, and score markers | 9 | IN_PROGRESS | `feat: add complete local game flow and interface` |
+| 10 | Menus, HUD, persistence, and score markers | 9 | COMPLETE | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
 | 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
 | 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
@@ -528,11 +528,18 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - persistence, score markers, UI flow, and integration
   tests.
 - Previous commit: `db1df0c`
-- Result: In progress.
+- Final commit: `feat: add complete local game flow and interface`
+- Result: Added a versioned local save repository with safe fallback behavior, wired
+  last-used name and personal best persistence into `AppRoot`, and expanded the app
+  state machine with pause and leaderboard shell states. Rebuilt the main scene into
+  a playable menu/HUD/result flow with contextual controls copy, storage warnings,
+  name-entry focus, and a generated menu preview. Added an in-world dashed personal
+  best marker plus deterministic save and UI flow regression coverage. `tools/ci.ps1`
+  passes with 62/62 tests green.
 
 ### Step 11 - SimpleBoards and Leaderboard Workflow
 

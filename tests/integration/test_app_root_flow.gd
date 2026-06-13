@@ -4,9 +4,18 @@ extends GutTest
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
 
 
+func before_each() -> void:
+	for suffix in ["1", "2", "3", "4", "5"]:
+		var path := "user://gut_app_root_flow_%s.json" % suffix
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
+
+
 func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_1.json")
+	app_root.set_menu_preview_enabled(false)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -32,6 +41,8 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 func test_back_to_menu_restores_menu_visibility() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_2.json")
+	app_root.set_menu_preview_enabled(false)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -48,6 +59,8 @@ func test_back_to_menu_restores_menu_visibility() -> void:
 func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_3.json")
+	app_root.set_menu_preview_enabled(false)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -70,6 +83,8 @@ func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:
 func test_death_locks_out_later_terminal_outcomes() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_4.json")
+	app_root.set_menu_preview_enabled(false)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -79,3 +94,19 @@ func test_death_locks_out_later_terminal_outcomes() -> void:
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 	assert_string_contains(app_root.result_status.text, "Lava")
+
+
+func test_pause_toggles_from_playing_and_back() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_5.json")
+	app_root.set_menu_preview_enabled(false)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+
+	app_root.transition_to(RunPhase.PLAYING)
+	app_root.transition_to(RunPhase.PAUSED)
+	assert_eq(app_root.get_run_state(), RunPhase.PAUSED)
+
+	app_root.transition_to(RunPhase.PLAYING)
+	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
