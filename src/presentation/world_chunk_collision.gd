@@ -55,7 +55,8 @@ func _build_segments(world: WorldGrid, terrain_registry: TerrainRegistry, hex_ra
 					)
 					add_edge = neighbor_definition == null or neighbor_definition.is_passable
 				if add_edge:
-					segments.append(center + corners[direction])
-					segments.append(center + corners[(direction + 1) % 6])
+					var edge_corners := HexMetrics.edge_corner_indices_for_direction(direction)
+					segments.append(center + corners[edge_corners.x])
+					segments.append(center + corners[edge_corners.y])
 
 	return segments

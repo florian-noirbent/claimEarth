@@ -53,6 +53,7 @@ func _draw() -> void:
 						)
 						should_outline = neighbor_definition == null or neighbor_definition.is_passable
 					if should_outline:
-						var start_corner := center + _corners[direction]
-						var end_corner := center + _corners[(direction + 1) % 6]
+						var edge_corners := HexMetrics.edge_corner_indices_for_direction(direction)
+						var start_corner := center + _corners[edge_corners.x]
+						var end_corner := center + _corners[edge_corners.y]
 						draw_line(start_corner, end_corner, Color(0.08, 0.05, 0.03, 1.0), 2.0)

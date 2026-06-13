@@ -19,6 +19,11 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_signal_emitted(app_root, "generation_started")
 	assert_signal_emitted(app_root, "gameplay_started")
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
+	assert_false(app_root.menu_root.visible)
+	assert_false(app_root.menu_background.visible)
+	assert_false(app_root.menu_panel.visible)
+	assert_false(app_root.title_label.visible)
+	assert_false(app_root.status_label.visible)
 
 
 func test_back_to_menu_restores_menu_visibility() -> void:
@@ -31,5 +36,7 @@ func test_back_to_menu_restores_menu_visibility() -> void:
 	app_root.back_to_menu_button.pressed.emit()
 
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
+	assert_true(app_root.menu_root.visible)
+	assert_true(app_root.menu_background.visible)
 	assert_true(app_root.menu_panel.visible)
 	assert_false(app_root.playing_panel.visible)

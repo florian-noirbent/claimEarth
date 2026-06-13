@@ -104,10 +104,6 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | COMPLETE | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | COMPLETE | `feat: add responsive player movement and camera` |
 | 6 | Grappling hook and rope movement | 5 | IN_PROGRESS | `feat: add grappling hook traversal` |
-| 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
-| 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
-| 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
-| 6 | Grappling hook and rope movement | 5 | NOT_STARTED | `feat: add grappling hook traversal` |
 | 7 | Item factory, projectiles, bombs, and mutations | 6 | NOT_STARTED | `feat: add configurable bombs and terrain mutation` |
 | 8 | Hazards, death, flag planting, and scoring | 7 | NOT_STARTED | `feat: complete run outcomes and flag scoring` |
 | 9 | Cooperative terrain simulation | 8 | NOT_STARTED | `feat: simulate sand water and lava` |
@@ -379,7 +375,12 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Completed:
 - Work lanes: Coordinator - grapple math, rope presentation, and integration tests.
 - Previous commit: record after Step 5 commit
-- Result: In progress.
+- Result: In progress. Before advancing deeper into hook work, a corrective pass fixed
+  regressions found during review: the gameplay transition now hides the menu overlay,
+  the camera locks to a fixed horizontal center sized to the map width, hex outline
+  edge mapping matches the flat-top grid, the spawn chamber includes a grounded floor
+  so jump is immediately usable, and generation tuning now favors denser horizontal
+  strata without exceeding the automated air-density bounds.
 
 ### Step 7 - Item Factory, Projectiles, Bombs, and Mutations
 

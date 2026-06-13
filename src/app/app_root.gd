@@ -11,6 +11,8 @@ signal gameplay_started
 
 @onready var title_label: Label = %Title
 @onready var status_label: Label = %Status
+@onready var menu_background: ColorRect = $Background
+@onready var menu_root: CenterContainer = $Center
 @onready var menu_panel: VBoxContainer = %MenuPanel
 @onready var menu_start_button: Button = %StartButton
 @onready var menu_leaderboard_button: Button = %LeaderboardButton
@@ -69,11 +71,19 @@ func _on_state_changed(_previous_state: StringName, next_state: StringName) -> v
 func _apply_state(next_state: StringName) -> void:
 	match next_state:
 		RunPhase.MAIN_MENU:
+			menu_background.visible = true
+			menu_root.visible = true
+			title_label.visible = true
+			status_label.visible = true
 			title_label.text = "CLAIM EARTH"
 			status_label.text = "Ready to descend | Seed %d" % _current_seed
 			menu_panel.visible = true
 			playing_panel.visible = false
 		RunPhase.GENERATING:
+			menu_background.visible = true
+			menu_root.visible = true
+			title_label.visible = true
+			status_label.visible = true
 			title_label.text = "CLAIM EARTH"
 			status_label.text = "Generating run..."
 			menu_panel.visible = true
@@ -81,10 +91,12 @@ func _apply_state(next_state: StringName) -> void:
 			generation_started.emit()
 			_begin_generation()
 		RunPhase.PLAYING:
-			title_label.text = "CLAIM EARTH"
-			status_label.text = "Run active"
+			menu_background.visible = false
+			menu_root.visible = false
+			title_label.visible = false
+			status_label.visible = false
 			menu_panel.visible = false
-			playing_panel.visible = true
+			playing_panel.visible = false
 			if _last_generation_result == null:
 				play_status_label.text = "Gameplay placeholder - no generated run is attached yet."
 			else:
@@ -124,8 +136,14 @@ func _ensure_player() -> void:
 		_player = player_scene.instantiate() as PlayerController
 		add_child(_player)
 	var spawn_col := _last_generation_result.spawn_rect.position.x + int(_last_generation_result.spawn_rect.size.x / 2)
-	var spawn_row := _last_generation_result.spawn_rect.position.y + 1
+	var spawn_row := _last_generation_result.spawn_rect.end.y - 2
 	var spawn_position := HexMetrics.center_for_offset(spawn_col, spawn_row, world_presenter.hex_radius)
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, generation_profile.depth + 6, world_presenter.hex_radius).y
 	_player.set_spawn_position(spawn_position)
+	var left_edge := HexMetrics.center_for_offset(0, 0, world_presenter.hex_radius).x - world_presenter.hex_radius
+	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
+	var map_width := right_edge - left_edge
+	var viewport_size := get_viewport_rect().size
+	var horizontal_zoom := maxf(1.0, map_width / maxf(1.0, viewport_size.x * 0.92))
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
+	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))

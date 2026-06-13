@@ -37,7 +37,13 @@ func test_generated_world_has_sealed_boundaries_and_spawn_air() -> void:
 
 	for row in range(result.spawn_rect.position.y, result.spawn_rect.end.y):
 		for col in range(result.spawn_rect.position.x, result.spawn_rect.end.x):
+			if row == result.spawn_rect.end.y - 1 and col > result.spawn_rect.position.x and col < result.spawn_rect.end.x - 1:
+				continue
 			assert_eq(result.world.get_committed_by_offset(col, row), air_id)
+
+	var dirt_id := registry.get_definition(2).stable_id
+	for col in range(result.spawn_rect.position.x + 1, result.spawn_rect.end.x - 1):
+		assert_eq(result.world.get_committed_by_offset(col, result.spawn_rect.end.y - 1), dirt_id)
 
 
 func test_generated_world_uses_only_registered_ids() -> void:
@@ -50,3 +56,16 @@ func test_generated_world_uses_only_registered_ids() -> void:
 
 	for cell_id in result.world.committed_cells:
 		assert_true(registry.has_definition(cell_id), "Unknown terrain id %d" % cell_id)
+
+
+func test_generated_world_air_ratio_stays_in_target_band() -> void:
+	var generator := WorldGenerator.new()
+	var profile := load("res://config/generation/default_profile.tres") as GenerationProfile
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var result := generator.generate(profile, registry, 31415)
+	assert_not_null(result)
+
+	var air_ratio := float(result.world.count_committed(0)) / float(result.world.dimensions.cell_count())
+	assert_true(air_ratio >= 0.08)
+	assert_true(air_ratio <= 0.42)
