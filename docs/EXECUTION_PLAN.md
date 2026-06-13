@@ -679,3 +679,16 @@ planning commit precedes Step 0 and establishes the Git repository.
 - **Browser persistence unavailable:** retain session state and warn without failing.
 - **Schedule pressure:** reduce polish density and tuning variants before cutting any
   mechanic explicitly required by the GDD.
+
+## 8. Post-Release Confidence Hardening
+
+- Added layered automation gates: fast headless, deterministic performance, and
+  milestone web/browser smoke.
+- Added AppRoot/player/backend/presenter test seams for deterministic scenario
+  driving and runtime counters.
+- Added regression coverage for pre-tree projectile configuration, hook input on the
+  live player scene, run-state hazards, flag lock flow, and chunk-window rebuild
+  behavior.
+- Updated tool entrypoints so `tools/test.ps1` stays fast, `tools/test_performance.ps1`
+  isolates performance contracts, and `tools/ci.ps1 -Milestone` runs the heavier web
+  gates.

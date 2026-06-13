@@ -16,17 +16,15 @@ var world: WorldGrid
 var terrain_registry: TerrainRegistry
 var hex_radius := 16.0
 
-@onready var body: Polygon2D = Polygon2D.new()
-@onready var outline: Line2D = Line2D.new()
+var body: Polygon2D
+var outline: Line2D
+var _pending_polygon := PackedVector2Array([-6, -6, 6, -6, 6, 6, -6, 6])
+var _pending_color := Color.WHITE
+var _pending_outline_color := Color(0.1, 0.05, 0.02, 1.0)
 
 
 func _ready() -> void:
-	if body.get_parent() == null:
-		body.polygon = PackedVector2Array([-6, -6, 6, -6, 6, 6, -6, 6])
-		add_child(body)
-	if outline.get_parent() == null:
-		outline.width = 2.0
-		add_child(outline)
+	_ensure_visuals()
 	remaining_fuse = fuse_seconds
 
 
@@ -37,13 +35,40 @@ func configure(config: Dictionary) -> void:
 	remaining_fuse = fuse_seconds
 	destroyed_by_lava = bool(config.get("destroyed_by_lava", true))
 	ignores_water = bool(config.get("ignores_water", false))
-	body.polygon = config.get("polygon", body.polygon)
-	body.color = config.get("color", Color.WHITE)
-	var outline_points := body.polygon.duplicate()
+	_pending_polygon = config.get("polygon", _pending_polygon)
+	_pending_color = config.get("color", Color.WHITE)
+	_pending_outline_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1))
+	_ensure_visuals()
+
+
+func visual_polygon() -> PackedVector2Array:
+	return _pending_polygon.duplicate()
+
+
+func outline_point_count() -> int:
+	if outline == null:
+		return 0
+	return outline.points.size()
+
+
+func _ensure_visuals() -> void:
+	if body == null:
+		body = Polygon2D.new()
+	if body.get_parent() == null:
+		add_child(body)
+	if outline == null:
+		outline = Line2D.new()
+		outline.width = 2.0
+	if outline.get_parent() == null:
+		add_child(outline)
+
+	body.polygon = _pending_polygon
+	body.color = _pending_color
+	var outline_points := _pending_polygon.duplicate()
 	if outline_points.size() > 0:
 		outline_points.append(outline_points[0])
 	outline.points = outline_points
-	outline.default_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1))
+	outline.default_color = _pending_outline_color
 
 
 func _physics_process(delta: float) -> void:

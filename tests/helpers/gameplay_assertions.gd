@@ -1,0 +1,20 @@
+class_name GameplayAssertions
+extends RefCounted
+
+
+static func assert_app_is_playing(test_case: GutTest, app_root: AppRoot) -> void:
+	test_case.assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
+	test_case.assert_true(app_root.overlay_root.visible)
+	test_case.assert_true(app_root.playing_panel.visible)
+	test_case.assert_not_null(app_root.get_player())
+	test_case.assert_true(app_root.get_player().is_physics_processing())
+
+
+static func assert_no_scene_leaks(test_case: GutTest, presenter: WorldPresenter, max_visible_chunks: int) -> void:
+	test_case.assert_lte(presenter.visible_chunk_count(), max_visible_chunks)
+	test_case.assert_eq(presenter.total_renderer_nodes(), presenter.total_collider_nodes())
+
+
+static func assert_projectile_visual_configured(test_case: GutTest, projectile: ItemProjectile, expected_point_count: int) -> void:
+	test_case.assert_eq(projectile.visual_polygon().size(), expected_point_count)
+	test_case.assert_eq(projectile.outline_point_count(), expected_point_count + 1)

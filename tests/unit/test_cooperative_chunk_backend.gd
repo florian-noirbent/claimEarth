@@ -51,3 +51,24 @@ func test_liquid_spreads_sideways_when_blocked_below() -> void:
 	assert_true(commit.did_commit)
 	assert_eq(world.get_committed_by_offset(2, 1), 0)
 	assert_true(world.get_committed_by_offset(1, 1) == 4 or world.get_committed_by_offset(3, 1) == 4)
+
+
+func test_backend_exposes_deterministic_stats_for_advances_and_commits() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), 0)
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	backend.schedule([Vector2i.ZERO, Vector2i(1, 0), Vector2i(2, 0)])
+	world.set_committed_by_offset(2, 1, 4)
+	world.set_committed_by_offset(2, 2, 1)
+
+	backend.advance(1000)
+	var commit = backend.commit_if_ready()
+
+	assert_true(commit.did_commit)
+	assert_eq(backend.scheduled_chunk_count(), 3)
+	assert_eq(backend.advances_performed(), 1)
+	assert_eq(backend.commits_performed(), 1)
+	assert_eq(backend.last_commit_rect(), commit.dirty_rect)
+	assert_gt(backend.last_commit_cell_count(), 0)

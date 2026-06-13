@@ -26,14 +26,21 @@ var _environment_status = EnvironmentStatusScript.new()
 var _terrain_registry: TerrainRegistry
 var _world: WorldGrid
 var _hex_radius := 16.0
+var _physics_frame_count := 0
+var _pending_anchor_query: GrappleAnchorQuery
 
 
 func _ready() -> void:
 	_movement_model = PlayerMovementModel.new(movement_config)
 	_grapple_model = GrappleModelScript.new(grapple_config)
+	if _pending_anchor_query != null:
+		_grapple_model.set_anchor_query(_pending_anchor_query)
+	if camera != null:
+		camera.target = self
 
 
 func _physics_process(delta: float) -> void:
+	_physics_frame_count += 1
 	var input_frame = _create_input_frame()
 	_movement_model.step(input_frame, is_on_floor(), delta)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
@@ -59,6 +66,9 @@ func set_spawn_position(world_position: Vector2) -> void:
 
 
 func configure_grapple_anchor_query(anchor_query) -> void:
+	_pending_anchor_query = anchor_query
+	if _grapple_model == null:
+		return
 	_grapple_model.set_anchor_query(anchor_query)
 
 
@@ -73,10 +83,18 @@ func is_grapple_attached() -> bool:
 	return _grapple_model.state.is_attached
 
 
+func physics_frame_count() -> int:
+	return _physics_frame_count
+
+
 func current_grapple_anchor_position() -> Vector2:
 	if not _grapple_model.state.is_attached or _grapple_model.state.anchor == null:
 		return Vector2.ZERO
 	return _grapple_model.state.anchor.position
+
+
+func current_rope_length() -> float:
+	return _grapple_model.state.rope_length
 
 
 func _create_input_frame():

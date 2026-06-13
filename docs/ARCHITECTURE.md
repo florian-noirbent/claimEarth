@@ -367,6 +367,29 @@ states.
 Use GUT 9.6 pinned under `addons/gut`. Tests are typed GDScript and run both from the
 editor and headlessly.
 
+### Automation layers
+
+- **Fast headless gate**: contracts, unit tests, integration flows, and project smoke.
+- **Performance contract gate**: deterministic presenter/backend/runtime counters.
+- **Web smoke gate**: export validation, shell/payload load, screenshot capture, and
+  browser console failure detection.
+- **Manual QA**: feel, balance, clarity, and polish only.
+
+### Release coverage matrix
+
+| Release feature | Automated coverage |
+| --- | --- |
+| Boot, menu, start, restart, HUD | `test_app_root_flow`, `test_project_smoke` |
+| Generation, sealed map, spawn safety | `test_world_generator`, `test_generation_task` |
+| Walking, jump, air control, pause | `test_player_movement_model`, `test_app_root_flow` |
+| Hook attach, rope adjust, release, swing | `test_grapple_model`, `test_player_scene`, `test_world_grapple_anchor_query` |
+| Bomb/flag inventory and throws | `test_item_inventory`, `test_item_projectile`, `test_app_root_flow` |
+| Blast, terrain reactions, simulation cadence | `test_explosion_service`, `test_cooperative_chunk_backend`, `test_runtime_contracts` |
+| Hazards and deaths | `test_environment_status`, `test_app_root_flow` |
+| Leaderboard, offline retry, local best | `test_leaderboard_flow`, `test_save_repository`, `test_simpleboards_response_parser` |
+| Chunk rendering/collision performance | `test_world_presenter`, `test_runtime_contracts` |
+| Web export/browser startup | `test_project_smoke`, `smoke_web.ps1`, `smoke_chromium.ps1` |
+
 ### Unit tests
 
 - Hex coordinate conversion, all six neighbors, distance, indexing, and boundaries.
@@ -414,13 +437,13 @@ regions. Randomized tests always print the seed on failure.
 
 - Benchmark generation and active-band simulation using fixed worst-case fluid/sand
   fixtures.
-- Assert no simulation frame slice exceeds its configured main-thread budget.
-- Assert a terrain commit completes within 0.5 seconds on the agreed reference
-  desktop browser/machine; report metrics rather than hiding overruns.
-- Headless test command is part of CI and must fail on any test error.
-- CI exports the Web preset and checks that all expected files exist.
-- Browser smoke automation loads the exported build in current Chromium and Firefox,
-  starts a run, confirms input responsiveness, and fails on console errors.
+- Assert no visible chunk window rebuilds every frame when nothing changed.
+- Assert renderer/collider node counts stay bounded by the visible chunk window.
+- Assert simulation advances/commits match the 0.5-second cadence contract while
+  player physics continues every frame.
+- The fast headless command must fail on any unexpected engine/script error.
+- Milestone CI exports the Web preset, checks required artifacts, captures a startup
+  screenshot, and fails on severe Chromium console/runtime errors.
 
 Manual testing is for movement feel, rope enjoyment, pacing, difficulty, visual
 clarity, sound, and balance. A reproducible logic defect requires an automated

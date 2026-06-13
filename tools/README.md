@@ -18,6 +18,7 @@ From the repository root:
 ```powershell
 .\tools\import.ps1
 .\tools\test.ps1
+.\tools\test_performance.ps1
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
 .\tools\serve_web.ps1
@@ -28,13 +29,14 @@ From the repository root:
 ```
 
 - `import.ps1` imports resources and verifies the project can open headlessly.
-- `test.ps1` runs all GUT tests under `res://tests` and propagates the exit code.
+- `test.ps1` runs the fast contract, unit, and integration suites.
+- `test_performance.ps1` runs deterministic performance contract tests.
 - `run_smoke.ps1` starts the configured main scene for two frames.
 - `export_web.ps1` creates a release build under `build/web`.
 - `serve_web.ps1` starts a local static server for the exported build on `127.0.0.1:8936`.
-- `smoke_web.ps1` exports the build, serves it locally, and verifies the shell loads.
-- `smoke_chromium.ps1` exports the build, serves it locally, and captures a Chrome headless screenshot.
-- `ci.ps1` runs import, tests, smoke, and Web export as a local CI-equivalent gate.
+- `smoke_web.ps1` exports the build, verifies required web artifacts exist, serves it locally, and checks the shell plus payloads load.
+- `smoke_chromium.ps1` exports the build, serves it locally, captures a Chrome headless screenshot, and fails on severe browser/runtime console errors.
+- `ci.ps1` runs the fast local gate by default. Use `.\tools\ci.ps1 -Milestone` to add performance tests plus web/browser smoke gates.
 - `assert_test_failure.ps1` injects a temporary failing test and verifies the headless
   runner returns a nonzero exit code.
 

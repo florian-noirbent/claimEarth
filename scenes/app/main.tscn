@@ -33,7 +33,10 @@ script = ExtResource("6_feedback")
 unique_name_in_owner = true
 script = ExtResource("5_audio")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="UiLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Background" type="ColorRect" parent="UiLayer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -42,7 +45,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04, 0.03, 0.07, 0.72)
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Center" type="CenterContainer" parent="UiLayer"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,13 +53,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Content" type="VBoxContainer" parent="Center"]
+[node name="Content" type="VBoxContainer" parent="UiLayer/Center"]
 layout_mode = 2
 theme_override_constants/separation = 12
 size_flags_horizontal = 4
 custom_minimum_size = Vector2(560, 0)
 
-[node name="Title" type="Label" parent="Center/Content"]
+[node name="Title" type="Label" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
@@ -64,7 +67,7 @@ theme_override_font_sizes/font_size = 54
 text = "CLAIM EARTH"
 horizontal_alignment = 1
 
-[node name="OwnerLabel" type="Label" parent="Center/Content"]
+[node name="OwnerLabel" type="Label" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.43, 0.87, 0.94, 1)
@@ -72,7 +75,7 @@ theme_override_font_sizes/font_size = 18
 text = "Earth owned by: Nobody yet"
 horizontal_alignment = 1
 
-[node name="Status" type="Label" parent="Center/Content"]
+[node name="Status" type="Label" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.87, 0.84, 1)
@@ -80,7 +83,7 @@ theme_override_font_sizes/font_size = 19
 text = "Ready to descend"
 horizontal_alignment = 1
 
-[node name="WarningLabel" type="Label" parent="Center/Content"]
+[node name="WarningLabel" type="Label" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -88,29 +91,29 @@ theme_override_colors/font_color = Color(1, 0.6, 0.42, 1)
 autowrap_mode = 2
 horizontal_alignment = 1
 
-[node name="ControlsLabel" type="Label" parent="Center/Content"]
+[node name="ControlsLabel" type="Label" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 text = "Controls"
 horizontal_alignment = 1
 
-[node name="MenuPanel" type="VBoxContainer" parent="Center/Content"]
+[node name="MenuPanel" type="VBoxContainer" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="StartButton" type="Button" parent="Center/Content/MenuPanel"]
+[node name="StartButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start"
 
-[node name="LeaderboardButton" type="Button" parent="Center/Content/MenuPanel"]
+[node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Leaderboard"
 
-[node name="OverlayRoot" type="MarginContainer" parent="."]
+[node name="OverlayRoot" type="MarginContainer" parent="UiLayer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -124,35 +127,35 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="OverlayContent" type="Control" parent="OverlayRoot"]
+[node name="OverlayContent" type="Control" parent="UiLayer/OverlayRoot"]
 layout_mode = 2
 
-[node name="PlayingPanel" type="VBoxContainer" parent="OverlayRoot/OverlayContent"]
+[node name="PlayingPanel" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_right = 460.0
 offset_bottom = 120.0
 theme_override_constants/separation = 6
 
-[node name="PlayStatus" type="Label" parent="OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.94, 0.9, 1)
 theme_override_font_sizes/font_size = 18
 text = "Depth 0"
 
-[node name="HintLabel" type="Label" parent="OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="HintLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
 text = "Selected: Small Bomb"
 
-[node name="BackToMenuButton" type="Button" parent="OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="BackToMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Back to Menu"
 
-[node name="NameEntryPanel" type="PanelContainer" parent="OverlayRoot/OverlayContent"]
+[node name="NameEntryPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -161,35 +164,35 @@ offset_top = 150.0
 offset_right = 920.0
 offset_bottom = 420.0
 
-[node name="NameEntryContent" type="VBoxContainer" parent="OverlayRoot/OverlayContent/NameEntryPanel"]
+[node name="NameEntryContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="NameEntryTitle" type="Label" parent="OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="NameEntryTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Plant Your Flag"
 horizontal_alignment = 1
 
-[node name="NameEntryStatus" type="Label" parent="OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="NameEntryStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Depth: 0"
 horizontal_alignment = 1
 
-[node name="PlayerNameInput" type="LineEdit" parent="OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="PlayerNameInput" type="LineEdit" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "Player"
 max_length = 20
 
-[node name="ConfirmScoreButton" type="Button" parent="OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="ConfirmScoreButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Confirm Score"
 
-[node name="ResultPanel" type="PanelContainer" parent="OverlayRoot/OverlayContent"]
+[node name="ResultPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -198,11 +201,11 @@ offset_top = 150.0
 offset_right = 940.0
 offset_bottom = 420.0
 
-[node name="ResultContent" type="VBoxContainer" parent="OverlayRoot/OverlayContent/ResultPanel"]
+[node name="ResultContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ResultTitle" type="Label" parent="OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
@@ -210,7 +213,7 @@ theme_override_font_sizes/font_size = 30
 text = "Run Complete"
 horizontal_alignment = 1
 
-[node name="ResultStatus" type="Label" parent="OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
@@ -218,17 +221,17 @@ text = "Result placeholder"
 autowrap_mode = 2
 horizontal_alignment = 1
 
-[node name="RestartButton" type="Button" parent="OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="RestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start New Run"
 
-[node name="ResultMenuButton" type="Button" parent="OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Main Menu"
 
-[node name="PausePanel" type="PanelContainer" parent="OverlayRoot/OverlayContent"]
+[node name="PausePanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -237,45 +240,45 @@ offset_top = 170.0
 offset_right = 860.0
 offset_bottom = 340.0
 
-[node name="PauseContent" type="VBoxContainer" parent="OverlayRoot/OverlayContent/PausePanel"]
+[node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PauseTitle" type="Label" parent="OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 28
 text = "Paused"
 horizontal_alignment = 1
 
-[node name="PauseBody" type="Label" parent="OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseBody" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
 layout_mode = 2
 text = "Press Esc to continue."
 horizontal_alignment = 1
 
-[node name="LeaderboardPanel" type="PanelContainer" parent="Center/Content"]
+[node name="LeaderboardPanel" type="PanelContainer" parent="UiLayer/Center/Content"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="LeaderboardContent" type="VBoxContainer" parent="Center/Content/LeaderboardPanel"]
+[node name="LeaderboardContent" type="VBoxContainer" parent="UiLayer/Center/Content/LeaderboardPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="LeaderboardTitle" type="Label" parent="Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="LeaderboardTitle" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Leaderboard"
 horizontal_alignment = 1
 
-[node name="LeaderboardStatus" type="Label" parent="Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="LeaderboardStatus" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Loading..."
 horizontal_alignment = 1
 
-[node name="LeaderboardRows" type="RichTextLabel" parent="Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="LeaderboardRows" type="RichTextLabel" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(520, 240)
@@ -283,7 +286,7 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="LeaderboardBackButton" type="Button" parent="Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="LeaderboardBackButton" type="Button" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Back"

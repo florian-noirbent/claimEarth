@@ -34,6 +34,18 @@ try {
 	if (-not (Test-Path -LiteralPath $screenshotPath -PathType Leaf)) {
 		throw "Chromium smoke test did not create a screenshot."
 	}
+	$screenshotInfo = Get-Item -LiteralPath $screenshotPath
+	if ($screenshotInfo.Length -lt 4096) {
+		throw "Chromium smoke test produced an unexpectedly small screenshot."
+	}
+	$stderrText = if (Test-Path -LiteralPath $stderrPath -PathType Leaf) {
+		Get-Content -LiteralPath $stderrPath -Raw
+	} else {
+		""
+	}
+	if ($stderrText -match "(?im)\b(SEVERE|Uncaught|ReferenceError|TypeError|SCRIPT ERROR|ERROR:)\b") {
+		throw "Chromium smoke test detected browser/runtime errors. See build/web/chromium-smoke.stderr.log."
+	}
 }
 finally {
 	& "$PSScriptRoot\stop_web_server.ps1" -ProcessId ([int]$serverId)

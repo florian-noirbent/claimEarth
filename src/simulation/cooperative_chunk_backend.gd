@@ -12,6 +12,11 @@ var _dirty_region := DirtyRegion.new()
 var _queued_changes: Array[CellChange] = []
 var _air_id := 0
 var _stone_id := 1
+var _advances_performed := 0
+var _commits_performed := 0
+var _scheduled_chunk_count := 0
+var _last_commit_rect := Rect2i()
+var _last_commit_cell_count := 0
 
 
 func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void:
@@ -22,10 +27,19 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_pending_commit = false
 	_dirty_region.clear()
 	_tick = 0
+	_advances_performed = 0
+	_commits_performed = 0
+	_scheduled_chunk_count = 0
+	_last_commit_rect = Rect2i()
+	_last_commit_cell_count = 0
 
 
 func queue_change(change: CellChange) -> void:
 	_queued_changes.append(change)
+
+
+func schedule(active_chunks: Array[Vector2i]) -> void:
+	_scheduled_chunk_count = active_chunks.size()
 
 
 func advance(_time_budget_usec: int) -> SimulationProgress:
@@ -41,6 +55,7 @@ func advance(_time_budget_usec: int) -> SimulationProgress:
 	progress.step_completed = true
 	progress.simulated_usec = 1
 	_tick += 1
+	_advances_performed += 1
 	return progress
 
 
@@ -52,6 +67,9 @@ func commit_if_ready() -> SimulationCommit:
 	commit.did_commit = true
 	commit.dirty_rect = _dirty_region.as_rect()
 	_pending_commit = false
+	_commits_performed += 1
+	_last_commit_rect = commit.dirty_rect
+	_last_commit_cell_count = commit.dirty_rect.size.x * commit.dirty_rect.size.y
 	return commit
 
 
@@ -64,6 +82,26 @@ func read_region(region: Rect2i) -> PackedByteArray:
 func shutdown() -> void:
 	_queued_changes.clear()
 	_pending_commit = false
+
+
+func advances_performed() -> int:
+	return _advances_performed
+
+
+func commits_performed() -> int:
+	return _commits_performed
+
+
+func scheduled_chunk_count() -> int:
+	return _scheduled_chunk_count
+
+
+func last_commit_rect() -> Rect2i:
+	return _last_commit_rect
+
+
+func last_commit_cell_count() -> int:
+	return _last_commit_cell_count
 
 
 func _simulate_one_tick() -> void:

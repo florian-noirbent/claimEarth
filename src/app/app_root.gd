@@ -25,8 +25,8 @@ const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simp
 @onready var status_label: Label = %Status
 @onready var warning_label: Label = %WarningLabel
 @onready var controls_label: Label = %ControlsLabel
-@onready var menu_background: ColorRect = $Background
-@onready var menu_root: CenterContainer = $Center
+@onready var menu_background: ColorRect = $UiLayer/Background
+@onready var menu_root: CenterContainer = $UiLayer/Center
 @onready var menu_panel: VBoxContainer = %MenuPanel
 @onready var menu_start_button: Button = %StartButton
 @onready var menu_leaderboard_button: Button = %LeaderboardButton
@@ -82,13 +82,18 @@ var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := true
 var _pending_submissions: Array[Dictionary] = []
 var _retrying_pending := false
+var _test_mode := false
 
 
 func _ready() -> void:
 	_current_seed = SeedUtils.seed_from_text("claim-earth-default-seed")
 	_configure_registries()
 	_load_local_state()
-	_configure_leaderboard_service()
+	if _test_mode:
+		if _leaderboard_service != null:
+			_configure_leaderboard_service()
+	else:
+		_configure_leaderboard_service()
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
 	menu_start_button.pressed.connect(_on_start_pressed)
@@ -102,8 +107,9 @@ func _ready() -> void:
 	owner_label.text = "Earth owned by: Nobody yet"
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
-	_refresh_leaderboard()
-	_retry_pending_submissions()
+	if not _test_mode or _leaderboard_service != null:
+		_refresh_leaderboard()
+		_retry_pending_submissions()
 	print("Claim Earth app shell started")
 
 
@@ -119,12 +125,52 @@ func configure_save_path_for_test(save_path: String) -> void:
 	_save_repository.configure(save_path)
 
 
+func set_test_mode(enabled: bool) -> void:
+	_test_mode = enabled
+	if enabled:
+		_enable_menu_preview = false
+
+
 func set_menu_preview_enabled(enabled: bool) -> void:
 	_enable_menu_preview = enabled
 
 
 func configure_leaderboard_service_for_test(service) -> void:
 	_leaderboard_service = service
+
+
+func start_run_for_test(seed: int) -> void:
+	_current_seed = seed
+	_enable_menu_preview = false
+	transition_to(RunPhase.GENERATING)
+
+
+func get_player() -> PlayerController:
+	return _player
+
+
+func active_projectile_count() -> int:
+	var count := 0
+	for child in get_children():
+		if child is ItemProjectile:
+			count += 1
+	return count
+
+
+func pending_score_depth() -> int:
+	return _pending_score_depth
+
+
+func simulation_backend():
+	return _simulation_backend
+
+
+func current_world() -> WorldGrid:
+	return _last_generation_result.world if _last_generation_result != null else null
+
+
+func terrain_registry() -> TerrainRegistry:
+	return _terrain_registry
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -245,7 +291,9 @@ func _begin_generation() -> void:
 	_pending_score_depth = -1
 	_active_flag_projectile = null
 	_simulation_accumulator = 0.0
+	_clear_preview_player()
 	_chunk_activity_index = null
+	world_presenter.reset()
 	_last_generation_result = await _generation_task.generate_async(
 		self,
 		generation_profile,
@@ -452,7 +500,7 @@ func _ensure_player() -> void:
 		add_child(_player)
 		_player.death_requested.connect(_on_player_death_requested)
 	var spawn_col := _last_generation_result.spawn_rect.position.x + int(_last_generation_result.spawn_rect.size.x / 2)
-	var spawn_row := _last_generation_result.spawn_rect.end.y - 2
+	var spawn_row := _last_generation_result.spawn_rect.position.y + 2
 	var spawn_position := HexMetrics.center_for_offset(spawn_col, spawn_row, world_presenter.hex_radius)
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, generation_profile.depth + 6, world_presenter.hex_radius).y
 	_player.set_spawn_position(spawn_position)
@@ -466,6 +514,7 @@ func _ensure_player() -> void:
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_last_generation_result.world, _terrain_registry, world_presenter.hex_radius)
 	_simulation_backend.initialize(_last_generation_result.world, _terrain_registry, _last_generation_result.final_seed)
+	_simulation_backend.schedule([])
 	_configure_world_bounds()
 	_item_inventory.configure(_item_registry)
 	_update_depth_markers()
@@ -541,8 +590,7 @@ func _generate_menu_preview() -> void:
 	if preview_result == null or _run_coordinator.current_state != RunPhase.MAIN_MENU:
 		return
 	_last_generation_result = preview_result
-	_attach_world(preview_result)
-	_set_player_active(false)
+	_attach_preview_world(preview_result)
 
 
 func _configure_leaderboard_service() -> void:
@@ -643,3 +691,24 @@ func _on_pending_retry_finished(remaining_pending: Array, successful_count: int,
 		_refresh_leaderboard()
 	if _run_coordinator.current_state == RunPhase.LEADERBOARD and not message.is_empty() and successful_count == 0:
 		leaderboard_status.text = message
+
+
+func _attach_preview_world(result: WorldGenerationResult) -> void:
+	_clear_preview_player()
+	if _chunk_activity_index == null:
+		_chunk_activity_index = ChunkActivityIndex.new(result.world.dimensions)
+	world_presenter.configure(result.world, _terrain_registry, _chunk_activity_index)
+	_configure_preview_bounds()
+
+
+func _configure_preview_bounds() -> void:
+	var left_edge := HexMetrics.center_for_offset(0, 0, world_presenter.hex_radius).x - world_presenter.hex_radius
+	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
+	depth_markers.configure_bounds(left_edge, right_edge, world_presenter.hex_radius)
+
+
+func _clear_preview_player() -> void:
+	if _player == null:
+		return
+	_player.queue_free()
+	_player = null

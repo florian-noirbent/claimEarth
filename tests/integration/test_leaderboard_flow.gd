@@ -23,7 +23,7 @@ func test_leaderboard_panel_shows_entries_and_updates_owner_label() -> void:
 	service.top_entries = [top_entry]
 	app_root.configure_save_path_for_test("user://gut_leaderboard_ok.json")
 	app_root.configure_leaderboard_service_for_test(service)
-	app_root.set_menu_preview_enabled(false)
+	app_root.set_test_mode(true)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -40,7 +40,7 @@ func test_failed_submission_is_saved_as_pending_and_result_still_opens() -> void
 	service.submit_error = "Offline"
 	app_root.configure_save_path_for_test("user://gut_leaderboard_fail.json")
 	app_root.configure_leaderboard_service_for_test(service)
-	app_root.set_menu_preview_enabled(false)
+	app_root.set_test_mode(true)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
