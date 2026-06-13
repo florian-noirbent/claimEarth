@@ -153,6 +153,7 @@ func test_start_run_for_test_throws_flag_and_locks_item_flow() -> void:
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 1.0)
+	await wait_seconds(1.1)
 
 	app_root._item_inventory.select_index(2)
 	ScenarioDriverScript.set_mouse_world_position(app_root, app_root.get_player().global_position + Vector2(80, 0))
@@ -160,6 +161,27 @@ func test_start_run_for_test_throws_flag_and_locks_item_flow() -> void:
 
 	assert_eq(app_root.get_run_state(), RunPhase.FLAG_IN_FLIGHT)
 	assert_eq(app_root.active_projectile_count(), 1)
+
+
+func test_start_run_for_test_blocks_throwing_for_first_second() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_throw_lock.json")
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+
+	app_root.start_run_for_test(SeedUtils.seed_from_text("throw-lock"))
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
+	, 1.0)
+
+	app_root._item_inventory.select_index(0)
+	ScenarioDriverScript.set_mouse_world_position(app_root, app_root.get_player().global_position + Vector2(80, 0))
+	app_root._throw_selected_item()
+
+	assert_eq(app_root.active_projectile_count(), 0)
+	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
 
 
 func test_hazards_apply_in_live_run() -> void:

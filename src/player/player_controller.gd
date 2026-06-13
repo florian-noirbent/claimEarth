@@ -13,6 +13,9 @@ const DeathCauseScript = preload("res://src/player/death_cause.gd")
 @export var movement_config: PlayerMovementConfig = preload("res://config/player/default_movement.tres")
 @export var grapple_config = preload("res://config/player/default_grapple.tres")
 @export var world_bottom_y := 100000.0
+@export var floor_snap_distance := 18.0
+@export var step_up_height := 14.0
+@export var support_probe_distance := 8.0
 
 @onready var body_polygon: Polygon2D = %BodyPolygon
 @onready var body_visual: Node2D = %BodyVisual
@@ -33,6 +36,7 @@ var _pending_anchor_query: GrappleAnchorQuery
 func _ready() -> void:
 	_movement_model = PlayerMovementModel.new(movement_config)
 	_grapple_model = GrappleModelScript.new(grapple_config)
+	floor_snap_length = floor_snap_distance
 	if _pending_anchor_query != null:
 		_grapple_model.set_anchor_query(_pending_anchor_query)
 	if camera != null:
@@ -42,13 +46,17 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_physics_frame_count += 1
 	var input_frame = _create_input_frame()
-	_movement_model.step(input_frame, is_on_floor(), delta)
+	var grounded_for_input := _is_grounded_for_movement()
+	_movement_model.step(input_frame, grounded_for_input, delta)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
+	_try_step_up(delta)
+	if velocity.y >= 0.0:
+		apply_floor_snap()
 	move_and_slide()
 	var grapple_resolution: Dictionary = _grapple_model.constrain_position(global_position, velocity)
 	global_position = grapple_resolution.position
 	velocity = grapple_resolution.velocity
-	_movement_model.sync_after_move(velocity, is_on_floor())
+	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
 	_update_visual_state()
 	_update_grapple_visuals()
@@ -109,6 +117,35 @@ func _create_input_frame():
 	frame.rope_axis = Input.get_axis(InputActions.ROPE_UP, InputActions.ROPE_DOWN)
 	frame.aim_position = get_global_mouse_position()
 	return frame
+
+
+func _is_grounded_for_movement() -> bool:
+	if is_on_floor():
+		return true
+	if velocity.y < 0.0:
+		return false
+	return test_move(global_transform, Vector2(0.0, support_probe_distance))
+
+
+func _try_step_up(delta: float) -> void:
+	if absf(velocity.x) < 1.0 or velocity.y < 0.0:
+		return
+	var horizontal_motion := Vector2(velocity.x * delta, 0.0)
+	if horizontal_motion.length_squared() <= 0.0001:
+		return
+	if not test_move(global_transform, horizontal_motion):
+		return
+
+	var step_increments := [step_up_height * 0.34, step_up_height * 0.67, step_up_height]
+	for step_height in step_increments:
+		var upward_motion := Vector2(0.0, -step_height)
+		if test_move(global_transform, upward_motion):
+			continue
+		var raised_transform := global_transform.translated(upward_motion)
+		if test_move(raised_transform, horizontal_motion):
+			continue
+		global_position += upward_motion
+		return
 
 
 func _update_visual_state() -> void:

@@ -6,6 +6,7 @@ var _passes: Array[GenerationPass] = [
 	BaseNoisePass.new(),
 	PocketNoisePass.new(),
 	SpawnChamberPass.new(),
+	ShowcasePocketPass.new(),
 	BoundarySealPass.new(),
 	GenerationValidationPass.new(),
 ]

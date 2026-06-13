@@ -11,6 +11,9 @@ var fuse_seconds := 0.0
 var remaining_fuse := 0.0
 var destroyed_by_lava := true
 var ignores_water := false
+var bounce_on_impact := false
+var bounce_damping := 0.55
+var horizontal_bounce_damping := 0.72
 var action
 var world: WorldGrid
 var terrain_registry: TerrainRegistry
@@ -35,6 +38,9 @@ func configure(config: Dictionary) -> void:
 	remaining_fuse = fuse_seconds
 	destroyed_by_lava = bool(config.get("destroyed_by_lava", true))
 	ignores_water = bool(config.get("ignores_water", false))
+	bounce_on_impact = bool(config.get("bounce_on_impact", false))
+	bounce_damping = float(config.get("bounce_damping", 0.55))
+	horizontal_bounce_damping = float(config.get("horizontal_bounce_damping", 0.72))
 	_pending_polygon = config.get("polygon", _pending_polygon)
 	_pending_color = config.get("color", Color.WHITE)
 	_pending_outline_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1))
@@ -85,8 +91,11 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 			return
 		if not definition.is_passable:
-			resolved.emit(self, previous_position, &"impact")
-			queue_free()
+			if bounce_on_impact:
+				_bounce(previous_position, delta)
+			else:
+				resolved.emit(self, previous_position, &"impact")
+				queue_free()
 			return
 
 	if remaining_fuse <= 0.0:
@@ -101,3 +110,28 @@ func _sample_terrain(world_position: Vector2) -> TerrainDefinition:
 	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return null
 	return terrain_registry.get_definition(world.get_committed_by_offset(offset.x, offset.y))
+
+
+func _bounce(previous_position: Vector2, delta: float) -> void:
+	global_position = previous_position
+	var x_hit := _is_blocked(previous_position + Vector2(velocity.x * delta, 0.0))
+	var y_hit := _is_blocked(previous_position + Vector2(0.0, velocity.y * delta))
+
+	if x_hit:
+		velocity.x = -velocity.x * horizontal_bounce_damping
+	else:
+		velocity.x *= horizontal_bounce_damping
+
+	if y_hit:
+		velocity.y = -velocity.y * bounce_damping
+		if absf(velocity.y) < 40.0:
+			velocity.y = -40.0
+	else:
+		velocity.y = -absf(velocity.y) * bounce_damping
+
+	rotation = velocity.angle() if velocity.length_squared() > 1.0 else rotation
+
+
+func _is_blocked(world_position: Vector2) -> bool:
+	var definition := _sample_terrain(world_position)
+	return definition != null and not definition.is_passable

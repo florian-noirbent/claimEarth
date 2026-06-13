@@ -8,9 +8,11 @@ func explode(
 	chunk_activity_index: ChunkActivityIndex,
 	impact_position: Vector2,
 	hex_radius: float,
-	blast_radius: int
+	blast_radius: int,
+	lethal_radius: int = 0
 ) -> Rect2i:
 	var origin := HexMetrics.offset_for_world(impact_position, hex_radius)
+	var air_id := _terrain_id(terrain_registry, "Air")
 	var queue: Array[Dictionary] = [{
 		"cell": origin,
 		"strength": float(blast_radius),
@@ -31,12 +33,18 @@ func explode(
 		var definition := terrain_registry.get_definition(world.get_committed_by_offset(cell.x, cell.y))
 		if definition == null:
 			continue
-		var effect = definition.blast_reaction.resolve()
-		if effect.replacement_id >= 0 and effect.replacement_id != definition.stable_id:
-			world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
-			changed_cells.append(cell)
+		var propagated_strength := strength - 1.0
+		if _is_within_radius(origin, cell, lethal_radius):
+			if definition.stable_id != air_id:
+				world.set_committed_by_offset(cell.x, cell.y, air_id)
+				changed_cells.append(cell)
+		else:
+			var effect = definition.blast_reaction.resolve()
+			if effect.replacement_id >= 0 and effect.replacement_id != definition.stable_id:
+				world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
+				changed_cells.append(cell)
+			propagated_strength = (strength - 1.0) * float(effect.propagation_multiplier)
 
-		var propagated_strength: float = (strength - 1.0) * float(effect.propagation_multiplier)
 		if propagated_strength < 0.0:
 			continue
 		for neighbor in HexCoord.from_offset_odd_q(cell.x, cell.y).neighbors():
@@ -64,3 +72,16 @@ func _dirty_rect_from_cells(cells: Array[Vector2i]) -> Rect2i:
 		min_row = mini(min_row, cell.y)
 		max_row = maxi(max_row, cell.y)
 	return Rect2i(min_col, min_row, max_col - min_col + 1, max_row - min_row + 1)
+
+
+func _is_within_radius(origin: Vector2i, cell: Vector2i, radius: int) -> bool:
+	if radius <= 0:
+		return false
+	return HexCoord.from_offset_odd_q(origin.x, origin.y).distance_to(HexCoord.from_offset_odd_q(cell.x, cell.y)) <= radius
+
+
+func _terrain_id(registry: TerrainRegistry, name: String) -> int:
+	for definition in registry.all_definitions():
+		if definition.display_name == name:
+			return definition.stable_id
+	return -1

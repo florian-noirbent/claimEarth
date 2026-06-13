@@ -19,6 +19,9 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"outline_color": factory.projectile_outline_color,
 		"polygon": factory.projectile_points,
 		"destroyed_by_lava": true,
+		"bounce_on_impact": true,
+		"bounce_damping": factory.bounce_damping,
+		"horizontal_bounce_damping": factory.horizontal_bounce_damping,
 	}
 
 

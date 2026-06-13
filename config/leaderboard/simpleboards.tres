@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_u6dvg")
-enabled = false
+enabled = true
 api_base_url = "https://api.simpleboards.dev/api"
-leaderboard_id = ""
-api_key = ""
+leaderboard_id = "5e6065c1-8dde-438d-832c-08dec994d592"
+api_key = "ab0d21a8-a2e9-4136-83e2-f045a849c48e"
 request_timeout_seconds = 8.0
 max_entries = 10
 game_version = "jam-dev"

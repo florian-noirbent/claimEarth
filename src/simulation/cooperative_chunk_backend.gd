@@ -15,6 +15,7 @@ var _stone_id := 1
 var _advances_performed := 0
 var _commits_performed := 0
 var _scheduled_chunk_count := 0
+var _scheduled_chunks: Array[Vector2i] = []
 var _last_commit_rect := Rect2i()
 var _last_commit_cell_count := 0
 
@@ -30,6 +31,7 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_advances_performed = 0
 	_commits_performed = 0
 	_scheduled_chunk_count = 0
+	_scheduled_chunks.clear()
 	_last_commit_rect = Rect2i()
 	_last_commit_cell_count = 0
 
@@ -40,6 +42,7 @@ func queue_change(change: CellChange) -> void:
 
 func schedule(active_chunks: Array[Vector2i]) -> void:
 	_scheduled_chunk_count = active_chunks.size()
+	_scheduled_chunks = active_chunks.duplicate()
 
 
 func advance(_time_budget_usec: int) -> SimulationProgress:
@@ -51,7 +54,7 @@ func advance(_time_budget_usec: int) -> SimulationProgress:
 	_apply_queued_changes()
 	_dirty_region.clear()
 	_simulate_one_tick()
-	_pending_commit = not _dirty_region.is_empty()
+	_pending_commit = not _dirty_region.is_empty() and _world.working_cells != _world.committed_cells
 	progress.step_completed = true
 	progress.simulated_usec = 1
 	_tick += 1
@@ -105,17 +108,46 @@ func last_commit_cell_count() -> int:
 
 
 func _simulate_one_tick() -> void:
-	var lateral_order := [-1, 1] if (_tick % 2 == 0) else [1, -1]
-	for row in range(_world.dimensions.depth - 2, -1, -1):
-		for col in range(1, _world.dimensions.width - 1):
-			var definition := _registry.get_definition(_world.get_committed_by_offset(col, row))
-			if definition == null:
-				continue
-			match definition.motion_behavior.behavior_name:
-				"falling":
-					_step_sand(col, row)
-				"liquid":
-					_step_liquid(col, row, lateral_order)
+	var diagonal_downward_order := [4, 0] if (_tick % 2 == 0) else [0, 4]
+	for region in _scheduled_regions():
+		for row in range(region.end.y - 1, region.position.y - 1, -1):
+			for col in range(region.position.x, region.end.x):
+				var definition := _registry.get_definition(_world.get_committed_by_offset(col, row))
+				if definition == null:
+					continue
+				match definition.motion_behavior.behavior_name:
+					"falling":
+						_step_sand(col, row)
+					"liquid":
+						_step_liquid(col, row, diagonal_downward_order)
+
+
+func _scheduled_regions() -> Array[Rect2i]:
+	if _scheduled_chunks.is_empty():
+		return [Rect2i(1, 0, max(_world.dimensions.width - 2, 0), max(_world.dimensions.depth - 1, 0))]
+
+	var chunk_rows := {}
+	for chunk_coord in _scheduled_chunks:
+		chunk_rows[int(chunk_coord.y)] = true
+
+	var sorted_rows: Array[int] = []
+	for row_variant in chunk_rows.keys():
+		sorted_rows.append(int(row_variant))
+	sorted_rows.sort()
+	sorted_rows.reverse()
+
+	var regions: Array[Rect2i] = []
+	for chunk_row in sorted_rows:
+		var top_row := chunk_row * 32
+		var region_start_row := maxi(0, top_row - 1)
+		var region_end_row := mini(_world.dimensions.depth - 1, top_row + 32)
+		regions.append(Rect2i(
+			1,
+			region_start_row,
+			max(_world.dimensions.width - 2, 0),
+			max(region_end_row - region_start_row, 0)
+		))
+	return regions
 
 
 func _step_sand(col: int, row: int) -> void:
@@ -131,7 +163,7 @@ func _step_sand(col: int, row: int) -> void:
 		_swap_cells(col, row, col, below_row, source_id, committed_target_id)
 
 
-func _step_liquid(col: int, row: int, lateral_order: Array) -> void:
+func _step_liquid(col: int, row: int, diagonal_downward_order: Array) -> void:
 	var source_id := _world.get_committed_by_offset(col, row)
 	var below_row := row + 1
 	if below_row < _world.dimensions.depth:
@@ -143,25 +175,26 @@ func _step_liquid(col: int, row: int, lateral_order: Array) -> void:
 				_world.set_working_by_offset(col, below_row, _stone_id)
 				_mark_dirty_pair(col, row, col, below_row)
 				return
-			if below_definition.is_passable:
+			if _can_liquid_move_into(source_id, below_id, below_definition):
 				_swap_cells(col, row, col, below_row, source_id, below_id)
 				return
 
-	for direction in lateral_order:
-		var side_col: int = col + int(direction)
-		if side_col <= 0 or side_col >= _world.dimensions.width - 1:
+	var source_coord := HexCoord.from_offset_odd_q(col, row)
+	for direction in diagonal_downward_order:
+		var target_offset := source_coord.neighbor(direction).to_offset_odd_q()
+		if not _world.dimensions.is_in_bounds_offset(target_offset.x, target_offset.y):
 			continue
-		var side_id := _world.get_working_by_offset(side_col, row)
-		var side_definition := _registry.get_definition(side_id)
-		if side_definition == null:
+		var target_id := _world.get_working_by_offset(target_offset.x, target_offset.y)
+		var target_definition := _registry.get_definition(target_id)
+		if target_definition == null:
 			continue
-		if _is_opposite_liquid(source_id, side_id):
+		if _is_opposite_liquid(source_id, target_id):
 			_world.set_working_by_offset(col, row, _air_id)
-			_world.set_working_by_offset(side_col, row, _stone_id)
-			_mark_dirty_pair(col, row, side_col, row)
+			_world.set_working_by_offset(target_offset.x, target_offset.y, _stone_id)
+			_mark_dirty_pair(col, row, target_offset.x, target_offset.y)
 			return
-		if side_definition.is_passable:
-			_swap_cells(col, row, side_col, row, source_id, side_id)
+		if _can_liquid_move_into(source_id, target_id, target_definition):
+			_swap_cells(col, row, target_offset.x, target_offset.y, source_id, target_id)
 			return
 
 
@@ -192,6 +225,19 @@ func _is_opposite_liquid(source_id: int, target_id: int) -> bool:
 	if source_definition == null or target_definition == null:
 		return false
 	return source_definition.motion_behavior.behavior_name == "liquid" and target_definition.motion_behavior.behavior_name == "liquid"
+
+
+func _can_liquid_move_into(source_id: int, target_id: int, target_definition: TerrainDefinition) -> bool:
+	if target_definition == null or not target_definition.is_passable:
+		return false
+	if source_id == target_id:
+		return false
+	var source_definition := _registry.get_definition(source_id)
+	if source_definition == null:
+		return false
+	if source_definition.motion_behavior.behavior_name == "liquid" and target_definition.motion_behavior.behavior_name == "liquid":
+		return false
+	return true
 
 
 func _terrain_id(display_name: String) -> int:

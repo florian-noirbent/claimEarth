@@ -31,3 +31,31 @@ func test_explosion_applies_registered_blast_reactions_and_marks_dirty_chunks() 
 	assert_eq(world.get_committed_by_offset(3, 4), water_id)
 	assert_true(dirty_rect.has_point(Vector2i(3, 3)))
 	assert_gt(chunks.consume_dirty_chunks().size(), 0)
+
+
+func test_explosion_vaporizes_terrain_within_lethal_radius_regardless_of_type() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), 1)
+	var chunks := ChunkActivityIndex.new(world.dimensions, 4, 4)
+	var service := ExplosionService.new()
+
+	world.set_committed_by_offset(3, 3, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(4, 3, FixtureLoader.terrain_id("Water"))
+	world.set_committed_by_offset(3, 4, FixtureLoader.terrain_id("Lava"))
+	world.set_committed_by_offset(2, 3, FixtureLoader.terrain_id("Sand"))
+
+	service.explode(
+		world,
+		registry,
+		chunks,
+		HexMetrics.center_for_offset(3, 3, 16.0),
+		16.0,
+		3,
+		1
+	)
+
+	assert_eq(world.get_committed_by_offset(3, 3), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_by_offset(4, 3), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_by_offset(3, 4), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_by_offset(2, 3), FixtureLoader.terrain_id("Air"))

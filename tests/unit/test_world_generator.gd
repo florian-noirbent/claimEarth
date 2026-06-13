@@ -67,5 +67,42 @@ func test_generated_world_air_ratio_stays_in_target_band() -> void:
 	assert_not_null(result)
 
 	var air_ratio := float(result.world.count_committed(0)) / float(result.world.dimensions.cell_count())
-	assert_true(air_ratio >= 0.08)
+	assert_true(air_ratio >= 0.14)
 	assert_true(air_ratio <= 0.42)
+
+
+func test_generated_world_includes_secondary_material_pockets() -> void:
+	var generator := WorldGenerator.new()
+	var profile := load("res://config/generation/default_profile.tres") as GenerationProfile
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var result := generator.generate(profile, registry, 31415)
+	assert_not_null(result)
+
+	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Sand")), 500)
+	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Water")), 500)
+	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Lava")), 100)
+
+
+func test_generated_world_shows_secondary_materials_in_upper_play_band() -> void:
+	var generator := WorldGenerator.new()
+	var profile := load("res://config/generation/default_profile.tres") as GenerationProfile
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var result := generator.generate(profile, registry, SeedUtils.seed_from_text("live-materials"))
+	assert_not_null(result)
+
+	var shallow_counts := {
+		"Sand": 0,
+		"Water": 0,
+		"Lava": 0,
+	}
+	for row in range(0, 96):
+		for col in range(profile.width):
+			var definition := registry.get_definition(result.world.get_committed_by_offset(col, row))
+			if shallow_counts.has(definition.display_name):
+				shallow_counts[definition.display_name] += 1
+
+	assert_gt(shallow_counts["Sand"], 0)
+	assert_gt(shallow_counts["Water"], 0)
+	assert_gt(shallow_counts["Lava"], 0)

@@ -83,10 +83,11 @@ var _enable_menu_preview := true
 var _pending_submissions: Array[Dictionary] = []
 var _retrying_pending := false
 var _test_mode := false
+var _throw_unlock_msec := 0
 
 
 func _ready() -> void:
-	_current_seed = SeedUtils.seed_from_text("claim-earth-default-seed")
+	_current_seed = _initial_run_seed()
 	_configure_registries()
 	_load_local_state()
 	if _test_mode:
@@ -103,7 +104,7 @@ func _ready() -> void:
 	restart_button.pressed.connect(_on_restart_pressed)
 	result_menu_button.pressed.connect(_on_result_menu_pressed)
 	leaderboard_back_button.pressed.connect(_on_leaderboard_back_pressed)
-	controls_label.text = "A/D move   Space jump   RMB hook   W/S rope   1/2/3 select   LMB throw   Esc pause"
+	controls_label.text = "Plant the deepest flag to claim Earth (3).\nUse small bombs (1), large bombs (2), and your grappling hook (RMB)."
 	owner_label.text = "Earth owned by: Nobody yet"
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
@@ -111,6 +112,14 @@ func _ready() -> void:
 		_refresh_leaderboard()
 		_retry_pending_submissions()
 	print("Claim Earth app shell started")
+
+
+func _initial_run_seed() -> int:
+	if _test_mode:
+		return SeedUtils.seed_from_text("claim-earth-default-seed")
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return int(rng.randi())
 
 
 func get_run_state() -> StringName:
@@ -252,6 +261,7 @@ func _apply_state(next_state: StringName) -> void:
 			_dismiss_menu_shell()
 			if _last_generation_result != null:
 				_attach_world(_last_generation_result)
+			_throw_unlock_msec = Time.get_ticks_msec() + 1000
 			_set_player_active(true)
 			gameplay_started.emit()
 		RunPhase.FLAG_IN_FLIGHT:
@@ -317,6 +327,11 @@ func _process(delta: float) -> void:
 
 	_handle_item_input()
 	var player_offset := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius)
+	var visible_start_row := maxi(0, player_offset.y - int(world_presenter.visible_row_count / 3))
+	if _chunk_activity_index != null:
+		_simulation_backend.schedule(
+			_chunk_activity_index.visible_chunks_for_depth_window(visible_start_row, world_presenter.visible_row_count)
+		)
 	_simulation_accumulator += delta
 	if _simulation_accumulator >= _simulation_backend.commit_interval_seconds:
 		_simulation_accumulator = 0.0
@@ -324,7 +339,7 @@ func _process(delta: float) -> void:
 		var commit = _simulation_backend.commit_if_ready()
 		if commit.did_commit and _chunk_activity_index != null:
 			_chunk_activity_index.mark_dirty_rect(commit.dirty_rect)
-	world_presenter.refresh_visible_chunks(maxi(0, player_offset.y - int(world_presenter.visible_row_count / 3)))
+	world_presenter.refresh_visible_chunks(visible_start_row)
 	_refresh_play_status()
 
 
@@ -339,7 +354,8 @@ func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) 
 		_chunk_activity_index,
 		impact_position,
 		world_presenter.hex_radius,
-		item_action.factory.blast_radius
+		item_action.factory.blast_radius,
+		item_action.factory.lethal_radius
 	)
 	audio_director.play_explosion(item_action.factory.blast_radius >= 4)
 	gameplay_feedback.spawn_ring(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius * world_presenter.hex_radius * 0.75)
@@ -378,6 +394,8 @@ func _handle_item_input() -> void:
 
 func _throw_selected_item() -> void:
 	if _player == null or _last_generation_result == null:
+		return
+	if Time.get_ticks_msec() < _throw_unlock_msec:
 		return
 	var definition := _item_inventory.selected_definition()
 	if definition == null or not _item_inventory.consume(definition):
@@ -541,7 +559,7 @@ func _configure_world_bounds() -> void:
 	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
 	var map_width := right_edge - left_edge
 	var viewport_size := get_viewport_rect().size
-	var horizontal_zoom := maxf(1.0, map_width / maxf(1.0, viewport_size.x * 0.92))
+	var horizontal_zoom := minf(1.0, maxf(0.1, (viewport_size.x * 0.92) / maxf(1.0, map_width)))
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
 	depth_markers.configure_bounds(left_edge, right_edge, world_presenter.hex_radius)
