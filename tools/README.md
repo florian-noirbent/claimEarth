@@ -20,6 +20,9 @@ From the repository root:
 .\tools\test.ps1
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
+.\tools\serve_web.ps1
+.\tools\smoke_web.ps1
+.\tools\smoke_chromium.ps1
 .\tools\ci.ps1
 .\tools\assert_test_failure.ps1
 ```
@@ -28,6 +31,9 @@ From the repository root:
 - `test.ps1` runs all GUT tests under `res://tests` and propagates the exit code.
 - `run_smoke.ps1` starts the configured main scene for two frames.
 - `export_web.ps1` creates a release build under `build/web`.
+- `serve_web.ps1` starts a local static server for the exported build on `127.0.0.1:8936`.
+- `smoke_web.ps1` exports the build, serves it locally, and verifies the shell loads.
+- `smoke_chromium.ps1` exports the build, serves it locally, and captures a Chrome headless screenshot.
 - `ci.ps1` runs import, tests, smoke, and Web export as a local CI-equivalent gate.
 - `assert_test_failure.ps1` injects a temporary failing test and verifies the headless
   runner returns a nonzero exit code.

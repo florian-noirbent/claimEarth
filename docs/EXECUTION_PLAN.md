@@ -110,7 +110,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 10 | Menus, HUD, persistence, and score markers | 9 | COMPLETE | `feat: add complete local game flow and interface` |
 | 11 | SimpleBoards and leaderboard workflow | 10 | COMPLETE | `feat: integrate online leaderboard services` |
 | 12 | Final vector art, procedural materials, audio, and effects | 11 | COMPLETE | `feat: complete cartoon presentation and feedback` |
-| 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
+| 13 | Performance, web export, browser automation, and itch.io release | 12 | COMPLETE | `release: prepare Claim Earth web jam build` |
 
 Exactly one row may be `IN_PROGRESS` during execution. This document's initial
 planning commit precedes Step 0 and establishes the Git repository.
@@ -647,6 +647,23 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Itch.io build completes the full scoring loop with network failure fallback.
 - `docs/GAME_DESIGN.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, and this ledger match the
   shipped build.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - export validation, local web serving, Chromium smoke,
+  and release documentation.
+- Previous commit: `7fec677`
+- Final commit: `release: prepare Claim Earth web jam build`
+- Result: Added local export/serve/smoke scripts, a Chromium headless screenshot
+  smoke path, and a release checklist for itch.io packaging plus browser/storage QA.
+  The project remains configured for single-threaded Web export and `tools/ci.ps1`,
+  `tools/smoke_web.ps1`, and `tools/smoke_chromium.ps1` all pass locally. The in-app
+  Browser plugin had no live `iab` browser available in this session, and Firefox is
+  still not installed on this workstation, so final interactive Firefox verification
+  remains an external release-machine check and is documented in
+  `docs/RELEASE_CHECKLIST.md`.
 
 
 ## 7. Release Risks and Fallbacks
