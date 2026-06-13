@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource path="res://src/app/main.gd" type="Script" id="1_main"]
+[ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -29,10 +29,12 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Content" type="VBoxContainer" parent="Center"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="Center/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 48
@@ -40,8 +42,43 @@ text = "CLAIM EARTH"
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.78, 0.72, 1)
 theme_override_font_sizes/font_size = 18
 text = "Godot 4.6 web baseline ready"
 horizontal_alignment = 1
+
+[node name="MenuPanel" type="VBoxContainer" parent="Center/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StartButton" type="Button" parent="Center/Content/MenuPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start"
+
+[node name="LeaderboardButton" type="Button" parent="Center/Content/MenuPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Leaderboard"
+
+[node name="PlayingPanel" type="VBoxContainer" parent="Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayStatus" type="Label" parent="Center/Content/PlayingPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.78, 0.72, 1)
+theme_override_font_sizes/font_size = 18
+text = "Gameplay placeholder"
+horizontal_alignment = 1
+
+[node name="BackToMenuButton" type="Button" parent="Center/Content/PlayingPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back to Menu"

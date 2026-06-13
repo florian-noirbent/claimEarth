@@ -99,7 +99,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | --- | --- | --- | --- | --- |
 | 0 | Repository and toolchain baseline | None | COMPLETE | `chore: establish web toolchain baseline` |
 | 1 | Core contracts, hex math, registries, and tests | 0 | COMPLETE | `feat: add core world and definition contracts` |
-| 2 | App shell, main scene, input map, and test harness | 1 | NOT_STARTED | `feat: add application shell and automated test harness` |
+| 2 | App shell, main scene, input map, and test harness | 1 | COMPLETE | `feat: add application shell and automated test harness` |
+| 3 | Deterministic map generation and packed world data | 2 | IN_PROGRESS | `feat: generate deterministic hex cave worlds` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
@@ -226,6 +227,20 @@ planning commit precedes Step 0 and establishes the Git repository.
   pass after it is removed.
 - Input actions exist and are addressed only by action name.
 
+**Tracking**
+
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - app shell, run state, input map, local CI scripts,
+  scene integration, and tests.
+- Previous commit: `1233043`
+- Final commit: `feat: add application shell and automated test harness`
+- Result: Added `AppRoot`, `RunCoordinator`, named run phases, the full project input
+  map, and a placeholder main-menu -> generating -> playing flow with integration
+  coverage. Added local `ci.ps1` and `assert_test_failure.ps1`; the temporary failure
+  probe confirms headless tests return a nonzero exit code. `tools/ci.ps1` passes with
+  22/22 tests green.
+
 ### Step 3 - Deterministic Map Generation and Packed World Data
 
 **Deliverables**
@@ -247,6 +262,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Same seed/profile produces the same world hash.
 - Every generated ID resolves through the terrain registry.
 - Dimensions, boundaries, final rows, spawn chamber, and distribution bounds pass.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - generation passes, profiles, scheduling, diagnostics,
+  and deterministic/property tests.
+- Previous commit: record after Step 2 commit
+- Result: In progress.
 
 ### Step 4 - Chunk Rendering, Outlines, and Collision Presentation
 

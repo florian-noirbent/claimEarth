@@ -20,11 +20,16 @@ From the repository root:
 .\tools\test.ps1
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
+.\tools\ci.ps1
+.\tools\assert_test_failure.ps1
 ```
 
 - `import.ps1` imports resources and verifies the project can open headlessly.
 - `test.ps1` runs all GUT tests under `res://tests` and propagates the exit code.
 - `run_smoke.ps1` starts the configured main scene for two frames.
 - `export_web.ps1` creates a release build under `build/web`.
+- `ci.ps1` runs import, tests, smoke, and Web export as a local CI-equivalent gate.
+- `assert_test_failure.ps1` injects a temporary failing test and verifies the headless
+  runner returns a nonzero exit code.
 
 The `build/` directory is generated and ignored by Git.
