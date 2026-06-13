@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GenerationProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/generation/generation_profile.gd" id="1_oqppt"]
+
+[resource]
+script = ExtResource("1_oqppt")
+width = 100
+depth = 2000
+spawn_width = 10
+spawn_height = 8
+spawn_margin_top = 3

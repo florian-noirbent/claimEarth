@@ -4,7 +4,6 @@ extends GutTest
 func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
-	app_root.generation_delay_seconds = 0.001
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
@@ -25,7 +24,6 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 func test_back_to_menu_restores_menu_visibility() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
-	app_root.generation_delay_seconds = 0.001
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 

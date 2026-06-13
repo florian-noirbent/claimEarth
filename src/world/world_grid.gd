@@ -73,3 +73,15 @@ func copy_committed_region(region: Rect2i) -> PackedByteArray:
 		for col in range(region.position.x, region.end.x):
 			result.append(get_committed_by_offset(col, row))
 	return result
+
+
+func count_committed(cell_id: int) -> int:
+	var total := 0
+	for current_id in committed_cells:
+		if current_id == cell_id:
+			total += 1
+	return total
+
+
+func committed_hash() -> int:
+	return SeedUtils.seed_from_text(committed_cells.hex_encode())

@@ -100,7 +100,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 0 | Repository and toolchain baseline | None | COMPLETE | `chore: establish web toolchain baseline` |
 | 1 | Core contracts, hex math, registries, and tests | 0 | COMPLETE | `feat: add core world and definition contracts` |
 | 2 | App shell, main scene, input map, and test harness | 1 | COMPLETE | `feat: add application shell and automated test harness` |
-| 3 | Deterministic map generation and packed world data | 2 | IN_PROGRESS | `feat: generate deterministic hex cave worlds` |
+| 3 | Deterministic map generation and packed world data | 2 | COMPLETE | `feat: generate deterministic hex cave worlds` |
+| 4 | Chunk rendering, outlines, and collision presentation | 3 | IN_PROGRESS | `feat: render and collide generated cave chunks` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | NOT_STARTED | `feat: add responsive player movement and camera` |
@@ -266,11 +267,16 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - generation passes, profiles, scheduling, diagnostics,
   and deterministic/property tests.
-- Previous commit: record after Step 2 commit
-- Result: In progress.
+- Previous commit: `6f34c08`
+- Final commit: `feat: generate deterministic hex cave worlds`
+- Result: Added `GenerationProfile`, generation contexts/passes, retry-capable
+  `WorldGenerator`, and async `WorldGenerationTask`. The default profile now creates
+  deterministic 100x2000 worlds with horizontal cave bias, hazard pockets, a carved
+  spawn chamber, sealed side walls, and sealed final stone rows. App shell generation
+  now shows real seed/hash data. `tools/ci.ps1` passes with 26/26 tests green.
 
 ### Step 4 - Chunk Rendering, Outlines, and Collision Presentation
 
@@ -294,6 +300,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Only visible/dirty chunks rebuild.
 - Visual occupancy and collision agree on fixture maps.
 - A full static generated map remains responsive on the reference machine.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - chunk activity, rendering, collision presentation,
+  instrumentation, and scene tests.
+- Previous commit: record after Step 3 commit
+- Result: In progress.
 
 ### Step 5 - Player Movement and Descending Camera
 
