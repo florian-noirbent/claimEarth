@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/items/item_definition.gd" id="1_iwl6w"]
+[ext_resource type="Resource" path="res://config/items/factory/flag_factory.tres" id="2_1bpvf"]
+
+[resource]
+script = ExtResource("1_iwl6w")
+stable_id = 3
+display_name = "Flag"
+starting_inventory = 1
+action_factory = ExtResource("2_1bpvf")

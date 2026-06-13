@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TerrainDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_14pcm"]
+[ext_resource type="Resource" path="res://config/terrain/motion/liquid_motion.tres" id="2_hkqhy"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/suffocation_hazard.tres" id="3_3p1bi"]
+[ext_resource type="Resource" path="res://config/terrain/blast/water_diffuse.tres" id="4_qkli1"]
+
+[resource]
+script = ExtResource("1_14pcm")
+stable_id = 4
+display_name = "Water"
+is_solid = false
+is_passable = true
+is_hookable = false
+is_destructible = false
+motion_behavior = ExtResource("2_hkqhy")
+hazard_behavior = ExtResource("3_3p1bi")
+blast_reaction = ExtResource("4_qkli1")

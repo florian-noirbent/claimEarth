@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemCatalog" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/items/item_catalog.gd" id="1_qwitu"]
+[ext_resource type="Resource" path="res://config/items/small_bomb.tres" id="2_vyjlwm"]
+[ext_resource type="Resource" path="res://config/items/large_bomb.tres" id="3_h0k52"]
+[ext_resource type="Resource" path="res://config/items/flag.tres" id="4_2o84p"]
+
+[resource]
+script = ExtResource("1_qwitu")
+definitions = [ExtResource("2_vyjlwm"), ExtResource("3_h0k52"), ExtResource("4_2o84p")]

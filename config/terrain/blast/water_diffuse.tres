@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DiffuseBlastReaction" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/diffuse_blast_reaction.gd" id="1_ydw26"]
+
+[resource]
+script = ExtResource("1_ydw26")
+attenuation_multiplier = 0.5

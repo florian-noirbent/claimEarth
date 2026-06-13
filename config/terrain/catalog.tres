@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TerrainCatalog" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_catalog.gd" id="1_h6xrb"]
+[ext_resource type="Resource" path="res://config/terrain/air.tres" id="2_fr7r6"]
+[ext_resource type="Resource" path="res://config/terrain/stone.tres" id="3_qvytl"]
+[ext_resource type="Resource" path="res://config/terrain/dirt.tres" id="4_tw4o8"]
+[ext_resource type="Resource" path="res://config/terrain/sand.tres" id="5_a7h5i"]
+[ext_resource type="Resource" path="res://config/terrain/water.tres" id="6_3bxp7"]
+[ext_resource type="Resource" path="res://config/terrain/lava.tres" id="7_rqm1w"]
+
+[resource]
+script = ExtResource("1_h6xrb")
+definitions = [ExtResource("2_fr7r6"), ExtResource("3_qvytl"), ExtResource("4_tw4o8"), ExtResource("5_a7h5i"), ExtResource("6_3bxp7"), ExtResource("7_rqm1w")]

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/items/item_definition.gd" id="1_ahqti"]
+[ext_resource type="Resource" path="res://config/items/factory/small_bomb_factory.tres" id="2_eptsg"]
+
+[resource]
+script = ExtResource("1_ahqti")
+stable_id = 1
+display_name = "Small Bomb"
+starting_inventory = 10
+action_factory = ExtResource("2_eptsg")

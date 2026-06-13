@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="FlagItemActionFactory" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/items/flag_item_action_factory.gd" id="1_pocku"]
+
+[resource]
+script = ExtResource("1_pocku")
+ignores_water = true
+destroyed_by_lava = true

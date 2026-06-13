@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="TransformBlastReaction" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/transform_blast_reaction.gd" id="1_4b0li"]
+
+[resource]
+script = ExtResource("1_4b0li")
+target_terrain_id = 2

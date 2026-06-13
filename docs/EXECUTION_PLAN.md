@@ -98,7 +98,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | Step | Deliverable | Dependencies | State | Commit subject |
 | --- | --- | --- | --- | --- |
 | 0 | Repository and toolchain baseline | None | COMPLETE | `chore: establish web toolchain baseline` |
-| 1 | Core contracts, hex math, registries, and tests | 0 | NOT_STARTED | `feat: add core world and definition contracts` |
+| 1 | Core contracts, hex math, registries, and tests | 0 | COMPLETE | `feat: add core world and definition contracts` |
 | 2 | App shell, main scene, input map, and test harness | 1 | NOT_STARTED | `feat: add application shell and automated test harness` |
 | 3 | Deterministic map generation and packed world data | 2 | NOT_STARTED | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | NOT_STARTED | `feat: render and collide generated cave chunks` |
@@ -186,6 +186,20 @@ planning commit precedes Step 0 and establishes the Git repository.
 - All coordinates round-trip and edge indexing is tested.
 - Duplicate/missing definitions fail validation.
 - Required terrain/item resources load and pass common contracts.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - world/core contracts, registries, fixtures, tests, and
+  integration.
+- Previous commit: `f07dba5`
+- Final commit: `feat: add core world and definition contracts`
+- Result: Added deterministic seed helpers, flat-top hex coordinate/value objects,
+  packed `WorldGrid` buffers, dirty-region/cell-change primitives, terrain and item
+  resource contracts, validation registries, and fixture catalogs for all required
+  terrain and item types. Added unit tests plus registry and architecture guardrail
+  coverage. `tools/import.ps1` and `tools/test.ps1` both pass, with 17/17 tests green.
 
 ### Step 2 - App Shell, Main Scene, Input Map, and Test Harness
 

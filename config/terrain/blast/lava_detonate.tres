@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="DetonateBlastReaction" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/detonate_blast_reaction.gd" id="1_4n4la"]
+
+[resource]
+script = ExtResource("1_4n4la")

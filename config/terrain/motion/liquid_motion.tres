@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="LiquidMotionBehavior" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/liquid_motion_behavior.gd" id="1_63x0r"]
+
+[resource]
+script = ExtResource("1_63x0r")
