@@ -108,7 +108,7 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 8 | Hazards, death, flag planting, and scoring | 7 | COMPLETE | `feat: complete run outcomes and flag scoring` |
 | 9 | Cooperative terrain simulation | 8 | COMPLETE | `feat: simulate sand water and lava` |
 | 10 | Menus, HUD, persistence, and score markers | 9 | COMPLETE | `feat: add complete local game flow and interface` |
-| 11 | SimpleBoards and leaderboard workflow | 10 | NOT_STARTED | `feat: integrate online leaderboard services` |
+| 11 | SimpleBoards and leaderboard workflow | 10 | COMPLETE | `feat: integrate online leaderboard services` |
 | 12 | Final vector art, procedural materials, audio, and effects | 11 | NOT_STARTED | `feat: complete cartoon presentation and feedback` |
 | 13 | Performance, web export, browser automation, and itch.io release | 12 | NOT_STARTED | `release: prepare Claim Earth web jam build` |
 
@@ -563,6 +563,22 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Local best survives failed online submission.
 - UI represents loading, empty, success, and failure explicitly.
 - No private credential is committed; acknowledge the public client-key model.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed: 2026-06-13
+- Work lanes: Coordinator - service contracts, SimpleBoards adapter, UI states,
+  pending retry flow, and tests.
+- Previous commit: `c1ea16c`
+- Final commit: `feat: integrate online leaderboard services`
+- Result: Added a leaderboard service contract, fake service, typed score/entry
+  models, a SimpleBoards HTTP adapter, and pure response parsing so tests stay fully
+  offline. `AppRoot` now fetches top scores for menu ownership/leaderboard display,
+  submits planted scores, preserves local bests on failure, and retries pending
+  submissions on later sessions. No key or leaderboard ID was committed; the tracked
+  config stays disabled until jam credentials are provided. `tools\test.ps1` passes
+  with 67/67 tests green.
 
 ### Step 12 - Final Vector Art, Procedural Materials, Audio, and Effects
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="LeaderboardConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/leaderboard/leaderboard_config.gd" id="1_u6dvg"]
+
+[resource]
+script = ExtResource("1_u6dvg")
+enabled = false
+api_base_url = "https://api.simpleboards.dev/api"
+leaderboard_id = ""
+api_key = ""
+request_timeout_seconds = 8.0
+max_entries = 10
+game_version = "jam-dev"

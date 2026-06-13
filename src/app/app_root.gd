@@ -13,9 +13,12 @@ const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
 const SaveRepositoryScript = preload("res://src/save/save_repository.gd")
 const SaveDataScript = preload("res://src/save/save_data.gd")
+const ScoreSubmissionScript = preload("res://src/leaderboard/score_submission.gd")
+const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simpleboards_leaderboard_service.gd")
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
+@export var leaderboard_config = preload("res://config/leaderboard/simpleboards.tres")
 
 @onready var title_label: Label = %Title
 @onready var owner_label: Label = %OwnerLabel
@@ -63,21 +66,27 @@ var _trajectory_service = ItemTrajectoryServiceScript.new()
 var _explosion_service = ExplosionServiceScript.new()
 var _simulation_backend = CooperativeChunkBackendScript.new()
 var _save_repository = SaveRepositoryScript.new()
+var _leaderboard_service
 var _simulation_accumulator := 0.0
 var _last_player_name := "Player"
 var _pending_score_depth := -1
 var _personal_best_depth := -1
+var _global_best_depth := -1
+var _global_best_player := ""
 var _terminal_outcome_locked := false
 var _active_flag_projectile = null
 var _storage_warning := ""
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := true
+var _pending_submissions: Array[Dictionary] = []
+var _retrying_pending := false
 
 
 func _ready() -> void:
 	_current_seed = SeedUtils.seed_from_text("claim-earth-default-seed")
 	_configure_registries()
 	_load_local_state()
+	_configure_leaderboard_service()
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
 	menu_start_button.pressed.connect(_on_start_pressed)
@@ -91,6 +100,8 @@ func _ready() -> void:
 	owner_label.text = "Earth owned by: Nobody yet"
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
+	_refresh_leaderboard()
+	_retry_pending_submissions()
 	print("Claim Earth app shell started")
 
 
@@ -108,6 +119,10 @@ func configure_save_path_for_test(save_path: String) -> void:
 
 func set_menu_preview_enabled(enabled: bool) -> void:
 	_enable_menu_preview = enabled
+
+
+func configure_leaderboard_service_for_test(service) -> void:
+	_leaderboard_service = service
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -177,8 +192,7 @@ func _apply_state(next_state: StringName) -> void:
 			status_label.text = "Ready to descend | Seed %d" % _current_seed
 			_set_player_active(false)
 		RunPhase.LEADERBOARD:
-			leaderboard_status.text = "Local leaderboard view arrives with online sync in Step 11."
-			leaderboard_rows.text = "[center]No entries loaded yet.[/center]"
+			_refresh_leaderboard()
 			_set_player_active(false)
 		RunPhase.GENERATING:
 			title_label.text = "CLAIM EARTH"
@@ -229,6 +243,7 @@ func _begin_generation() -> void:
 	_pending_score_depth = -1
 	_active_flag_projectile = null
 	_simulation_accumulator = 0.0
+	_chunk_activity_index = null
 	_last_generation_result = await _generation_task.generate_async(
 		self,
 		generation_profile,
@@ -371,12 +386,27 @@ func _on_confirm_score_pressed() -> void:
 		_personal_best_depth = _pending_score_depth
 	_update_depth_markers()
 	_persist_local_state()
+	var submission = ScoreSubmissionScript.new()
+	submission.player_name = _last_player_name
+	submission.score_depth = _pending_score_depth
+	submission.seed = _last_generation_result.final_seed if _last_generation_result != null else _current_seed
+	submission.game_version = leaderboard_config.game_version if leaderboard_config != null else "dev"
+	if _leaderboard_service == null:
+		result_status.text = "%s claimed depth %d. Personal best: %d." % [
+			_last_player_name,
+			_pending_score_depth,
+			_personal_best_depth,
+		]
+		transition_to(RunPhase.RESULT)
+		return
 	result_status.text = "%s claimed depth %d. Personal best: %d." % [
 		_last_player_name,
 		_pending_score_depth,
 		_personal_best_depth,
 	]
-	transition_to(RunPhase.RESULT)
+	result_status.text += "\nSubmitting score..."
+	transition_to(RunPhase.SUBMITTING)
+	_leaderboard_service.submit_score(submission)
 
 
 func _on_restart_pressed() -> void:
@@ -460,17 +490,23 @@ func _load_local_state() -> void:
 	var save_data = _save_repository.load_data()
 	_last_player_name = save_data.last_player_name
 	_personal_best_depth = save_data.personal_best_depth
+	_pending_submissions.clear()
+	for pending_submission in save_data.pending_submissions:
+		_pending_submissions.append(pending_submission.duplicate(true))
 
 
 func _persist_local_state() -> void:
 	var save_data = SaveDataScript.new()
 	save_data.last_player_name = _last_player_name
 	save_data.personal_best_depth = _personal_best_depth
+	for pending_submission in _pending_submissions:
+		save_data.pending_submissions.append(pending_submission.duplicate(true))
 	_save_repository.save_data(save_data)
 
 
 func _update_depth_markers() -> void:
 	depth_markers.set_personal_depth(_personal_best_depth)
+	depth_markers.set_global_depth(_global_best_depth, _global_best_player)
 
 
 func _start_menu_preview() -> void:
@@ -494,3 +530,103 @@ func _generate_menu_preview() -> void:
 	_last_generation_result = preview_result
 	_attach_world(preview_result)
 	_set_player_active(false)
+
+
+func _configure_leaderboard_service() -> void:
+	if _leaderboard_service != null:
+		if _leaderboard_service.get_parent() == null:
+			add_child(_leaderboard_service)
+		_connect_leaderboard_service()
+		return
+	_leaderboard_service = SimpleBoardsLeaderboardServiceScript.new()
+	add_child(_leaderboard_service)
+	_leaderboard_service.configure(leaderboard_config)
+	_connect_leaderboard_service()
+
+
+func _connect_leaderboard_service() -> void:
+	if not _leaderboard_service.top_loaded.is_connected(_on_leaderboard_top_loaded):
+		_leaderboard_service.top_loaded.connect(_on_leaderboard_top_loaded)
+	if not _leaderboard_service.submission_finished.is_connected(_on_leaderboard_submission_finished):
+		_leaderboard_service.submission_finished.connect(_on_leaderboard_submission_finished)
+	if not _leaderboard_service.pending_retry_finished.is_connected(_on_pending_retry_finished):
+		_leaderboard_service.pending_retry_finished.connect(_on_pending_retry_finished)
+
+
+func _refresh_leaderboard() -> void:
+	leaderboard_status.text = "Loading leaderboard..."
+	leaderboard_rows.text = ""
+	if _leaderboard_service == null:
+		leaderboard_status.text = "Leaderboard unavailable."
+		leaderboard_rows.text = "[center]No entries loaded yet.[/center]"
+		return
+	_leaderboard_service.fetch_top(10)
+
+
+func _retry_pending_submissions() -> void:
+	if _leaderboard_service == null or _pending_submissions.is_empty() or _retrying_pending:
+		return
+	_retrying_pending = true
+	_leaderboard_service.retry_pending(_pending_submissions)
+
+
+func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -> void:
+	if failed:
+		leaderboard_status.text = message if not message.is_empty() else "Leaderboard unavailable."
+		leaderboard_rows.text = "[center]Retry later. Local best still saves.[/center]"
+		return
+	if entries.is_empty():
+		leaderboard_status.text = "Nobody has claimed Earth yet."
+		leaderboard_rows.text = "[center]No entries yet.[/center]"
+		owner_label.text = "Earth owned by: Nobody yet"
+		_global_best_depth = -1
+		_global_best_player = ""
+		_update_depth_markers()
+		return
+	leaderboard_status.text = "Top depths"
+	var lines := PackedStringArray()
+	for entry in entries:
+		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
+	var top_entry = entries[0]
+	owner_label.text = "Earth owned by: %s" % top_entry.player_name
+	_global_best_depth = top_entry.score_depth
+	_global_best_player = top_entry.player_name
+	leaderboard_rows.text = "[code]%s[/code]" % "\n".join(lines)
+	_update_depth_markers()
+
+
+func _on_leaderboard_submission_finished(submission, entry, failed: bool, message: String) -> void:
+	if failed:
+		_pending_submissions.append(submission.to_pending_dictionary())
+		_persist_local_state()
+		result_status.text = "%s claimed depth %d. Personal best: %d.\nOnline submit failed: %s" % [
+			submission.player_name,
+			submission.score_depth,
+			_personal_best_depth,
+			message,
+		]
+		transition_to(RunPhase.RESULT)
+		return
+	result_status.text = "%s claimed depth %d. Personal best: %d.\nScore submitted." % [
+		submission.player_name,
+		submission.score_depth,
+		_personal_best_depth,
+	]
+	if entry != null and (_global_best_depth < 0 or entry.score_depth >= _global_best_depth):
+		_global_best_depth = entry.score_depth
+		_global_best_player = entry.player_name
+	_update_depth_markers()
+	_refresh_leaderboard()
+	transition_to(RunPhase.RESULT)
+
+
+func _on_pending_retry_finished(remaining_pending: Array, successful_count: int, message: String) -> void:
+	_retrying_pending = false
+	_pending_submissions.clear()
+	for pending_submission in remaining_pending:
+		_pending_submissions.append(pending_submission.duplicate(true))
+	_persist_local_state()
+	if successful_count > 0:
+		_refresh_leaderboard()
+	if _run_coordinator.current_state == RunPhase.LEADERBOARD and not message.is_empty() and successful_count == 0:
+		leaderboard_status.text = message
