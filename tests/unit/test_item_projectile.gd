@@ -23,12 +23,11 @@ func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> 
 	var projectile := ItemProjectile.new()
 	projectile.world = world
 	projectile.terrain_registry = registry
-	projectile.global_position = HexMetrics.center_for_offset(2, 2, projectile.hex_radius)
+	var sample_position := HexMetrics.center_for_offset(2, 2, projectile.hex_radius)
+	projectile.global_position = sample_position
 	projectile.configure({"fuse_seconds": 5.0})
-	add_child_autofree(projectile)
-	await wait_process_frames(1)
 
-	var definition := projectile._sample_terrain(projectile.global_position)
+	var definition := projectile._sample_terrain(sample_position)
 
 	assert_not_null(definition)
 	assert_eq(definition.display_name, "Stone")
