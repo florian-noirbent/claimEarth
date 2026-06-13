@@ -5,6 +5,7 @@ extends Control
 signal generation_started
 signal gameplay_started
 
+const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
@@ -28,6 +29,7 @@ var _last_generation_result: WorldGenerationResult
 var _current_seed := 0
 var _chunk_activity_index: ChunkActivityIndex
 var _player: PlayerController
+var _grapple_anchor_query = WorldGrappleAnchorQueryScript.new()
 
 
 func _ready() -> void:
@@ -129,6 +131,14 @@ func _on_generation_progress_changed(progress: float, label: String) -> void:
 	status_label.text = "%s %d%%" % [label, int(progress * 100.0)]
 
 
+func _process(_delta: float) -> void:
+	if _player == null or _last_generation_result == null or _run_coordinator.current_state != RunPhase.PLAYING:
+		return
+
+	var player_row := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
+	world_presenter.refresh_visible_chunks(maxi(0, player_row - int(world_presenter.visible_row_count / 3)))
+
+
 func _ensure_player() -> void:
 	if player_scene == null or _last_generation_result == null:
 		return
@@ -140,6 +150,14 @@ func _ensure_player() -> void:
 	var spawn_position := HexMetrics.center_for_offset(spawn_col, spawn_row, world_presenter.hex_radius)
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, generation_profile.depth + 6, world_presenter.hex_radius).y
 	_player.set_spawn_position(spawn_position)
+	_grapple_anchor_query.configure(
+		_last_generation_result.world,
+		_terrain_registry,
+		world_presenter.hex_radius,
+		_player.grapple_config.attach_radius,
+		_player.grapple_config.probe_step
+	)
+	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	var left_edge := HexMetrics.center_for_offset(0, 0, world_presenter.hex_radius).x - world_presenter.hex_radius
 	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
 	var map_width := right_edge - left_edge

@@ -17,3 +17,8 @@ func test_neighbor_count_and_distance() -> void:
 func test_world_position_uses_flat_top_spacing() -> void:
 	var right := HexCoord.new(1, 0).to_world_position()
 	assert_almost_eq(right.x, 1.5, 0.001)
+
+
+func test_hex_metrics_world_round_trip_matches_offset_coordinates() -> void:
+	var center := HexMetrics.center_for_offset(4, 5, 16.0)
+	assert_eq(HexMetrics.offset_for_world(center, 16.0), Vector2i(4, 5))

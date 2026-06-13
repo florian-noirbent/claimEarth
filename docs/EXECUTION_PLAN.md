@@ -103,8 +103,8 @@ the editor must be recorded explicitly rather than claimed as headless automatio
 | 3 | Deterministic map generation and packed world data | 2 | COMPLETE | `feat: generate deterministic hex cave worlds` |
 | 4 | Chunk rendering, outlines, and collision presentation | 3 | COMPLETE | `feat: render and collide generated cave chunks` |
 | 5 | Player movement and descending camera | 4 | COMPLETE | `feat: add responsive player movement and camera` |
-| 6 | Grappling hook and rope movement | 5 | IN_PROGRESS | `feat: add grappling hook traversal` |
-| 7 | Item factory, projectiles, bombs, and mutations | 6 | NOT_STARTED | `feat: add configurable bombs and terrain mutation` |
+| 6 | Grappling hook and rope movement | 5 | COMPLETE | `feat: add grappling hook traversal` |
+| 7 | Item factory, projectiles, bombs, and mutations | 6 | IN_PROGRESS | `feat: add configurable bombs and terrain mutation` |
 | 8 | Hazards, death, flag planting, and scoring | 7 | NOT_STARTED | `feat: complete run outcomes and flag scoring` |
 | 9 | Cooperative terrain simulation | 8 | NOT_STARTED | `feat: simulate sand water and lava` |
 | 10 | Menus, HUD, persistence, and score markers | 9 | NOT_STARTED | `feat: add complete local game flow and interface` |
@@ -372,15 +372,16 @@ planning commit precedes Step 0 and establishes the Git repository.
 **Tracking**
 
 - Started: 2026-06-13
-- Completed:
+- Completed: 2026-06-13
 - Work lanes: Coordinator - grapple math, rope presentation, and integration tests.
-- Previous commit: record after Step 5 commit
-- Result: In progress. Before advancing deeper into hook work, a corrective pass fixed
-  regressions found during review: the gameplay transition now hides the menu overlay,
-  the camera locks to a fixed horizontal center sized to the map width, hex outline
-  edge mapping matches the flat-top grid, the spawn chamber includes a grounded floor
-  so jump is immediately usable, and generation tuning now favors denser horizontal
-  strata without exceeding the automated air-density bounds.
+- Previous commit: `1b3072d`
+- Final commit: `feat: add grappling hook traversal`
+- Result: Added a testable grapple model with attach, release, rope-length adjustment,
+  tangential swing momentum, and anchor invalidation. The player scene now renders a
+  rope and hook indicator, the app injects a world-backed hookable-terrain query, and
+  the world presenter refreshes visible chunks as the player descends. Added unit
+  tests for grapple mechanics plus world-anchor lookup. `tools/ci.ps1` passes with
+  47/47 tests green.
 
 ### Step 7 - Item Factory, Projectiles, Bombs, and Mutations
 
@@ -405,6 +406,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Nominal throw distances and all default terrain transformations are tested.
 - No item/terrain type branches appear in callers.
 - Visual and collision removal responds immediately to blasts.
+
+**Tracking**
+
+- Started: 2026-06-13
+- Completed:
+- Work lanes: Coordinator - item actions, projectile flow, terrain mutation, and
+  integration tests.
+- Previous commit: `9854043`
+- Result: In progress.
 
 ### Step 8 - Hazards, Death, Flag Planting, and Scoring
 

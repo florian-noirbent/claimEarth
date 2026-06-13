@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
+[ext_resource type="Resource" path="res://config/player/default_grapple.tres" id="3_grapple"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
 radius = 14.0
@@ -10,6 +11,7 @@ radius = 14.0
 script = ExtResource("1_player")
 collision_layer = 1
 collision_mask = 1
+grapple_config = ExtResource("3_grapple")
 
 [node name="BodyPolygon" type="Polygon2D" parent="."]
 unique_name_in_owner = true
@@ -24,3 +26,15 @@ unique_name_in_owner = true
 position_smoothing_enabled = false
 enabled = true
 script = ExtResource("2_camera")
+
+[node name="RopeLine" type="Line2D" parent="."]
+unique_name_in_owner = true
+visible = false
+width = 2.0
+default_color = Color(0.95, 0.95, 0.95, 0.9)
+
+[node name="HookIndicator" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+visible = false
+color = Color(0.96, 0.75, 0.19, 1)
+polygon = PackedVector2Array(0, -6, 6, 0, 0, 6, -6, 0)
