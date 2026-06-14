@@ -692,3 +692,46 @@ planning commit precedes Step 0 and establishes the Git repository.
 - Updated tool entrypoints so `tools/test.ps1` stays fast, `tools/test_performance.ps1`
   isolates performance contracts, and `tools/ci.ps1 -Milestone` runs the heavier web
   gates.
+
+## 9. Portfolio Refactor Ledger
+
+### Refactor 1 - Extract AppUiController
+
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `61ea097`
+- Commit subject: `refactor: extract app ui controller`
+- Result: `AppUiController` owns menu, HUD, pause, score-entry, result, and
+  leaderboard presentation and emits typed UI intents. Existing AppRoot integration
+  scenarios remain green, with focused signal and phase-visibility tests.
+
+### Refactor 2 - Extract ScoreController
+
+- State: NOT_STARTED
+- Previous commit: recorded when work begins
+- Commit subject: `refactor: extract score controller`
+
+### Refactor 3 - Extract RunItemController
+
+- State: NOT_STARTED
+- Previous commit: recorded when work begins
+- Commit subject: `refactor: extract run item controller`
+
+### Refactor 4 - Extract RunWorldController
+
+- State: NOT_STARTED
+- Previous commit: recorded when work begins
+- Commit subject: `refactor: extract run world controller`
+
+### Refactor 5 - Reduce AppRoot To Coordination
+
+- State: NOT_STARTED
+- Previous commit: recorded when work begins
+- Commit subject: `refactor: reduce app root to coordinator`
+
+### Refactor 6 - Final Refactor Gates
+
+- State: NOT_STARTED
+- Previous commit: recorded when work begins
+- Commit subject: `test: verify app root refactor gates`

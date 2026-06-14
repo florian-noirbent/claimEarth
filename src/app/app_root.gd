@@ -21,35 +21,23 @@ const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 @export var player_scene: PackedScene
 @export var leaderboard_config = preload("res://config/leaderboard/simpleboards.tres")
 
-@onready var title_label: Label = %Title
-@onready var owner_label: Label = %OwnerLabel
-@onready var status_label: Label = %Status
-@onready var warning_label: Label = %WarningLabel
-@onready var controls_label: Label = %ControlsLabel
-@onready var menu_background: ColorRect = $UiLayer/Background
-@onready var menu_root: CenterContainer = $UiLayer/Center
-@onready var menu_panel: VBoxContainer = %MenuPanel
-@onready var menu_start_button: Button = %StartButton
-@onready var menu_leaderboard_button: Button = %LeaderboardButton
-@onready var overlay_root: MarginContainer = %OverlayRoot
-@onready var playing_panel: VBoxContainer = %PlayingPanel
-@onready var play_status_label: Label = %PlayStatus
-@onready var hint_label: Label = %HintLabel
-@onready var back_to_menu_button: Button = %BackToMenuButton
-@onready var name_entry_panel: PanelContainer = %NameEntryPanel
-@onready var name_entry_status: Label = %NameEntryStatus
-@onready var player_name_input: LineEdit = %PlayerNameInput
-@onready var confirm_score_button: Button = %ConfirmScoreButton
-@onready var result_panel: PanelContainer = %ResultPanel
-@onready var result_title: Label = %ResultTitle
-@onready var result_status: Label = %ResultStatus
-@onready var restart_button: Button = %RestartButton
-@onready var result_menu_button: Button = %ResultMenuButton
-@onready var pause_panel: PanelContainer = %PausePanel
-@onready var leaderboard_panel: PanelContainer = %LeaderboardPanel
-@onready var leaderboard_status: Label = %LeaderboardStatus
-@onready var leaderboard_rows: RichTextLabel = %LeaderboardRows
-@onready var leaderboard_back_button: Button = %LeaderboardBackButton
+@onready var ui: AppUiController = %UiLayer
+@onready var title_label: Label = ui.title_label
+@onready var owner_label: Label = ui.owner_label
+@onready var status_label: Label = ui.status_label
+@onready var menu_background: ColorRect = ui.menu_background
+@onready var menu_root: CenterContainer = ui.menu_root
+@onready var menu_panel: VBoxContainer = ui.menu_panel
+@onready var menu_start_button: Button = ui.menu_start_button
+@onready var overlay_root: MarginContainer = ui.overlay_root
+@onready var playing_panel: VBoxContainer = ui.playing_panel
+@onready var back_to_menu_button: Button = ui.back_to_menu_button
+@onready var name_entry_panel: PanelContainer = ui.name_entry_panel
+@onready var player_name_input: LineEdit = ui.player_name_input
+@onready var confirm_score_button: Button = ui.confirm_score_button
+@onready var result_panel: PanelContainer = ui.result_panel
+@onready var result_status: Label = ui.result_status
+@onready var leaderboard_rows: RichTextLabel = ui.leaderboard_rows
 @onready var world_presenter: WorldPresenter = %WorldPresenter
 @onready var depth_markers: Node2D = %DepthMarkers
 @onready var gameplay_feedback = %GameplayFeedback
@@ -104,15 +92,11 @@ func _ready() -> void:
 	_diag("ready: leaderboard configured")
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
-	menu_start_button.pressed.connect(_on_start_pressed)
-	menu_leaderboard_button.pressed.connect(_on_leaderboard_pressed)
-	back_to_menu_button.pressed.connect(_on_back_to_menu_pressed)
-	confirm_score_button.pressed.connect(_on_confirm_score_pressed)
-	restart_button.pressed.connect(_on_restart_pressed)
-	result_menu_button.pressed.connect(_on_result_menu_pressed)
-	leaderboard_back_button.pressed.connect(_on_leaderboard_back_pressed)
-	controls_label.text = "Plant the deepest flag to claim Earth (3).\nUse small bombs (1), large bombs (2), and your grappling hook (RMB)."
-	owner_label.text = "Earth owned by: Nobody yet"
+	ui.start_requested.connect(_on_start_pressed)
+	ui.leaderboard_requested.connect(_on_leaderboard_pressed)
+	ui.menu_requested.connect(_on_back_to_menu_pressed)
+	ui.score_confirmed.connect(_on_confirm_score_requested)
+	ui.restart_requested.connect(_on_restart_pressed)
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
 	if not _test_mode or _leaderboard_service != null:
@@ -217,91 +201,45 @@ func _on_back_to_menu_pressed() -> void:
 	transition_to(RunPhase.MAIN_MENU)
 
 
-func _on_leaderboard_back_pressed() -> void:
-	transition_to(RunPhase.MAIN_MENU)
-
-
 func _on_state_changed(_previous_state: StringName, next_state: StringName) -> void:
 	_apply_state(next_state)
 
 
 func _apply_state(next_state: StringName) -> void:
-	var show_menu_shell := next_state in [RunPhase.MAIN_MENU, RunPhase.GENERATING, RunPhase.LEADERBOARD]
-	menu_background.visible = show_menu_shell
-	menu_root.visible = show_menu_shell
-	title_label.visible = show_menu_shell and next_state != RunPhase.LEADERBOARD
-	owner_label.visible = show_menu_shell and next_state != RunPhase.LEADERBOARD
-	status_label.visible = show_menu_shell and next_state != RunPhase.LEADERBOARD
-	warning_label.visible = show_menu_shell and not _storage_warning.is_empty()
-	controls_label.visible = show_menu_shell and next_state == RunPhase.MAIN_MENU
-	menu_panel.visible = next_state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]
-	overlay_root.visible = next_state in [
-		RunPhase.PLAYING,
-		RunPhase.FLAG_IN_FLIGHT,
-		RunPhase.NAME_ENTRY,
-		RunPhase.PAUSED,
-		RunPhase.SUBMITTING,
-		RunPhase.DEATH,
-		RunPhase.RESULT,
-	]
-	playing_panel.visible = next_state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT, RunPhase.PAUSED]
-	name_entry_panel.visible = next_state == RunPhase.NAME_ENTRY
-	result_panel.visible = next_state in [RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT]
-	pause_panel.visible = next_state == RunPhase.PAUSED
-	leaderboard_panel.visible = next_state == RunPhase.LEADERBOARD
-	warning_label.text = _storage_warning
+	ui.apply_state(next_state, _current_seed, _storage_warning, _pending_score_depth, _last_player_name)
 
 	match next_state:
 		RunPhase.MAIN_MENU:
-			title_label.text = "CLAIM EARTH"
-			status_label.text = "Ready to descend | Seed %d" % _current_seed
 			_set_player_active(false)
 		RunPhase.LEADERBOARD:
 			_refresh_leaderboard()
 			_set_player_active(false)
 		RunPhase.GENERATING:
-			title_label.text = "CLAIM EARTH"
-			status_label.text = "Generating run..."
 			_set_player_active(false)
 			generation_started.emit()
 			_begin_generation()
 		RunPhase.PLAYING:
-			_dismiss_menu_shell()
+			ui.dismiss_menu_shell()
 			if _last_generation_result != null:
 				_attach_world(_last_generation_result)
 			_throw_unlock_msec = Time.get_ticks_msec() + 1000
 			_set_player_active(true)
 			gameplay_started.emit()
 		RunPhase.FLAG_IN_FLIGHT:
-			_dismiss_menu_shell()
+			ui.dismiss_menu_shell()
 			_set_player_active(true)
 		RunPhase.NAME_ENTRY:
 			_set_player_active(false)
-			name_entry_status.text = "Depth: %d" % _pending_score_depth
-			player_name_input.text = _last_player_name
-			player_name_input.grab_focus()
 		RunPhase.PAUSED:
 			_set_player_active(false)
 		RunPhase.SUBMITTING:
 			_set_player_active(false)
-			result_title.text = "Flag Planted"
 		RunPhase.DEATH:
 			_set_player_active(false)
-			result_title.text = "Run Lost"
 		RunPhase.RESULT:
 			_set_player_active(false)
-			result_title.text = "Flag Planted"
 		_:
 			push_error("Unknown run state: %s" % [next_state])
-
-
-func _dismiss_menu_shell() -> void:
-	menu_background.visible = false
-	menu_root.visible = false
-	title_label.visible = false
-	owner_label.visible = false
-	status_label.visible = false
-	warning_label.visible = false
 
 
 func _begin_generation() -> void:
@@ -328,7 +266,7 @@ func _begin_generation() -> void:
 
 
 func _on_generation_progress_changed(progress: float, label: String) -> void:
-	status_label.text = "%s %d%%" % [label, int(progress * 100.0)]
+	ui.show_generation_progress(progress, label)
 
 
 func _process(delta: float) -> void:
@@ -440,7 +378,7 @@ func _throw_selected_item() -> void:
 func _refresh_play_status() -> void:
 	var selected_definition := _item_inventory.selected_definition()
 	if selected_definition == null or _player == null:
-		play_status_label.text = "No items configured"
+		ui.show_play_status("No items configured", "")
 		return
 	var parts := PackedStringArray()
 	for definition in _item_inventory.definitions():
@@ -448,15 +386,16 @@ func _refresh_play_status() -> void:
 	var player_depth := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
 	var best_text := "PB:%d" % _personal_best_depth if _personal_best_depth >= 0 else "PB:-"
 	var rope_text := "Hooked" if _player.is_grapple_attached() else "Free"
-	play_status_label.text = "Depth %d | %s | %s | %s" % [
+	var status_text := "Depth %d | %s | %s | %s" % [
 		player_depth,
 		best_text,
 		rope_text,
 		" | ".join(parts),
 	]
-	hint_label.text = "Selected: %s" % selected_definition.display_name
+	var hint_text := "Selected: %s" % selected_definition.display_name
 	if _active_flag_projectile != null:
-		hint_label.text += " | Flag in flight"
+		hint_text += " | Flag in flight"
+	ui.show_play_status(status_text, hint_text)
 
 
 func _on_player_death_requested(cause: StringName) -> void:
@@ -466,10 +405,10 @@ func _on_player_death_requested(cause: StringName) -> void:
 	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH)
 
 
-func _on_confirm_score_pressed() -> void:
-	var trimmed_name := player_name_input.text.strip_edges()
+func _on_confirm_score_requested(player_name: String) -> void:
+	var trimmed_name := player_name.strip_edges()
 	if trimmed_name.is_empty():
-		name_entry_status.text = "Enter a name between 1 and 20 characters."
+		ui.show_name_error("Enter a name between 1 and 20 characters.")
 		return
 	_last_player_name = trimmed_name.substr(0, 20)
 	audio_director.play_ui_confirm()
@@ -483,19 +422,18 @@ func _on_confirm_score_pressed() -> void:
 	submission.seed = _last_generation_result.final_seed if _last_generation_result != null else _current_seed
 	submission.game_version = leaderboard_config.game_version if leaderboard_config != null else "dev"
 	if _leaderboard_service == null:
-		result_status.text = "%s claimed depth %d. Personal best: %d." % [
+		ui.show_result("%s claimed depth %d. Personal best: %d." % [
 			_last_player_name,
 			_pending_score_depth,
 			_personal_best_depth,
-		]
+		])
 		transition_to(RunPhase.RESULT)
 		return
-	result_status.text = "%s claimed depth %d. Personal best: %d." % [
+	ui.show_result("%s claimed depth %d. Personal best: %d.\nSubmitting score..." % [
 		_last_player_name,
 		_pending_score_depth,
 		_personal_best_depth,
-	]
-	result_status.text += "\nSubmitting score..."
+	])
 	transition_to(RunPhase.SUBMITTING)
 	_leaderboard_service.submit_score(submission)
 
@@ -504,15 +442,11 @@ func _on_restart_pressed() -> void:
 	transition_to(RunPhase.GENERATING)
 
 
-func _on_result_menu_pressed() -> void:
-	transition_to(RunPhase.MAIN_MENU)
-
-
 func _complete_terminal_outcome(message: String, next_state: StringName) -> void:
 	if _terminal_outcome_locked:
 		return
 	_terminal_outcome_locked = true
-	result_status.text = message
+	ui.show_result(message)
 	transition_to(next_state)
 
 
@@ -652,11 +586,9 @@ func _connect_leaderboard_service() -> void:
 
 
 func _refresh_leaderboard() -> void:
-	leaderboard_status.text = "Loading leaderboard..."
-	leaderboard_rows.text = ""
+	ui.show_leaderboard_loading()
 	if _leaderboard_service == null:
-		leaderboard_status.text = "Leaderboard unavailable."
-		leaderboard_rows.text = "[center]No entries loaded yet.[/center]"
+		ui.show_leaderboard("Leaderboard unavailable.", "[center]No entries loaded yet.[/center]")
 		return
 	_leaderboard_service.fetch_top(10)
 
@@ -670,26 +602,23 @@ func _retry_pending_submissions() -> void:
 
 func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -> void:
 	if failed:
-		leaderboard_status.text = message if not message.is_empty() else "Leaderboard unavailable."
-		leaderboard_rows.text = "[center]Retry later. Local best still saves.[/center]"
+		ui.show_leaderboard(message if not message.is_empty() else "Leaderboard unavailable.", "[center]Retry later. Local best still saves.[/center]")
 		return
 	if entries.is_empty():
-		leaderboard_status.text = "Nobody has claimed Earth yet."
-		leaderboard_rows.text = "[center]No entries yet.[/center]"
-		owner_label.text = "Earth owned by: Nobody yet"
+		ui.show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Earth owned by: Nobody yet")
 		_global_best_depth = -1
 		_global_best_player = ""
 		_update_depth_markers()
 		return
-	leaderboard_status.text = "Top depths"
+	var status := "Top depths"
 	var lines := PackedStringArray()
 	for entry in entries:
 		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
 	var top_entry = entries[0]
-	owner_label.text = "Earth owned by: %s" % top_entry.player_name
+	var owner := "Earth owned by: %s" % top_entry.player_name
 	_global_best_depth = top_entry.score_depth
 	_global_best_player = top_entry.player_name
-	leaderboard_rows.text = "[code]%s[/code]" % "\n".join(lines)
+	ui.show_leaderboard(status, "[code]%s[/code]" % "\n".join(lines), owner)
 	_update_depth_markers()
 
 
@@ -697,19 +626,19 @@ func _on_leaderboard_submission_finished(submission, entry, failed: bool, messag
 	if failed:
 		_pending_submissions.append(submission.to_pending_dictionary())
 		_persist_local_state()
-		result_status.text = "%s claimed depth %d. Personal best: %d.\nOnline submit failed: %s" % [
+		ui.show_result("%s claimed depth %d. Personal best: %d.\nOnline submit failed: %s" % [
 			submission.player_name,
 			submission.score_depth,
 			_personal_best_depth,
 			message,
-		]
+		])
 		transition_to(RunPhase.RESULT)
 		return
-	result_status.text = "%s claimed depth %d. Personal best: %d.\nScore submitted." % [
+	ui.show_result("%s claimed depth %d. Personal best: %d.\nScore submitted." % [
 		submission.player_name,
 		submission.score_depth,
 		_personal_best_depth,
-	]
+	])
 	if entry != null and (_global_best_depth < 0 or entry.score_depth >= _global_best_depth):
 		_global_best_depth = entry.score_depth
 		_global_best_player = entry.player_name
@@ -727,7 +656,7 @@ func _on_pending_retry_finished(remaining_pending: Array, successful_count: int,
 	if successful_count > 0:
 		_refresh_leaderboard()
 	if _run_coordinator.current_state == RunPhase.LEADERBOARD and not message.is_empty() and successful_count == 0:
-		leaderboard_status.text = message
+		ui.leaderboard_status.text = message
 
 
 func _attach_preview_world(result: WorldGenerationResult) -> void:

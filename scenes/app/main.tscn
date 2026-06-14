@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 [ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
@@ -7,6 +7,7 @@
 [ext_resource path="res://src/audio/audio_director.gd" type="Script" id="5_audio"]
 [ext_resource path="res://src/presentation/gameplay_feedback.gd" type="Script" id="6_feedback"]
 [ext_resource path="res://src/presentation/world_side_boundaries.gd" type="Script" id="7_boundaries"]
+[ext_resource path="res://src/app/app_ui_controller.gd" type="Script" id="8_ui"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -39,7 +40,9 @@ unique_name_in_owner = true
 script = ExtResource("5_audio")
 
 [node name="UiLayer" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
 layer = 1
+script = ExtResource("8_ui")
 
 [node name="Background" type="ColorRect" parent="UiLayer"]
 layout_mode = 1
