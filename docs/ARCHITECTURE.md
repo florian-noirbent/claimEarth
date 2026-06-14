@@ -61,24 +61,26 @@ behavior strategy references, not global mutable run state.
 
 ## 3. Runtime Composition
 
-`AppRoot` is the composition root and the only place allowed to choose concrete
-implementations. It creates and injects:
+`AppRoot` is a composition and state-routing node. It owns `RunCoordinator`, maps
+controller outcomes to `RunPhase` transitions, and preserves a small integration-test
+façade. Runtime responsibilities are held by focused child controllers:
 
-- `RunCoordinator`
-- `WorldGenerator`
-- `TerrainRegistry`
-- `ItemFactory`
-- `TerrainSimulationBackend`
-- `WorldMutationService`
-- `SaveRepository`
-- `LeaderboardService`
-- presentation adapters and scene factories
+- `AppUiController` owns menu, HUD, pause, score-entry, result, and leaderboard UI.
+- `RunWorldController` owns registries, generation/preview cancellation, player
+  construction, simulation scheduling, camera bounds, and world presentation.
+- `RunItemController` owns inventory, selection, projectiles, explosions, and flag
+  flight locking.
+- `ScoreController` owns saves, profile/best scores, pending submissions, and the
+  injected `LeaderboardService`.
+
+Dependencies are passed once through typed `configure(...)` methods. Controllers do
+not call one another; typed signals return intents and outcomes to `AppRoot`.
 
 Use Godot signals for observable events crossing scene ownership boundaries. Use
 direct typed method calls within one subsystem. Avoid a global event bus.
 
-Only stable cross-scene services may be autoloads: `App`, `SaveRepository`, and
-`AudioDirector`. Run-specific state belongs under the current gameplay scene.
+No gameplay service is currently an autoload. Run-specific state belongs below the
+main gameplay scene and is released or reset between runs.
 
 ## 4. Run State Machine
 

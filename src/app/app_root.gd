@@ -5,8 +5,6 @@ extends Control
 signal generation_started
 signal gameplay_started
 
-const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
-
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
 @export var leaderboard_config = preload("res://config/leaderboard/simpleboards.tres")
@@ -20,24 +18,6 @@ const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 @onready var gameplay_feedback = %GameplayFeedback
 @onready var audio_director = %AudioDirector
 @onready var world_side_boundaries: WorldSideBoundaries = %WorldSideBoundaries
-
-# Stable scene-test aliases. UI ownership remains in AppUiController.
-@onready var title_label: Label = ui.title_label
-@onready var owner_label: Label = ui.owner_label
-@onready var status_label: Label = ui.status_label
-@onready var menu_background: ColorRect = ui.menu_background
-@onready var menu_root: CenterContainer = ui.menu_root
-@onready var menu_panel: VBoxContainer = ui.menu_panel
-@onready var menu_start_button: Button = ui.menu_start_button
-@onready var overlay_root: MarginContainer = ui.overlay_root
-@onready var playing_panel: VBoxContainer = ui.playing_panel
-@onready var back_to_menu_button: Button = ui.back_to_menu_button
-@onready var name_entry_panel: PanelContainer = ui.name_entry_panel
-@onready var player_name_input: LineEdit = ui.player_name_input
-@onready var confirm_score_button: Button = ui.confirm_score_button
-@onready var result_panel: PanelContainer = ui.result_panel
-@onready var result_status: Label = ui.result_status
-@onready var leaderboard_rows: RichTextLabel = ui.leaderboard_rows
 
 var _run_coordinator := RunCoordinator.new()
 var _current_seed := 0
@@ -68,11 +48,11 @@ func _ready() -> void:
 
 func _connect_controller_signals() -> void:
 	_run_coordinator.state_changed.connect(_on_state_changed)
-	ui.start_requested.connect(_on_start_pressed)
-	ui.leaderboard_requested.connect(_on_leaderboard_pressed)
-	ui.menu_requested.connect(_on_back_to_menu_pressed)
+	ui.start_requested.connect(func() -> void: transition_to(RunPhase.GENERATING))
+	ui.leaderboard_requested.connect(func() -> void: transition_to(RunPhase.LEADERBOARD))
+	ui.menu_requested.connect(func() -> void: transition_to(RunPhase.MAIN_MENU))
 	ui.score_confirmed.connect(_on_confirm_score_requested)
-	ui.restart_requested.connect(_on_restart_pressed)
+	ui.restart_requested.connect(func() -> void: transition_to(RunPhase.GENERATING))
 	world_controller.generation_progressed.connect(ui.show_generation_progress)
 	world_controller.run_ready.connect(_on_run_ready)
 	world_controller.player_died.connect(_on_player_death_requested)
@@ -179,22 +159,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			transition_to(RunPhase.RESULT)
 
 
-func _on_start_pressed() -> void:
-	transition_to(RunPhase.GENERATING)
-
-
-func _on_leaderboard_pressed() -> void:
-	transition_to(RunPhase.LEADERBOARD)
-
-
-func _on_back_to_menu_pressed() -> void:
-	transition_to(RunPhase.MAIN_MENU)
-
-
-func _on_restart_pressed() -> void:
-	transition_to(RunPhase.GENERATING)
-
-
 func _on_state_changed(_previous_state: StringName, next_state: StringName) -> void:
 	_apply_state(next_state)
 
@@ -251,12 +215,7 @@ func _refresh_play_status() -> void:
 		ui.show_play_status("No items configured", "")
 		return
 	var player_depth := HexMetrics.offset_for_world(get_player().global_position, world_presenter.hex_radius).y
-	var best_text := "PB:%d" % score_controller.personal_best_depth if score_controller.personal_best_depth >= 0 else "PB:-"
-	var rope_text := "Hooked" if get_player().is_grapple_attached() else "Free"
-	ui.show_play_status(
-		"Depth %d | %s | %s | %s" % [player_depth, best_text, rope_text, " | ".join(item_status.counts)],
-		"Selected: %s%s" % [item_status.selected_name, " | Flag in flight" if item_status.flag_in_flight else ""]
-	)
+	ui.show_run_status(player_depth, score_controller.personal_best_depth, get_player().is_grapple_attached(), item_status)
 
 
 func _on_bomb_exploded(position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
@@ -333,23 +292,12 @@ func _refresh_leaderboard() -> void:
 
 
 func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -> void:
-	if failed:
-		ui.show_leaderboard(message if not message.is_empty() else "Leaderboard unavailable.", "[center]Retry later. Local best still saves.[/center]")
-		return
-	if entries.is_empty():
-		ui.show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Earth owned by: Nobody yet")
-		_update_depth_markers()
-		return
-	var lines := PackedStringArray()
-	for entry in entries:
-		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
-	ui.show_leaderboard("Top depths", "[code]%s[/code]" % "\n".join(lines), "Earth owned by: %s" % entries[0].player_name)
+	ui.show_leaderboard_entries(entries, failed, message)
 	_update_depth_markers()
 
 
 func _on_leaderboard_submission_finished(submission, _entry, failed: bool, message: String) -> void:
-	var summary := "%s claimed depth %d. Personal best: %d." % [submission.player_name, submission.score_depth, score_controller.personal_best_depth]
-	ui.show_result(summary + ("\nOnline submit failed: %s" % message if failed else "\nScore submitted."))
+	ui.show_submission_result(submission.player_name, submission.score_depth, score_controller.personal_best_depth, failed, message)
 	_update_depth_markers()
 	if not failed:
 		_refresh_leaderboard()

@@ -114,6 +114,13 @@ func show_play_status(status_text: String, hint_text: String) -> void:
 	hint_label.text = hint_text
 
 
+func show_run_status(depth: int, personal_best: int, hooked: bool, item_status: Dictionary) -> void:
+	var best_text := "PB:%d" % personal_best if personal_best >= 0 else "PB:-"
+	var rope_text := "Hooked" if hooked else "Free"
+	play_status_label.text = "Depth %d | %s | %s | %s" % [depth, best_text, rope_text, " | ".join(item_status.counts)]
+	hint_label.text = "Selected: %s%s" % [item_status.selected_name, " | Flag in flight" if item_status.flag_in_flight else ""]
+
+
 func show_name_error(message: String) -> void:
 	name_entry_status.text = message
 
@@ -132,3 +139,21 @@ func show_leaderboard(status: String, rows: String, owner: String = "") -> void:
 	leaderboard_rows.text = rows
 	if not owner.is_empty():
 		owner_label.text = owner
+
+
+func show_leaderboard_entries(entries: Array, failed: bool, message: String) -> void:
+	if failed:
+		show_leaderboard(message if not message.is_empty() else "Leaderboard unavailable.", "[center]Retry later. Local best still saves.[/center]")
+		return
+	if entries.is_empty():
+		show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Earth owned by: Nobody yet")
+		return
+	var lines := PackedStringArray()
+	for entry in entries:
+		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
+	show_leaderboard("Top depths", "[code]%s[/code]" % "\n".join(lines), "Earth owned by: %s" % entries[0].player_name)
+
+
+func show_submission_result(player_name: String, depth: int, personal_best: int, failed: bool, message: String) -> void:
+	var summary := "%s claimed depth %d. Personal best: %d." % [player_name, depth, personal_best]
+	show_result(summary + ("\nOnline submit failed: %s" % message if failed else "\nScore submitted."))

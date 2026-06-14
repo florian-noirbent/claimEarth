@@ -742,9 +742,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 ### Refactor 5 - Reduce AppRoot To Coordination
 
-- State: NOT_STARTED
-- Previous commit: recorded when work begins
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `26a0bb1`
 - Commit subject: `refactor: reduce app root to coordinator`
+- Result: AppRoot now composes the four child controllers, owns `RunCoordinator`,
+  arbitrates terminal outcomes, and routes typed intents/outcomes. UI formatting and
+  all world, item, persistence, and network internals live behind controller APIs;
+  integration tests use explicit façades instead of private state.
 
 ### Refactor 6 - Final Refactor Gates
 

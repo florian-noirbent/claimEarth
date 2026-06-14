@@ -4,8 +4,8 @@ extends RefCounted
 
 static func assert_app_is_playing(test_case: GutTest, app_root: AppRoot) -> void:
 	test_case.assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
-	test_case.assert_true(app_root.overlay_root.visible)
-	test_case.assert_true(app_root.playing_panel.visible)
+	test_case.assert_true(app_root.ui.overlay_root.visible)
+	test_case.assert_true(app_root.ui.playing_panel.visible)
 	test_case.assert_not_null(app_root.get_player())
 	test_case.assert_true(app_root.get_player().is_physics_processing())
 

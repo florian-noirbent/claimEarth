@@ -24,7 +24,7 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
 
 	watch_signals(app_root)
-	app_root.menu_start_button.pressed.emit()
+	app_root.ui.menu_start_button.pressed.emit()
 
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.PLAYING
@@ -33,11 +33,11 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_signal_emitted(app_root, "generation_started")
 	assert_signal_emitted(app_root, "gameplay_started")
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
-	assert_false(app_root.menu_root.visible)
-	assert_false(app_root.menu_background.visible)
-	assert_false(app_root.menu_panel.visible)
-	assert_false(app_root.title_label.visible)
-	assert_false(app_root.status_label.visible)
+	assert_false(app_root.ui.menu_root.visible)
+	assert_false(app_root.ui.menu_background.visible)
+	assert_false(app_root.ui.menu_panel.visible)
+	assert_false(app_root.ui.title_label.visible)
+	assert_false(app_root.ui.status_label.visible)
 	var left_edge := HexMetrics.center_for_offset(0, 0, app_root.world_presenter.hex_radius).x - app_root.world_presenter.hex_radius
 	var right_edge := HexMetrics.center_for_offset(app_root.generation_profile.width - 1, 0, app_root.world_presenter.hex_radius).x + app_root.world_presenter.hex_radius
 	var expected_zoom := app_root.get_viewport_rect().size.x / (right_edge - left_edge)
@@ -67,7 +67,7 @@ func test_start_enables_player_movement_input() -> void:
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
-	app_root.menu_start_button.pressed.emit()
+	app_root.ui.menu_start_button.pressed.emit()
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 1.0)
@@ -89,13 +89,13 @@ func test_back_to_menu_restores_menu_visibility() -> void:
 	await wait_process_frames(1)
 
 	app_root.transition_to(RunPhase.PLAYING)
-	app_root.back_to_menu_button.pressed.emit()
+	app_root.ui.back_to_menu_button.pressed.emit()
 
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
-	assert_true(app_root.menu_root.visible)
-	assert_true(app_root.menu_background.visible)
-	assert_true(app_root.menu_panel.visible)
-	assert_false(app_root.playing_panel.visible)
+	assert_true(app_root.ui.menu_root.visible)
+	assert_true(app_root.ui.menu_background.visible)
+	assert_true(app_root.ui.menu_panel.visible)
+	assert_false(app_root.ui.playing_panel.visible)
 
 
 func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:
@@ -110,16 +110,16 @@ func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:
 	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
 
 	assert_eq(app_root.get_run_state(), RunPhase.NAME_ENTRY)
-	assert_true(app_root.name_entry_panel.visible)
-	assert_eq(app_root.player_name_input.text, "Player")
+	assert_true(app_root.ui.name_entry_panel.visible)
+	assert_eq(app_root.ui.player_name_input.text, "Player")
 
-	app_root.player_name_input.text = "Florian"
-	app_root.confirm_score_button.pressed.emit()
+	app_root.ui.player_name_input.text = "Florian"
+	app_root.ui.confirm_score_button.pressed.emit()
 
 	assert_eq(app_root.get_run_state(), RunPhase.RESULT)
-	assert_true(app_root.result_panel.visible)
-	assert_string_contains(app_root.result_status.text, "Florian")
-	assert_string_contains(app_root.result_status.text, "25")
+	assert_true(app_root.ui.result_panel.visible)
+	assert_string_contains(app_root.ui.result_status.text, "Florian")
+	assert_string_contains(app_root.ui.result_status.text, "25")
 
 
 func test_death_locks_out_later_terminal_outcomes() -> void:
@@ -135,7 +135,7 @@ func test_death_locks_out_later_terminal_outcomes() -> void:
 	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 40, app_root.world_presenter.hex_radius), null, &"impact")
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
-	assert_string_contains(app_root.result_status.text, "Lava")
+	assert_string_contains(app_root.ui.result_status.text, "Lava")
 
 
 func test_pause_toggles_from_playing_and_back() -> void:
@@ -240,3 +240,26 @@ func test_starting_run_cancels_preview_without_overwriting_active_world() -> voi
 	, 2.0)
 
 	assert_eq(app_root.last_generation_result_for_test().final_seed, SeedUtils.derive_seed(run_seed, "attempt_0"))
+
+
+func test_repeated_menu_and_restart_cycles_keep_single_player_and_clear_projectiles() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_cycles.json")
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+
+	for run_index in range(3):
+		app_root.start_run_for_test(SeedUtils.seed_from_text("cycle-%d" % run_index))
+		await wait_until(func() -> bool:
+			return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
+		, 2.0)
+		var player_count := 0
+		for child in app_root.world_controller.get_children():
+			if child is PlayerController:
+				player_count += 1
+		assert_eq(player_count, 1)
+		assert_eq(app_root.active_projectile_count(), 0)
+		app_root.transition_to(RunPhase.MAIN_MENU)
+		await wait_process_frames(1)
