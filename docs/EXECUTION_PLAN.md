@@ -730,9 +730,15 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 ### Refactor 4 - Extract RunWorldController
 
-- State: NOT_STARTED
-- Previous commit: recorded when work begins
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `afe6946`
 - Commit subject: `refactor: extract run world controller`
+- Result: `RunWorldController` owns registries, deterministic generation, preview
+  cancellation, player construction, simulation scheduling, camera/bounds setup, and
+  world presentation refresh. AppRoot now consumes typed progress, ready, and death
+  signals and exposes only stable read façades to integration tests.
 
 ### Refactor 5 - Reduce AppRoot To Coordination
 

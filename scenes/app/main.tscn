@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 [ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
@@ -10,6 +10,7 @@
 [ext_resource path="res://src/app/app_ui_controller.gd" type="Script" id="8_ui"]
 [ext_resource path="res://src/app/score_controller.gd" type="Script" id="9_score"]
 [ext_resource path="res://src/app/run_item_controller.gd" type="Script" id="10_items"]
+[ext_resource path="res://src/app/run_world_controller.gd" type="Script" id="11_world_controller"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -28,6 +29,10 @@ script = ExtResource("9_score")
 [node name="RunItemController" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("10_items")
+
+[node name="RunWorldController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("11_world_controller")
 
 [node name="WorldPresenter" type="Node2D" parent="."]
 unique_name_in_owner = true

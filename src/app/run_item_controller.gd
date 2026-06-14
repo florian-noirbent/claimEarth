@@ -49,7 +49,7 @@ func clear_run() -> void:
 	_active_flag_projectile = null
 	for child in get_children():
 		if child is ItemProjectile:
-			child.queue_free()
+			child.free()
 
 
 func handle_input(aim_position: Vector2) -> void:
