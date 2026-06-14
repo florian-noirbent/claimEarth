@@ -3,8 +3,8 @@ extends Node
 
 
 signal player_killed(cause: StringName)
-signal bomb_exploded(position: Vector2, color: Color, blast_radius: int, is_large: bool)
-signal flag_planted(depth: int, position: Vector2)
+signal bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
+signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
@@ -14,16 +14,16 @@ const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_ser
 const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
 const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 
-var _inventory = ItemInventoryScript.new()
-var _trajectory_service = ItemTrajectoryServiceScript.new()
-var _explosion_service = ExplosionServiceScript.new()
+var _inventory: ItemInventory = ItemInventoryScript.new()
+var _trajectory_service: ItemTrajectoryService = ItemTrajectoryServiceScript.new()
+var _explosion_service: ExplosionService = ExplosionServiceScript.new()
 var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _chunk_activity_index: ChunkActivityIndex
 var _hex_radius := 8.0
 var _throw_unlock_msec := 0
-var _active_flag_projectile
+var _active_flag_projectile: ItemProjectile
 
 
 func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
@@ -74,21 +74,19 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 		return false
 	if not bypass_cooldown and Time.get_ticks_msec() < _throw_unlock_msec:
 		return false
-	var definition := _inventory.selected_definition()
+	var definition: ItemDefinition = _inventory.selected_definition()
 	if definition == null or not _inventory.consume(definition):
 		return false
-	var action = definition.action_factory.create_action(definition)
+	var action: ItemAction = definition.action_factory.create_action(definition)
 	var projectile_data: Dictionary = action.create_projectile(_player.global_position, aim_position, _trajectory_service, _player.velocity)
-	var projectile = ItemProjectileScript.new()
+	var projectile: ItemProjectile = ItemProjectileScript.new()
 	projectile.action = action
 	projectile.world = _world
 	projectile.terrain_registry = _terrain_registry
 	projectile.hex_radius = _hex_radius
 	projectile.global_position = _player.global_position
 	projectile.configure(projectile_data)
-	projectile.resolved.connect(func(resolved_projectile, impact_position: Vector2, resolution_kind: StringName) -> void:
-		action.resolve(self, impact_position, resolved_projectile, resolution_kind)
-	)
+	projectile.resolved.connect(_on_projectile_resolved)
 	add_child(projectile)
 	item_thrown.emit()
 	if action.locks_throwing_until_resolved():
@@ -97,7 +95,7 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 	return true
 
 
-func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) -> void:
+func resolve_bomb_explosion(item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile) -> void:
 	if _world == null or _chunk_activity_index == null:
 		return
 	if _player != null and _player.global_position.distance_to(impact_position) <= item_action.factory.lethal_radius * _hex_radius:
@@ -107,7 +105,7 @@ func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) 
 	bomb_exploded.emit(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius, is_large)
 
 
-func resolve_flag_landing(_item_action, impact_position: Vector2, _projectile, resolution_kind: StringName) -> void:
+func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile, resolution_kind: StringName) -> void:
 	_active_flag_projectile = null
 	flag_flight_changed.emit(false)
 	if resolution_kind == &"lava":
@@ -117,7 +115,7 @@ func resolve_flag_landing(_item_action, impact_position: Vector2, _projectile, r
 
 
 func inventory_status() -> Dictionary:
-	var selected_definition := _inventory.selected_definition()
+	var selected_definition: ItemDefinition = _inventory.selected_definition()
 	var counts := PackedStringArray()
 	for definition in _inventory.definitions():
 		counts.append("%s:%d" % [definition.display_name, _inventory.count_for(definition)])
@@ -134,3 +132,7 @@ func active_projectile_count() -> int:
 
 func is_flag_in_flight() -> bool:
 	return is_instance_valid(_active_flag_projectile)
+
+
+func _on_projectile_resolved(projectile: ItemProjectile, impact_position: Vector2, resolution_kind: StringName) -> void:
+	projectile.action.resolve(self, impact_position, projectile, resolution_kind)

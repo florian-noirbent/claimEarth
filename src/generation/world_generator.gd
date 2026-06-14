@@ -12,9 +12,9 @@ var _passes: Array[GenerationPass] = [
 ]
 
 
-func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, seed: int) -> WorldGenerationResult:
+func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, run_seed: int) -> WorldGenerationResult:
 	for attempt in range(profile.max_retries + 1):
-		var attempt_seed := SeedUtils.derive_seed(seed, "attempt_%d" % attempt)
+		var attempt_seed := SeedUtils.derive_seed(run_seed, "attempt_%d" % attempt)
 		var world := WorldGrid.new(profile.create_dimensions(), 0)
 		var context := GenerationContext.new(profile, attempt_seed, terrain_registry, world)
 
@@ -33,5 +33,5 @@ func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, see
 			result.world_hash = world.committed_hash()
 			return result
 
-	push_error("World generation failed after %d attempts for seed %d" % [profile.max_retries + 1, seed])
+	push_error("World generation failed after %d attempts for seed %d" % [profile.max_retries + 1, run_seed])
 	return null

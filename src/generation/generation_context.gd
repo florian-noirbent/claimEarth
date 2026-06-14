@@ -3,7 +3,7 @@ extends RefCounted
 
 
 var profile: GenerationProfile
-var seed: int
+var run_seed: int
 var terrain_registry: TerrainRegistry
 var world: WorldGrid
 var spawn_rect := Rect2i()
@@ -17,6 +17,6 @@ func _init(
 	world_value: WorldGrid
 ) -> void:
 	profile = profile_value
-	seed = seed_value
+	run_seed = seed_value
 	terrain_registry = terrain_registry_value
 	world = world_value

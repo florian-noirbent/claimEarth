@@ -46,14 +46,12 @@ func _ready() -> void:
 	result_menu_button.pressed.connect(menu_requested.emit)
 	leaderboard_back_button.pressed.connect(menu_requested.emit)
 	restart_button.pressed.connect(restart_requested.emit)
-	confirm_score_button.pressed.connect(func() -> void:
-		score_confirmed.emit(player_name_input.text)
-	)
+	confirm_score_button.pressed.connect(_on_confirm_score_pressed)
 	controls_label.text = "Plant the deepest flag to claim Earth (3).\nUse small bombs (1), large bombs (2), and your grappling hook (RMB)."
 	owner_label.text = "Earth owned by: Nobody yet"
 
 
-func apply_state(state: StringName, seed: int, storage_warning: String, pending_depth: int, player_name: String) -> void:
+func apply_state(state: StringName, run_seed: int, storage_warning: String, pending_depth: int, player_name: String) -> void:
 	var show_menu_shell := state in [RunPhase.MAIN_MENU, RunPhase.GENERATING, RunPhase.LEADERBOARD]
 	menu_background.visible = show_menu_shell
 	menu_root.visible = show_menu_shell
@@ -82,7 +80,7 @@ func apply_state(state: StringName, seed: int, storage_warning: String, pending_
 	match state:
 		RunPhase.MAIN_MENU:
 			title_label.text = "CLAIM EARTH"
-			status_label.text = "Ready to descend | Seed %d" % seed
+			status_label.text = "Ready to descend | Seed %d" % run_seed
 		RunPhase.GENERATING:
 			title_label.text = "CLAIM EARTH"
 			status_label.text = "Generating run..."
@@ -117,8 +115,11 @@ func show_play_status(status_text: String, hint_text: String) -> void:
 func show_run_status(depth: int, personal_best: int, hooked: bool, item_status: Dictionary) -> void:
 	var best_text := "PB:%d" % personal_best if personal_best >= 0 else "PB:-"
 	var rope_text := "Hooked" if hooked else "Free"
-	play_status_label.text = "Depth %d | %s | %s | %s" % [depth, best_text, rope_text, " | ".join(item_status.counts)]
-	hint_label.text = "Selected: %s%s" % [item_status.selected_name, " | Flag in flight" if item_status.flag_in_flight else ""]
+	var counts: PackedStringArray = item_status["counts"]
+	var selected_name := String(item_status["selected_name"])
+	var flight_suffix := " | Flag in flight" if bool(item_status["flag_in_flight"]) else ""
+	play_status_label.text = "Depth %d | %s | %s | %s" % [depth, best_text, rope_text, " | ".join(counts)]
+	hint_label.text = "Selected: %s%s" % [selected_name, flight_suffix]
 
 
 func show_name_error(message: String) -> void:
@@ -141,7 +142,7 @@ func show_leaderboard(status: String, rows: String, owner: String = "") -> void:
 		owner_label.text = owner
 
 
-func show_leaderboard_entries(entries: Array, failed: bool, message: String) -> void:
+func show_leaderboard_entries(entries: Array[LeaderboardEntry], failed: bool, message: String) -> void:
 	if failed:
 		show_leaderboard(message if not message.is_empty() else "Leaderboard unavailable.", "[center]Retry later. Local best still saves.[/center]")
 		return
@@ -152,6 +153,10 @@ func show_leaderboard_entries(entries: Array, failed: bool, message: String) -> 
 	for entry in entries:
 		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
 	show_leaderboard("Top depths", "[code]%s[/code]" % "\n".join(lines), "Earth owned by: %s" % entries[0].player_name)
+
+
+func _on_confirm_score_pressed() -> void:
+	score_confirmed.emit(player_name_input.text)
 
 
 func show_submission_result(player_name: String, depth: int, personal_best: int, failed: bool, message: String) -> void:

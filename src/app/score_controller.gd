@@ -3,8 +3,8 @@ extends Node
 
 
 signal profile_changed
-signal leaderboard_changed(entries: Array, failed: bool, message: String)
-signal submission_finished(submission, entry, failed: bool, message: String)
+signal leaderboard_changed(entries: Array[LeaderboardEntry], failed: bool, message: String)
+signal submission_finished(submission: ScoreSubmission, entry: LeaderboardEntry, failed: bool, message: String)
 signal pending_retry_finished(successful_count: int, message: String)
 
 const SaveRepositoryScript = preload("res://src/save/save_repository.gd")
@@ -18,20 +18,20 @@ var global_best_depth := -1
 var global_best_player := ""
 var storage_warning := ""
 
-var _save_repository = SaveRepositoryScript.new()
-var _leaderboard_service
-var _leaderboard_config
+var _save_repository: SaveRepository = SaveRepositoryScript.new()
+var _leaderboard_service: LeaderboardService
+var _leaderboard_config: LeaderboardConfig
 var _pending_submissions: Array[Dictionary] = []
 var _retrying_pending := false
 
 
-func configure(leaderboard_config, test_mode: bool, injected_service = null) -> void:
+func configure(leaderboard_config: LeaderboardConfig, test_mode: bool, injected_service: LeaderboardService = null) -> void:
 	_leaderboard_config = leaderboard_config
 	_load_local_state()
 	if injected_service != null:
 		_install_service(injected_service)
 	elif not test_mode:
-		var service = SimpleBoardsLeaderboardServiceScript.new()
+		var service: LeaderboardService = SimpleBoardsLeaderboardServiceScript.new()
 		service.configure(leaderboard_config)
 		_install_service(service)
 	profile_changed.emit()
@@ -41,7 +41,7 @@ func configure_save_path(save_path: String) -> void:
 	_save_repository.configure(save_path)
 
 
-func configure_service(service) -> void:
+func configure_service(service: LeaderboardService) -> void:
 	_install_service(service)
 
 
@@ -49,7 +49,7 @@ func has_service() -> bool:
 	return _leaderboard_service != null
 
 
-func confirm_score(player_name: String, depth: int, seed: int) -> Dictionary:
+func confirm_score(player_name: String, depth: int, run_seed: int) -> Dictionary:
 	var trimmed_name := player_name.strip_edges()
 	if trimmed_name.is_empty():
 		return {"accepted": false, "error": "Enter a name between 1 and 20 characters."}
@@ -58,10 +58,10 @@ func confirm_score(player_name: String, depth: int, seed: int) -> Dictionary:
 	_persist_local_state()
 	profile_changed.emit()
 
-	var submission = ScoreSubmissionScript.new()
+	var submission: ScoreSubmission = ScoreSubmissionScript.new()
 	submission.player_name = last_player_name
 	submission.score_depth = depth
-	submission.seed = seed
+	submission.run_seed = run_seed
 	submission.game_version = _leaderboard_config.game_version if _leaderboard_config != null else "dev"
 	if _leaderboard_service == null:
 		return {"accepted": true, "submitted": false, "submission": submission}
@@ -87,7 +87,7 @@ func pending_submission_count() -> int:
 	return _pending_submissions.size()
 
 
-func _install_service(service) -> void:
+func _install_service(service: LeaderboardService) -> void:
 	_leaderboard_service = service
 	if _leaderboard_service.get_parent() == null:
 		add_child(_leaderboard_service)
@@ -101,14 +101,14 @@ func _install_service(service) -> void:
 
 func _load_local_state() -> void:
 	storage_warning = _save_repository.storage_warning()
-	var save_data = _save_repository.load_data()
+	var save_data: SaveData = _save_repository.load_data()
 	last_player_name = save_data.last_player_name
 	personal_best_depth = save_data.personal_best_depth
 	_pending_submissions.assign(save_data.pending_submissions)
 
 
 func _persist_local_state() -> void:
-	var save_data = SaveDataScript.new()
+	var save_data: SaveData = SaveDataScript.new()
 	save_data.last_player_name = last_player_name
 	save_data.personal_best_depth = personal_best_depth
 	for pending_submission in _pending_submissions:
@@ -116,7 +116,7 @@ func _persist_local_state() -> void:
 	_save_repository.save_data(save_data)
 
 
-func _on_top_loaded(entries: Array, failed: bool, message: String) -> void:
+func _on_top_loaded(entries: Array[LeaderboardEntry], failed: bool, message: String) -> void:
 	if not failed:
 		if entries.is_empty():
 			global_best_depth = -1
@@ -128,7 +128,7 @@ func _on_top_loaded(entries: Array, failed: bool, message: String) -> void:
 	leaderboard_changed.emit(entries, failed, message)
 
 
-func _on_submission_finished(submission, entry, failed: bool, message: String) -> void:
+func _on_submission_finished(submission: ScoreSubmission, entry: LeaderboardEntry, failed: bool, message: String) -> void:
 	if failed:
 		_pending_submissions.append(submission.to_pending_dictionary())
 		_persist_local_state()

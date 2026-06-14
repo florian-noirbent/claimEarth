@@ -2,7 +2,7 @@ class_name BombItemAction
 extends ItemAction
 
 
-func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_service, thrower_velocity: Vector2) -> Dictionary:
+func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_service: ItemTrajectoryService, thrower_velocity: Vector2) -> Dictionary:
 	var launch_velocity: Vector2 = trajectory_service.launch_velocity(
 		origin,
 		aim_position,
@@ -25,5 +25,5 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 	}
 
 
-func resolve(app_root, impact_position: Vector2, projectile, _resolution_kind: StringName = &"impact") -> void:
-	app_root.resolve_bomb_explosion(self, impact_position, projectile)
+func resolve(item_controller: RunItemController, impact_position: Vector2, projectile: ItemProjectile, _resolution_kind: StringName = &"impact") -> void:
+	item_controller.resolve_bomb_explosion(self, impact_position, projectile)

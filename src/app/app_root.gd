@@ -7,7 +7,7 @@ signal gameplay_started
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
-@export var leaderboard_config = preload("res://config/leaderboard/simpleboards.tres")
+@export var leaderboard_config: LeaderboardConfig = preload("res://config/leaderboard/simpleboards.tres")
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
@@ -15,8 +15,8 @@ signal gameplay_started
 @onready var world_controller: RunWorldController = %RunWorldController
 @onready var world_presenter: WorldPresenter = %WorldPresenter
 @onready var depth_markers: Node2D = %DepthMarkers
-@onready var gameplay_feedback = %GameplayFeedback
-@onready var audio_director = %AudioDirector
+@onready var gameplay_feedback: GameplayFeedback = %GameplayFeedback
+@onready var audio_director: AudioDirector = %AudioDirector
 @onready var world_side_boundaries: WorldSideBoundaries = %WorldSideBoundaries
 
 var _run_coordinator := RunCoordinator.new()
@@ -27,7 +27,7 @@ var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := true
 var _test_mode := false
 var _configured_save_path := ""
-var _injected_leaderboard_service
+var _injected_leaderboard_service: LeaderboardService
 
 
 func _ready() -> void:
@@ -48,11 +48,11 @@ func _ready() -> void:
 
 func _connect_controller_signals() -> void:
 	_run_coordinator.state_changed.connect(_on_state_changed)
-	ui.start_requested.connect(func() -> void: transition_to(RunPhase.GENERATING))
-	ui.leaderboard_requested.connect(func() -> void: transition_to(RunPhase.LEADERBOARD))
-	ui.menu_requested.connect(func() -> void: transition_to(RunPhase.MAIN_MENU))
+	ui.start_requested.connect(_on_start_requested)
+	ui.leaderboard_requested.connect(_on_leaderboard_requested)
+	ui.menu_requested.connect(_on_menu_requested)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
-	ui.restart_requested.connect(func() -> void: transition_to(RunPhase.GENERATING))
+	ui.restart_requested.connect(_on_restart_requested)
 	world_controller.generation_progressed.connect(ui.show_generation_progress)
 	world_controller.run_ready.connect(_on_run_ready)
 	world_controller.player_died.connect(_on_player_death_requested)
@@ -98,12 +98,12 @@ func set_menu_preview_enabled(enabled: bool) -> void:
 	_enable_menu_preview = enabled
 
 
-func configure_leaderboard_service_for_test(service) -> void:
+func configure_leaderboard_service_for_test(service: LeaderboardService) -> void:
 	_injected_leaderboard_service = service
 
 
-func start_run_for_test(seed: int) -> void:
-	_current_seed = seed
+func start_run_for_test(run_seed: int) -> void:
+	_current_seed = run_seed
 	_enable_menu_preview = false
 	transition_to(RunPhase.GENERATING)
 
@@ -132,7 +132,7 @@ func pending_score_depth() -> int:
 	return _pending_score_depth
 
 
-func simulation_backend():
+func simulation_backend() -> TerrainSimulationBackend:
 	return world_controller.simulation_backend()
 
 
@@ -142,6 +142,22 @@ func current_world() -> WorldGrid:
 
 func terrain_registry() -> TerrainRegistry:
 	return world_controller.terrain_registry()
+
+
+func _on_start_requested() -> void:
+	transition_to(RunPhase.GENERATING)
+
+
+func _on_leaderboard_requested() -> void:
+	transition_to(RunPhase.LEADERBOARD)
+
+
+func _on_menu_requested() -> void:
+	transition_to(RunPhase.MAIN_MENU)
+
+
+func _on_restart_requested() -> void:
+	transition_to(RunPhase.GENERATING)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -210,27 +226,27 @@ func _process(delta: float) -> void:
 
 
 func _refresh_play_status() -> void:
-	var item_status := item_controller.inventory_status()
-	if item_status.selected_name.is_empty() or get_player() == null:
+	var item_status: Dictionary = item_controller.inventory_status()
+	if String(item_status["selected_name"]).is_empty() or get_player() == null:
 		ui.show_play_status("No items configured", "")
 		return
 	var player_depth := HexMetrics.offset_for_world(get_player().global_position, world_presenter.hex_radius).y
 	ui.show_run_status(player_depth, score_controller.personal_best_depth, get_player().is_grapple_attached(), item_status)
 
 
-func _on_bomb_exploded(position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
+func _on_bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
 	audio_director.play_explosion(is_large)
-	gameplay_feedback.spawn_ring(position, color, blast_radius * world_presenter.hex_radius * 0.75)
+	gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
 	if get_player() != null:
 		get_player().camera.apply_shake(10.0 if is_large else 6.0)
 
 
-func _on_flag_planted(depth: int, position: Vector2) -> void:
+func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
 	_pending_score_depth = depth
 	audio_director.play_flag_plant()
-	gameplay_feedback.spawn_ring(position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
+	gameplay_feedback.spawn_ring(landing_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
 	transition_to(RunPhase.NAME_ENTRY)
 
 
@@ -263,16 +279,16 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 
 
 func _on_confirm_score_requested(player_name: String) -> void:
-	var result_data := world_controller.generation_result()
+	var result_data: WorldGenerationResult = world_controller.generation_result()
 	var score_seed := result_data.final_seed if result_data != null else _current_seed
-	var result := score_controller.confirm_score(player_name, _pending_score_depth, score_seed)
-	if not result.accepted:
-		ui.show_name_error(result.error)
+	var confirmation: Dictionary = score_controller.confirm_score(player_name, _pending_score_depth, score_seed)
+	if not bool(confirmation["accepted"]):
+		ui.show_name_error(String(confirmation["error"]))
 		return
 	audio_director.play_ui_confirm()
 	_update_depth_markers()
 	var summary := "%s claimed depth %d. Personal best: %d." % [score_controller.last_player_name, _pending_score_depth, score_controller.personal_best_depth]
-	if not result.submitted:
+	if not bool(confirmation["submitted"]):
 		ui.show_result(summary)
 		transition_to(RunPhase.RESULT)
 		return
@@ -291,12 +307,12 @@ func _refresh_leaderboard() -> void:
 		ui.show_leaderboard("Leaderboard unavailable.", "[center]No entries loaded yet.[/center]")
 
 
-func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -> void:
+func _on_leaderboard_top_loaded(entries: Array[LeaderboardEntry], failed: bool, message: String) -> void:
 	ui.show_leaderboard_entries(entries, failed, message)
 	_update_depth_markers()
 
 
-func _on_leaderboard_submission_finished(submission, _entry, failed: bool, message: String) -> void:
+func _on_leaderboard_submission_finished(submission: ScoreSubmission, _entry: LeaderboardEntry, failed: bool, message: String) -> void:
 	ui.show_submission_result(submission.player_name, submission.score_depth, score_controller.personal_best_depth, failed, message)
 	_update_depth_markers()
 	if not failed:

@@ -767,3 +767,17 @@ planning commit precedes Step 0 and establishes the Git repository.
   screenshot writes. The headless screenshot still shows Godot's loading shell, so
   interactive menu/gameplay rendering remains covered by the Godot integration suite
   rather than claimed as browser automation.
+
+### Refactor 7 - Clean GDScript Diagnostics
+
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `4cf4ae7`
+- Commit subject: `chore: clean gdscript diagnostics`
+- Result: Controller, item, generation, save, and leaderboard boundaries now expose
+  explicit typed contracts instead of propagating `Variant` values. Built-in-name
+  shadows were removed, anonymous UI/projectile callbacks were replaced with named
+  methods, and the projectile lifecycle regression test now frees all created nodes.
+  Editor import succeeds, the 98-test headless suite passes without GUT orphans, and
+  both deterministic performance contracts remain green.

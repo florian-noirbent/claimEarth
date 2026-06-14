@@ -11,7 +11,7 @@ func _init(definition_value: ItemDefinition, factory_value: ItemActionFactory) -
 	factory = factory_value
 
 
-func can_use(_inventory) -> bool:
+func can_use(_inventory: ItemInventory) -> bool:
 	return true
 
 
@@ -19,9 +19,9 @@ func locks_throwing_until_resolved() -> bool:
 	return false
 
 
-func create_projectile(_origin: Vector2, _aim_position: Vector2, _trajectory_service, _thrower_velocity: Vector2) -> Dictionary:
+func create_projectile(_origin: Vector2, _aim_position: Vector2, _trajectory_service: ItemTrajectoryService, _thrower_velocity: Vector2) -> Dictionary:
 	return {}
 
 
-func resolve(_app_root, _impact_position: Vector2, _projectile, _resolution_kind: StringName = &"impact") -> void:
+func resolve(_item_controller: RunItemController, _impact_position: Vector2, _projectile: ItemProjectile, _resolution_kind: StringName = &"impact") -> void:
 	pass

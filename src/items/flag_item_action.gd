@@ -2,7 +2,7 @@ class_name FlagItemAction
 extends ItemAction
 
 
-func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_service, thrower_velocity: Vector2) -> Dictionary:
+func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_service: ItemTrajectoryService, thrower_velocity: Vector2) -> Dictionary:
 	var launch_velocity: Vector2 = trajectory_service.launch_velocity(
 		origin,
 		aim_position,
@@ -27,5 +27,5 @@ func locks_throwing_until_resolved() -> bool:
 	return true
 
 
-func resolve(app_root, impact_position: Vector2, projectile, resolution_kind: StringName = &"impact") -> void:
-	app_root.resolve_flag_landing(self, impact_position, projectile, resolution_kind)
+func resolve(item_controller: RunItemController, impact_position: Vector2, projectile: ItemProjectile, resolution_kind: StringName = &"impact") -> void:
+	item_controller.resolve_flag_landing(self, impact_position, projectile, resolution_kind)

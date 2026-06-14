@@ -15,15 +15,15 @@ static func derive_seed(base_seed: int, salt: String) -> int:
 	return _fnv1a_32((str(base_seed) + ":" + salt).to_utf8_buffer())
 
 
-static func create_rng(seed: int) -> RandomNumberGenerator:
+static func create_rng(run_seed: int) -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = seed
+	rng.seed = run_seed
 	return rng
 
 
 static func _fnv1a_32(bytes: PackedByteArray) -> int:
-	var hash := _FNV_OFFSET
+	var content_hash := _FNV_OFFSET
 	for byte in bytes:
-		hash = hash ^ byte
-		hash = int((hash * _FNV_PRIME) & 0xFFFFFFFF)
-	return hash
+		content_hash = content_hash ^ byte
+		content_hash = int((content_hash * _FNV_PRIME) & 0xFFFFFFFF)
+	return content_hash

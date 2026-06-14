@@ -11,7 +11,7 @@ func configure(save_path: String) -> void:
 	_save_path = save_path
 
 
-func load_data():
+func load_data() -> SaveData:
 	if not FileAccess.file_exists(_save_path):
 		return SaveDataScript.new()
 
@@ -21,13 +21,13 @@ func load_data():
 	var parser := JSON.new()
 	if parser.parse(file.get_as_text()) != OK:
 		return SaveDataScript.new()
-	var parsed = parser.data
+	var parsed: Variant = parser.data
 	if parsed is not Dictionary:
 		return SaveDataScript.new()
 	return SaveDataScript.from_dictionary(parsed)
 
 
-func save_data(data) -> bool:
+func save_data(data: SaveData) -> bool:
 	var directory_path := _save_path.get_base_dir()
 	if not directory_path.is_empty():
 		DirAccess.make_dir_recursive_absolute(directory_path)

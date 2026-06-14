@@ -26,6 +26,7 @@ func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> 
 	var sample_position := HexMetrics.center_for_offset(2, 2, projectile.hex_radius)
 	projectile.global_position = sample_position
 	projectile.configure({"fuse_seconds": 5.0})
+	add_child_autofree(projectile)
 
 	var definition := projectile._sample_terrain(sample_position)
 

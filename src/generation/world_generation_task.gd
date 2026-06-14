@@ -13,7 +13,7 @@ func generate_async(
 	host: Node,
 	profile: GenerationProfile,
 	terrain_registry: TerrainRegistry,
-	seed: int
+	run_seed: int
 ) -> WorldGenerationResult:
 	var steps := PackedStringArray([
 		"Preparing generation",
@@ -27,7 +27,7 @@ func generate_async(
 		progress_changed.emit(float(index) / float(steps.size()), steps[index])
 		await host.get_tree().process_frame
 
-	var result := _generator.generate(profile, terrain_registry, seed)
+	var result := _generator.generate(profile, terrain_registry, run_seed)
 	progress_changed.emit(1.0, "Generation complete")
 	completed.emit(result)
 	return result

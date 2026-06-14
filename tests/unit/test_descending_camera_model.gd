@@ -21,5 +21,5 @@ func test_camera_clamps_to_bounds() -> void:
 	model.min_y = 10.0
 	model.max_y = 100.0
 
-	var position := model.update(Vector2.ZERO, Vector2(0, 1000), Vector2(1200, 720))
-	assert_eq(position.y, 100.0)
+	var camera_position := model.update(Vector2.ZERO, Vector2(0, 1000), Vector2(1200, 720))
+	assert_eq(camera_position.y, 100.0)

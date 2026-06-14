@@ -15,12 +15,13 @@ func before_each() -> void:
 func test_leaderboard_panel_shows_entries_and_updates_owner_label() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
-	var service = FakeLeaderboardServiceScript.new()
-	var top_entry = LeaderboardEntryScript.new()
+	var service: FakeLeaderboardService = FakeLeaderboardServiceScript.new()
+	var top_entry: LeaderboardEntry = LeaderboardEntryScript.new()
 	top_entry.rank = 1
 	top_entry.player_name = "Dana"
 	top_entry.score_depth = 123
-	service.top_entries = [top_entry]
+	var top_entries: Array[LeaderboardEntry] = [top_entry]
+	service.top_entries = top_entries
 	app_root.configure_save_path_for_test("user://gut_leaderboard_ok.json")
 	app_root.configure_leaderboard_service_for_test(service)
 	app_root.set_test_mode(true)
@@ -36,7 +37,7 @@ func test_leaderboard_panel_shows_entries_and_updates_owner_label() -> void:
 func test_failed_submission_is_saved_as_pending_and_result_still_opens() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
-	var service = FakeLeaderboardServiceScript.new()
+	var service: FakeLeaderboardService = FakeLeaderboardServiceScript.new()
 	service.submit_error = "Offline"
 	app_root.configure_save_path_for_test("user://gut_leaderboard_fail.json")
 	app_root.configure_leaderboard_service_for_test(service)

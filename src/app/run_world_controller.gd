@@ -14,14 +14,14 @@ var _player_scene: PackedScene
 var _world_presenter: WorldPresenter
 var _depth_markers: Node2D
 var _side_boundaries: WorldSideBoundaries
-var _terrain_registry := TerrainRegistry.new()
-var _item_registry := ItemRegistry.new()
-var _generation_task := WorldGenerationTask.new()
+var _terrain_registry: TerrainRegistry = TerrainRegistry.new()
+var _item_registry: ItemRegistry = ItemRegistry.new()
+var _generation_task: WorldGenerationTask = WorldGenerationTask.new()
 var _generation_result: WorldGenerationResult
 var _chunk_activity_index: ChunkActivityIndex
 var _player: PlayerController
-var _grapple_anchor_query = WorldGrappleAnchorQueryScript.new()
-var _simulation_backend = CooperativeChunkBackendScript.new()
+var _grapple_anchor_query: WorldGrappleAnchorQuery = WorldGrappleAnchorQueryScript.new()
+var _simulation_backend: TerrainSimulationBackend = CooperativeChunkBackendScript.new()
 var _simulation_accumulator := 0.0
 var _generation_serial := 0
 
@@ -36,7 +36,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene, world_pres
 	_configure_registries()
 
 
-func start_run(seed: int) -> void:
+func start_run(run_seed: int) -> void:
 	_generation_serial += 1
 	var serial := _generation_serial
 	_clear_player()
@@ -44,25 +44,25 @@ func start_run(seed: int) -> void:
 	_chunk_activity_index = null
 	_simulation_accumulator = 0.0
 	_world_presenter.reset()
-	var result = await _generation_task.generate_async(self, _profile, _terrain_registry, seed)
-	if serial != _generation_serial or result == null:
+	var generated_result: WorldGenerationResult = await _generation_task.generate_async(self, _profile, _terrain_registry, run_seed)
+	if serial != _generation_serial or generated_result == null:
 		return
-	_generation_result = result
+	_generation_result = generated_result
 	_attach_run_world()
-	run_ready.emit(SeedUtils.derive_seed(seed, "next_run"))
+	run_ready.emit(SeedUtils.derive_seed(run_seed, "next_run"))
 
 
-func start_preview(seed: int) -> void:
+func start_preview(run_seed: int) -> void:
 	_generation_serial += 1
 	var serial := _generation_serial
-	var preview_task := WorldGenerationTask.new()
-	var result = await preview_task.generate_async(self, _profile, _terrain_registry, SeedUtils.derive_seed(seed, "menu_preview"))
-	if serial != _generation_serial or result == null:
+	var preview_task: WorldGenerationTask = WorldGenerationTask.new()
+	var generated_result: WorldGenerationResult = await preview_task.generate_async(self, _profile, _terrain_registry, SeedUtils.derive_seed(run_seed, "menu_preview"))
+	if serial != _generation_serial or generated_result == null:
 		return
-	_generation_result = result
+	_generation_result = generated_result
 	_clear_player()
-	_chunk_activity_index = ChunkActivityIndex.new(result.world.dimensions)
-	_world_presenter.configure(result.world, _terrain_registry, _chunk_activity_index)
+	_chunk_activity_index = ChunkActivityIndex.new(generated_result.world.dimensions)
+	_world_presenter.configure(generated_result.world, _terrain_registry, _chunk_activity_index)
 	_configure_marker_bounds()
 
 
@@ -86,7 +86,7 @@ func advance(delta: float) -> void:
 	if _simulation_accumulator >= _simulation_backend.commit_interval_seconds:
 		_simulation_accumulator = 0.0
 		_simulation_backend.advance(1000)
-		var commit = _simulation_backend.commit_if_ready()
+		var commit: SimulationCommit = _simulation_backend.commit_if_ready()
 		if commit.did_commit and _chunk_activity_index != null:
 			_chunk_activity_index.mark_dirty_rect(commit.dirty_rect)
 	_world_presenter.refresh_visible_chunks(visible_start_row)
@@ -104,7 +104,7 @@ func generation_result() -> WorldGenerationResult:
 	return _generation_result
 
 
-func simulation_backend():
+func simulation_backend() -> TerrainSimulationBackend:
 	return _simulation_backend
 
 

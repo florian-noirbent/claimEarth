@@ -14,14 +14,14 @@ func apply(context: GenerationContext) -> bool:
 	var air_id := _terrain_id(context.terrain_registry, "Air")
 
 	var noise := FastNoiseLite.new()
-	noise.seed = SeedUtils.derive_seed(context.seed, "pocket_noise")
+	noise.seed = SeedUtils.derive_seed(context.run_seed, "pocket_noise")
 	noise.frequency = 1.0
 	noise.fractal_octaves = context.profile.pocket_octaves
 	noise.fractal_gain = 0.56
 	noise.fractal_lacunarity = 2.1
 
 	var blob_noise := FastNoiseLite.new()
-	blob_noise.seed = SeedUtils.derive_seed(context.seed, "pocket_blob_noise")
+	blob_noise.seed = SeedUtils.derive_seed(context.run_seed, "pocket_blob_noise")
 	blob_noise.frequency = 1.0
 	blob_noise.fractal_octaves = context.profile.pocket_octaves + 1
 	blob_noise.fractal_gain = 0.48

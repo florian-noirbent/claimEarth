@@ -18,7 +18,7 @@ func apply(context: GenerationContext) -> bool:
 		return false
 
 	var rng := RandomNumberGenerator.new()
-	rng.seed = SeedUtils.derive_seed(context.seed, "showcase_pockets")
+	rng.seed = SeedUtils.derive_seed(context.run_seed, "showcase_pockets")
 
 	_place_blob(context, rng, sand_id, 16, 36, 6, 10, 4, 6)
 	_place_blob(context, rng, water_id, 28, 70, 8, 14, 5, 8)

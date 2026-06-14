@@ -14,7 +14,7 @@ var ignores_water := false
 var bounce_on_impact := false
 var bounce_damping := 0.55
 var horizontal_bounce_damping := 0.72
-var action
+var action: ItemAction
 var world: WorldGrid
 var terrain_registry: TerrainRegistry
 var hex_radius := 16.0
@@ -32,7 +32,7 @@ func _ready() -> void:
 
 
 func configure(config: Dictionary) -> void:
-	velocity = config.get("velocity", Vector2.ZERO)
+	velocity = config.get("velocity", Vector2.ZERO) as Vector2
 	gravity = float(config.get("gravity", 900.0))
 	fuse_seconds = float(config.get("fuse_seconds", 0.0))
 	remaining_fuse = fuse_seconds
@@ -41,9 +41,9 @@ func configure(config: Dictionary) -> void:
 	bounce_on_impact = bool(config.get("bounce_on_impact", false))
 	bounce_damping = float(config.get("bounce_damping", 0.55))
 	horizontal_bounce_damping = float(config.get("horizontal_bounce_damping", 0.72))
-	_pending_polygon = config.get("polygon", _pending_polygon)
-	_pending_color = config.get("color", Color.WHITE)
-	_pending_outline_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1))
+	_pending_polygon = config.get("polygon", _pending_polygon) as PackedVector2Array
+	_pending_color = config.get("color", Color.WHITE) as Color
+	_pending_outline_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1)) as Color
 	_ensure_visuals()
 
 
