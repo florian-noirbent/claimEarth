@@ -4,99 +4,81 @@ extends Node2D
 
 var chunk_coord := Vector2i.ZERO
 var chunk_rect := Rect2i()
-var _world: WorldGrid
-var _terrain_registry: TerrainRegistry
-var _hex_radius := 16.0
-var _corners := PackedVector2Array()
+var _static_mesh := MeshInstance2D.new()
+var _sand_mesh := MeshInstance2D.new()
+var _fluid_mesh := MeshInstance2D.new()
 
 
 func _ready() -> void:
-	_corners = HexMetrics.corners(_hex_radius)
+	if _static_mesh.get_parent() == null:
+		add_child(_static_mesh)
+		add_child(_sand_mesh)
+		add_child(_fluid_mesh)
+		_static_mesh.material = _make_material(0)
+		_sand_mesh.material = _make_material(1)
+		_fluid_mesh.material = _make_material(2)
 
 
-func configure(
-	world: WorldGrid,
-	terrain_registry: TerrainRegistry,
-	chunk_coord_value: Vector2i,
-	chunk_rect_value: Rect2i
-) -> void:
-	_world = world
-	_terrain_registry = terrain_registry
+func configure(chunk_coord_value: Vector2i, chunk_rect_value: Rect2i) -> void:
 	chunk_coord = chunk_coord_value
 	chunk_rect = chunk_rect_value
-	queue_redraw()
 
 
-func _draw() -> void:
-	if _world == null or _terrain_registry == null:
-		return
-
-	for row in range(chunk_rect.position.y, chunk_rect.end.y):
-		for col in range(chunk_rect.position.x, chunk_rect.end.x):
-			var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(col, row))
-			if definition == null or definition.debug_color.a <= 0.0:
-				continue
-
-			var center := HexMetrics.center_for_offset(col, row, _hex_radius)
-			var polygon := PackedVector2Array()
-			for corner in _corners:
-				polygon.append(center + corner)
-			var style = definition.visual_style
-			if style != null:
-				draw_colored_polygon(polygon, style.fill_color)
-				_draw_pattern(center, style, col, row)
-			else:
-				draw_colored_polygon(polygon, definition.debug_color)
-
-			if definition.is_solid:
-				for direction in range(6):
-					var neighbor := HexCoord.from_offset_odd_q(col, row).neighbor(direction).to_offset_odd_q()
-					var should_outline := true
-					if _world.dimensions.is_in_bounds_offset(neighbor.x, neighbor.y):
-						var neighbor_definition := _terrain_registry.get_definition(
-							_world.get_committed_by_offset(neighbor.x, neighbor.y)
-						)
-						should_outline = neighbor_definition == null or neighbor_definition.is_passable
-					if should_outline:
-						var edge_corners := HexMetrics.edge_corner_indices_for_direction(direction)
-						var start_corner := center + _corners[edge_corners.x]
-						var end_corner := center + _corners[edge_corners.y]
-						var outline_color: Color = style.outline_color if style != null else Color(0.08, 0.05, 0.03, 1.0)
-						var outline_width: float = style.outline_width if style != null else 2.0
-						draw_line(start_corner, end_corner, outline_color, outline_width)
+func apply_result(result: ChunkBuildResult) -> void:
+	if (result.layer_mask & TerrainLayerMask.STATIC_VISUAL) != 0:
+		_static_mesh.mesh = _create_mesh(result.static_vertices, result.static_colors, result.static_uvs, result.static_indices)
+	if (result.layer_mask & TerrainLayerMask.SAND_VISUAL) != 0:
+		_sand_mesh.mesh = _create_mesh(result.sand_vertices, result.sand_colors, result.sand_uvs, result.sand_indices)
+	if (result.layer_mask & TerrainLayerMask.FLUID_VISUAL) != 0:
+		_fluid_mesh.mesh = _create_mesh(result.fluid_vertices, result.fluid_colors, result.fluid_uvs, result.fluid_indices)
 
 
-func _draw_pattern(center: Vector2, style, col: int, row: int) -> void:
-	var phase := float((col * 17 + row * 31) % 7)
-	match String(style.pattern_mode):
-		"grain":
-			for index in range(3):
-				var offset := Vector2(-5 + index * 4, -4 + fmod(phase + index * 3.0, 8.0))
-				draw_line(
-					center + offset,
-					center + offset + Vector2(3, 2),
-					Color(style.accent_color.r, style.accent_color.g, style.accent_color.b, style.pattern_strength),
-					1.5
-				)
-		"flow":
-			for index in range(2):
-				var y := -4.0 + index * 8.0
-				var points := PackedVector2Array([
-					center + Vector2(-8, y),
-					center + Vector2(-2, y + sin(phase + float(index)) * 2.0),
-					center + Vector2(6, y),
-				])
-				draw_polyline(points, Color(style.accent_color.r, style.accent_color.g, style.accent_color.b, style.pattern_strength), 2.0)
-		"cross":
-			draw_line(
-				center + Vector2(-6, -6),
-				center + Vector2(6, 6),
-				Color(style.accent_color.r, style.accent_color.g, style.accent_color.b, style.pattern_strength),
-				2.0
-			)
-			draw_line(
-				center + Vector2(-6, 6),
-				center + Vector2(6, -6),
-				Color(style.accent_color.r, style.accent_color.g, style.accent_color.b, style.pattern_strength),
-				2.0
-			)
+func layer_vertex_count(layer_mask: int) -> int:
+	var instance := _static_mesh
+	if layer_mask == TerrainLayerMask.SAND_VISUAL:
+		instance = _sand_mesh
+	elif layer_mask == TerrainLayerMask.FLUID_VISUAL:
+		instance = _fluid_mesh
+	var mesh := instance.mesh as ArrayMesh
+	if mesh == null or mesh.get_surface_count() == 0:
+		return 0
+	var arrays := mesh.surface_get_arrays(0)
+	return (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+
+
+func _create_mesh(vertices: PackedVector3Array, colors: PackedColorArray, uvs: PackedVector2Array, indices: PackedInt32Array) -> ArrayMesh:
+	if vertices.is_empty():
+		return null
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+func _make_material(layer_kind: int) -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform int layer_kind = 0;
+void fragment() {
+	vec4 base = COLOR;
+	float pattern = 0.0;
+	if (layer_kind == 1) {
+		pattern = step(0.72, fract(UV.x * 13.0 + UV.y * 7.0)) * 0.10;
+	} else if (layer_kind == 2) {
+		pattern = sin((UV.y + TIME * 0.18) * 32.0 + sin(UV.x * 18.0)) * 0.055;
+	} else {
+		pattern = step(0.88, fract(UV.x * 9.0 + UV.y * 11.0)) * 0.07;
+	}
+	COLOR = vec4(base.rgb + pattern, base.a);
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("layer_kind", layer_kind)
+	return material

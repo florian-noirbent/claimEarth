@@ -20,3 +20,39 @@ func test_mark_dirty_rect_touches_intersecting_chunks() -> void:
 	assert_true(dirty.has(Vector2i(1, 0)))
 	assert_true(dirty.has(Vector2i(0, 1)))
 	assert_true(dirty.has(Vector2i(1, 1)))
+
+
+func test_change_set_tracks_fluid_visual_without_collision() -> void:
+	var dimensions := WorldDimensions.new(40, 64)
+	var metadata := CompiledTerrainData.compile(FixtureLoader.terrain_registry())
+	var changes := TerrainChangeSet.new(dimensions, 20, 32)
+	var source := dimensions.offset_to_index(19, 10)
+	changes.add_change(source, FixtureLoader.terrain_id("Water"), FixtureLoader.terrain_id("Air"), metadata)
+
+	assert_eq(changes.mask_for_chunk(Vector2i(0, 0)), TerrainLayerMask.FLUID_VISUAL)
+	assert_eq(changes.mask_for_chunk(Vector2i(1, 0)), TerrainLayerMask.NONE)
+
+
+func test_solid_boundary_change_marks_collision_in_neighbor_chunk() -> void:
+	var dimensions := WorldDimensions.new(40, 64)
+	var metadata := CompiledTerrainData.compile(FixtureLoader.terrain_registry())
+	var changes := TerrainChangeSet.new(dimensions, 20, 32)
+	var source := dimensions.offset_to_index(19, 10)
+	changes.add_change(source, FixtureLoader.terrain_id("Sand"), FixtureLoader.terrain_id("Air"), metadata)
+
+	assert_true((changes.mask_for_chunk(Vector2i(0, 0)) & TerrainLayerMask.COLLISION) != 0)
+	assert_true((changes.mask_for_chunk(Vector2i(1, 0)) & TerrainLayerMask.COLLISION) != 0)
+
+
+func test_static_to_static_change_does_not_dirty_collision() -> void:
+	var dimensions := WorldDimensions.new(20, 32)
+	var metadata := CompiledTerrainData.compile(FixtureLoader.terrain_registry())
+	var changes := TerrainChangeSet.new(dimensions, 20, 32)
+	changes.add_change(
+		dimensions.offset_to_index(5, 5),
+		FixtureLoader.terrain_id("Stone"),
+		FixtureLoader.terrain_id("Dirt"),
+		metadata
+	)
+
+	assert_eq(changes.mask_for_chunk(Vector2i.ZERO), TerrainLayerMask.STATIC_VISUAL)

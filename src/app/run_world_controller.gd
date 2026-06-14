@@ -23,6 +23,7 @@ var _player: PlayerController
 var _grapple_anchor_query: WorldGrappleAnchorQuery = WorldGrappleAnchorQueryScript.new()
 var _simulation_backend: TerrainSimulationBackend = CooperativeChunkBackendScript.new()
 var _simulation_accumulator := 0.0
+var _simulation_tick_requested := false
 var _generation_serial := 0
 
 
@@ -43,6 +44,7 @@ func start_run(run_seed: int) -> void:
 	_generation_result = null
 	_chunk_activity_index = null
 	_simulation_accumulator = 0.0
+	_simulation_tick_requested = false
 	_world_presenter.reset()
 	var generated_result: WorldGenerationResult = await _generation_task.generate_async(self, _profile, _terrain_registry, run_seed)
 	if serial != _generation_serial or generated_result == null:
@@ -84,11 +86,15 @@ func advance(delta: float) -> void:
 		_simulation_backend.schedule(_chunk_activity_index.visible_chunks_for_depth_window(visible_start_row, _world_presenter.visible_row_count))
 	_simulation_accumulator += delta
 	if _simulation_accumulator >= _simulation_backend.commit_interval_seconds:
-		_simulation_accumulator = 0.0
-		_simulation_backend.advance(1000)
+		_simulation_accumulator = fmod(_simulation_accumulator, _simulation_backend.commit_interval_seconds)
+		_simulation_tick_requested = true
+	if _simulation_tick_requested or _simulation_backend.is_tick_in_progress():
+		var progress := _simulation_backend.advance(1500)
+		if progress.step_completed:
+			_simulation_tick_requested = false
 		var commit: SimulationCommit = _simulation_backend.commit_if_ready()
 		if commit.did_commit and _chunk_activity_index != null:
-			_chunk_activity_index.mark_dirty_rect(commit.dirty_rect)
+			_chunk_activity_index.mark_change_set(commit.change_set)
 	_world_presenter.refresh_visible_chunks(visible_start_row)
 
 

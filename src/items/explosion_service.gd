@@ -11,8 +11,22 @@ func explode(
 	blast_radius: int,
 	lethal_radius: int = 0
 ) -> Rect2i:
+	return explode_with_changes(world, terrain_registry, chunk_activity_index, impact_position, hex_radius, blast_radius, lethal_radius).dirty_rect
+
+
+func explode_with_changes(
+	world: WorldGrid,
+	terrain_registry: TerrainRegistry,
+	chunk_activity_index: ChunkActivityIndex,
+	impact_position: Vector2,
+	hex_radius: float,
+	blast_radius: int,
+	lethal_radius: int = 0
+) -> TerrainChangeSet:
 	var origin := HexMetrics.offset_for_world(impact_position, hex_radius)
 	var air_id := _terrain_id(terrain_registry, "Air")
+	var metadata := CompiledTerrainData.compile(terrain_registry)
+	var change_set := TerrainChangeSet.new(world.dimensions, chunk_activity_index.chunk_width, chunk_activity_index.chunk_height)
 	var queue: Array[Dictionary] = [{
 		"cell": origin,
 		"strength": float(blast_radius),
@@ -36,12 +50,14 @@ func explode(
 		var propagated_strength := strength - 1.0
 		if _is_within_radius(origin, cell, lethal_radius):
 			if definition.stable_id != air_id:
-				world.set_committed_by_offset(cell.x, cell.y, air_id)
+				var change := world.set_committed_by_offset(cell.x, cell.y, air_id)
+				change_set.add_change(change.index, change.previous_id, change.next_id, metadata)
 				changed_cells.append(cell)
 		else:
 			var effect = definition.blast_reaction.resolve()
 			if effect.replacement_id >= 0 and effect.replacement_id != definition.stable_id:
-				world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
+				var change := world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
+				change_set.add_change(change.index, change.previous_id, change.next_id, metadata)
 				changed_cells.append(cell)
 			propagated_strength = (strength - 1.0) * float(effect.propagation_multiplier)
 
@@ -54,11 +70,11 @@ func explode(
 			})
 
 	if changed_cells.is_empty():
-		return Rect2i(origin, Vector2i.ONE)
+		change_set.dirty_rect = Rect2i(origin, Vector2i.ONE)
+		return change_set
 
-	var dirty_rect := _dirty_rect_from_cells(changed_cells)
-	chunk_activity_index.mark_dirty_rect(dirty_rect)
-	return dirty_rect
+	chunk_activity_index.mark_change_set(change_set)
+	return change_set
 
 
 func _dirty_rect_from_cells(cells: Array[Vector2i]) -> Rect2i:

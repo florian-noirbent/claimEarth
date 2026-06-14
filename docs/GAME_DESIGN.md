@@ -59,8 +59,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Lava | Passable | Falls diagonally; instant death | Detonates bombs |
 
 Water/lava contact creates stone. Settled liquids do not move truly sideways or
-oscillate indefinitely. Terrain simulation attempts a commit every 0.5 seconds;
-player physics, projectiles, and rendering continue every frame.
+oscillate indefinitely. Terrain simulation targets a commit every 0.1 seconds;
+simulation and presentation work are spread across frames so player physics,
+projectiles, and input remain responsive.
 
 ## Player And Camera
 

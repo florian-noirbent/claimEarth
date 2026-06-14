@@ -6,6 +6,7 @@ extends StaticBody2D
 
 var chunk_coord := Vector2i.ZERO
 var chunk_rect := Rect2i()
+var _edge_segments: Dictionary = {}
 
 
 func _ready() -> void:
@@ -24,6 +25,37 @@ func configure(
 	chunk_rect = chunk_rect_value
 	var shape := ConcavePolygonShape2D.new()
 	shape.segments = _build_segments(world, terrain_registry, hex_radius)
+	collision_shape.shape = shape
+
+
+func apply_segments(segments: PackedVector2Array) -> void:
+	_edge_segments.clear()
+	var shape := ConcavePolygonShape2D.new()
+	shape.segments = segments
+	collision_shape.shape = shape
+
+
+func apply_result(result: ChunkBuildResult) -> void:
+	if result.collision_full_rebuild:
+		_edge_segments.clear()
+	var point_cursor := 0
+	for edge_index in range(result.collision_edge_keys.size()):
+		var key := int(result.collision_edge_keys[edge_index])
+		if result.collision_edge_enabled[edge_index] == 0:
+			_edge_segments.erase(key)
+			continue
+		_edge_segments[key] = PackedVector2Array([
+			result.collision_edge_points[point_cursor],
+			result.collision_edge_points[point_cursor + 1],
+		])
+		point_cursor += 2
+	var keys := _edge_segments.keys()
+	keys.sort()
+	var segments := PackedVector2Array()
+	for key in keys:
+		segments.append_array(_edge_segments[key] as PackedVector2Array)
+	var shape := ConcavePolygonShape2D.new()
+	shape.segments = segments
 	collision_shape.shape = shape
 
 

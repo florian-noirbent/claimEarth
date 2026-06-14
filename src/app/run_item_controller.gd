@@ -21,8 +21,9 @@ var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _chunk_activity_index: ChunkActivityIndex
+var _simulation_backend: TerrainSimulationBackend
 var _hex_radius := 8.0
-var _throw_unlock_msec := 0
+var _throw_lock_remaining := 0.0
 var _active_flag_projectile: ItemProjectile
 
 
@@ -31,14 +32,15 @@ func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
 	_hex_radius = hex_radius
 
 
-func configure_run(player: PlayerController, world: WorldGrid, terrain_registry: TerrainRegistry, chunk_activity_index: ChunkActivityIndex, hex_radius: float) -> void:
+func configure_run(player: PlayerController, world: WorldGrid, terrain_registry: TerrainRegistry, chunk_activity_index: ChunkActivityIndex, hex_radius: float, simulation_backend: TerrainSimulationBackend = null) -> void:
 	_player = player
 	_world = world
 	_terrain_registry = terrain_registry
 	_chunk_activity_index = chunk_activity_index
+	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
 	_active_flag_projectile = null
-	_throw_unlock_msec = Time.get_ticks_msec() + 1000
+	_throw_lock_remaining = 1.0
 	flag_flight_changed.emit(false)
 
 
@@ -46,13 +48,15 @@ func clear_run() -> void:
 	_player = null
 	_world = null
 	_chunk_activity_index = null
+	_simulation_backend = null
 	_active_flag_projectile = null
 	for child in get_children():
 		if child is ItemProjectile:
 			child.free()
 
 
-func handle_input(aim_position: Vector2) -> void:
+func handle_input(aim_position: Vector2, delta: float = 0.0) -> void:
+	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
 	if is_flag_in_flight():
 		return
 	if Input.is_action_just_pressed(InputActions.SELECT_SMALL_BOMB):
@@ -72,7 +76,7 @@ func select_index(index: int) -> void:
 func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> bool:
 	if _player == null or _world == null:
 		return false
-	if not bypass_cooldown and Time.get_ticks_msec() < _throw_unlock_msec:
+	if not bypass_cooldown and _throw_lock_remaining > 0.0:
 		return false
 	var definition: ItemDefinition = _inventory.selected_definition()
 	if definition == null or not _inventory.consume(definition):
@@ -100,7 +104,9 @@ func resolve_bomb_explosion(item_action: ItemAction, impact_position: Vector2, _
 		return
 	if _player != null and _player.global_position.distance_to(impact_position) <= item_action.factory.lethal_radius * _hex_radius:
 		player_killed.emit(DeathCause.BOMB)
-	_explosion_service.explode(_world, _terrain_registry, _chunk_activity_index, impact_position, _hex_radius, item_action.factory.blast_radius, item_action.factory.lethal_radius)
+	var change_set := _explosion_service.explode_with_changes(_world, _terrain_registry, _chunk_activity_index, impact_position, _hex_radius, item_action.factory.blast_radius, item_action.factory.lethal_radius)
+	if _simulation_backend != null:
+		_simulation_backend.notify_external_changes(change_set)
 	var is_large: bool = item_action.factory.blast_radius >= 4
 	bomb_exploded.emit(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius, is_large)
 

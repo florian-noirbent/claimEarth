@@ -19,6 +19,7 @@ From the repository root:
 .\tools\import.ps1
 .\tools\test.ps1
 .\tools\test_performance.ps1
+.\tools\benchmark_terrain.ps1
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
 .\tools\serve_web.ps1
@@ -33,6 +34,8 @@ From the repository root:
 - `import.ps1` imports resources and verifies the project can open headlessly.
 - `test.ps1` runs the fast contract, unit, and integration suites.
 - `test_performance.ps1` runs deterministic performance contract tests.
+- `benchmark_terrain.ps1` reports current terrain simulation, chunk drawing, and
+  collision-build timing distributions for sparse, dense, and settled fixtures.
 - `run_smoke.ps1` starts the configured main scene for two frames.
 - `export_web.ps1` creates a release build under `build/web`.
 - `serve_web.ps1` starts a local static server for the exported build on `127.0.0.1:8936`.

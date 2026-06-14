@@ -34,6 +34,17 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 	_ordered_definitions.sort_custom(func(a: TerrainDefinition, b: TerrainDefinition) -> bool:
 		return a.stable_id < b.stable_id
 	)
+	var empty_count := 0
+	var contact_product_count := 0
+	for definition in _ordered_definitions:
+		if definition.is_empty_space:
+			empty_count += 1
+		if definition.is_liquid_contact_product:
+			contact_product_count += 1
+	if empty_count != 1:
+		validation_errors.append("terrain catalog must define exactly one empty-space terrain")
+	if contact_product_count != 1:
+		validation_errors.append("terrain catalog must define exactly one liquid-contact product")
 
 	return validation_errors.is_empty()
 

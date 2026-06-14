@@ -212,7 +212,7 @@ func _on_run_ready(next_seed: int) -> void:
 func _configure_items_for_current_world() -> void:
 	if get_player() == null or current_world() == null:
 		return
-	item_controller.configure_run(get_player(), current_world(), terrain_registry(), world_controller.chunk_activity_index(), world_presenter.hex_radius)
+	item_controller.configure_run(get_player(), current_world(), terrain_registry(), world_controller.chunk_activity_index(), world_presenter.hex_radius, simulation_backend())
 
 
 func _process(delta: float) -> void:
@@ -220,7 +220,7 @@ func _process(delta: float) -> void:
 		return
 	if get_player() == null:
 		return
-	item_controller.handle_input(get_global_mouse_position())
+	item_controller.handle_input(get_global_mouse_position(), delta)
 	world_controller.advance(delta)
 	_refresh_play_status()
 

@@ -28,3 +28,15 @@ func read_region(_region: Rect2i) -> PackedByteArray:
 
 func shutdown() -> void:
 	pass
+
+
+func notify_external_changes(_change_set: TerrainChangeSet) -> void:
+	pass
+
+
+func is_tick_in_progress() -> bool:
+	return false
+
+
+func has_commit_ready() -> bool:
+	return false

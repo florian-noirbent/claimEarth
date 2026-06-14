@@ -67,17 +67,22 @@ flag wins; later competing outcomes are ignored. Keep score persistence in
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 
-`ChunkActivityIndex` uses 20x32-cell chunks by default. It tracks dirty chunks and
-computes the depth window used by simulation and presentation.
+`ChunkActivityIndex` uses 20x32-cell chunks by default. It tracks exact per-chunk
+static, sand, fluid, and collision masks plus changed collision cells, and computes
+the depth window used by simulation and presentation.
 
 `WorldPresenter` creates one `WorldChunkRenderer` and one `WorldChunkCollision` per
-visible chunk. It rebuilds newly visible or dirty chunks and frees chunks leaving the
-window. Renderers and colliders consume `WorldGrid`; they never mutate it.
+visible chunk. Each renderer owns persistent static, sand, and fluid mesh layers.
+Plain `ChunkBuildJob` inputs snapshot packed world data and produce resource-free
+mesh arrays and collision-edge updates. The cooperative executor time-slices those
+jobs; `WorldPresenter` alone creates engine resources and applies revision-checked
+results on the main thread. This job boundary is suitable for a future worker
+executor without enabling Web threads today.
 
 Gameplay mutations currently update committed cells directly through focused
-services such as `ExplosionService`, then mark the affected rectangle dirty. There
-is no general `WorldMutationService`; add one only if multiple mutation paths gain
-meaningfully duplicated synchronization rules.
+services such as `ExplosionService`, then publish a `TerrainChangeSet`. Change sets
+contain exact cells and layer masks, wake nearby simulation cells, and invalidate an
+unfinished simulation snapshot before it can overwrite the mutation.
 
 ## Terrain And Simulation
 
@@ -92,16 +97,17 @@ backend may compile registry data into IDs for its hot loop.
 `TerrainSimulationBackend` defines initialization, scheduling, advancement, commit,
 region read, and shutdown. `CooperativeChunkBackend` is the implemented backend.
 `RunWorldController` schedules chunks around the player's visible depth window and
-invokes a simulation step at the configured 0.5-second cadence.
+requests deterministic ticks at a 0.1-second cadence.
 
-The cooperative backend resets working state from committed state, applies queued
-changes, performs one deterministic terrain tick, and commits only when working and
-committed buffers differ. This equality check prevents false perpetual commits after
-fluid/sand activity settles.
+The cooperative backend compiles resource definitions into packed ID-indexed motion,
+solidity, passability, visual, and color tables. Newly visible chunks receive one
+bounded motion scan; afterward only active cells and their neighbors remain awake.
+Ticks preserve a deterministic order while `advance(time_budget_usec)` spreads work
+across frames. Commits contain exact changed cells rather than one broad dirty area.
 
-Do not describe time-budget slicing, sleeping chunks, pair registries, threaded
-backends, or compute backends as implemented. They are possible future work and must
-remain behind `TerrainSimulationBackend` if introduced.
+Threaded and compute backends are not implemented. A future threaded backend must
+reuse the plain simulation/build inputs and outputs, keep scene-tree and resource
+application on the main thread, and remain optional for the single-thread Web build.
 
 ## Generation
 

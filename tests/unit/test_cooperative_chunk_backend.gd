@@ -178,3 +178,40 @@ func test_backend_does_not_commit_when_tick_returns_to_same_world_state() -> voi
 
 	assert_eq(world.committed_hash(), settled_hash)
 	assert_false(no_op_commit.did_commit)
+
+
+func test_different_time_budgets_produce_identical_tick_result() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var dimensions := WorldDimensions.new(30, 40)
+	var fast_world := WorldGrid.new(dimensions, FixtureLoader.terrain_id("Air"))
+	for col in range(1, 29):
+		fast_world.set_committed_by_offset(col, 10, FixtureLoader.terrain_id("Sand"))
+		fast_world.set_committed_by_offset(col, 20, FixtureLoader.terrain_id("Water"))
+	var sliced_world := WorldGrid.new(dimensions, FixtureLoader.terrain_id("Air"))
+	sliced_world.committed_cells = fast_world.committed_cells.duplicate()
+	sliced_world.working_cells = fast_world.working_cells.duplicate()
+	var fast_backend := CooperativeChunkBackendScript.new()
+	var sliced_backend := CooperativeChunkBackendScript.new()
+	fast_backend.initialize(fast_world, registry, 7)
+	sliced_backend.initialize(sliced_world, registry, 7)
+	fast_backend.advance(1000000)
+	while not sliced_backend.advance(1).step_completed:
+		pass
+	fast_backend.commit_if_ready()
+	sliced_backend.commit_if_ready()
+
+	assert_eq(sliced_world.committed_cells, fast_world.committed_cells)
+
+
+func test_settled_scheduled_region_goes_to_sleep() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(100, 96), FixtureLoader.terrain_id("Air"))
+	var backend := CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	backend.schedule(ChunkActivityIndex.new(world.dimensions).visible_chunks_for_depth_window(0, 96))
+	backend.advance(1000000)
+	backend.commit_if_ready()
+	backend.advance(1000000)
+
+	assert_eq(backend.active_cell_count(), 0)
+	assert_eq(backend.last_processed_cell_count(), 0)
