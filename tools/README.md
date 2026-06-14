@@ -1,17 +1,17 @@
 # Development Commands
 
-The project uses the standard GDScript editor installed at:
+Automation resolves Godot in this order:
+
+1. The `GODOT4` environment variable.
+2. The standard GDScript editor installed at:
 
 ```text
 %LOCALAPPDATA%\Programs\Godot_v4.6.3-stable_win64\Godot_v4.6.3-stable_win64_console.exe
 ```
 
-The user-level `GODOT4` environment variable should point to that executable. Tool
-scripts prefer `GODOT4` and use the path above as a local fallback. The original
-Mono editor remains installed at
+3. The Mono console editor installed at
 `C:\Program Files\Godot_v4.6.3-stable_mono_win64`, but it reports a missing .NET SDK
-while importing even a GDScript-only project, so automation deliberately uses the
-standard editor.
+on the original workstation. Prefer the standard editor or set `GODOT4` explicitly.
 
 From the repository root:
 
@@ -45,3 +45,7 @@ From the repository root:
   runner returns a nonzero exit code.
 
 The `build/` directory is generated and ignored by Git.
+
+Opening `build/web/index.html` directly with a `file://` URL is not a valid Web test.
+Godot's `.pck` and WebAssembly payloads must be served over HTTP; use
+`serve_web.ps1` or `run_web_debug.ps1`.

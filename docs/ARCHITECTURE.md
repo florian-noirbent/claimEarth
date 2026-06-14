@@ -1,479 +1,217 @@
-# Claim Earth - Technical Architecture
+# Claim Earth - Architecture Guide
 
-## 1. Constraints and Decisions
+This document explains the implemented system and how to extend it. It is not a
+historical build plan.
 
-- Engine: Godot 4.6.
-- Language: typed GDScript. The .NET editor may be used; no C# runtime code is
-  shipped because Godot 4.6 cannot export C# projects to Web.
-- Release: itch.io HTML5, modern desktop Chromium and Firefox.
-- Renderer: Compatibility/WebGL 2. Godot Web does not expose the Forward+/Mobile
-  `RenderingDevice` compute path because WebGL 2 has no compute shaders.
-- Default export: single-threaded for maximum itch.io/browser compatibility.
-- Simulation cadence: committed terrain updates every 0.5 seconds, with immediate
-  local handling for explosions and player hazards.
-- Architecture must allow a threaded or future WebGPU backend without changing
-  gameplay systems.
+## Runtime Constraints
 
-## 2. Project Layout
+- Godot 4.6.3 with typed GDScript and the Compatibility renderer.
+- Single-threaded Web export is the required baseline.
+- No C# runtime, GDExtension, or required compute/thread support.
+- Terrain is a fixed packed grid; scene nodes exist only for active gameplay and
+  visible chunks.
+
+## Repository Map
 
 ```text
-res://
-  addons/gut/                 # Pinned GUT 9.6 test framework
-  assets/
-    audio/
-    fonts/
-    vector/
-  config/
-    generation/
-    items/
-    player/
-    terrain/
-    visual/
-  scenes/
-    app/
-    gameplay/
-    items/
-    player/
-    ui/
-  shaders/
-  src/
-    app/
-    audio/
-    core/
-    generation/
-    items/
-    leaderboard/
-    player/
-    presentation/
-    simulation/
-    terrain/
-    world/
-  tests/
-    integration/
-    performance/
-    unit/
-  docs/
+config/                 Tunable Resource definitions and catalogs
+scenes/app/main.tscn    Main composition scene
+scenes/player/          Player scene
+src/app/                Run state and four top-level controllers
+src/generation/         Deterministic generation passes
+src/items/              Definitions, actions, projectiles, explosions
+src/leaderboard/        Service contract, fake, SimpleBoards adapter
+src/player/             Movement, grapple, hazards, camera
+src/presentation/       Chunk rendering/collision, markers, effects
+src/simulation/         Replaceable terrain simulation backend
+src/terrain/            Terrain definitions and behavior strategies
+src/world/              Packed grid and hex coordinate types
+tests/                  Contracts, unit, integration, performance
+tools/                  Import, test, export, and browser scripts
 ```
 
-Dependencies point inward: presentation and Godot scenes depend on domain services;
-domain services do not depend on UI scenes. Resources contain configuration and
-behavior strategy references, not global mutable run state.
+## Runtime Composition
 
-## 3. Runtime Composition
+`scenes/app/main.tscn` composes the application. `AppRoot` owns `RunCoordinator`,
+routes typed signals, arbitrates terminal outcomes, and exposes a small test facade.
+It delegates implementation details to four child controllers:
 
-`AppRoot` is a composition and state-routing node. It owns `RunCoordinator`, maps
-controller outcomes to `RunPhase` transitions, and preserves a small integration-test
-façade. Runtime responsibilities are held by focused child controllers:
+| Controller | Owns |
+| --- | --- |
+| `AppUiController` | Menu, HUD, pause, name entry, results, leaderboard rendering |
+| `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
+| `RunItemController` | Inventory, selection, projectiles, explosions, flag flight |
+| `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
 
-- `AppUiController` owns menu, HUD, pause, score-entry, result, and leaderboard UI.
-- `RunWorldController` owns registries, generation/preview cancellation, player
-  construction, simulation scheduling, camera bounds, and world presentation.
-- `RunItemController` owns inventory, selection, projectiles, explosions, and flag
-  flight locking.
-- `ScoreController` owns saves, profile/best scores, pending submissions, and the
-  injected `LeaderboardService`.
+Controllers receive dependencies through typed `configure(...)` methods. They do not
+reach into one another. UI emits intent; gameplay controllers emit outcomes;
+`AppRoot` maps both to `RunPhase` transitions.
 
-Dependencies are passed once through typed `configure(...)` methods. Controllers do
-not call one another; typed signals return intents and outcomes to `AppRoot`.
+## Run State
 
-Use Godot signals for observable events crossing scene ownership boundaries. Use
-direct typed method calls within one subsystem. Avoid a global event bus.
+`RunCoordinator` starts at `MAIN_MENU` and transitions through `GENERATING`,
+`PLAYING`, `FLAG_IN_FLIGHT`, `NAME_ENTRY`, `SUBMITTING`, `DEATH`, `RESULT`,
+`PAUSED`, and `LEADERBOARD`.
 
-No gameplay service is currently an autoload. Run-specific state belongs below the
-main gameplay scene and is released or reset between runs.
+`AppRoot` holds the terminal-outcome lock. The first death, planted flag, or destroyed
+flag wins; later competing outcomes are ignored. Keep score persistence in
+`ScoreController`, not item or player code.
 
-## 4. Run State Machine
+## World Data And Presentation
 
-`RunCoordinator` owns explicit states:
+`WorldGrid` owns two `PackedByteArray` buffers:
 
-```text
-MAIN_MENU -> GENERATING -> PLAYING -> FLAG_IN_FLIGHT -> NAME_ENTRY
-                                      |                    |
-                                      v                    v
-                                    DEATH              SUBMITTING
-                                      |                    |
-                                      +------> RESULT <----+
-                                                   |
-                                                   v
-                                              GENERATING
-```
+- `committed_cells`: authoritative state read by gameplay and presentation.
+- `working_cells`: candidate state produced by terrain simulation.
 
-Each state controls allowed commands and scene/UI visibility. State transitions are
-idempotent. Death and flag resolution race through one `RunOutcomeGate`; the first
-valid terminal outcome wins, preventing score-after-death and duplicate submission.
+`WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
+world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 
-## 5. World Model
+`ChunkActivityIndex` uses 20x32-cell chunks by default. It tracks dirty chunks and
+computes the depth window used by simulation and presentation.
 
-### Coordinates and storage
+`WorldPresenter` creates one `WorldChunkRenderer` and one `WorldChunkCollision` per
+visible chunk. It rebuilds newly visible or dirty chunks and frees chunks leaving the
+window. Renderers and colliders consume `WorldGrid`; they never mutate it.
 
-`HexCoord` is an immutable value object with conversion, neighbor, distance, and
-world-position functions. It is the sole owner of hex math.
+Gameplay mutations currently update committed cells directly through focused
+services such as `ExplosionService`, then mark the affected rectangle dirty. There
+is no general `WorldMutationService`; add one only if multiple mutation paths gain
+meaningfully duplicated synchronization rules.
 
-`WorldGrid` stores terrain definition IDs in two `PackedByteArray` buffers:
+## Terrain And Simulation
 
-- `committed_cells`: state consumed by rendering, collision, and general queries.
-- `working_cells`: state being calculated for the next simulation commit.
+`TerrainDefinition` resources contain identity, collision/passability, visual style,
+hookability, and strategy resources for motion, hazards, and blast response. The
+catalog is `config/terrain/catalog.tres`.
 
-Index formula and bounds checks are centralized in `WorldDimensions`. A byte ID is
-resolved through `TerrainRegistry`; IDs are stable within a build and validated at
-startup. Dynamic per-cell flags such as awake/dirty are separate packed bitsets so
-terrain IDs stay compact.
+Call sites must not branch on terrain ID, display name, script class, or resource
+path. Add behavior through the existing strategy/resource boundary. The simulation
+backend may compile registry data into IDs for its hot loop.
 
-At 100 by 2000, each byte buffer is about 200 KB. Full-map storage is cheap; scene
-nodes and collision objects are created only near the camera.
+`TerrainSimulationBackend` defines initialization, scheduling, advancement, commit,
+region read, and shutdown. `CooperativeChunkBackend` is the implemented backend.
+`RunWorldController` schedules chunks around the player's visible depth window and
+invokes a simulation step at the configured 0.5-second cadence.
 
-### Chunks
+The cooperative backend resets working state from committed state, applies queued
+changes, performs one deterministic terrain tick, and commits only when working and
+committed buffers differ. This equality check prevents false perpetual commits after
+fluid/sand activity settles.
 
-- Default chunk size: 20 columns by 32 rows, configurable.
-- `ChunkActivityIndex` tracks awake, dirty-render, dirty-collision, and scheduled
-  chunks.
-- A terrain mutation wakes its chunk and all neighbor chunks touched by the rule.
-- A chunk sleeps after configurable consecutive commits with no changes.
-- The active band includes camera-visible chunks, one render margin, player/hazard
-  chunks, projectile paths, and all currently unstable cells.
+Do not describe time-budget slicing, sleeping chunks, pair registries, threaded
+backends, or compute backends as implemented. They are possible future work and must
+remain behind `TerrainSimulationBackend` if introduced.
 
-`WorldMutationService` is the exclusive writer from gameplay systems. It applies
-immediate mutations to the committed buffer, records dirty regions, updates nearby
-collision, and queues equivalent changes into the backend's next working state.
+## Generation
 
-## 6. Terrain Polymorphism
-
-No gameplay system may branch on terrain IDs, enum values, resource paths, or names.
-
-### Definitions
-
-`TerrainDefinition` is a custom `Resource` containing:
-
-- Stable ID and display name.
-- Physical properties and collision policy.
-- Visual material/palette configuration.
-- `TerrainMotionBehavior` strategy.
-- `TerrainHazardBehavior` strategy.
-- `BlastReaction` strategy.
-- Hookability and destructibility capabilities.
-
-Strategies are reusable resources:
-
-- `StableMotion`
-- `FallingMotion`
-- `LiquidMotion`
-- `NoHazard`, `LavaHazard`, `SuffocationHazard`, `BurialHazard`
-- `NoBlastReaction`, `TransformBlastReaction`, `DiffuseBlastReaction`,
-  `DetonateBlastReaction`
-
-Simulation dispatches through a precompiled behavior opcode/table derived from the
-resource registry. This keeps the hot loop data-oriented while preserving
-polymorphic configuration at the architecture boundary. The compiler, not gameplay
-code, maps strategies to simulation operations.
-
-### Pair interactions
-
-`TerrainInteractionRegistry` resolves ordered source/destination behavior pairs.
-Rules are resources implementing `TerrainPairInteraction`, such as solidification
-and density swap. The registry uses definition IDs as lookup keys internally; no
-caller contains pair-specific branches.
-
-Startup validation fails loudly for duplicate IDs, missing strategies, invalid
-transitions, or an unregistered required interaction.
-
-## 7. Items and Explosions
-
-`ItemDefinition` is a resource containing inventory count, projectile scene,
-trajectory settings, icon, and an `ItemActionFactory`.
-
-`ItemFactory.create(definition, context)` produces an `ItemAction`. Implementations
-include bomb and flag actions, but selection and throwing code only sees the common
-interface:
-
-```gdscript
-func can_use(context: ItemUseContext) -> bool
-func create_projectile(context: ItemUseContext) -> Projectile
-func on_resolved(result: ProjectileResult) -> void
-```
-
-`BombDefinition` supplies fuse, terrain radius, lethal radius, impulse, water
-attenuation, and chain-reaction configuration. `ExplosionService` traverses cells by
-hex distance, builds `BlastContext`, and calls each terrain's `BlastReaction`.
-
-`FlagAction` reports exactly one of planted, destroyed, or invalid. The outcome gate
-then transitions the run. Item code never decides score persistence directly.
-
-Projectile trajectory calculation is a pure service shared by runtime physics,
-tests, and any aiming preview.
-
-## 8. Simulation Backends
-
-### Contract
-
-All implementations satisfy `TerrainSimulationBackend`:
-
-```gdscript
-func initialize(world: WorldGrid, registry: TerrainRegistry, seed: int) -> void
-func queue_change(change: CellChange) -> void
-func schedule(active_chunks: PackedInt32Array) -> void
-func advance(time_budget_usec: int) -> SimulationProgress
-func commit_if_ready() -> SimulationCommit
-func read_region(region: Rect2i) -> PackedByteArray
-func shutdown() -> void
-```
-
-The backend never owns player physics, scoring, rendering, or scene nodes.
-
-### Jam backend: CooperativeChunkBackend
-
-- Runs in the main process but uses a strict microsecond budget per frame.
-- Copies only scheduled chunks plus a one-cell interaction halo into working state.
-- Processes deterministic phases: queued mutations, downward movement, lateral
-  liquid movement, pair interactions, then dirty/activity calculation.
-- Uses intent buffers so each source and destination participates in at most one
-  move per phase.
-- Resolves competing intents by deterministic hash of run seed, tick, and cell.
-- Alternates traversal orientation each tick to avoid persistent left/right bias.
-- Atomically swaps completed chunk state into the committed buffer every 0.5 seconds.
-- Carries unfinished work across frames without blocking rendering or input.
-
-If the backend cannot finish within one cadence, it records an overrun metric,
-reduces non-visible scheduling first, and never performs an unbounded catch-up loop.
-
-### Optional backend: ThreadedChunkBackend
-
-Implement behind the same contract only after the cooperative backend passes release
-budgets. It may use `WorkerThreadPool` in native builds or web thread-enabled builds.
-It operates on copied packed data and communicates only through thread-safe queues;
-it never touches Nodes, Resources, RenderingServer, or PhysicsServer from workers.
-
-Itch.io requires opt-in SharedArrayBuffer hosting for web threads. Therefore the jam
-release must remain correct and playable without this backend.
-
-### Future compute backend
-
-A future WebGPU/native implementation may upload packed cell buffers and return dirty
-regions. It must preserve contract tests and commit semantics. No other subsystem
-changes when swapping backends.
-
-## 9. Generation
-
-`WorldGenerator` composes ordered `GenerationPass` resources:
+`WorldGenerator` runs these passes in order:
 
 1. `BaseNoisePass`
 2. `PocketNoisePass`
-3. `SpawnChamberPass`
-4. `BoundarySealPass`
-5. `GenerationValidationPass`
+3. `ShowcasePocketPass`
+4. `SpawnChamberPass`
+5. `BoundarySealPass`
+6. `GenerationValidationPass`
 
-`GenerationProfile` exposes seed policy, octave count, frequencies, amplitudes,
-thresholds, depth curves, pocket size/frequency, spawn dimensions, and repair limits.
-Noise objects receive explicit seeds. Generation code has no calls to global random
-state, making fixtures reproducible.
+`WorldGenerationTask` yields between progress labels, then executes generation.
+Rejected maps retry with deterministically derived seeds. The active defaults live in
+`config/generation/default_profile.tres`, not the script's fallback values.
 
-Generation is sliced across frames with progress reporting. A rejected map retries
-with a deterministically derived seed and a configured maximum retry count.
+Generation changes must retain deterministic hashes, valid registered terrain IDs,
+spawn air, the bottom two stone rows, and distribution tests. Horizontal player
+bounds are invisible runtime constraints; generation does not create stone side
+walls.
 
-## 10. Player and Physics
+## Player, Camera, And Items
 
-`PlayerController` is a thin coordinator of components:
+`PlayerController` is a `CharacterBody2D` coordinating `PlayerMovementModel`,
+`GrappleModel`, environment sampling, step-up behavior, and horizontal clamping.
+Movement and grapple tuning are resources under `config/player/`.
 
-- `GroundMotor`
-- `AirMotor`
-- `JumpAbility`
-- `GrappleAbility`
-- `ItemThrowAbility`
-- `EnvironmentStatus`
-- `PlayerHealth`
+`DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
+to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
 
-Components consume an `InputFrame` produced by `PlayerInputSource`. Tests inject a
-fake source. Components communicate through typed state and signals rather than
-querying siblings by scene path.
+Items are registered through `config/items/catalog.tres`. `ItemDefinition` points to
+an `ItemActionFactory`; factories create polymorphic `ItemAction` implementations.
+`RunItemController` treats all selected items through that contract. `ItemProjectile`
+owns flight, terrain sampling, bounce, fuse, and resolution signals.
 
-Collision uses chunked generated polygons or merged convex shapes for solid cells,
-rebuilt only for dirty chunks near the player. A conservative temporary collision
-overlay is applied immediately after a mutation and removed after the chunk rebuild,
-preventing the player from colliding with visually removed terrain.
+`ExplosionService` traverses hexes, asks each terrain blast strategy for its effect,
+updates committed cells, and marks the resulting dirty rectangle. The lethal radius
+always vaporizes terrain and is also checked against the player.
 
-Hazard sampling queries occupied hexes through each terrain's hazard strategy.
-Timers live in `EnvironmentStatus`, reset on leaving the applicable environment, and
-emit a typed death cause through `PlayerHealth`.
+## Persistence And Leaderboard
 
-## 11. Rendering
+`SaveRepository` stores JSON under `user://` with last player name, personal best,
+and pending submissions. Missing or corrupt data falls back to defaults.
 
-`WorldPresenter` owns a pool of `ChunkRenderer` nodes for visible chunks only.
+`LeaderboardService` is the dependency boundary. Production uses
+`SimpleBoardsLeaderboardService`; tests and offline scenarios use
+`FakeLeaderboardService`. Response parsing is isolated in
+`SimpleBoardsResponseParser`.
 
-- Build one batched mesh per terrain visual layer per visible chunk, not one node per
-  cell.
-- Generate flat-top hex vertices procedurally.
-- Apply `TerrainVisualStyle` resources so fill, outline, and pattern cues stay data
-  driven instead of branching on terrain identity.
-- Procedural interior texture comes from shader-compatible noise or generated image
-  textures supported by WebGL 2.
-- Boundary outlines are emitted only where a solid cell neighbors air/passable space.
-- Fluids may animate through UV/time uniforms without changing logical state.
-- Rebuild a chunk only when its committed dirty flag changes.
+The Web client API key is public by nature. Do not log it unnecessarily, but do not
+model it as a server secret. Never use the live service from automated tests.
 
-`WorldCollisionPresenter` independently consumes collision dirty regions. Rendering
-and collision never mutate the world model.
+## Common Feature Recipes
 
-Vector source assets remain SVG. Imported raster size and filtering are explicitly
-configured to avoid browser-dependent blur.
+### Add Terrain
 
-## 12. Camera and Score Markers
+1. Create/reuse motion, hazard, blast, and visual resources.
+2. Create the `TerrainDefinition` resource with a unique stable ID.
+3. Add it to `config/terrain/catalog.tres`.
+4. Extend simulation behavior only through strategy/registry compilation.
+5. Add registry, rule, generation, and rendering tests as applicable.
 
-`DescendingCameraController` stores `deepest_camera_y`; its vertical output is the
-maximum of that value and the downward target, clamped to map bounds. It never moves
-upward during `PLAYING`.
+### Add An Item
 
-`DepthMarkerPresenter` renders personal and global best dashed lines based on depth
-values, independent of generated cell state. Markers remain readable but do not
-collide or affect gameplay.
+1. Add an action factory and action implementing the common contracts.
+2. Add definition/factory `.tres` files and register the definition in the catalog.
+3. Keep selection, HUD inventory, and spawning generic.
+4. Test inventory, projectile lifecycle, resolution, and full run-state effects.
 
-`AudioDirector` and `GameplayFeedback` are presentation-only companions that synthesize
-short cues, rings, and camera shake from gameplay events without owning game rules.
+### Add A Run Workflow Or Screen
 
-## 13. Persistence and SimpleBoards
+1. Add UI nodes under `UiLayer` and presentation logic to `AppUiController`.
+2. Emit a typed intent signal rather than calling gameplay directly.
+3. Route it in `AppRoot`; add a `RunPhase` only when behavior truly needs a state.
+4. Cover visibility, transition, repeated-entry, and cleanup behavior.
 
-### Local persistence
+### Change Simulation Or Rendering
 
-`SaveRepository` reads/writes versioned JSON at `user://claim_earth_save.json`:
+1. Add deterministic counters/fixtures before optimizing.
+2. Keep player physics independent from terrain commit cadence.
+3. Dirty only affected chunks and keep renderer/collider node counts bounded.
+4. Run both fast and performance suites; use the Web milestone gate for renderer or
+   export changes.
 
-```json
-{
-  "version": 1,
-  "last_player_name": "Player",
-  "personal_best_depth": 0,
-  "pending_submissions": []
-}
-```
+## Tests And Gates
 
-Writes use a temporary file and replace strategy where supported. Corrupt or missing
-data falls back to defaults. If `OS.is_userfs_persistent()` reports unavailable, the
-UI warns that progress may not survive the browser session.
-
-### Online service
-
-`LeaderboardService` exposes asynchronous signals/results for:
-
-- `fetch_top(limit)`
-- `submit_score(score_submission)`
-- `retry_pending()`
-
-`SimpleBoardsLeaderboardService` uses `HTTPRequest` and configuration supplied at
-export time. API key and leaderboard ID are never embedded in domain resources or
-tests. DTO parsing validates required fields and treats malformed responses as
-service failures.
-
-`FakeLeaderboardService` is injected in tests and offline development. UI depends
-only on the interface and explicitly renders loading, success, empty, and failure
-states.
-
-## 14. Testing Strategy
-
-Use GUT 9.6 pinned under `addons/gut`. Tests are typed GDScript and run both from the
-editor and headlessly.
-
-### Automation layers
-
-- **Fast headless gate**: contracts, unit tests, integration flows, and project smoke.
-- **Performance contract gate**: deterministic presenter/backend/runtime counters.
-- **Web smoke gate**: export validation, shell/payload load, screenshot capture, and
-  browser console failure detection.
-- **Manual QA**: feel, balance, clarity, and polish only.
-
-### Release coverage matrix
-
-| Release feature | Automated coverage |
+| Change | Required minimum |
 | --- | --- |
-| Boot, menu, start, restart, HUD | `test_app_root_flow`, `test_project_smoke` |
-| Generation, sealed map, spawn safety | `test_world_generator`, `test_generation_task` |
-| Walking, jump, air control, pause | `test_player_movement_model`, `test_app_root_flow` |
-| Hook attach, rope adjust, release, swing | `test_grapple_model`, `test_player_scene`, `test_world_grapple_anchor_query` |
-| Bomb/flag inventory and throws | `test_item_inventory`, `test_item_projectile`, `test_app_root_flow` |
-| Blast, terrain reactions, simulation cadence | `test_explosion_service`, `test_cooperative_chunk_backend`, `test_runtime_contracts` |
-| Hazards and deaths | `test_environment_status`, `test_app_root_flow` |
-| Leaderboard, offline retry, local best | `test_leaderboard_flow`, `test_save_repository`, `test_simpleboards_response_parser` |
-| Chunk rendering/collision performance | `test_world_presenter`, `test_runtime_contracts` |
-| Web export/browser startup | `test_project_smoke`, `smoke_web.ps1`, `smoke_chromium.ps1` |
+| Pure rule/resource | Relevant unit and contract tests |
+| Run/UI workflow | Integration test plus fast suite |
+| Generation | Fixed-seed generation tests plus fast suite |
+| Simulation/rendering/collision | Fast suite and performance suite |
+| Save/leaderboard | Offline fake-service tests plus fast suite |
+| Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 
-### Unit tests
+Commands and environment setup are documented in `tools/README.md`. Current suites:
 
-- Hex coordinate conversion, all six neighbors, distance, indexing, and boundaries.
-- Camera downward-only behavior and map clamping.
-- Inventory selection/consumption and invalid commands.
-- Movement state transitions, coyote time, jump buffering, rope limits, and detach.
-- Projectile trajectory and blast-distance calculations.
-- Every terrain blast/hazard/motion strategy.
-- Flag landing, lava destruction, score depth, and run outcome races.
-- Save migration, corrupt-save recovery, name validation, and pending submissions.
+- `tests/contracts`: registry and architecture constraints.
+- `tests/unit`: deterministic domain behavior.
+- `tests/integration`: scene and complete workflow behavior.
+- `tests/performance`: structural frame-loop and bounded-node contracts.
 
-### Contract and property tests
+Manual testing evaluates feel, readability, balance, and browser presentation. Add a
+regression test for reproducible logic defects.
 
-- Iterate every registered terrain and item definition and run the same capability
-  contract. Adding a resource automatically adds it to the test matrix.
-- Reject duplicate IDs and incomplete definitions.
-- Verify no domain script uses forbidden terrain/item type branching with a small
-  source scan test.
-- Generate many fixed seeds and assert dimensions, sealed sides/bottom, safe spawn,
-  valid IDs, deterministic hashes, and configured distribution ranges.
+## Definition Of Done
 
-### Simulation fixtures
-
-Use small textual grids converted through the registry. Cover falling, lateral flow,
-sand swaps, lava-water stone creation, boundaries, conflicts, sleep/wake, explosion
-mutations, alternating traversal, and cadence commits.
-
-Run every fixture through each backend and compare committed cell buffers and dirty
-regions. Randomized tests always print the seed on failure.
-
-### Integration and scene tests
-
-- Menu to generation to play.
-- Input selection and throwing each item.
-- Hook attach, swing inputs, and release.
-- Each death cause discards score.
-- Valid flag pauses play, prefills editable name, submits once, saves local best, and
-  starts a new seeded run.
-- Destroyed flag cancels the run.
-- Leaderboard success, empty, malformed, timeout, offline, and retry behavior through
-  the fake service.
-- Dirty terrain updates both presentation and collision.
-
-### Performance and release tests
-
-- Benchmark generation and active-band simulation using fixed worst-case fluid/sand
-  fixtures.
-- Assert no visible chunk window rebuilds every frame when nothing changed.
-- Assert renderer/collider node counts stay bounded by the visible chunk window.
-- Assert simulation advances/commits match the 0.5-second cadence contract while
-  player physics continues every frame.
-- The fast headless command must fail on any unexpected engine/script error.
-- Milestone CI exports the Web preset, checks required artifacts, captures a startup
-  screenshot, and fails on severe Chromium console/runtime errors.
-
-Manual testing is for movement feel, rope enjoyment, pacing, difficulty, visual
-clarity, sound, and balance. A reproducible logic defect requires an automated
-regression test before it is considered fixed.
-
-## 15. Build Order
-
-1. Project input, resource registries, hex math, world buffers, and GUT setup.
-2. Static generated cave rendering/collision and deterministic generation tests.
-3. Player movement, downward camera, and hook with test input injection.
-4. Item factory, bombs, immediate terrain mutation, deaths, and flag outcome.
-5. Cooperative simulation backend and complete terrain interactions.
-6. Run flow, HUD, persistence, personal-best marker, and menu.
-7. SimpleBoards adapter, leaderboard UI, pending submission handling.
-8. Vector/procedural art, animation, effects, audio, performance tuning.
-9. Web export, itch.io upload verification, browser smoke tests, and balancing.
-
-Every stage ends with a playable vertical path and green automated tests. Avoid
-building all infrastructure before validating the corresponding gameplay behavior.
-
-## 16. Definition of Done
-
-- Public behavior matches `docs/GAME_DESIGN.md`.
-- New terrain and item definitions require resources/strategies, not edits to central
-  conditional logic.
-- Domain rules are deterministic and covered by unit or contract tests.
-- Web export runs on itch.io in Chromium and Firefox without requiring experimental
-  thread support.
-- Performance instrumentation confirms 60 FPS gameplay target and 0.5-second terrain
-  commits on the reference machine.
-- No known logic defect is left solely to manual reproduction.
+- Behavior matches `GAME_DESIGN.md`, or that document changes in the same commit.
+- Ownership and extension guidance here still matches the code.
+- Shipped GDScript has clean diagnostics and typed public boundaries.
+- Relevant tests and required gates pass without unexpected script/engine errors.
+- New tuning is resource-configured where designers are expected to iterate.
+- No central terrain/item type branch or per-cell Node architecture is introduced.

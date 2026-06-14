@@ -1,7 +1,7 @@
 # Claim Earth Asset Notes
 
-All art added for the jam build is original repo content created as SVG or through
-procedural drawing/audio code inside the project.
+Current art is original repository content created as SVG or through procedural
+drawing/audio code inside the project.
 
 - `assets/vector/player_body.svg`
 - `assets/vector/small_bomb.svg`

@@ -1,4 +1,7 @@
-# Claim Earth Release Checklist
+# Claim Earth Web Release Checklist
+
+Use this only for a release candidate. Normal feature work follows the smaller test
+matrix in `docs/ARCHITECTURE.md`.
 
 ## Web Build
 
@@ -27,12 +30,12 @@
 
 ## Itch.io Packaging
 
-- Upload the contents of `build/web`.
+- Zip the contents inside `build/web` so `index.html` is at the ZIP root, then upload
+  that ZIP as a browser-playable file.
 - Set the embed to responsive mode with keyboard focus enabled.
 - Mention keyboard/mouse controls and browser storage behavior in the page copy.
 
-## Known Local Limitation
+## Environment Note
 
-This workstation currently has Python and Chromium-compatible browser coverage for
-local smoke. Firefox is not installed, so Firefox verification must happen on the
-release machine before final jam upload.
+The automated browser smoke uses an installed Chromium-compatible browser. Firefox
+is a manual release check unless a Firefox automation path is added to `tools/`.

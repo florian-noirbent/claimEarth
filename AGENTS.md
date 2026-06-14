@@ -1,82 +1,81 @@
-# Claim Earth Agent Instructions
+# Claim Earth Agent Guide
 
-These instructions apply to the entire repository.
+These instructions apply to the entire repository. The base game is implemented;
+work is now maintenance, portfolio polish, and feature development.
 
-## Sources of truth
+## Start Here
 
-- Product behavior: `docs/GAME_DESIGN.md`
-- Technical design, boundaries, test strategy, and build order:
-  `docs/ARCHITECTURE.md`
-- Active implementation status, ownership, gates, and commit sequence:
-  `docs/EXECUTION_PLAN.md`
-- When implementation and documentation disagree, stop and reconcile the documents
-  in the same change. Do not silently invent a third behavior.
+1. Read `docs/GAME_DESIGN.md` for the current player-facing contract.
+2. Read `docs/ARCHITECTURE.md` for ownership boundaries and extension recipes.
+3. Read `tools/README.md` for local commands.
+4. Inspect the closest implementation and tests before proposing a new abstraction.
 
-## Non-negotiable constraints
+There is intentionally no execution ledger or prescribed build sequence. Use Git
+history for historical context. Keep documentation focused on the current system.
 
-- Use Godot 4.6 and typed GDScript for shipped gameplay code.
-- The release target is an itch.io Web build for current desktop Chromium and
-  Firefox using the Compatibility renderer.
-- Do not introduce C# runtime code, GDExtension, or a mandatory threaded/compute
-  dependency. They are incompatible with the required low-risk web release.
-- All graphics must be vector assets or procedural textures. Do not use diffusion
-  image generation.
-- Keep the complete map fixed at 100 by 2000 cells unless the GDD is deliberately
-  revised. Side boundaries and the final two rows are indestructible stone.
-- Terrain simulation commits every 0.5 seconds while player input, physics,
-  projectiles, hazards, and rendering remain responsive each frame.
-- A score exists only after a valid planted flag. Death and lava-destroyed flags
+## Project Constraints
+
+- Godot 4.6.3, typed GDScript, Compatibility renderer.
+- Primary release target: itch.io Web on current desktop Chromium and Firefox.
+- Do not add C# runtime code, GDExtension, or a required threaded/compute path.
+- Keep the default Web export playable without cross-origin isolation.
+- Visual assets must be SVG/vector or procedurally generated.
+- Preserve deterministic world seeds and resource-driven tuning.
+- A score exists only after a valid flag landing. Death and a lava-destroyed flag
   never save a score.
 
-## Architecture rules
+## Architecture Boundaries
 
-- Depend on interfaces/contracts and inject implementations at the composition root.
-- Terrain and item behavior is polymorphic and resource-configured.
-- Never branch over terrain or item type, ID, enum, resource path, class name, or
-  display name in gameplay code. Use behavior strategies, registries, factories, or
-  pair interactions.
-- Keep hot simulation data packed and data-oriented. Do not create one Node per map
-  cell.
-- World mutation must pass through `WorldMutationService`; rendering and collision
-  presenters are consumers, not authorities.
-- Keep `TerrainSimulationBackend` replaceable. The cooperative backend is the release
-  baseline; alternative backends must pass identical contract fixtures.
-- Avoid global mutable state and broad event buses. Use typed direct calls within a
-  subsystem and signals across ownership boundaries.
-- Put tuning values in validated `.tres` resources rather than magic constants.
-- Preserve deterministic seeds for generation and simulation diagnostics.
+- `AppRoot` composes controllers, routes signals, and owns run-state transitions.
+- `AppUiController` owns UI presentation and emits user intents.
+- `RunWorldController` owns generation, player lifetime, simulation scheduling,
+  camera/bounds setup, and presenter attachment.
+- `RunItemController` owns inventory, projectiles, explosions, and flag resolution.
+- `ScoreController` owns local persistence and leaderboard workflows.
+- `WorldGrid` is authoritative terrain state. `WorldPresenter` consumes committed
+  cells and rebuilds visible dirty chunks.
+- Terrain and item behavior is selected through resources, strategies, registries,
+  and factories. Never add central branches on terrain/item IDs, names, classes, or
+  resource paths.
+- Keep simulation data packed. Never create one Node per map cell.
+- Use typed direct calls inside one ownership boundary and typed signals across
+  boundaries. Avoid autoload state and broad event buses.
+- Put gameplay tuning in validated `.tres` resources instead of script constants.
 
-## Testing rules
+## Change Guidance
 
-- Use GUT 9.6 for Godot 4.6.
-- Add unit tests with each domain behavior and integration tests with each workflow.
-- Every bug fix includes a deterministic regression test when technically possible.
-- New terrain and item definitions must automatically participate in registry contract
-  tests.
-- Randomized tests print and retain their seed on failure.
-- Keep network tests offline through `FakeLeaderboardService`; never submit test
-  scores to SimpleBoards.
-- Before considering work complete, run relevant tests, the full headless suite, and
-  the Web export smoke check when export behavior is affected.
-- Manual QA evaluates game feel, balance, clarity, and polish. It is not the primary
-  way to find deterministic logic defects.
+- New terrain: add behavior/style resources, register the definition in
+  `config/terrain/catalog.tres`, and extend registry/simulation tests.
+- New item: add an `ItemDefinition`, action factory/action, resources, catalog entry,
+  and item workflow tests. Selection code must remain type-agnostic.
+- Generation changes: edit passes/profile resources and retain seed determinism,
+  spawn safety, valid IDs, and the final two stone rows.
+- UI changes: keep formatting and visibility in `AppUiController`; route gameplay
+  intent through `AppRoot`.
+- Simulation changes: preserve `TerrainSimulationBackend` and committed/working
+  buffer semantics. Rendering, player physics, and input must stay frame-responsive.
+- Leaderboard changes: depend on `LeaderboardService`; automated tests use
+  `FakeLeaderboardService` and never call SimpleBoards.
 
-## Working style
+## Verification
 
-- Execute one step at a time from `docs/EXECUTION_PLAN.md`. Update its state, evidence,
-  and next-step previous commit reference as part of every step.
-- End every completed execution step with one coordinator-owned Git commit using the
-  ledger's commit subject. Subagents never commit.
-- All agents share the current worktree. Assign disjoint write sets, never create
-  additional worktrees, and never allow concurrent edits to shared configuration,
-  scenes, resources, or planning documents.
-- Use subagents to save context for bounded parallel lanes after interfaces are fixed;
-  the coordinator owns integration, tests, the ledger, and Git.
-- Follow the staged build order in `docs/ARCHITECTURE.md`; leave the project playable
-  and tests green after each stage.
-- Prefer the smallest implementation that satisfies the documented contract.
-- Do not add abstractions without a concrete extension, testing, or duplication
-  benefit.
-- Keep scenes focused on composition and presentation; keep deterministic rules in
-  testable non-Node classes where practical.
-- Update both design documents when a product or architecture decision changes.
+- Every bug fix gets a deterministic regression test when practical.
+- Domain rules belong in unit tests; complete player workflows belong in integration
+  tests; structural frame-loop risks belong in performance tests.
+- Run `./tools/test.ps1` for every code change.
+- Run `./tools/test_performance.ps1` for world, simulation, rendering, collision, or
+  frame-loop changes.
+- Run `./tools/ci.ps1 -Milestone` for export, browser, release, or broad changes.
+- Check GDScript diagnostics and `git diff --check` before completion.
+- Manual QA is for feel, balance, visual clarity, and browser presentation, not for
+  discovering deterministic correctness bugs.
+
+## Working Style
+
+- Work with existing uncommitted changes; never discard changes you did not make.
+- Keep changes scoped and leave the project playable and tests green.
+- Update `GAME_DESIGN.md` when player-visible behavior changes.
+- Update `ARCHITECTURE.md` when ownership, data flow, extension points, or required
+  verification changes.
+- Do not add planning/history sections to these documents. A temporary task plan may
+  live in the conversation or issue tracker and should be removed when obsolete.
