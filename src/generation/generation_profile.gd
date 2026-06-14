@@ -19,8 +19,8 @@ extends Resource
 @export var water_depth_start_ratio := 0.16
 @export var lava_depth_start_ratio := 0.45
 @export var spawn_width := 10
-@export var spawn_height := 8
-@export var spawn_margin_top := 3
+@export var spawn_height := 4
+@export var spawn_margin_top := 0
 @export var max_retries := 4
 
 

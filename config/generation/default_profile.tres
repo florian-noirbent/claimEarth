@@ -21,5 +21,5 @@ lava_threshold = 0.66
 water_depth_start_ratio = 0.02
 lava_depth_start_ratio = 0.06
 spawn_width = 10
-spawn_height = 8
-spawn_margin_top = 3
+spawn_height = 4
+spawn_margin_top = 0

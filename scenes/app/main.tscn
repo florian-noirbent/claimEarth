@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
 [ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
@@ -6,6 +6,7 @@
 [ext_resource path="res://src/presentation/depth_marker_presenter.gd" type="Script" id="4_markers"]
 [ext_resource path="res://src/audio/audio_director.gd" type="Script" id="5_audio"]
 [ext_resource path="res://src/presentation/gameplay_feedback.gd" type="Script" id="6_feedback"]
+[ext_resource path="res://src/presentation/world_side_boundaries.gd" type="Script" id="7_boundaries"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -28,6 +29,10 @@ script = ExtResource("4_markers")
 [node name="GameplayFeedback" type="Node2D" parent="."]
 unique_name_in_owner = true
 script = ExtResource("6_feedback")
+
+[node name="WorldSideBoundaries" type="StaticBody2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_boundaries")
 
 [node name="AudioDirector" type="Node" parent="."]
 unique_name_in_owner = true

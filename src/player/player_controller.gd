@@ -16,6 +16,7 @@ const DeathCauseScript = preload("res://src/player/death_cause.gd")
 @export var floor_snap_distance := 18.0
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0
+@export var horizontal_collision_radius := 14.0
 
 @onready var body_polygon: Polygon2D = %BodyPolygon
 @onready var body_visual: Node2D = %BodyVisual
@@ -31,6 +32,9 @@ var _world: WorldGrid
 var _hex_radius := 16.0
 var _physics_frame_count := 0
 var _pending_anchor_query: GrappleAnchorQuery
+var _horizontal_bounds_enabled := false
+var _horizontal_min_x := 0.0
+var _horizontal_max_x := 0.0
 
 
 func _ready() -> void:
@@ -58,6 +62,7 @@ func _physics_process(delta: float) -> void:
 	velocity = grapple_resolution.velocity
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
+	_enforce_horizontal_bounds()
 	_update_visual_state()
 	_update_grapple_visuals()
 	_sample_environment(delta)
@@ -85,6 +90,13 @@ func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, 
 	_terrain_registry = terrain_registry
 	_hex_radius = hex_radius
 	_environment_status.reset()
+
+
+func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
+	_horizontal_min_x = left_edge + horizontal_collision_radius
+	_horizontal_max_x = right_edge - horizontal_collision_radius
+	_horizontal_bounds_enabled = _horizontal_min_x <= _horizontal_max_x
+	_enforce_horizontal_bounds()
 
 
 func is_grapple_attached() -> bool:
@@ -189,6 +201,19 @@ func _sample_environment(delta: float) -> void:
 	var cause := _environment_status.evaluate(effects, delta)
 	if cause != DeathCauseScript.NONE:
 		death_requested.emit(cause)
+
+
+func _enforce_horizontal_bounds() -> void:
+	if not _horizontal_bounds_enabled:
+		return
+	var clamped_x := clampf(global_position.x, _horizontal_min_x, _horizontal_max_x)
+	if is_equal_approx(clamped_x, global_position.x):
+		return
+	global_position.x = clamped_x
+	if global_position.x <= _horizontal_min_x and velocity.x < 0.0:
+		velocity.x = 0.0
+	elif global_position.x >= _horizontal_max_x and velocity.x > 0.0:
+		velocity.x = 0.0
 
 
 func _occupied_sample_positions() -> Array[Vector2]:

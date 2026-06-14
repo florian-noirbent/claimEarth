@@ -15,6 +15,7 @@ const SaveRepositoryScript = preload("res://src/save/save_repository.gd")
 const SaveDataScript = preload("res://src/save/save_data.gd")
 const ScoreSubmissionScript = preload("res://src/leaderboard/score_submission.gd")
 const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simpleboards_leaderboard_service.gd")
+const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
@@ -53,6 +54,7 @@ const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simp
 @onready var depth_markers: Node2D = %DepthMarkers
 @onready var gameplay_feedback = %GameplayFeedback
 @onready var audio_director = %AudioDirector
+@onready var world_side_boundaries: WorldSideBoundaries = %WorldSideBoundaries
 
 var _run_coordinator := RunCoordinator.new()
 var _terrain_registry := TerrainRegistry.new()
@@ -87,14 +89,19 @@ var _throw_unlock_msec := 0
 
 
 func _ready() -> void:
+	_diag("ready: begin")
 	_current_seed = _initial_run_seed()
+	_diag("ready: seed initialized")
 	_configure_registries()
+	_diag("ready: registries configured")
 	_load_local_state()
+	_diag("ready: local state loaded")
 	if _test_mode:
 		if _leaderboard_service != null:
 			_configure_leaderboard_service()
 	else:
 		_configure_leaderboard_service()
+	_diag("ready: leaderboard configured")
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
 	menu_start_button.pressed.connect(_on_start_pressed)
@@ -111,7 +118,7 @@ func _ready() -> void:
 	if not _test_mode or _leaderboard_service != null:
 		_refresh_leaderboard()
 		_retry_pending_submissions()
-	print("Claim Earth app shell started")
+	_diag("ready: complete")
 
 
 func _initial_run_seed() -> int:
@@ -198,6 +205,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_start_pressed() -> void:
+	_diag("start button pressed")
 	transition_to(RunPhase.GENERATING)
 
 
@@ -297,6 +305,8 @@ func _dismiss_menu_shell() -> void:
 
 
 func _begin_generation() -> void:
+	var generation_started_msec := Time.get_ticks_msec()
+	_diag("generation: begin seed=%d" % _current_seed)
 	_terminal_outcome_locked = false
 	_pending_score_depth = -1
 	_active_flag_projectile = null
@@ -310,8 +320,10 @@ func _begin_generation() -> void:
 		_terrain_registry,
 		_current_seed
 	)
+	_diag("generation: generated in %d ms" % (Time.get_ticks_msec() - generation_started_msec))
 	_current_seed = SeedUtils.derive_seed(_current_seed, "next_run")
 	if _run_coordinator.current_state == RunPhase.GENERATING and _last_generation_result != null:
+		_diag("generation: transitioning to playing")
 		transition_to(RunPhase.PLAYING)
 
 
@@ -518,7 +530,7 @@ func _ensure_player() -> void:
 		add_child(_player)
 		_player.death_requested.connect(_on_player_death_requested)
 	var spawn_col := _last_generation_result.spawn_rect.position.x + int(_last_generation_result.spawn_rect.size.x / 2)
-	var spawn_row := _last_generation_result.spawn_rect.position.y + 2
+	var spawn_row := _last_generation_result.spawn_rect.position.y + 1
 	var spawn_position := HexMetrics.center_for_offset(spawn_col, spawn_row, world_presenter.hex_radius)
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, generation_profile.depth + 6, world_presenter.hex_radius).y
 	_player.set_spawn_position(spawn_position)
@@ -539,10 +551,13 @@ func _ensure_player() -> void:
 
 
 func _attach_world(result: WorldGenerationResult) -> void:
+	_diag("world: attach begin")
 	if _chunk_activity_index == null:
 		_chunk_activity_index = ChunkActivityIndex.new(result.world.dimensions)
 	world_presenter.configure(result.world, _terrain_registry, _chunk_activity_index)
+	_diag("world: presenter configured")
 	_ensure_player()
+	_diag("world: player ready")
 
 
 func _configure_registries() -> void:
@@ -559,9 +574,13 @@ func _configure_world_bounds() -> void:
 	var right_edge := HexMetrics.center_for_offset(generation_profile.width - 1, 0, world_presenter.hex_radius).x + world_presenter.hex_radius
 	var map_width := right_edge - left_edge
 	var viewport_size := get_viewport_rect().size
-	var horizontal_zoom := minf(1.0, maxf(0.1, (viewport_size.x * 0.92) / maxf(1.0, map_width)))
+	var horizontal_zoom := maxf(0.1, viewport_size.x ) / maxf(1.0, map_width - 16.0)
+	var top_edge := HexMetrics.center_for_offset(0, 0, world_presenter.hex_radius).y - world_presenter.hex_radius
+	var bottom_edge := HexMetrics.center_for_offset(0, generation_profile.depth - 1, world_presenter.hex_radius).y + world_presenter.hex_radius
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
+	_player.configure_horizontal_bounds(left_edge, right_edge)
+	world_side_boundaries.configure(left_edge, right_edge, top_edge, bottom_edge)
 	depth_markers.configure_bounds(left_edge, right_edge, world_presenter.hex_radius)
 
 
@@ -730,3 +749,7 @@ func _clear_preview_player() -> void:
 		return
 	_player.queue_free()
 	_player = null
+
+
+func _diag(message: String) -> void:
+	print("[CLAIM_EARTH][%s][%d] %s" % [BUILD_DIAGNOSTIC_ID, Time.get_ticks_msec(), message])

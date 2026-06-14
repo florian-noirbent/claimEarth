@@ -16,7 +16,7 @@ func test_same_seed_and_profile_produce_same_world_hash() -> void:
 	assert_eq(first.spawn_rect, second.spawn_rect)
 
 
-func test_generated_world_has_sealed_boundaries_and_spawn_air() -> void:
+func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 	var generator := WorldGenerator.new()
 	var profile := load("res://config/generation/default_profile.tres") as GenerationProfile
 	var registry := TerrainRegistry.new()
@@ -26,10 +26,8 @@ func test_generated_world_has_sealed_boundaries_and_spawn_air() -> void:
 
 	var result := generator.generate(profile, registry, 222)
 	assert_not_null(result)
-
-	for row in range(profile.depth):
-		assert_eq(result.world.get_committed_by_offset(0, row), stone_id)
-		assert_eq(result.world.get_committed_by_offset(profile.width - 1, row), stone_id)
+	assert_eq(result.spawn_rect.position.y, 0)
+	assert_eq(result.spawn_rect.size.y, 4)
 
 	for row in range(profile.depth - 2, profile.depth):
 		for col in range(profile.width):
@@ -44,6 +42,10 @@ func test_generated_world_has_sealed_boundaries_and_spawn_air() -> void:
 	var dirt_id := registry.get_definition(2).stable_id
 	for col in range(result.spawn_rect.position.x + 1, result.spawn_rect.end.x - 1):
 		assert_eq(result.world.get_committed_by_offset(col, result.spawn_rect.end.y - 1), dirt_id)
+
+	var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
+	for row in range(0, result.spawn_rect.end.y - 1):
+		assert_eq(result.world.get_committed_by_offset(spawn_col, row), air_id)
 
 
 func test_generated_world_uses_only_registered_ids() -> void:

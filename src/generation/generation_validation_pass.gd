@@ -15,14 +15,6 @@ func apply(context: GenerationContext) -> bool:
 	var width := context.profile.width
 	var depth := context.profile.depth
 
-	for row in range(depth):
-		if context.world.get_committed_by_offset(0, row) != stone_id:
-			context.validation_errors.append("left boundary is not sealed")
-			break
-		if context.world.get_committed_by_offset(width - 1, row) != stone_id:
-			context.validation_errors.append("right boundary is not sealed")
-			break
-
 	for row in range(maxi(0, depth - 2), depth):
 		for col in range(width):
 			if context.world.get_committed_by_offset(col, row) != stone_id:

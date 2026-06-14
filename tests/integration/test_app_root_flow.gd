@@ -38,6 +38,24 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_false(app_root.menu_panel.visible)
 	assert_false(app_root.title_label.visible)
 	assert_false(app_root.status_label.visible)
+	var left_edge := HexMetrics.center_for_offset(0, 0, app_root.world_presenter.hex_radius).x - app_root.world_presenter.hex_radius
+	var right_edge := HexMetrics.center_for_offset(app_root.generation_profile.width - 1, 0, app_root.world_presenter.hex_radius).x + app_root.world_presenter.hex_radius
+	var expected_zoom := app_root.get_viewport_rect().size.x / (right_edge - left_edge)
+	assert_almost_eq(app_root.get_player().camera.zoom.x, expected_zoom, 0.005)
+	assert_almost_eq(app_root.world_side_boundaries.left_wall_inner_edge(), left_edge, 0.001)
+	assert_almost_eq(app_root.world_side_boundaries.right_wall_inner_edge(), right_edge, 0.001)
+	var spawn_offset := HexMetrics.offset_for_world(app_root.get_player().global_position, app_root.world_presenter.hex_radius)
+	assert_eq(spawn_offset.y, app_root._last_generation_result.spawn_rect.position.y + 1)
+	app_root.get_player().global_position.x = left_edge - 100.0
+	app_root.get_player().velocity.x = -500.0
+	await wait_physics_frames(1)
+	assert_gte(app_root.get_player().global_position.x, left_edge + app_root.get_player().horizontal_collision_radius)
+	assert_gte(app_root.get_player().velocity.x, 0.0)
+	app_root.get_player().global_position.x = right_edge + 100.0
+	app_root.get_player().velocity.x = 500.0
+	await wait_physics_frames(1)
+	assert_lte(app_root.get_player().global_position.x, right_edge - app_root.get_player().horizontal_collision_radius)
+	assert_lte(app_root.get_player().velocity.x, 0.0)
 	GameplayAssertionsScript.assert_app_is_playing(self, app_root)
 
 
