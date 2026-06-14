@@ -45,7 +45,7 @@ func test_failed_submission_is_saved_as_pending_and_result_still_opens() -> void
 	await wait_process_frames(1)
 
 	app_root.transition_to(RunPhase.PLAYING)
-	app_root.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
+	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
 	app_root.player_name_input.text = "Mira"
 	app_root.confirm_score_button.pressed.emit()
 	await wait_process_frames(1)

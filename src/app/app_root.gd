@@ -6,10 +6,6 @@ signal generation_started
 signal gameplay_started
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
-const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
-const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
-const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
-const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
 const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 
@@ -19,6 +15,7 @@ const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
+@onready var item_controller: RunItemController = %RunItemController
 @onready var title_label: Label = ui.title_label
 @onready var owner_label: Label = ui.owner_label
 @onready var status_label: Label = ui.status_label
@@ -50,18 +47,13 @@ var _current_seed := 0
 var _chunk_activity_index: ChunkActivityIndex
 var _player: PlayerController
 var _grapple_anchor_query = WorldGrappleAnchorQueryScript.new()
-var _item_inventory = ItemInventoryScript.new()
-var _trajectory_service = ItemTrajectoryServiceScript.new()
-var _explosion_service = ExplosionServiceScript.new()
 var _simulation_backend = CooperativeChunkBackendScript.new()
 var _simulation_accumulator := 0.0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
-var _active_flag_projectile = null
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := true
 var _test_mode := false
-var _throw_unlock_msec := 0
 var _configured_save_path := ""
 var _injected_leaderboard_service
 
@@ -71,6 +63,7 @@ func _ready() -> void:
 	_current_seed = _initial_run_seed()
 	_diag("ready: seed initialized")
 	_configure_registries()
+	item_controller.configure_catalog(_item_registry, world_presenter.hex_radius)
 	_diag("ready: registries configured")
 	if not _configured_save_path.is_empty():
 		score_controller.configure_save_path(_configured_save_path)
@@ -88,6 +81,12 @@ func _ready() -> void:
 	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
 	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
 	score_controller.pending_retry_finished.connect(_on_pending_retry_finished)
+	item_controller.player_killed.connect(_on_player_death_requested)
+	item_controller.bomb_exploded.connect(_on_bomb_exploded)
+	item_controller.flag_planted.connect(_on_flag_planted)
+	item_controller.flag_destroyed.connect(_on_flag_destroyed)
+	item_controller.flag_flight_changed.connect(_on_flag_flight_changed)
+	item_controller.item_thrown.connect(audio_director.play_throw)
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
 	if score_controller.has_service():
@@ -141,11 +140,15 @@ func get_player() -> PlayerController:
 
 
 func active_projectile_count() -> int:
-	var count := 0
-	for child in get_children():
-		if child is ItemProjectile:
-			count += 1
-	return count
+	return item_controller.active_projectile_count()
+
+
+func select_item_for_test(index: int) -> void:
+	item_controller.select_index(index)
+
+
+func throw_selected_item_for_test(aim_position: Vector2, bypass_cooldown: bool = false) -> bool:
+	return item_controller.throw_selected(aim_position, bypass_cooldown)
 
 
 func pending_score_depth() -> int:
@@ -213,7 +216,6 @@ func _apply_state(next_state: StringName) -> void:
 			ui.dismiss_menu_shell()
 			if _last_generation_result != null:
 				_attach_world(_last_generation_result)
-			_throw_unlock_msec = Time.get_ticks_msec() + 1000
 			_set_player_active(true)
 			gameplay_started.emit()
 		RunPhase.FLAG_IN_FLIGHT:
@@ -238,7 +240,7 @@ func _begin_generation() -> void:
 	_diag("generation: begin seed=%d" % _current_seed)
 	_terminal_outcome_locked = false
 	_pending_score_depth = -1
-	_active_flag_projectile = null
+	item_controller.clear_run()
 	_simulation_accumulator = 0.0
 	_clear_preview_player()
 	_chunk_activity_index = null
@@ -266,7 +268,7 @@ func _process(delta: float) -> void:
 	if _run_coordinator.current_state != RunPhase.PLAYING and _run_coordinator.current_state != RunPhase.FLAG_IN_FLIGHT:
 		return
 
-	_handle_item_input()
+	item_controller.handle_input(get_global_mouse_position())
 	var player_offset := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius)
 	var visible_start_row := maxi(0, player_offset.y - int(world_presenter.visible_row_count / 3))
 	if _chunk_activity_index != null:
@@ -284,96 +286,40 @@ func _process(delta: float) -> void:
 	_refresh_play_status()
 
 
-func resolve_bomb_explosion(item_action, impact_position: Vector2, _projectile) -> void:
-	if _last_generation_result == null or _chunk_activity_index == null:
-		return
-	if _player != null and _player.global_position.distance_to(impact_position) <= item_action.factory.lethal_radius * world_presenter.hex_radius:
-		_on_player_death_requested(DeathCause.BOMB)
-	_explosion_service.explode(
-		_last_generation_result.world,
-		_terrain_registry,
-		_chunk_activity_index,
-		impact_position,
-		world_presenter.hex_radius,
-		item_action.factory.blast_radius,
-		item_action.factory.lethal_radius
-	)
-	audio_director.play_explosion(item_action.factory.blast_radius >= 4)
-	gameplay_feedback.spawn_ring(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius * world_presenter.hex_radius * 0.75)
+func _on_bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
+	audio_director.play_explosion(is_large)
+	gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
 	if _player != null:
-		_player.camera.apply_shake(10.0 if item_action.factory.blast_radius >= 4 else 6.0)
+		_player.camera.apply_shake(10.0 if is_large else 6.0)
 
 
-func resolve_flag_landing(_item_action, impact_position: Vector2, _projectile, resolution_kind: StringName) -> void:
+func _on_flag_planted(depth: int, impact_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
-	_active_flag_projectile = null
-	if resolution_kind == &"lava":
-		_complete_terminal_outcome("The flag melted in lava.", RunPhase.DEATH)
-		return
-	if resolution_kind != &"impact":
-		transition_to(RunPhase.PLAYING)
-		return
-	_pending_score_depth = HexMetrics.offset_for_world(impact_position, world_presenter.hex_radius).y
+	_pending_score_depth = depth
 	audio_director.play_flag_plant()
 	gameplay_feedback.spawn_ring(impact_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
 	transition_to(RunPhase.NAME_ENTRY)
 
 
-func _handle_item_input() -> void:
-	if _run_coordinator.current_state == RunPhase.FLAG_IN_FLIGHT:
-		return
-	if Input.is_action_just_pressed(InputActions.SELECT_SMALL_BOMB):
-		_item_inventory.select_index(0)
-	if Input.is_action_just_pressed(InputActions.SELECT_LARGE_BOMB):
-		_item_inventory.select_index(1)
-	if Input.is_action_just_pressed(InputActions.SELECT_FLAG):
-		_item_inventory.select_index(2)
-	if Input.is_action_just_pressed(InputActions.THROW_SELECTED):
-		_throw_selected_item()
+func _on_flag_destroyed() -> void:
+	_complete_terminal_outcome("The flag melted in lava.", RunPhase.DEATH)
 
 
-func _throw_selected_item() -> void:
-	if _player == null or _last_generation_result == null:
+func _on_flag_flight_changed(in_flight: bool) -> void:
+	if _terminal_outcome_locked:
 		return
-	if Time.get_ticks_msec() < _throw_unlock_msec:
-		return
-	var definition := _item_inventory.selected_definition()
-	if definition == null or not _item_inventory.consume(definition):
-		return
-
-	var action = definition.action_factory.create_action(definition)
-	var projectile_data: Dictionary = action.create_projectile(
-		_player.global_position,
-		get_global_mouse_position(),
-		_trajectory_service,
-		_player.velocity
-	)
-	var projectile = ItemProjectileScript.new()
-	projectile.action = action
-	projectile.world = _last_generation_result.world
-	projectile.terrain_registry = _terrain_registry
-	projectile.hex_radius = world_presenter.hex_radius
-	projectile.global_position = _player.global_position
-	projectile.configure(projectile_data)
-	projectile.resolved.connect(func(resolved_projectile, impact_position: Vector2, resolution_kind: StringName) -> void:
-		action.resolve(self, impact_position, resolved_projectile, resolution_kind)
-	)
-	add_child(projectile)
-	audio_director.play_throw()
-	if action.locks_throwing_until_resolved():
-		_active_flag_projectile = projectile
+	if in_flight:
 		transition_to(RunPhase.FLAG_IN_FLIGHT)
+	elif _run_coordinator.current_state == RunPhase.FLAG_IN_FLIGHT:
+		transition_to(RunPhase.PLAYING)
 
 
 func _refresh_play_status() -> void:
-	var selected_definition := _item_inventory.selected_definition()
-	if selected_definition == null or _player == null:
+	var item_status := item_controller.inventory_status()
+	if item_status.selected_name.is_empty() or _player == null:
 		ui.show_play_status("No items configured", "")
 		return
-	var parts := PackedStringArray()
-	for definition in _item_inventory.definitions():
-		parts.append("%s:%d" % [definition.display_name, _item_inventory.count_for(definition)])
 	var player_depth := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
 	var best_text := "PB:%d" % score_controller.personal_best_depth if score_controller.personal_best_depth >= 0 else "PB:-"
 	var rope_text := "Hooked" if _player.is_grapple_attached() else "Free"
@@ -381,10 +327,10 @@ func _refresh_play_status() -> void:
 		player_depth,
 		best_text,
 		rope_text,
-		" | ".join(parts),
+		" | ".join(item_status.counts),
 	]
-	var hint_text := "Selected: %s" % selected_definition.display_name
-	if _active_flag_projectile != null:
+	var hint_text := "Selected: %s" % item_status.selected_name
+	if item_status.flag_in_flight:
 		hint_text += " | Flag in flight"
 	ui.show_play_status(status_text, hint_text)
 
@@ -462,7 +408,7 @@ func _ensure_player() -> void:
 	_simulation_backend.initialize(_last_generation_result.world, _terrain_registry, _last_generation_result.final_seed)
 	_simulation_backend.schedule([])
 	_configure_world_bounds()
-	_item_inventory.configure(_item_registry)
+	item_controller.configure_run(_player, _last_generation_result.world, _terrain_registry, _chunk_activity_index, world_presenter.hex_radius)
 	_update_depth_markers()
 
 

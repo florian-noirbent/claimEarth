@@ -107,7 +107,7 @@ func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:
 	await wait_process_frames(1)
 
 	app_root.transition_to(RunPhase.PLAYING)
-	app_root.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
+	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
 
 	assert_eq(app_root.get_run_state(), RunPhase.NAME_ENTRY)
 	assert_true(app_root.name_entry_panel.visible)
@@ -132,7 +132,7 @@ func test_death_locks_out_later_terminal_outcomes() -> void:
 
 	app_root.transition_to(RunPhase.PLAYING)
 	app_root._on_player_death_requested(DeathCauseScript.LAVA)
-	app_root.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 40, app_root.world_presenter.hex_radius), null, &"impact")
+	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 40, app_root.world_presenter.hex_radius), null, &"impact")
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 	assert_string_contains(app_root.result_status.text, "Lava")
@@ -173,9 +173,9 @@ func test_start_run_for_test_throws_flag_and_locks_item_flow() -> void:
 	, 1.0)
 	await wait_seconds(1.1)
 
-	app_root._item_inventory.select_index(2)
+	app_root.select_item_for_test(2)
 	ScenarioDriverScript.set_mouse_world_position(app_root, app_root.get_player().global_position + Vector2(80, 0))
-	app_root._throw_selected_item()
+	app_root.throw_selected_item_for_test(app_root.get_player().global_position + Vector2.DOWN * 20.0)
 
 	assert_eq(app_root.get_run_state(), RunPhase.FLAG_IN_FLIGHT)
 	assert_eq(app_root.active_projectile_count(), 1)
@@ -194,9 +194,9 @@ func test_start_run_for_test_blocks_throwing_for_first_second() -> void:
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 1.0)
 
-	app_root._item_inventory.select_index(0)
+	app_root.select_item_for_test(0)
 	ScenarioDriverScript.set_mouse_world_position(app_root, app_root.get_player().global_position + Vector2(80, 0))
-	app_root._throw_selected_item()
+	app_root.throw_selected_item_for_test(app_root.get_player().global_position + Vector2.DOWN * 20.0)
 
 	assert_eq(app_root.active_projectile_count(), 0)
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)

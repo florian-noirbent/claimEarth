@@ -719,9 +719,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 ### Refactor 3 - Extract RunItemController
 
-- State: NOT_STARTED
-- Previous commit: recorded when work begins
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `ab44a86`
 - Commit subject: `refactor: extract run item controller`
+- Result: `RunItemController` owns inventory, selection, cooldown, trajectories,
+  projectile nodes, explosion mutations, and flag-flight locking. AppRoot exposes
+  stable test façades and routes typed item outcomes into run phases and feedback.
 
 ### Refactor 4 - Extract RunWorldController
 
