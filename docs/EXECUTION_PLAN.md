@@ -708,9 +708,14 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 ### Refactor 2 - Extract ScoreController
 
-- State: NOT_STARTED
-- Previous commit: recorded when work begins
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `8db26d4`
 - Commit subject: `refactor: extract score controller`
+- Result: `ScoreController` owns save loading/writing, player identity, local/global
+  bests, pending retries, SimpleBoards service wiring, and score submissions. Fake
+  service success/failure and validation paths have focused automated coverage.
 
 ### Refactor 3 - Extract RunItemController
 

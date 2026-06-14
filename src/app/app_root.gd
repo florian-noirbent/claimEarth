@@ -11,10 +11,6 @@ const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_ser
 const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
 const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
-const SaveRepositoryScript = preload("res://src/save/save_repository.gd")
-const SaveDataScript = preload("res://src/save/save_data.gd")
-const ScoreSubmissionScript = preload("res://src/leaderboard/score_submission.gd")
-const SimpleBoardsLeaderboardServiceScript = preload("res://src/leaderboard/simpleboards_leaderboard_service.gd")
 const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
@@ -22,6 +18,7 @@ const BUILD_DIAGNOSTIC_ID := "web-debug-2026-06-14-a"
 @export var leaderboard_config = preload("res://config/leaderboard/simpleboards.tres")
 
 @onready var ui: AppUiController = %UiLayer
+@onready var score_controller: ScoreController = %ScoreController
 @onready var title_label: Label = ui.title_label
 @onready var owner_label: Label = ui.owner_label
 @onready var status_label: Label = ui.status_label
@@ -57,23 +54,16 @@ var _item_inventory = ItemInventoryScript.new()
 var _trajectory_service = ItemTrajectoryServiceScript.new()
 var _explosion_service = ExplosionServiceScript.new()
 var _simulation_backend = CooperativeChunkBackendScript.new()
-var _save_repository = SaveRepositoryScript.new()
-var _leaderboard_service
 var _simulation_accumulator := 0.0
-var _last_player_name := "Player"
 var _pending_score_depth := -1
-var _personal_best_depth := -1
-var _global_best_depth := -1
-var _global_best_player := ""
 var _terminal_outcome_locked := false
 var _active_flag_projectile = null
-var _storage_warning := ""
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := true
-var _pending_submissions: Array[Dictionary] = []
-var _retrying_pending := false
 var _test_mode := false
 var _throw_unlock_msec := 0
+var _configured_save_path := ""
+var _injected_leaderboard_service
 
 
 func _ready() -> void:
@@ -82,13 +72,10 @@ func _ready() -> void:
 	_diag("ready: seed initialized")
 	_configure_registries()
 	_diag("ready: registries configured")
-	_load_local_state()
+	if not _configured_save_path.is_empty():
+		score_controller.configure_save_path(_configured_save_path)
+	score_controller.configure(leaderboard_config, _test_mode, _injected_leaderboard_service)
 	_diag("ready: local state loaded")
-	if _test_mode:
-		if _leaderboard_service != null:
-			_configure_leaderboard_service()
-	else:
-		_configure_leaderboard_service()
 	_diag("ready: leaderboard configured")
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	_generation_task.progress_changed.connect(_on_generation_progress_changed)
@@ -97,9 +84,13 @@ func _ready() -> void:
 	ui.menu_requested.connect(_on_back_to_menu_pressed)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_pressed)
+	score_controller.profile_changed.connect(_update_depth_markers)
+	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
+	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
+	score_controller.pending_retry_finished.connect(_on_pending_retry_finished)
 	_apply_state(_run_coordinator.current_state)
 	_start_menu_preview()
-	if not _test_mode or _leaderboard_service != null:
+	if score_controller.has_service():
 		_refresh_leaderboard()
 		_retry_pending_submissions()
 	_diag("ready: complete")
@@ -122,7 +113,7 @@ func transition_to(next_state: StringName) -> void:
 
 
 func configure_save_path_for_test(save_path: String) -> void:
-	_save_repository.configure(save_path)
+	_configured_save_path = save_path
 
 
 func set_test_mode(enabled: bool) -> void:
@@ -136,7 +127,7 @@ func set_menu_preview_enabled(enabled: bool) -> void:
 
 
 func configure_leaderboard_service_for_test(service) -> void:
-	_leaderboard_service = service
+	_injected_leaderboard_service = service
 
 
 func start_run_for_test(seed: int) -> void:
@@ -206,7 +197,7 @@ func _on_state_changed(_previous_state: StringName, next_state: StringName) -> v
 
 
 func _apply_state(next_state: StringName) -> void:
-	ui.apply_state(next_state, _current_seed, _storage_warning, _pending_score_depth, _last_player_name)
+	ui.apply_state(next_state, _current_seed, score_controller.storage_warning, _pending_score_depth, score_controller.last_player_name)
 
 	match next_state:
 		RunPhase.MAIN_MENU:
@@ -384,7 +375,7 @@ func _refresh_play_status() -> void:
 	for definition in _item_inventory.definitions():
 		parts.append("%s:%d" % [definition.display_name, _item_inventory.count_for(definition)])
 	var player_depth := HexMetrics.offset_for_world(_player.global_position, world_presenter.hex_radius).y
-	var best_text := "PB:%d" % _personal_best_depth if _personal_best_depth >= 0 else "PB:-"
+	var best_text := "PB:%d" % score_controller.personal_best_depth if score_controller.personal_best_depth >= 0 else "PB:-"
 	var rope_text := "Hooked" if _player.is_grapple_attached() else "Free"
 	var status_text := "Depth %d | %s | %s | %s" % [
 		player_depth,
@@ -406,36 +397,27 @@ func _on_player_death_requested(cause: StringName) -> void:
 
 
 func _on_confirm_score_requested(player_name: String) -> void:
-	var trimmed_name := player_name.strip_edges()
-	if trimmed_name.is_empty():
-		ui.show_name_error("Enter a name between 1 and 20 characters.")
+	var seed := _last_generation_result.final_seed if _last_generation_result != null else _current_seed
+	var result := score_controller.confirm_score(player_name, _pending_score_depth, seed)
+	if not result.accepted:
+		ui.show_name_error(result.error)
 		return
-	_last_player_name = trimmed_name.substr(0, 20)
 	audio_director.play_ui_confirm()
-	if _pending_score_depth > _personal_best_depth:
-		_personal_best_depth = _pending_score_depth
 	_update_depth_markers()
-	_persist_local_state()
-	var submission = ScoreSubmissionScript.new()
-	submission.player_name = _last_player_name
-	submission.score_depth = _pending_score_depth
-	submission.seed = _last_generation_result.final_seed if _last_generation_result != null else _current_seed
-	submission.game_version = leaderboard_config.game_version if leaderboard_config != null else "dev"
-	if _leaderboard_service == null:
+	if not result.submitted:
 		ui.show_result("%s claimed depth %d. Personal best: %d." % [
-			_last_player_name,
+			score_controller.last_player_name,
 			_pending_score_depth,
-			_personal_best_depth,
+			score_controller.personal_best_depth,
 		])
 		transition_to(RunPhase.RESULT)
 		return
 	ui.show_result("%s claimed depth %d. Personal best: %d.\nSubmitting score..." % [
-		_last_player_name,
+		score_controller.last_player_name,
 		_pending_score_depth,
-		_personal_best_depth,
+		score_controller.personal_best_depth,
 	])
 	transition_to(RunPhase.SUBMITTING)
-	_leaderboard_service.submit_score(submission)
 
 
 func _on_restart_pressed() -> void:
@@ -518,28 +500,9 @@ func _configure_world_bounds() -> void:
 	depth_markers.configure_bounds(left_edge, right_edge, world_presenter.hex_radius)
 
 
-func _load_local_state() -> void:
-	_storage_warning = _save_repository.storage_warning()
-	var save_data = _save_repository.load_data()
-	_last_player_name = save_data.last_player_name
-	_personal_best_depth = save_data.personal_best_depth
-	_pending_submissions.clear()
-	for pending_submission in save_data.pending_submissions:
-		_pending_submissions.append(pending_submission.duplicate(true))
-
-
-func _persist_local_state() -> void:
-	var save_data = SaveDataScript.new()
-	save_data.last_player_name = _last_player_name
-	save_data.personal_best_depth = _personal_best_depth
-	for pending_submission in _pending_submissions:
-		save_data.pending_submissions.append(pending_submission.duplicate(true))
-	_save_repository.save_data(save_data)
-
-
 func _update_depth_markers() -> void:
-	depth_markers.set_personal_depth(_personal_best_depth)
-	depth_markers.set_global_depth(_global_best_depth, _global_best_player)
+	depth_markers.set_personal_depth(score_controller.personal_best_depth)
+	depth_markers.set_global_depth(score_controller.global_best_depth, score_controller.global_best_player)
 
 
 func _start_menu_preview() -> void:
@@ -564,40 +527,14 @@ func _generate_menu_preview() -> void:
 	_attach_preview_world(preview_result)
 
 
-func _configure_leaderboard_service() -> void:
-	if _leaderboard_service != null:
-		if _leaderboard_service.get_parent() == null:
-			add_child(_leaderboard_service)
-		_connect_leaderboard_service()
-		return
-	_leaderboard_service = SimpleBoardsLeaderboardServiceScript.new()
-	add_child(_leaderboard_service)
-	_leaderboard_service.configure(leaderboard_config)
-	_connect_leaderboard_service()
-
-
-func _connect_leaderboard_service() -> void:
-	if not _leaderboard_service.top_loaded.is_connected(_on_leaderboard_top_loaded):
-		_leaderboard_service.top_loaded.connect(_on_leaderboard_top_loaded)
-	if not _leaderboard_service.submission_finished.is_connected(_on_leaderboard_submission_finished):
-		_leaderboard_service.submission_finished.connect(_on_leaderboard_submission_finished)
-	if not _leaderboard_service.pending_retry_finished.is_connected(_on_pending_retry_finished):
-		_leaderboard_service.pending_retry_finished.connect(_on_pending_retry_finished)
-
-
 func _refresh_leaderboard() -> void:
 	ui.show_leaderboard_loading()
-	if _leaderboard_service == null:
+	if not score_controller.fetch_top(10):
 		ui.show_leaderboard("Leaderboard unavailable.", "[center]No entries loaded yet.[/center]")
-		return
-	_leaderboard_service.fetch_top(10)
 
 
 func _retry_pending_submissions() -> void:
-	if _leaderboard_service == null or _pending_submissions.is_empty() or _retrying_pending:
-		return
-	_retrying_pending = true
-	_leaderboard_service.retry_pending(_pending_submissions)
+	score_controller.retry_pending()
 
 
 func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -> void:
@@ -606,8 +543,6 @@ func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -
 		return
 	if entries.is_empty():
 		ui.show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Earth owned by: Nobody yet")
-		_global_best_depth = -1
-		_global_best_player = ""
 		_update_depth_markers()
 		return
 	var status := "Top depths"
@@ -616,20 +551,16 @@ func _on_leaderboard_top_loaded(entries: Array, failed: bool, message: String) -
 		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
 	var top_entry = entries[0]
 	var owner := "Earth owned by: %s" % top_entry.player_name
-	_global_best_depth = top_entry.score_depth
-	_global_best_player = top_entry.player_name
 	ui.show_leaderboard(status, "[code]%s[/code]" % "\n".join(lines), owner)
 	_update_depth_markers()
 
 
 func _on_leaderboard_submission_finished(submission, entry, failed: bool, message: String) -> void:
 	if failed:
-		_pending_submissions.append(submission.to_pending_dictionary())
-		_persist_local_state()
 		ui.show_result("%s claimed depth %d. Personal best: %d.\nOnline submit failed: %s" % [
 			submission.player_name,
 			submission.score_depth,
-			_personal_best_depth,
+			score_controller.personal_best_depth,
 			message,
 		])
 		transition_to(RunPhase.RESULT)
@@ -637,22 +568,14 @@ func _on_leaderboard_submission_finished(submission, entry, failed: bool, messag
 	ui.show_result("%s claimed depth %d. Personal best: %d.\nScore submitted." % [
 		submission.player_name,
 		submission.score_depth,
-		_personal_best_depth,
+		score_controller.personal_best_depth,
 	])
-	if entry != null and (_global_best_depth < 0 or entry.score_depth >= _global_best_depth):
-		_global_best_depth = entry.score_depth
-		_global_best_player = entry.player_name
 	_update_depth_markers()
 	_refresh_leaderboard()
 	transition_to(RunPhase.RESULT)
 
 
-func _on_pending_retry_finished(remaining_pending: Array, successful_count: int, message: String) -> void:
-	_retrying_pending = false
-	_pending_submissions.clear()
-	for pending_submission in remaining_pending:
-		_pending_submissions.append(pending_submission.duplicate(true))
-	_persist_local_state()
+func _on_pending_retry_finished(successful_count: int, message: String) -> void:
 	if successful_count > 0:
 		_refresh_leaderboard()
 	if _run_coordinator.current_state == RunPhase.LEADERBOARD and not message.is_empty() and successful_count == 0:
