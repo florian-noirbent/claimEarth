@@ -754,6 +754,16 @@ planning commit precedes Step 0 and establishes the Git repository.
 
 ### Refactor 6 - Final Refactor Gates
 
-- State: NOT_STARTED
-- Previous commit: recorded when work begins
+- State: COMPLETE
+- Started: 2026-06-14
+- Completed: 2026-06-14
+- Previous commit: `a4bdc9e`
 - Commit subject: `test: verify app root refactor gates`
+- Result: `tools/test.ps1` passes 98/98 tests, including preview cancellation and
+  repeated three-run cleanup; `tools/test_performance.ps1` passes both runtime
+  contracts; Web export and HTTP payload smoke pass; Chromium produces a nonblank
+  screenshot with an empty runtime-error log. The Chromium script now isolates its
+  profile, uses SwiftShader for WebGL, removes stale evidence, and waits for delayed
+  screenshot writes. The headless screenshot still shows Godot's loading shell, so
+  interactive menu/gameplay rendering remains covered by the Godot integration suite
+  rather than claimed as browser automation.

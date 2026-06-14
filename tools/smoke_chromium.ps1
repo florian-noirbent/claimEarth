@@ -18,19 +18,29 @@ if ([string]::IsNullOrWhiteSpace($chromePath)) {
 $serverId = & "$PSScriptRoot\serve_web.ps1"
 $screenshotPath = Join-Path $PSScriptRoot "..\build\web\chromium-smoke.png"
 $stderrPath = Join-Path $PSScriptRoot "..\build\web\chromium-smoke.stderr.log"
+$profilePath = Join-Path $PSScriptRoot "..\build\web\chromium-profile"
 try {
+	Remove-Item -LiteralPath $screenshotPath -Force -ErrorAction SilentlyContinue
+	Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+	Remove-Item -LiteralPath $profilePath -Recurse -Force -ErrorAction SilentlyContinue
 	Start-Sleep -Seconds 2
 	& $chromePath `
 		--headless `
 		--no-sandbox `
-		--disable-gpu `
+		--use-angle=swiftshader `
+		--enable-unsafe-swiftshader `
 		--hide-scrollbars `
+		"--user-data-dir=$profilePath" `
 		--window-size=1280,720 `
-		--virtual-time-budget=12000 `
+		--virtual-time-budget=30000 `
 		--enable-logging=stderr `
 		--log-level=0 `
 		"--screenshot=$screenshotPath" `
 		"http://127.0.0.1:8936/index.html" 2> $stderrPath
+	$deadline = [DateTime]::UtcNow.AddSeconds(5)
+	while (-not (Test-Path -LiteralPath $screenshotPath -PathType Leaf) -and [DateTime]::UtcNow -lt $deadline) {
+		Start-Sleep -Milliseconds 100
+	}
 	if (-not (Test-Path -LiteralPath $screenshotPath -PathType Leaf)) {
 		throw "Chromium smoke test did not create a screenshot."
 	}
