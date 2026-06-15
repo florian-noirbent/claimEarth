@@ -123,9 +123,20 @@ func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _p
 func inventory_status() -> Dictionary:
 	var selected_definition: ItemDefinition = _inventory.selected_definition()
 	var counts := PackedStringArray()
-	for definition in _inventory.definitions():
+	var items: Array[Dictionary] = []
+	var definitions := _inventory.definitions()
+	for index in definitions.size():
+		var definition := definitions[index]
+		var count := _inventory.count_for(definition)
 		counts.append("%s:%d" % [definition.display_name, _inventory.count_for(definition)])
-	return {"selected_name": selected_definition.display_name if selected_definition != null else "", "counts": counts, "flag_in_flight": is_flag_in_flight()}.duplicate(true)
+		items.append({
+			"name": definition.display_name,
+			"icon": definition.icon,
+			"count": count,
+			"selected": definition == selected_definition,
+			"shortcut": index + 1,
+		})
+	return {"selected_name": selected_definition.display_name if selected_definition != null else "", "counts": counts, "items": items, "flag_in_flight": is_flag_in_flight()}.duplicate(true)
 
 
 func active_projectile_count() -> int:

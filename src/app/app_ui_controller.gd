@@ -1,10 +1,12 @@
 class_name AppUiController
 extends CanvasLayer
 
+const ItemToolbarSlotScene := preload("res://scenes/ui/item_toolbar_slot.tscn")
 
 signal start_requested
 signal leaderboard_requested
 signal menu_requested
+signal pause_requested
 signal score_confirmed(player_name: String)
 signal restart_requested
 
@@ -21,8 +23,12 @@ signal restart_requested
 @onready var overlay_root: MarginContainer = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
 @onready var play_status_label: Label = %PlayStatus
-@onready var hint_label: Label = %HintLabel
-@onready var back_to_menu_button: Button = %BackToMenuButton
+@onready var run_state_label: Label = %RunStateLabel
+@onready var pause_button: Button = %PauseButton
+@onready var item_toolbar: PanelContainer = %ItemToolbar
+@onready var item_toolbar_content: HBoxContainer = %ItemToolbarContent
+@onready var selection_name_label: Label = %SelectionNameLabel
+@onready var selection_name_timer: Timer = %SelectionNameTimer
 @onready var name_entry_panel: PanelContainer = %NameEntryPanel
 @onready var name_entry_status: Label = %NameEntryStatus
 @onready var player_name_input: LineEdit = %PlayerNameInput
@@ -33,20 +39,27 @@ signal restart_requested
 @onready var restart_button: Button = %RestartButton
 @onready var result_menu_button: Button = %ResultMenuButton
 @onready var pause_panel: PanelContainer = %PausePanel
+@onready var resume_button: Button = %ResumeButton
+@onready var pause_menu_button: Button = %PauseMenuButton
 @onready var leaderboard_panel: PanelContainer = %LeaderboardPanel
 @onready var leaderboard_status: Label = %LeaderboardStatus
 @onready var leaderboard_rows: RichTextLabel = %LeaderboardRows
 @onready var leaderboard_back_button: Button = %LeaderboardBackButton
 
+var _selected_item_name := ""
+
 
 func _ready() -> void:
 	menu_start_button.pressed.connect(start_requested.emit)
 	menu_leaderboard_button.pressed.connect(leaderboard_requested.emit)
-	back_to_menu_button.pressed.connect(menu_requested.emit)
+	pause_button.pressed.connect(pause_requested.emit)
+	resume_button.pressed.connect(pause_requested.emit)
+	pause_menu_button.pressed.connect(menu_requested.emit)
 	result_menu_button.pressed.connect(menu_requested.emit)
 	leaderboard_back_button.pressed.connect(menu_requested.emit)
 	restart_button.pressed.connect(restart_requested.emit)
 	confirm_score_button.pressed.connect(_on_confirm_score_pressed)
+	selection_name_timer.timeout.connect(_on_selection_name_timeout)
 	controls_label.text = "Plant the deepest flag to claim Earth (3).\nUse small bombs (1), large bombs (2), and your grappling hook (RMB)."
 	owner_label.text = "Earth owned by: Nobody yet"
 
@@ -70,7 +83,12 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 		RunPhase.DEATH,
 		RunPhase.RESULT,
 	]
-	playing_panel.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT, RunPhase.PAUSED]
+	playing_panel.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	pause_button.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	item_toolbar.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	if state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
+		selection_name_label.visible = false
+		selection_name_timer.stop()
 	name_entry_panel.visible = state == RunPhase.NAME_ENTRY
 	result_panel.visible = state in [RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT]
 	pause_panel.visible = state == RunPhase.PAUSED
@@ -109,17 +127,51 @@ func show_generation_progress(progress: float, label: String) -> void:
 
 func show_play_status(status_text: String, hint_text: String) -> void:
 	play_status_label.text = status_text
-	hint_label.text = hint_text
+	run_state_label.text = hint_text
 
 
 func show_run_status(depth: int, personal_best: int, hooked: bool, item_status: Dictionary) -> void:
 	var best_text := "PB:%d" % personal_best if personal_best >= 0 else "PB:-"
 	var rope_text := "Hooked" if hooked else "Free"
-	var counts: PackedStringArray = item_status["counts"]
-	var selected_name := String(item_status["selected_name"])
-	var flight_suffix := " | Flag in flight" if bool(item_status["flag_in_flight"]) else ""
-	play_status_label.text = "Depth %d | %s | %s | %s" % [depth, best_text, rope_text, " | ".join(counts)]
-	hint_label.text = "Selected: %s%s" % [selected_name, flight_suffix]
+	play_status_label.text = "Depth %d  |  %s" % [depth, best_text]
+	run_state_label.text = "Flag in flight" if bool(item_status["flag_in_flight"]) else rope_text
+	_update_item_toolbar(item_status.get("items", []))
+
+
+func _update_item_toolbar(items: Array) -> void:
+	if item_toolbar_content.get_child_count() != items.size():
+		for child in item_toolbar_content.get_children():
+			child.free()
+		for _item in items:
+			item_toolbar_content.add_child(ItemToolbarSlotScene.instantiate())
+	for index in items.size():
+		var item: Dictionary = items[index]
+		var slot := item_toolbar_content.get_child(index) as ItemToolbarSlot
+		var selected := bool(item.get("selected", false))
+		slot.configure(
+			item.get("icon") as Texture2D,
+			str(item.get("shortcut", index + 1)),
+			int(item.get("count", 0)),
+			selected
+		)
+		if selected:
+			_show_selection_name_if_changed(str(item.get("name", "Item")))
+
+
+func _show_selection_name_if_changed(item_name: String) -> void:
+	if item_name == _selected_item_name:
+		return
+	var had_selection := not _selected_item_name.is_empty()
+	_selected_item_name = item_name
+	if not had_selection:
+		return
+	selection_name_label.text = item_name
+	selection_name_label.visible = true
+	selection_name_timer.start()
+
+
+func _on_selection_name_timeout() -> void:
+	selection_name_label.visible = false
 
 
 func show_name_error(message: String) -> void:

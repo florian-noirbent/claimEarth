@@ -89,7 +89,9 @@ func test_back_to_menu_restores_menu_visibility() -> void:
 	await wait_process_frames(1)
 
 	app_root.transition_to(RunPhase.PLAYING)
-	app_root.ui.back_to_menu_button.pressed.emit()
+	app_root.ui.pause_button.pressed.emit()
+	assert_eq(app_root.get_run_state(), RunPhase.PAUSED)
+	app_root.ui.pause_menu_button.pressed.emit()
 
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
 	assert_true(app_root.ui.menu_root.visible)
@@ -150,11 +152,11 @@ func test_pause_toggles_from_playing_and_back() -> void:
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 1.0)
-	app_root.transition_to(RunPhase.PAUSED)
+	app_root.ui.pause_button.pressed.emit()
 	assert_eq(app_root.get_run_state(), RunPhase.PAUSED)
 	assert_false(app_root.get_player().is_physics_processing())
 
-	app_root.transition_to(RunPhase.PLAYING)
+	app_root.ui.resume_button.pressed.emit()
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
 	assert_true(app_root.get_player().is_physics_processing())
 

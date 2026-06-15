@@ -17,6 +17,7 @@ historical build plan.
 config/                 Tunable Resource definitions and catalogs
 scenes/app/main.tscn    Main composition scene
 scenes/player/          Player scene
+scenes/ui/              Reusable editor-authored UI components
 src/app/                Run state and four top-level controllers
 src/generation/         Deterministic generation passes
 src/items/              Definitions, actions, projectiles, explosions

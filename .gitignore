@@ -3,3 +3,6 @@
 /android/
 /build/*
 !/build/.gdignore
+
+# Orphaned temporary scene saves created by the Godot editor.
+*.tscn*.tmp

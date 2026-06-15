@@ -1,18 +1,20 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene format=3 uid="uid://bxndgutwe3l0o"]
 
-[ext_resource path="res://src/app/app_root.gd" type="Script" id="1_main"]
-[ext_resource path="res://src/presentation/world_presenter.gd" type="Script" id="2_world"]
-[ext_resource path="res://scenes/player/player.tscn" type="PackedScene" id="3_player"]
-[ext_resource path="res://src/presentation/depth_marker_presenter.gd" type="Script" id="4_markers"]
-[ext_resource path="res://src/audio/audio_director.gd" type="Script" id="5_audio"]
-[ext_resource path="res://src/presentation/gameplay_feedback.gd" type="Script" id="6_feedback"]
-[ext_resource path="res://src/presentation/world_side_boundaries.gd" type="Script" id="7_boundaries"]
-[ext_resource path="res://src/app/app_ui_controller.gd" type="Script" id="8_ui"]
-[ext_resource path="res://src/app/score_controller.gd" type="Script" id="9_score"]
-[ext_resource path="res://src/app/run_item_controller.gd" type="Script" id="10_items"]
-[ext_resource path="res://src/app/run_world_controller.gd" type="Script" id="11_world_controller"]
+[ext_resource type="Script" uid="uid://dx7a7pt13ex5h" path="res://src/app/app_root.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://crqfd0y6v3xmq" path="res://src/presentation/world_presenter.gd" id="2_world"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="Script" uid="uid://yy5ptlbwykbr" path="res://src/presentation/depth_marker_presenter.gd" id="4_markers"]
+[ext_resource type="Script" uid="uid://dbmagduv515l6" path="res://src/audio/audio_director.gd" id="5_audio"]
+[ext_resource type="Script" uid="uid://utv1nw4blrvy" path="res://src/presentation/gameplay_feedback.gd" id="6_feedback"]
+[ext_resource type="Script" uid="uid://cfg7amhyovnbe" path="res://src/presentation/world_side_boundaries.gd" id="7_boundaries"]
+[ext_resource type="Script" uid="uid://bhqvdn4txrc3r" path="res://src/app/app_ui_controller.gd" id="8_ui"]
+[ext_resource type="Script" uid="uid://cbg6nyfogmet2" path="res://src/app/score_controller.gd" id="9_score"]
+[ext_resource type="Script" uid="uid://cc0hh6yxi3t8y" path="res://src/app/run_item_controller.gd" id="10_items"]
+[ext_resource type="Script" uid="uid://yricpip2gti8" path="res://src/app/run_world_controller.gd" id="11_world_controller"]
+[ext_resource type="Resource" path="res://config/generation/default_profile.tres" id="12_generation_profile"]
+[ext_resource type="Resource" path="res://config/leaderboard/simpleboards.tres" id="13_leaderboard_config"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=739120312]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,47 +22,47 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
+generation_profile = ExtResource("12_generation_profile")
 player_scene = ExtResource("3_player")
+leaderboard_config = ExtResource("13_leaderboard_config")
 
-[node name="ScoreController" type="Node" parent="."]
+[node name="ScoreController" type="Node" parent="." unique_id=397205212]
 unique_name_in_owner = true
 script = ExtResource("9_score")
 
-[node name="RunItemController" type="Node" parent="."]
+[node name="RunItemController" type="Node" parent="." unique_id=2001577775]
 unique_name_in_owner = true
 script = ExtResource("10_items")
 
-[node name="RunWorldController" type="Node" parent="."]
+[node name="RunWorldController" type="Node" parent="." unique_id=214111568]
 unique_name_in_owner = true
 script = ExtResource("11_world_controller")
 
-[node name="WorldPresenter" type="Node2D" parent="."]
+[node name="WorldPresenter" type="Node2D" parent="." unique_id=764999484]
 unique_name_in_owner = true
 script = ExtResource("2_world")
 
-[node name="DepthMarkers" type="Node2D" parent="."]
+[node name="DepthMarkers" type="Node2D" parent="." unique_id=896067904]
 unique_name_in_owner = true
 script = ExtResource("4_markers")
 
-[node name="GameplayFeedback" type="Node2D" parent="."]
+[node name="GameplayFeedback" type="Node2D" parent="." unique_id=1538003543]
 unique_name_in_owner = true
 script = ExtResource("6_feedback")
 
-[node name="WorldSideBoundaries" type="StaticBody2D" parent="."]
+[node name="WorldSideBoundaries" type="StaticBody2D" parent="." unique_id=499991837]
 unique_name_in_owner = true
 script = ExtResource("7_boundaries")
 
-[node name="AudioDirector" type="Node" parent="."]
+[node name="AudioDirector" type="Node" parent="." unique_id=1497690768]
 unique_name_in_owner = true
 script = ExtResource("5_audio")
 
-[node name="UiLayer" type="CanvasLayer" parent="."]
+[node name="UiLayer" type="CanvasLayer" parent="." unique_id=772962582]
 unique_name_in_owner = true
-layer = 1
 script = ExtResource("8_ui")
 
-[node name="Background" type="ColorRect" parent="UiLayer"]
-layout_mode = 1
+[node name="Background" type="ColorRect" parent="UiLayer" unique_id=1619031388]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -68,21 +70,20 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04, 0.03, 0.07, 0.72)
 
-[node name="Center" type="CenterContainer" parent="UiLayer"]
-layout_mode = 1
+[node name="Center" type="CenterContainer" parent="UiLayer" unique_id=496009083]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Content" type="VBoxContainer" parent="UiLayer/Center"]
-layout_mode = 2
-theme_override_constants/separation = 12
-size_flags_horizontal = 4
+[node name="Content" type="VBoxContainer" parent="UiLayer/Center" unique_id=1482415018]
 custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="UiLayer/Center/Content"]
+[node name="Title" type="Label" parent="UiLayer/Center/Content" unique_id=1279294258]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
@@ -90,7 +91,7 @@ theme_override_font_sizes/font_size = 54
 text = "CLAIM EARTH"
 horizontal_alignment = 1
 
-[node name="OwnerLabel" type="Label" parent="UiLayer/Center/Content"]
+[node name="OwnerLabel" type="Label" parent="UiLayer/Center/Content" unique_id=1693222855]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.43, 0.87, 0.94, 1)
@@ -98,7 +99,7 @@ theme_override_font_sizes/font_size = 18
 text = "Earth owned by: Nobody yet"
 horizontal_alignment = 1
 
-[node name="Status" type="Label" parent="UiLayer/Center/Content"]
+[node name="Status" type="Label" parent="UiLayer/Center/Content" unique_id=1900517500]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.87, 0.84, 1)
@@ -106,40 +107,74 @@ theme_override_font_sizes/font_size = 19
 text = "Ready to descend"
 horizontal_alignment = 1
 
-[node name="WarningLabel" type="Label" parent="UiLayer/Center/Content"]
+[node name="WarningLabel" type="Label" parent="UiLayer/Center/Content" unique_id=1034415227]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.6, 0.42, 1)
-autowrap_mode = 2
 horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="ControlsLabel" type="Label" parent="UiLayer/Center/Content"]
+[node name="ControlsLabel" type="Label" parent="UiLayer/Center/Content" unique_id=758744064]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 text = "Controls"
 horizontal_alignment = 1
 
-[node name="MenuPanel" type="VBoxContainer" parent="UiLayer/Center/Content"]
+[node name="MenuPanel" type="VBoxContainer" parent="UiLayer/Center/Content" unique_id=433400094]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="StartButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
+[node name="StartButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=1676925267]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start"
 
-[node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
+[node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=831887216]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Leaderboard"
 
-[node name="OverlayRoot" type="MarginContainer" parent="UiLayer"]
+[node name="LeaderboardPanel" type="PanelContainer" parent="UiLayer/Center/Content" unique_id=1903913946]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
+layout_mode = 2
+
+[node name="LeaderboardContent" type="VBoxContainer" parent="UiLayer/Center/Content/LeaderboardPanel" unique_id=991276779]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LeaderboardTitle" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=1213492498]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 30
+text = "Leaderboard"
+horizontal_alignment = 1
+
+[node name="LeaderboardStatus" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=1126344963]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Loading..."
+horizontal_alignment = 1
+
+[node name="LeaderboardRows" type="RichTextLabel" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=989810920]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(520, 240)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="LeaderboardBackButton" type="Button" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=845548296]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="OverlayRoot" type="MarginContainer" parent="UiLayer" unique_id=202866097]
+unique_name_in_owner = true
+visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -150,35 +185,90 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="OverlayContent" type="Control" parent="UiLayer/OverlayRoot"]
+[node name="OverlayContent" type="Control" parent="UiLayer/OverlayRoot" unique_id=660231969]
 layout_mode = 2
 
-[node name="PlayingPanel" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="PlayingPanel" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=708717385]
 unique_name_in_owner = true
 layout_mode = 0
-offset_right = 460.0
-offset_bottom = 120.0
+offset_right = 360.0
+offset_bottom = 64.0
 theme_override_constants/separation = 6
 
-[node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=163240117]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.94, 0.9, 1)
 theme_override_font_sizes/font_size = 18
 text = "Depth 0"
 
-[node name="HintLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="RunStateLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=1063391024]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
-text = "Selected: Small Bomb"
+text = "Free"
 
-[node name="BackToMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="PauseButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1227630892]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -48.0
+offset_bottom = 40.0
+grow_horizontal = 0
+tooltip_text = "Pause"
+theme_override_font_sizes/font_size = 18
+text = "||"
+
+[node name="ItemToolbar" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2011239212]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -76.0
+offset_right = 110.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="ItemToolbarMargin" type="MarginContainer" parent="UiLayer/OverlayRoot/OverlayContent/ItemToolbar" unique_id=2088349828]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="ItemToolbarContent" type="HBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/ItemToolbar/ItemToolbarMargin" unique_id=2131243832]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Back to Menu"
+theme_override_constants/separation = 8
+alignment = 1
 
-[node name="NameEntryPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="SelectionNameLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1201117353]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -112.0
+offset_right = 160.0
+offset_bottom = -84.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="NameEntryPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=563556894]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -187,35 +277,35 @@ offset_top = 150.0
 offset_right = 920.0
 offset_bottom = 420.0
 
-[node name="NameEntryContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel"]
+[node name="NameEntryContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel" unique_id=600408623]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="NameEntryTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="NameEntryTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=1909882641]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Plant Your Flag"
 horizontal_alignment = 1
 
-[node name="NameEntryStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="NameEntryStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=926994201]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Depth: 0"
 horizontal_alignment = 1
 
-[node name="PlayerNameInput" type="LineEdit" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="PlayerNameInput" type="LineEdit" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=674480781]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "Player"
 max_length = 20
 
-[node name="ConfirmScoreButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+[node name="ConfirmScoreButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=1284480067]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Confirm Score"
 
-[node name="ResultPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="ResultPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=994695937]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -224,11 +314,11 @@ offset_top = 150.0
 offset_right = 940.0
 offset_bottom = 420.0
 
-[node name="ResultContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel"]
+[node name="ResultContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel" unique_id=623904716]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ResultTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=2072216465]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
@@ -236,80 +326,59 @@ theme_override_font_sizes/font_size = 30
 text = "Run Complete"
 horizontal_alignment = 1
 
-[node name="ResultStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=2123267930]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
 text = "Result placeholder"
-autowrap_mode = 2
 horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="RestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="RestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=725601985]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start New Run"
 
-[node name="ResultMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+[node name="ResultMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=218252668]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Main Menu"
 
-[node name="PausePanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="PausePanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=345381812]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
 offset_left = 420.0
-offset_top = 170.0
+offset_top = 140.0
 offset_right = 860.0
-offset_bottom = 340.0
+offset_bottom = 390.0
 
-[node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel"]
+[node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel" unique_id=447488270]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PauseTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1062585874]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 28
 text = "Paused"
 horizontal_alignment = 1
 
-[node name="PauseBody" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseBody" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=647601408]
 layout_mode = 2
 text = "Press Esc to continue."
 horizontal_alignment = 1
 
-[node name="LeaderboardPanel" type="PanelContainer" parent="UiLayer/Center/Content"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="LeaderboardContent" type="VBoxContainer" parent="UiLayer/Center/Content/LeaderboardPanel"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="LeaderboardTitle" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
-theme_override_font_sizes/font_size = 30
-text = "Leaderboard"
-horizontal_alignment = 1
-
-[node name="LeaderboardStatus" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="ResumeButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1941676487]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Loading..."
-horizontal_alignment = 1
+text = "Resume"
 
-[node name="LeaderboardRows" type="RichTextLabel" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="PauseMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1110613241]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(520, 240)
-bbcode_enabled = true
-fit_content = true
-scroll_active = false
+text = "Back to Menu"
 
-[node name="LeaderboardBackButton" type="Button" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent"]
+[node name="SelectionNameTimer" type="Timer" parent="UiLayer" unique_id=2125176947]
 unique_name_in_owner = true
-layout_mode = 2
-text = "Back"
+one_shot = true

@@ -51,6 +51,7 @@ func _connect_controller_signals() -> void:
 	ui.start_requested.connect(_on_start_requested)
 	ui.leaderboard_requested.connect(_on_leaderboard_requested)
 	ui.menu_requested.connect(_on_menu_requested)
+	ui.pause_requested.connect(_toggle_pause)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_requested)
 	world_controller.generation_progressed.connect(ui.show_generation_progress)
@@ -163,6 +164,10 @@ func _on_restart_requested() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed(InputActions.PAUSE):
 		return
+	_toggle_pause()
+
+
+func _toggle_pause() -> void:
 	match _run_coordinator.current_state:
 		RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT:
 			_previous_play_state = _run_coordinator.current_state
