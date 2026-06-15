@@ -42,6 +42,7 @@ func explode_with_changes(
 			continue
 		visited[cell] = true
 		if not world.dimensions.is_in_bounds_offset(cell.x, cell.y):
+			_enqueue_neighbors(queue, cell, strength - 1.0)
 			continue
 
 		var definition := terrain_registry.get_definition(world.get_committed_by_offset(cell.x, cell.y))
@@ -63,11 +64,7 @@ func explode_with_changes(
 
 		if propagated_strength < 0.0:
 			continue
-		for neighbor in HexCoord.from_offset_odd_q(cell.x, cell.y).neighbors():
-			queue.append({
-				"cell": neighbor.to_offset_odd_q(),
-				"strength": propagated_strength,
-			})
+		_enqueue_neighbors(queue, cell, propagated_strength)
 
 	if changed_cells.is_empty():
 		change_set.dirty_rect = Rect2i(origin, Vector2i.ONE)
@@ -75,6 +72,16 @@ func explode_with_changes(
 
 	chunk_activity_index.mark_change_set(change_set)
 	return change_set
+
+
+func _enqueue_neighbors(queue: Array[Dictionary], cell: Vector2i, strength: float) -> void:
+	if strength < 0.0:
+		return
+	for neighbor in HexCoord.from_offset_odd_q(cell.x, cell.y).neighbors():
+		queue.append({
+			"cell": neighbor.to_offset_odd_q(),
+			"strength": strength,
+		})
 
 
 func _dirty_rect_from_cells(cells: Array[Vector2i]) -> Rect2i:

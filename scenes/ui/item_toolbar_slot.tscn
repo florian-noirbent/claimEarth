@@ -34,15 +34,25 @@ corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
 
-[node name="ItemToolbarSlot" type="PanelContainer"]
+[node name="ItemToolbarSlot" type="Button"]
 custom_minimum_size = Vector2(60, 52)
-theme_override_styles/panel = SubResource("StyleBox_normal")
+clip_contents = true
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBox_normal")
+theme_override_styles/hover = SubResource("StyleBox_normal")
+theme_override_styles/pressed = SubResource("StyleBox_normal")
+theme_override_styles/focus = SubResource("StyleBox_normal")
 script = ExtResource("1_script")
 normal_style = SubResource("StyleBox_normal")
 selected_style = SubResource("StyleBox_selected")
 
 [node name="Content" type="Control" parent="."]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="Icon" type="TextureRect" parent="Content"]

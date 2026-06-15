@@ -33,6 +33,7 @@ func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
 
 
 func configure_run(player: PlayerController, world: WorldGrid, terrain_registry: TerrainRegistry, chunk_activity_index: ChunkActivityIndex, hex_radius: float, simulation_backend: TerrainSimulationBackend = null) -> void:
+	_inventory.reset()
 	_player = player
 	_world = world
 	_terrain_registry = terrain_registry
@@ -55,17 +56,20 @@ func clear_run() -> void:
 			child.free()
 
 
-func handle_input(aim_position: Vector2, delta: float = 0.0) -> void:
+func advance(delta: float) -> void:
 	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
+
+
+func handle_unhandled_input(event: InputEvent, aim_position: Vector2) -> void:
 	if is_flag_in_flight():
 		return
-	if Input.is_action_just_pressed(InputActions.SELECT_SMALL_BOMB):
+	if event.is_action_pressed(InputActions.SELECT_SMALL_BOMB):
 		select_index(0)
-	if Input.is_action_just_pressed(InputActions.SELECT_LARGE_BOMB):
+	elif event.is_action_pressed(InputActions.SELECT_LARGE_BOMB):
 		select_index(1)
-	if Input.is_action_just_pressed(InputActions.SELECT_FLAG):
+	elif event.is_action_pressed(InputActions.SELECT_FLAG):
 		select_index(2)
-	if Input.is_action_just_pressed(InputActions.THROW_SELECTED):
+	elif event.is_action_pressed(InputActions.THROW_SELECTED):
 		throw_selected(aim_position)
 
 

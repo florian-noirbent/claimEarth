@@ -5,21 +5,38 @@ extends Control
 signal generation_started
 signal gameplay_started
 
+const RunSessionScene := preload("res://scenes/app/run_session.tscn")
+
 @export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
 @export var player_scene: PackedScene
 @export var leaderboard_config: LeaderboardConfig = preload("res://config/leaderboard/simpleboards.tres")
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
-@onready var item_controller: RunItemController = %RunItemController
-@onready var world_controller: RunWorldController = %RunWorldController
-@onready var world_presenter: WorldPresenter = %WorldPresenter
-@onready var depth_markers: Node2D = %DepthMarkers
-@onready var gameplay_feedback: GameplayFeedback = %GameplayFeedback
 @onready var audio_director: AudioDirector = %AudioDirector
-@onready var world_side_boundaries: WorldSideBoundaries = %WorldSideBoundaries
+
+var item_controller: RunItemController:
+	get:
+		return _session.item_controller if is_instance_valid(_session) else null
+var world_controller: RunWorldController:
+	get:
+		return _session.world_controller if is_instance_valid(_session) else null
+var world_presenter: WorldPresenter:
+	get:
+		return _session.world_presenter if is_instance_valid(_session) else null
+var depth_markers: DepthMarkerPresenter:
+	get:
+		return _session.depth_markers if is_instance_valid(_session) else null
+var gameplay_feedback: GameplayFeedback:
+	get:
+		return _session.gameplay_feedback if is_instance_valid(_session) else null
+var world_side_boundaries: WorldSideBoundaries:
+	get:
+		return _session.world_side_boundaries if is_instance_valid(_session) else null
 
 var _run_coordinator := RunCoordinator.new()
+var _session: RunSession
+var _session_change_serial := 0
 var _current_seed := 0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
@@ -32,41 +49,41 @@ var _injected_leaderboard_service: LeaderboardService
 
 func _ready() -> void:
 	_current_seed = _initial_run_seed()
-	world_controller.configure(generation_profile, player_scene, world_presenter, depth_markers, world_side_boundaries)
-	item_controller.configure_catalog(world_controller.item_registry(), world_presenter.hex_radius)
 	if not _configured_save_path.is_empty():
 		score_controller.configure_save_path(_configured_save_path)
 	score_controller.configure(leaderboard_config, _test_mode, _injected_leaderboard_service)
-	_connect_controller_signals()
+	_connect_persistent_signals()
 	_apply_state(_run_coordinator.current_state)
-	if _enable_menu_preview:
-		world_controller.start_preview(_current_seed)
 	if score_controller.has_service():
 		_refresh_leaderboard()
 		score_controller.retry_pending()
 
 
-func _connect_controller_signals() -> void:
+func _connect_persistent_signals() -> void:
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	ui.start_requested.connect(_on_start_requested)
 	ui.leaderboard_requested.connect(_on_leaderboard_requested)
 	ui.menu_requested.connect(_on_menu_requested)
 	ui.pause_requested.connect(_toggle_pause)
+	ui.item_selected.connect(_on_item_selected)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_requested)
-	world_controller.generation_progressed.connect(ui.show_generation_progress)
-	world_controller.run_ready.connect(_on_run_ready)
-	world_controller.player_died.connect(_on_player_death_requested)
 	score_controller.profile_changed.connect(_update_depth_markers)
 	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
 	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
 	score_controller.pending_retry_finished.connect(_on_pending_retry_finished)
-	item_controller.player_killed.connect(_on_player_death_requested)
-	item_controller.bomb_exploded.connect(_on_bomb_exploded)
-	item_controller.flag_planted.connect(_on_flag_planted)
-	item_controller.flag_destroyed.connect(_on_flag_destroyed)
-	item_controller.flag_flight_changed.connect(_on_flag_flight_changed)
-	item_controller.item_thrown.connect(audio_director.play_throw)
+
+
+func _connect_session_signals(session: RunSession) -> void:
+	session.generation_progressed.connect(ui.show_generation_progress)
+	session.run_ready.connect(_on_run_ready)
+	session.player_died.connect(_on_player_death_requested)
+	session.player_killed.connect(_on_player_death_requested)
+	session.bomb_exploded.connect(_on_bomb_exploded)
+	session.flag_planted.connect(_on_flag_planted)
+	session.flag_destroyed.connect(_on_flag_destroyed)
+	session.flag_flight_changed.connect(_on_flag_flight_changed)
+	session.item_thrown.connect(audio_director.play_throw)
 
 
 func _initial_run_seed() -> int:
@@ -110,23 +127,36 @@ func start_run_for_test(run_seed: int) -> void:
 
 
 func get_player() -> PlayerController:
-	return world_controller.player()
+	return world_controller.player() if world_controller != null else null
 
 
 func active_projectile_count() -> int:
-	return item_controller.active_projectile_count()
+	return item_controller.active_projectile_count() if item_controller != null else 0
+
+
+func active_session_count() -> int:
+	var count := 0
+	for child in get_children():
+		if child is RunSession and not child.is_queued_for_deletion():
+			count += 1
+	return count
 
 
 func select_item_for_test(index: int) -> void:
-	item_controller.select_index(index)
+	if item_controller != null:
+		item_controller.select_index(index)
 
 
 func throw_selected_item_for_test(aim_position: Vector2, bypass_cooldown: bool = false) -> bool:
-	return item_controller.throw_selected(aim_position, bypass_cooldown)
+	return item_controller.throw_selected(aim_position, bypass_cooldown) if item_controller != null else false
+
+
+func inventory_status_for_test() -> Dictionary:
+	return item_controller.inventory_status() if item_controller != null else {}
 
 
 func last_generation_result_for_test() -> WorldGenerationResult:
-	return world_controller.generation_result()
+	return world_controller.generation_result() if world_controller != null else null
 
 
 func pending_score_depth() -> int:
@@ -134,15 +164,15 @@ func pending_score_depth() -> int:
 
 
 func simulation_backend() -> TerrainSimulationBackend:
-	return world_controller.simulation_backend()
+	return world_controller.simulation_backend() if world_controller != null else null
 
 
 func current_world() -> WorldGrid:
-	return world_controller.current_world()
+	return world_controller.current_world() if world_controller != null else null
 
 
 func terrain_registry() -> TerrainRegistry:
-	return world_controller.terrain_registry()
+	return world_controller.terrain_registry() if world_controller != null else null
 
 
 func _on_start_requested() -> void:
@@ -161,10 +191,21 @@ func _on_restart_requested() -> void:
 	transition_to(RunPhase.GENERATING)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_action_pressed(InputActions.PAUSE):
+func _on_item_selected(index: int) -> void:
+	if _run_coordinator.current_state != RunPhase.PLAYING or item_controller == null:
 		return
-	_toggle_pause()
+	item_controller.select_index(index)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(InputActions.PAUSE):
+		_toggle_pause()
+		get_viewport().set_input_as_handled()
+		return
+	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
+		return
+	if is_instance_valid(_session):
+		_session.handle_unhandled_input(event, get_global_mouse_position())
 
 
 func _toggle_pause() -> void:
@@ -187,18 +228,19 @@ func _on_state_changed(_previous_state: StringName, next_state: StringName) -> v
 func _apply_state(next_state: StringName) -> void:
 	ui.apply_state(next_state, _current_seed, score_controller.storage_warning, _pending_score_depth, score_controller.last_player_name)
 	match next_state:
-		RunPhase.MAIN_MENU, RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
-			world_controller.set_active(false)
+		RunPhase.MAIN_MENU:
+			_set_session_active(false)
+			_enter_menu_session()
+		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
+			_set_session_active(false)
 		RunPhase.GENERATING:
-			world_controller.set_active(false)
 			_terminal_outcome_locked = false
 			_pending_score_depth = -1
-			item_controller.clear_run()
 			generation_started.emit()
-			world_controller.start_run(_current_seed)
+			_start_new_run()
 		RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT:
 			ui.dismiss_menu_shell()
-			world_controller.set_active(true)
+			_set_session_active(true)
 			if next_state == RunPhase.PLAYING:
 				gameplay_started.emit()
 		_:
@@ -207,26 +249,72 @@ func _apply_state(next_state: StringName) -> void:
 		_refresh_leaderboard()
 
 
+func _start_new_run() -> void:
+	var serial := _begin_session_change()
+	var session := await _replace_session(serial)
+	if session == null or serial != _session_change_serial or _run_coordinator.current_state != RunPhase.GENERATING:
+		return
+	session.start_run(_current_seed)
+
+
+func _enter_menu_session() -> void:
+	var serial := _begin_session_change()
+	await _dispose_current_session()
+	if serial != _session_change_serial or _run_coordinator.current_state != RunPhase.MAIN_MENU:
+		return
+	if not _enable_menu_preview:
+		return
+	var session := await _replace_session(serial)
+	if session == null or serial != _session_change_serial or _run_coordinator.current_state != RunPhase.MAIN_MENU:
+		return
+	if _enable_menu_preview:
+		session.start_preview(_current_seed)
+
+
+func _begin_session_change() -> int:
+	_session_change_serial += 1
+	return _session_change_serial
+
+
+func _replace_session(serial: int) -> RunSession:
+	await _dispose_current_session()
+	if serial != _session_change_serial:
+		return null
+	var session := RunSessionScene.instantiate() as RunSession
+	add_child(session)
+	session.configure(generation_profile, player_scene)
+	_connect_session_signals(session)
+	_session = session
+	_update_depth_markers()
+	return session
+
+
+func _dispose_current_session() -> void:
+	if not is_instance_valid(_session):
+		return
+	_session.shutdown()
+	_session.queue_free()
+	_session = null
+	await get_tree().process_frame
+
+
+func _set_session_active(is_active: bool) -> void:
+	if is_instance_valid(_session):
+		_session.set_active(is_active)
+
+
 func _on_run_ready(next_seed: int) -> void:
 	_current_seed = next_seed
 	if _run_coordinator.current_state == RunPhase.GENERATING:
-		_configure_items_for_current_world()
 		transition_to(RunPhase.PLAYING)
-
-
-func _configure_items_for_current_world() -> void:
-	if get_player() == null or current_world() == null:
-		return
-	item_controller.configure_run(get_player(), current_world(), terrain_registry(), world_controller.chunk_activity_index(), world_presenter.hex_radius, simulation_backend())
 
 
 func _process(delta: float) -> void:
 	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
 		return
-	if get_player() == null:
+	if not is_instance_valid(_session) or get_player() == null:
 		return
-	item_controller.handle_input(get_global_mouse_position(), delta)
-	world_controller.advance(delta)
+	_session.advance(delta)
 	_refresh_play_status()
 
 
@@ -241,7 +329,8 @@ func _refresh_play_status() -> void:
 
 func _on_bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
 	audio_director.play_explosion(is_large)
-	gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
+	if gameplay_feedback != null and world_presenter != null:
+		gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
 	if get_player() != null:
 		get_player().camera.apply_shake(10.0 if is_large else 6.0)
 
@@ -251,7 +340,8 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 		return
 	_pending_score_depth = depth
 	audio_director.play_flag_plant()
-	gameplay_feedback.spawn_ring(landing_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
+	if gameplay_feedback != null:
+		gameplay_feedback.spawn_ring(landing_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
 	transition_to(RunPhase.NAME_ENTRY)
 
 
@@ -284,7 +374,7 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 
 
 func _on_confirm_score_requested(player_name: String) -> void:
-	var result_data: WorldGenerationResult = world_controller.generation_result()
+	var result_data := last_generation_result_for_test()
 	var score_seed := result_data.final_seed if result_data != null else _current_seed
 	var confirmation: Dictionary = score_controller.confirm_score(player_name, _pending_score_depth, score_seed)
 	if not bool(confirmation["accepted"]):
@@ -302,6 +392,8 @@ func _on_confirm_score_requested(player_name: String) -> void:
 
 
 func _update_depth_markers() -> void:
+	if depth_markers == null:
+		return
 	depth_markers.set_personal_depth(score_controller.personal_best_depth)
 	depth_markers.set_global_depth(score_controller.global_best_depth, score_controller.global_best_player)
 

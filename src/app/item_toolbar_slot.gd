@@ -1,5 +1,5 @@
 class_name ItemToolbarSlot
-extends PanelContainer
+extends Button
 
 
 @export var normal_style: StyleBoxFlat
@@ -14,4 +14,8 @@ func configure(icon: Texture2D, shortcut: String, count: int, selected: bool) ->
 	icon_rect.texture = icon
 	key_label.text = shortcut
 	count_label.text = "x%d" % count
-	add_theme_stylebox_override("panel", selected_style if selected else normal_style)
+	var style := selected_style if selected else normal_style
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
+	add_theme_stylebox_override("pressed", style)
+	add_theme_stylebox_override("focus", style)

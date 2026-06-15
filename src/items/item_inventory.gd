@@ -8,8 +8,12 @@ var _selected_index := 0
 
 
 func configure(item_registry: ItemRegistry) -> void:
-	_counts.clear()
 	_ordered_definitions = item_registry.all_definitions()
+	reset()
+
+
+func reset() -> void:
+	_counts.clear()
 	for definition in _ordered_definitions:
 		_counts[definition.stable_id] = definition.starting_inventory
 	_selected_index = 0

@@ -34,7 +34,8 @@ the flag loses it.
 | `Escape` | Pause or leave the current modal |
 
 The in-game HUD presents inventory as a compact bottom icon toolbar with the selected
-item highlighted. Changing selection briefly shows the item name above the toolbar.
+item highlighted. Toolbar items can be clicked to select them. Changing selection
+briefly shows the item name above the toolbar.
 A compact pause button opens the pause menu, which contains Resume and Back to Menu
 actions.
 

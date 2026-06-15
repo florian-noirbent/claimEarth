@@ -59,3 +59,27 @@ func test_explosion_vaporizes_terrain_within_lethal_radius_regardless_of_type() 
 	assert_eq(world.get_committed_by_offset(4, 3), FixtureLoader.terrain_id("Air"))
 	assert_eq(world.get_committed_by_offset(3, 4), FixtureLoader.terrain_id("Air"))
 	assert_eq(world.get_committed_by_offset(2, 3), FixtureLoader.terrain_id("Air"))
+
+
+func test_explosion_above_top_row_propagates_into_world() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var air_id := FixtureLoader.terrain_id("Air")
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), stone_id)
+	var chunks := ChunkActivityIndex.new(world.dimensions, 4, 4)
+	var service := ExplosionService.new()
+
+	var change_set := service.explode_with_changes(
+		world,
+		registry,
+		chunks,
+		HexMetrics.center_for_offset(3, -1, 16.0),
+		16.0,
+		2,
+		1
+	)
+
+	assert_eq(world.get_committed_by_offset(3, 0), air_id)
+	assert_gt(change_set.changed_cell_count(), 0)
+	assert_gt(chunks.consume_dirty_chunks().size(), 0)

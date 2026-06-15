@@ -7,6 +7,7 @@ signal start_requested
 signal leaderboard_requested
 signal menu_requested
 signal pause_requested
+signal item_selected(index: int)
 signal score_confirmed(player_name: String)
 signal restart_requested
 
@@ -142,8 +143,10 @@ func _update_item_toolbar(items: Array) -> void:
 	if item_toolbar_content.get_child_count() != items.size():
 		for child in item_toolbar_content.get_children():
 			child.free()
-		for _item in items:
-			item_toolbar_content.add_child(ItemToolbarSlotScene.instantiate())
+		for index in items.size():
+			var slot := ItemToolbarSlotScene.instantiate() as ItemToolbarSlot
+			item_toolbar_content.add_child(slot)
+			slot.pressed.connect(_on_item_slot_pressed.bind(index))
 	for index in items.size():
 		var item: Dictionary = items[index]
 		var slot := item_toolbar_content.get_child(index) as ItemToolbarSlot
@@ -156,6 +159,10 @@ func _update_item_toolbar(items: Array) -> void:
 		)
 		if selected:
 			_show_selection_name_if_changed(str(item.get("name", "Item")))
+
+
+func _on_item_slot_pressed(index: int) -> void:
+	item_selected.emit(index)
 
 
 func _show_selection_name_if_changed(item_name: String) -> void:

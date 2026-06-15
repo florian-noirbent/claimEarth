@@ -1,0 +1,36 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/app/run_session.gd" id="1_session"]
+[ext_resource type="Script" path="res://src/app/run_item_controller.gd" id="2_items"]
+[ext_resource type="Script" path="res://src/app/run_world_controller.gd" id="3_world_controller"]
+[ext_resource type="Script" path="res://src/presentation/world_presenter.gd" id="4_presenter"]
+[ext_resource type="Script" path="res://src/presentation/depth_marker_presenter.gd" id="5_markers"]
+[ext_resource type="Script" path="res://src/presentation/gameplay_feedback.gd" id="6_feedback"]
+[ext_resource type="Script" path="res://src/presentation/world_side_boundaries.gd" id="7_boundaries"]
+
+[node name="RunSession" type="Node"]
+script = ExtResource("1_session")
+
+[node name="RunItemController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_items")
+
+[node name="RunWorldController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_world_controller")
+
+[node name="WorldPresenter" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4_presenter")
+
+[node name="DepthMarkers" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_markers")
+
+[node name="GameplayFeedback" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_feedback")
+
+[node name="WorldSideBoundaries" type="StaticBody2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_boundaries")

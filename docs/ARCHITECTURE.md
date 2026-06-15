@@ -15,7 +15,8 @@ historical build plan.
 
 ```text
 config/                 Tunable Resource definitions and catalogs
-scenes/app/main.tscn    Main composition scene
+scenes/app/main.tscn    Persistent application shell
+scenes/app/run_session.tscn Disposable gameplay/preview composition
 scenes/player/          Player scene
 scenes/ui/              Reusable editor-authored UI components
 src/app/                Run state and four top-level controllers
@@ -33,20 +34,30 @@ tools/                  Import, test, export, and browser scripts
 
 ## Runtime Composition
 
-`scenes/app/main.tscn` composes the application. `AppRoot` owns `RunCoordinator`,
-routes typed signals, arbitrates terminal outcomes, and exposes a small test facade.
-It delegates implementation details to four child controllers:
+`scenes/app/main.tscn` composes the persistent application shell. `AppRoot` owns
+`RunCoordinator`, UI, audio, scores, leaderboard workflows, and the active disposable
+`RunSession`. Starting or restarting frees the previous session before instantiating
+a fresh `scenes/app/run_session.tscn`; returning to the menu replaces gameplay with
+an optional preview session. This guarantees that players, projectiles, world data,
+simulation state, and inventory never cross run boundaries.
 
-| Controller | Owns |
-| --- | --- |
-| `AppUiController` | Menu, HUD, pause, name entry, results, leaderboard rendering |
-| `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
-| `RunItemController` | Inventory, selection, projectiles, explosions, flag flight |
-| `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
+Application responsibilities are split between the persistent shell and the active
+disposable session:
+
+| Owner | Component | Owns |
+| --- | --- | --- |
+| `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
+| `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
+| `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
+| `RunSession` | `RunItemController` | Inventory, selection, projectiles, explosions, flag flight |
 
 Controllers receive dependencies through typed `configure(...)` methods. They do not
 reach into one another. UI emits intent; gameplay controllers emit outcomes;
 `AppRoot` maps both to `RunPhase` transitions.
+
+Discrete item selection and throwing use unhandled input events routed by `AppRoot`
+to the active session. GUI-consumed mouse clicks therefore cannot trigger gameplay.
+Continuous movement and grapple state remain polled by the active player.
 
 ## Run State
 
@@ -57,6 +68,10 @@ reach into one another. UI emits intent; gameplay controllers emit outcomes;
 `AppRoot` holds the terminal-outcome lock. The first death, planted flag, or destroyed
 flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
+
+`GENERATING` creates a new run session and resets inventory from item resources.
+`MAIN_MENU` disposes the active gameplay session; menu previews use their own fresh
+session. Generation tasks must tolerate their host session being cancelled and freed.
 
 ## World Data And Presentation
 

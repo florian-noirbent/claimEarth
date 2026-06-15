@@ -45,7 +45,10 @@ func test_failed_submission_is_saved_as_pending_and_result_still_opens() -> void
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 
-	app_root.transition_to(RunPhase.PLAYING)
+	app_root.start_run_for_test(SeedUtils.seed_from_text("leaderboard-submit"))
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.PLAYING
+	, 1.0)
 	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 25, app_root.world_presenter.hex_radius), null, &"impact")
 	app_root.ui.player_name_input.text = "Mira"
 	app_root.ui.confirm_score_button.pressed.emit()
