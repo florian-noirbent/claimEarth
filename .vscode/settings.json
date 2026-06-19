@@ -1,0 +1,21 @@
+{
+  "files.exclude": {
+    "**/*.gd.uid": true,
+    "**/.import": true,
+    "**/build": true,
+    "**/logs": true
+  },
+  "search.exclude": {
+    "**/.import": true,
+    "**/build": true,
+    "**/logs": true
+  },
+  "files.watcherExclude": {
+    "**/.import/**": true,
+    "**/build/**": true,
+    "**/logs/**": true
+  },
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}
