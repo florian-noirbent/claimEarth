@@ -13,6 +13,8 @@ func test_same_seed_and_profile_produce_same_world_hash() -> void:
 	assert_not_null(first)
 	assert_not_null(second)
 	assert_eq(first.world_hash, second.world_hash)
+	assert_eq(first.final_seed, 12345)
+	assert_eq(first.attempts, 1)
 	assert_eq(first.spawn_rect, second.spawn_rect)
 
 
@@ -108,3 +110,40 @@ func test_generated_world_shows_secondary_materials_in_upper_play_band() -> void
 	assert_gt(shallow_counts["Sand"], 0)
 	assert_gt(shallow_counts["Water"], 0)
 	assert_gt(shallow_counts["Lava"], 0)
+
+
+func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
+	var generator := WorldGenerator.new()
+	var profile := load("res://config/generation/default_profile.tres") as GenerationProfile
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var air_id := FixtureLoader.terrain_id("Air")
+	var dirt_id := FixtureLoader.terrain_id("Dirt")
+	var sample_seeds := [
+		SeedUtils.seed_from_text("generation-invariant-1"),
+		SeedUtils.seed_from_text("generation-invariant-2"),
+		SeedUtils.seed_from_text("generation-invariant-3"),
+		SeedUtils.seed_from_text("generation-invariant-4"),
+	]
+
+	for run_seed in sample_seeds:
+		var result := generator.generate(profile, registry, run_seed)
+		assert_not_null(result, "Generation failed for seed %d" % run_seed)
+		assert_eq(result.final_seed, run_seed)
+		assert_eq(result.attempts, 1)
+
+		for row in range(profile.depth - 2, profile.depth):
+			for col in range(profile.width):
+				assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
+
+		for row in range(result.spawn_rect.position.y, result.spawn_rect.end.y - 1):
+			for col in range(result.spawn_rect.position.x, result.spawn_rect.end.x):
+				assert_eq(result.world.get_committed_by_offset(col, row), air_id)
+
+		for col in range(result.spawn_rect.position.x + 1, result.spawn_rect.end.x - 1):
+			assert_eq(result.world.get_committed_by_offset(col, result.spawn_rect.end.y - 1), dirt_id)
+
+		var air_ratio := float(result.world.count_committed(air_id)) / float(result.world.dimensions.cell_count())
+		assert_true(air_ratio >= 0.08, "Air ratio too low for seed %d: %f" % [run_seed, air_ratio])
+		assert_true(air_ratio <= 0.42, "Air ratio too high for seed %d: %f" % [run_seed, air_ratio])

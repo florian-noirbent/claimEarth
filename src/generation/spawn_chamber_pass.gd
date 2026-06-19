@@ -9,8 +9,8 @@ func get_name() -> String:
 func apply(context: GenerationContext) -> bool:
 	var air_id := _terrain_id(context.terrain_registry, "Air")
 	var dirt_id := _terrain_id(context.terrain_registry, "Dirt")
-	var center_col := int(context.profile.width / 2)
-	var start_col := maxi(1, center_col - int(context.profile.spawn_width / 2))
+	var center_col := int(context.profile.width >> 1)
+	var start_col := maxi(1, center_col - int(context.profile.spawn_width >> 1))
 	var start_row := context.profile.spawn_margin_top
 	context.spawn_rect = Rect2i(start_col, start_row, context.profile.spawn_width, context.profile.spawn_height)
 

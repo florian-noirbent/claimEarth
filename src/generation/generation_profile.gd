@@ -21,7 +21,6 @@ extends Resource
 @export var spawn_width := 10
 @export var spawn_height := 4
 @export var spawn_margin_top := 0
-@export var max_retries := 4
 
 
 func create_dimensions() -> WorldDimensions:

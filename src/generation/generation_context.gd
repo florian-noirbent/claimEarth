@@ -7,7 +7,6 @@ var run_seed: int
 var terrain_registry: TerrainRegistry
 var world: WorldGrid
 var spawn_rect := Rect2i()
-var validation_errors := PackedStringArray()
 
 
 func _init(

@@ -20,7 +20,7 @@ func generate_async(
 		"Sampling cave layers",
 		"Seeding hazard pockets",
 		"Carving spawn chamber",
-		"Validating map",
+		"Finalizing map",
 	])
 
 	for index in range(steps.size()):

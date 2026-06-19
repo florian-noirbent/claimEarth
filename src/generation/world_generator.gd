@@ -8,30 +8,22 @@ var _passes: Array[GenerationPass] = [
 	SpawnChamberPass.new(),
 	ShowcasePocketPass.new(),
 	BoundarySealPass.new(),
-	GenerationValidationPass.new(),
 ]
 
 
 func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, run_seed: int) -> WorldGenerationResult:
-	for attempt in range(profile.max_retries + 1):
-		var attempt_seed := SeedUtils.derive_seed(run_seed, "attempt_%d" % attempt)
-		var world := WorldGrid.new(profile.create_dimensions(), 0)
-		var context := GenerationContext.new(profile, attempt_seed, terrain_registry, world)
+	var world := WorldGrid.new(profile.create_dimensions(), 0)
+	var context := GenerationContext.new(profile, run_seed, terrain_registry, world)
 
-		var passed := true
-		for generation_pass in _passes:
-			if not generation_pass.apply(context):
-				passed = false
-				break
+	for generation_pass in _passes:
+		if not generation_pass.apply(context):
+			push_error("World generation pass failed: %s for seed %d" % [generation_pass.get_name(), run_seed])
+			return null
 
-		if passed:
-			var result := WorldGenerationResult.new()
-			result.world = world
-			result.final_seed = attempt_seed
-			result.attempts = attempt + 1
-			result.spawn_rect = context.spawn_rect
-			result.world_hash = world.committed_hash()
-			return result
-
-	push_error("World generation failed after %d attempts for seed %d" % [profile.max_retries + 1, run_seed])
-	return null
+	var result := WorldGenerationResult.new()
+	result.world = world
+	result.final_seed = run_seed
+	result.attempts = 1
+	result.spawn_rect = context.spawn_rect
+	result.world_hash = world.committed_hash()
+	return result

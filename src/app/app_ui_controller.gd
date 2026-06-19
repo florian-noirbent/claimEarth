@@ -194,11 +194,11 @@ func show_leaderboard_loading() -> void:
 	leaderboard_rows.text = ""
 
 
-func show_leaderboard(status: String, rows: String, owner: String = "") -> void:
+func show_leaderboard(status: String, rows: String, top_user: String = "") -> void:
 	leaderboard_status.text = status
 	leaderboard_rows.text = rows
-	if not owner.is_empty():
-		owner_label.text = owner
+	if not top_user.is_empty():
+		owner_label.text = top_user
 
 
 func show_leaderboard_entries(entries: Array[LeaderboardEntry], failed: bool, message: String) -> void:

@@ -247,7 +247,7 @@ func test_starting_run_cancels_preview_without_overwriting_active_world() -> voi
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 2.0)
 
-	assert_eq(app_root.last_generation_result_for_test().final_seed, SeedUtils.derive_seed(run_seed, "attempt_0"))
+	assert_eq(app_root.last_generation_result_for_test().final_seed, run_seed)
 
 
 func test_repeated_menu_and_restart_cycles_keep_single_player_and_clear_projectiles() -> void:

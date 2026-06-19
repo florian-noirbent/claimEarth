@@ -131,13 +131,14 @@ application on the main thread, and remain optional for the single-thread Web bu
 
 1. `BaseNoisePass`
 2. `PocketNoisePass`
-3. `ShowcasePocketPass`
-4. `SpawnChamberPass`
+3. `SpawnChamberPass`
+4. `ShowcasePocketPass`
 5. `BoundarySealPass`
-6. `GenerationValidationPass`
 
-`WorldGenerationTask` yields between progress labels, then executes generation.
-Rejected maps retry with deterministically derived seeds. The active defaults live in
+`WorldGenerationTask` yields between progress labels, then executes generation once
+for the requested seed. Generation invariants such as spawn air, bottom sealing, air
+ratio, and valid registered IDs are enforced by deterministic tests rather than a
+runtime validation pass. The active defaults live in
 `config/generation/default_profile.tres`, not the script's fallback values.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
