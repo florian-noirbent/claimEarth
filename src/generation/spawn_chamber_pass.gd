@@ -1,14 +1,22 @@
-class_name SpawnChamberPass
-extends GenerationPass
+@tool
+extends GenerationPassResource
 
 
-func get_name() -> String:
-	return "spawn_chamber"
+func get_pass_type_name() -> String:
+	return "Spawn Chamber"
+
+
+func get_progress_label() -> String:
+	return "Carving spawn chamber"
+
+
+func _default_seed_key() -> String:
+	return "spawn_chamber_%d" % Time.get_ticks_usec()
 
 
 func apply(context: GenerationContext) -> bool:
-	var air_id := _terrain_id(context.terrain_registry, "Air")
-	var dirt_id := _terrain_id(context.terrain_registry, "Dirt")
+	var air_id := terrain_id(context.terrain_registry, "Air")
+	var dirt_id := terrain_id(context.terrain_registry, "Dirt")
 	var center_col := int(context.profile.width >> 1)
 	var start_col := maxi(1, center_col - int(context.profile.spawn_width >> 1))
 	var start_row := context.profile.spawn_margin_top
@@ -23,10 +31,3 @@ func apply(context: GenerationContext) -> bool:
 		context.world.set_committed_by_offset(col, floor_row, dirt_id)
 
 	return true
-
-
-func _terrain_id(registry: TerrainRegistry, name: String) -> int:
-	for definition in registry.all_definitions():
-		if definition.display_name == name:
-			return definition.stable_id
-	return -1

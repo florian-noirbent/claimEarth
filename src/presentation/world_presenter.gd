@@ -6,6 +6,7 @@ extends Node2D
 @export var visible_row_count := 96
 @export var build_budget_usec := 1200
 @export var max_results_applied_per_frame := 1
+@export var build_collision := true
 
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
@@ -67,13 +68,14 @@ func refresh_visible_chunks(start_row: int) -> void:
 	for chunk_coord in visible_chunks:
 		visible_lookup[chunk_coord] = true
 		if _ensure_chunk_nodes(chunk_coord):
-			requested_masks[chunk_coord] = TerrainLayerMask.ALL
+			requested_masks[chunk_coord] = _effective_layer_mask(TerrainLayerMask.ALL)
 	for existing_coord_variant in _renderers.keys():
 		var existing_coord := existing_coord_variant as Vector2i
 		if visible_lookup.has(existing_coord):
 			continue
 		(_renderers[existing_coord] as Node).queue_free()
-		(_colliders[existing_coord] as Node).queue_free()
+		if _colliders.has(existing_coord):
+			(_colliders[existing_coord] as Node).queue_free()
 		_renderers.erase(existing_coord)
 		_colliders.erase(existing_coord)
 		_chunk_revisions.erase(existing_coord)
@@ -82,11 +84,11 @@ func refresh_visible_chunks(start_row: int) -> void:
 		var coord := coord_variant as Vector2i
 		if visible_lookup.has(coord):
 			var work := dirty_work[coord] as Dictionary
-			requested_masks[coord] = int(requested_masks.get(coord, TerrainLayerMask.NONE)) | int(work["mask"])
+			requested_masks[coord] = _effective_layer_mask(int(requested_masks.get(coord, TerrainLayerMask.NONE)) | int(work["mask"]))
 	for coord_variant in requested_masks.keys():
 		var coord := coord_variant as Vector2i
 		var collision_indices := PackedInt32Array()
-		if dirty_work.has(coord):
+		if build_collision and dirty_work.has(coord):
 			collision_indices = (dirty_work[coord] as Dictionary)["collision_indices"] as PackedInt32Array
 		_enqueue_chunk_job(coord, int(requested_masks[coord]), collision_indices)
 	_visible_lookup = visible_lookup
@@ -105,10 +107,12 @@ func total_renderer_nodes() -> int:
 
 
 func total_collider_nodes() -> int:
-	return _colliders.size()
+	return _colliders.size() if build_collision else 0
 
 
 func chunk_collision_segment_count(chunk_coord: Vector2i) -> int:
+	if not build_collision:
+		return 0
 	var collider := _colliders.get(chunk_coord) as WorldChunkCollision
 	return collider.segment_count() if collider != null else 0
 
@@ -160,14 +164,15 @@ func _ensure_chunk_nodes(chunk_coord: Vector2i) -> bool:
 		return false
 	var chunk_rect := _chunk_activity_index.chunk_rect(chunk_coord)
 	var renderer := WorldChunkRenderer.new()
-	var collider := WorldChunkCollision.new()
 	add_child(renderer)
-	add_child(collider)
 	renderer.configure(chunk_coord, chunk_rect)
-	collider.chunk_coord = chunk_coord
-	collider.chunk_rect = chunk_rect
 	_renderers[chunk_coord] = renderer
-	_colliders[chunk_coord] = collider
+	if build_collision:
+		var collider := WorldChunkCollision.new()
+		add_child(collider)
+		collider.chunk_coord = chunk_coord
+		collider.chunk_rect = chunk_rect
+		_colliders[chunk_coord] = collider
 	_chunk_revisions[chunk_coord] = 0
 	return true
 
@@ -200,9 +205,13 @@ func _apply_completed_results(limit: int) -> void:
 			_discarded_result_count += 1
 			continue
 		(_renderers[result.chunk_coord] as WorldChunkRenderer).apply_result(result)
-		if (result.layer_mask & TerrainLayerMask.COLLISION) != 0:
+		if build_collision and (result.layer_mask & TerrainLayerMask.COLLISION) != 0 and _colliders.has(result.chunk_coord):
 			(_colliders[result.chunk_coord] as WorldChunkCollision).apply_result(result)
 		_rebuild_count += 1
 		_dirty_rebuild_count += 1
 		_last_refresh_rebuild_count += 1
 		applied += 1
+
+
+func _effective_layer_mask(layer_mask: int) -> int:
+	return layer_mask if build_collision else layer_mask & ~TerrainLayerMask.COLLISION

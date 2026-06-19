@@ -19,6 +19,7 @@ From the repository root:
 .\tools\import.ps1
 .\tools\test.ps1
 .\tools\test_performance.ps1
+.\tools\validate_generation_plugin.ps1
 .\tools\benchmark_terrain.ps1
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
@@ -34,6 +35,7 @@ From the repository root:
 - `import.ps1` imports resources and verifies the project can open headlessly.
 - `test.ps1` runs the fast contract, unit, and integration suites.
 - `test_performance.ps1` runs deterministic performance contract tests.
+- `validate_generation_plugin.ps1` launches the editor with the `World Gen` main screen selected, waits for startup stability, and fails on a native editor crash.
 - `benchmark_terrain.ps1` reports current terrain simulation, chunk drawing, and
   collision-build timing distributions for sparse, dense, and settled fixtures.
 - `run_smoke.ps1` starts the configured main scene for two frames.

@@ -48,9 +48,10 @@ The first second of a run blocks throws so the Start click cannot fire an item.
   bounds rather than visible stone columns.
 - The camera is horizontally locked to the map and only follows downward.
 - Initial terrain is deterministic for a given seed.
-- Generation uses layered noise for stone, dirt, and air, then adds sand, water, and
-  lava pockets and carves a safe surface spawn chamber.
-- The generation profile and thresholds live in
+- Generation uses an ordered resource-driven pass stack. The shipped default stack
+  layers base cave noise, pocket noise, spawn carving, showcase pockets, and bottom
+  sealing.
+- The generation profile and pass tuning live in
   `config/generation/default_profile.tres`.
 
 ### Terrain Rules

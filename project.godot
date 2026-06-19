@@ -27,6 +27,10 @@ window/stretch/mode="canvas_items"
 
 project/assembly_name="ClaimEarth"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/claim_earth_generation_tools/plugin.cfg")
+
 [input]
 
 move_left={

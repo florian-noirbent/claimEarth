@@ -127,19 +127,23 @@ application on the main thread, and remain optional for the single-thread Web bu
 
 ## Generation
 
-`WorldGenerator` runs these passes in order:
+`WorldGenerator` iterates the ordered `GenerationProfile.passes` stack. Each pass is
+a resource instance with its own enable state, parameters, depth-range blend, and
+target-replacement whitelist. The default profile still ships the familiar base
+noise, pocket noise, spawn chamber, showcase pocket, and boundary seal behaviors,
+but the stack may be reordered, duplicated, or selectively disabled without code
+changes.
 
-1. `BaseNoisePass`
-2. `PocketNoisePass`
-3. `SpawnChamberPass`
-4. `ShowcasePocketPass`
-5. `BoundarySealPass`
+`WorldGenerationTask` yields between dynamic progress labels derived from the active
+pass stack, then executes generation once for the requested seed. Generation
+invariants such as spawn air, bottom sealing, air ratio, and valid registered IDs
+are enforced by deterministic tests rather than a runtime validation pass. The
+active defaults live in `config/generation/default_profile.tres`.
 
-`WorldGenerationTask` yields between progress labels, then executes generation once
-for the requested seed. Generation invariants such as spawn air, bottom sealing, air
-ratio, and valid registered IDs are enforced by deterministic tests rather than a
-runtime validation pass. The active defaults live in
-`config/generation/default_profile.tres`, not the script's fallback values.
+The editor-side tuning surface lives in
+`addons/claim_earth_generation_tools/`. It previews static generated terrain through
+the same `WorldGenerator` and `WorldPresenter` path used at runtime, but does not
+spawn the player, items, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
 spawn air, the bottom two stone rows, and distribution tests. Horizontal player

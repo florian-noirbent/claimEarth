@@ -15,13 +15,9 @@ func generate_async(
 	terrain_registry: TerrainRegistry,
 	run_seed: int
 ) -> WorldGenerationResult:
-	var steps := PackedStringArray([
-		"Preparing generation",
-		"Sampling cave layers",
-		"Seeding hazard pockets",
-		"Carving spawn chamber",
-		"Finalizing map",
-	])
+	var steps := PackedStringArray(["Preparing generation"])
+	for pass_resource in profile.active_passes():
+		steps.append(pass_resource.get_progress_label())
 
 	for index in range(steps.size()):
 		progress_changed.emit(float(index) / float(steps.size()), steps[index])

@@ -1,25 +1,57 @@
-[gd_resource type="Resource" script_class="GenerationProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="GenerationProfile" load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://src/generation/generation_profile.gd" id="1_oqppt"]
+[ext_resource type="Script" path="res://src/generation/generation_profile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://src/generation/base_noise_pass.gd" id="2_base"]
+[ext_resource type="Script" path="res://src/generation/pocket_noise_pass.gd" id="3_pocket"]
+[ext_resource type="Script" path="res://src/generation/spawn_chamber_pass.gd" id="4_spawn"]
+[ext_resource type="Script" path="res://src/generation/showcase_pocket_pass.gd" id="5_showcase"]
+[ext_resource type="Script" path="res://src/generation/boundary_seal_pass.gd" id="6_boundary"]
 
-[resource]
-script = ExtResource("1_oqppt")
-width = 100
-depth = 2000
-base_frequency_x = 0.01
-base_frequency_y = 0.045
-base_octaves = 5
-base_gain = 0.54
+[sub_resource type="Resource" id="Resource_base"]
+script = ExtResource("2_base")
+label = "Base Terrain"
+pass_seed_key = "base_terrain"
+octaves = 5
+frequency_x = 0.01
+frequency_y = 0.045
+gain = 0.54
 cave_threshold = 0.12
 dirt_threshold = 0.42
-pocket_octaves = 4
-pocket_frequency_x = 0.026
-pocket_frequency_y = 0.021
+
+[sub_resource type="Resource" id="Resource_pocket"]
+script = ExtResource("3_pocket")
+label = "Hazard Pockets"
+pass_seed_key = "hazard_pockets"
+octaves = 4
+frequency_x = 0.026
+frequency_y = 0.021
 sand_threshold = 0.58
 water_threshold = 0.64
 lava_threshold = 0.66
 water_depth_start_ratio = 0.02
 lava_depth_start_ratio = 0.06
+
+[sub_resource type="Resource" id="Resource_spawn"]
+script = ExtResource("4_spawn")
+label = "Spawn Chamber"
+pass_seed_key = "spawn_chamber"
+
+[sub_resource type="Resource" id="Resource_showcase"]
+script = ExtResource("5_showcase")
+label = "Showcase Pockets"
+pass_seed_key = "showcase_pockets"
+
+[sub_resource type="Resource" id="Resource_boundary"]
+script = ExtResource("6_boundary")
+label = "Bottom Seal"
+pass_seed_key = "bottom_seal"
+sealed_row_count = 2
+
+[resource]
+script = ExtResource("1_profile")
+width = 100
+depth = 512
 spawn_width = 10
 spawn_height = 4
 spawn_margin_top = 0
+passes = Array[Resource]([SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_showcase"), SubResource("Resource_boundary")])

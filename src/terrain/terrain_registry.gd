@@ -3,12 +3,14 @@ extends RefCounted
 
 
 var _definitions_by_id: Dictionary = {}
+var _definitions_by_name: Dictionary = {}
 var _ordered_definitions: Array[TerrainDefinition] = []
 var validation_errors := PackedStringArray()
 
 
 func try_configure(catalog: TerrainCatalog) -> bool:
 	_definitions_by_id.clear()
+	_definitions_by_name.clear()
 	_ordered_definitions.clear()
 	validation_errors = PackedStringArray()
 
@@ -29,6 +31,7 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 			validation_errors.append("duplicate terrain stable_id %d" % definition.stable_id)
 			continue
 		_definitions_by_id[definition.stable_id] = definition
+		_definitions_by_name[definition.display_name] = definition
 		_ordered_definitions.append(definition)
 
 	_ordered_definitions.sort_custom(func(a: TerrainDefinition, b: TerrainDefinition) -> bool:
@@ -55,6 +58,11 @@ func is_valid() -> bool:
 
 func get_definition(stable_id: int) -> TerrainDefinition:
 	return _definitions_by_id.get(stable_id) as TerrainDefinition
+
+
+func stable_id_for_name(terrain_name: String) -> int:
+	var definition := _definitions_by_name.get(terrain_name) as TerrainDefinition
+	return definition.stable_id if definition != null else -1
 
 
 func has_definition(stable_id: int) -> bool:

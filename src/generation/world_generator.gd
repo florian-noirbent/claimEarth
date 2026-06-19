@@ -2,22 +2,16 @@ class_name WorldGenerator
 extends RefCounted
 
 
-var _passes: Array[GenerationPass] = [
-	BaseNoisePass.new(),
-	PocketNoisePass.new(),
-	SpawnChamberPass.new(),
-	ShowcasePocketPass.new(),
-	BoundarySealPass.new(),
-]
-
-
 func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, run_seed: int) -> WorldGenerationResult:
+	if profile == null:
+		return null
+	profile.ensure_pass_seed_keys()
 	var world := WorldGrid.new(profile.create_dimensions(), 0)
 	var context := GenerationContext.new(profile, run_seed, terrain_registry, world)
 
-	for generation_pass in _passes:
+	for generation_pass in profile.active_passes():
 		if not generation_pass.apply(context):
-			push_error("World generation pass failed: %s for seed %d" % [generation_pass.get_name(), run_seed])
+			push_error("World generation pass failed: %s for seed %d" % [generation_pass.get_display_name(), run_seed])
 			return null
 
 	var result := WorldGenerationResult.new()
