@@ -1,57 +1,68 @@
-[gd_resource type="Resource" script_class="GenerationProfile" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="GenerationProfile" format=3 uid="uid://k51yn6p208lp"]
 
-[ext_resource type="Script" path="res://src/generation/generation_profile.gd" id="1_profile"]
-[ext_resource type="Script" path="res://src/generation/base_noise_pass.gd" id="2_base"]
-[ext_resource type="Script" path="res://src/generation/pocket_noise_pass.gd" id="3_pocket"]
-[ext_resource type="Script" path="res://src/generation/spawn_chamber_pass.gd" id="4_spawn"]
-[ext_resource type="Script" path="res://src/generation/showcase_pocket_pass.gd" id="5_showcase"]
-[ext_resource type="Script" path="res://src/generation/boundary_seal_pass.gd" id="6_boundary"]
+[ext_resource type="Script" uid="uid://edr3c3akxvxq" path="res://src/generation/generation_profile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://bs8t7i74mdjuw" path="res://src/generation/base_noise_pass.gd" id="2_base"]
+[ext_resource type="Script" uid="uid://hw8ljernfq4o" path="res://src/generation/pocket_noise_pass.gd" id="3_pocket"]
+[ext_resource type="Script" uid="uid://c6xc08gl400h1" path="res://src/generation/spawn_chamber_pass.gd" id="4_spawn"]
+[ext_resource type="Script" uid="uid://cl6lpqt7i7yhr" path="res://src/generation/boundary_seal_pass.gd" id="5_boundary"]
 
-[sub_resource type="Resource" id="Resource_base"]
+[sub_resource type="Resource" id="Resource_i4eqn"]
 script = ExtResource("2_base")
-label = "Base Terrain"
-pass_seed_key = "base_terrain"
 octaves = 5
 frequency_x = 0.01
 frequency_y = 0.045
 gain = 0.54
 cave_threshold = 0.12
-dirt_threshold = 0.42
+dirt_threshold = 0.355
+label = "Base Terrain"
+pass_seed_key = "base_terrain_0"
+allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_pocket"]
+[sub_resource type="Resource" id="Resource_rdg67"]
 script = ExtResource("3_pocket")
-label = "Hazard Pockets"
-pass_seed_key = "hazard_pockets"
 octaves = 4
 frequency_x = 0.026
 frequency_y = 0.021
-sand_threshold = 0.58
-water_threshold = 0.64
-lava_threshold = 0.66
-water_depth_start_ratio = 0.02
-lava_depth_start_ratio = 0.06
+placement_threshold = 0.58
+label = "Sand Hazard"
+pass_seed_key = "sand_hazard_1"
+allowed_target_ids = PackedInt32Array(2)
 
-[sub_resource type="Resource" id="Resource_spawn"]
+[sub_resource type="Resource" id="Resource_7rhj7"]
+script = ExtResource("3_pocket")
+octaves = 4
+frequency_x = 0.026
+frequency_y = 0.021
+hazard_type = 1
+placement_threshold = 0.58
+label = "Water Hazard"
+pass_seed_key = "water_hazard_2"
+min_depth_ratio = 0.02
+allowed_target_ids = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="Resource_26qyd"]
+script = ExtResource("3_pocket")
+frequency_x = 0.097
+frequency_y = 0.029
+hazard_type = 2
+placement_threshold = 0.522
+label = "Lava Hazard"
+pass_seed_key = "lava_hazard_3"
+min_depth_ratio = 0.06
+allowed_target_ids = PackedInt32Array(1)
+
+[sub_resource type="Resource" id="Resource_fr6de"]
 script = ExtResource("4_spawn")
 label = "Spawn Chamber"
-pass_seed_key = "spawn_chamber"
+pass_seed_key = "spawn_chamber_4"
+allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_showcase"]
-script = ExtResource("5_showcase")
-label = "Showcase Pockets"
-pass_seed_key = "showcase_pockets"
-
-[sub_resource type="Resource" id="Resource_boundary"]
-script = ExtResource("6_boundary")
+[sub_resource type="Resource" id="Resource_22l3w"]
+script = ExtResource("5_boundary")
 label = "Bottom Seal"
-pass_seed_key = "bottom_seal"
-sealed_row_count = 2
+pass_seed_key = "bottom_seal_5"
+allowed_target_ids = PackedInt32Array()
 
 [resource]
 script = ExtResource("1_profile")
-width = 100
-depth = 512
-spawn_width = 10
-spawn_height = 4
-spawn_margin_top = 0
-passes = Array[Resource]([SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_showcase"), SubResource("Resource_boundary")])
+passes = [SubResource("Resource_i4eqn"), SubResource("Resource_rdg67"), SubResource("Resource_7rhj7"), SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w")]

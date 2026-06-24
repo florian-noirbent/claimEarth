@@ -37,6 +37,17 @@ func _base_profile_for_stack_tests() -> GenerationProfile:
 	return profile
 
 
+func _hazard_pass(pass_seed_key: String, hazard_type: int, placement_threshold: float, allowed_target_ids := PackedInt32Array()) -> Resource:
+	var pocket_pass = PocketNoisePassScript.new()
+	pocket_pass.pass_seed_key = pass_seed_key
+	pocket_pass.hazard_type = hazard_type
+	pocket_pass.allowed_target_ids = allowed_target_ids
+	pocket_pass.frequency_x = 0.04
+	pocket_pass.frequency_y = 0.04
+	pocket_pass.placement_threshold = placement_threshold
+	return pocket_pass
+
+
 func test_same_seed_and_profile_produce_same_world_hash() -> void:
 	var generator := WorldGenerator.new()
 	var profile := _default_profile()
@@ -119,33 +130,28 @@ func test_generated_world_includes_secondary_material_pockets() -> void:
 	var result := generator.generate(profile, registry, 31415)
 	assert_not_null(result)
 
-	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Sand")), 500)
-	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Water")), 500)
+	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Sand")), 100)
+	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Water")), 100)
 	assert_gt(result.world.count_committed(FixtureLoader.terrain_id("Lava")), 100)
 
 
-func test_generated_world_shows_secondary_materials_in_upper_play_band() -> void:
-	var generator := WorldGenerator.new()
+func test_default_profile_uses_typed_hazard_pocket_instances_without_showcase_pass() -> void:
 	var profile := _default_profile()
-	var registry := TerrainRegistry.new()
-	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
-	var result := generator.generate(profile, registry, SeedUtils.seed_from_text("live-materials"))
-	assert_not_null(result)
+	var hazard_passes: Array = []
+	for pass_resource in profile.passes:
+		if pass_resource == null:
+			continue
+		assert_ne(pass_resource.get_pass_type_name(), "Showcase Pockets")
+		if pass_resource.get_pass_type_name() == "Hazard Pocket":
+			hazard_passes.append(pass_resource)
 
-	var shallow_counts := {
-		"Sand": 0,
-		"Water": 0,
-		"Lava": 0,
-	}
-	for row in range(0, 96):
-		for col in range(profile.width):
-			var definition := registry.get_definition(result.world.get_committed_by_offset(col, row))
-			if shallow_counts.has(definition.display_name):
-				shallow_counts[definition.display_name] += 1
-
-	assert_gt(shallow_counts["Sand"], 0)
-	assert_gt(shallow_counts["Water"], 0)
-	assert_gt(shallow_counts["Lava"], 0)
+	assert_eq(hazard_passes.size(), 3)
+	assert_eq(hazard_passes[0].label, "Sand Hazard")
+	assert_eq(hazard_passes[1].label, "Water Hazard")
+	assert_eq(hazard_passes[2].label, "Lava Hazard")
+	assert_eq(hazard_passes[0].hazard_type, PocketNoisePassScript.HazardType.SAND)
+	assert_eq(hazard_passes[1].hazard_type, PocketNoisePassScript.HazardType.WATER)
+	assert_eq(hazard_passes[2].hazard_type, PocketNoisePassScript.HazardType.LAVA)
 
 
 func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
@@ -209,14 +215,7 @@ func test_reordering_passes_changes_output_deterministically() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var dirt_id := FixtureLoader.terrain_id("Dirt")
 
-	var pocket_pass_a = PocketNoisePassScript.new()
-	pocket_pass_a.pass_seed_key = "reorder_pocket"
-	pocket_pass_a.allowed_target_ids = PackedInt32Array([dirt_id])
-	pocket_pass_a.frequency_x = 0.04
-	pocket_pass_a.frequency_y = 0.04
-	pocket_pass_a.sand_threshold = 0.4
-	pocket_pass_a.water_threshold = 0.99
-	pocket_pass_a.lava_threshold = 0.99
+	var pocket_pass_a = _hazard_pass("reorder_pocket", PocketNoisePassScript.HazardType.SAND, 0.4, PackedInt32Array([dirt_id]))
 	var pocket_pass_b: Resource = pocket_pass_a.duplicate(true)
 
 	profile_a.passes.insert(1, pocket_pass_a)
@@ -240,23 +239,13 @@ func test_duplicate_pass_type_with_different_parameters_applies_both_instances()
 	var sand_id := FixtureLoader.terrain_id("Sand")
 	var water_id := FixtureLoader.terrain_id("Water")
 
-	var first = PocketNoisePassScript.new()
-	first.pass_seed_key = "pocket_one"
-	first.allowed_target_ids = PackedInt32Array([dirt_id])
+	var first = _hazard_pass("pocket_one", PocketNoisePassScript.HazardType.SAND, 0.4, PackedInt32Array([dirt_id]))
 	first.frequency_x = 0.05
 	first.frequency_y = 0.04
-	first.sand_threshold = 0.4
-	first.water_threshold = 0.95
-	first.lava_threshold = 0.99
 
-	var second = PocketNoisePassScript.new()
-	second.pass_seed_key = "pocket_two"
-	second.allowed_target_ids = PackedInt32Array([dirt_id])
+	var second = _hazard_pass("pocket_two", PocketNoisePassScript.HazardType.WATER, 0.4, PackedInt32Array([dirt_id]))
 	second.frequency_x = 0.03
 	second.frequency_y = 0.03
-	second.sand_threshold = 0.99
-	second.water_threshold = 0.4
-	second.lava_threshold = 0.99
 
 	profile.passes.insert(1, first)
 	profile.passes.insert(2, second)
@@ -265,6 +254,29 @@ func test_duplicate_pass_type_with_different_parameters_applies_both_instances()
 	assert_not_null(result)
 	assert_gt(result.world.count_committed(sand_id), 0)
 	assert_gt(result.world.count_committed(water_id), 0)
+
+
+func test_hazard_pocket_pass_seed_key_changes_noise_layout_deterministically() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var profile_a := _base_profile_for_stack_tests()
+	var profile_b := _base_profile_for_stack_tests()
+	var dirt_id := FixtureLoader.terrain_id("Dirt")
+
+	var first_pass = _hazard_pass("hazard_alpha", PocketNoisePassScript.HazardType.SAND, 0.35, PackedInt32Array([dirt_id]))
+	var second_pass = _hazard_pass("hazard_beta", PocketNoisePassScript.HazardType.SAND, 0.35, PackedInt32Array([dirt_id]))
+	profile_a.passes.insert(1, first_pass)
+	profile_b.passes.insert(1, second_pass)
+
+	var result_a := generator.generate(profile_a, registry, 1441)
+	var result_b := generator.generate(profile_b, registry, 1441)
+	var result_b_repeat := generator.generate(profile_b, registry, 1441)
+
+	assert_not_null(result_a)
+	assert_not_null(result_b)
+	assert_not_null(result_b_repeat)
+	assert_ne(result_a.world_hash, result_b.world_hash)
+	assert_eq(result_b.world_hash, result_b_repeat.world_hash)
 
 
 func test_replacement_whitelist_prevents_unauthorized_replacement() -> void:
@@ -276,14 +288,9 @@ func test_replacement_whitelist_prevents_unauthorized_replacement() -> void:
 	var dirt_id := FixtureLoader.terrain_id("Dirt")
 	var sand_id := FixtureLoader.terrain_id("Sand")
 
-	var pocket_pass = PocketNoisePassScript.new()
-	pocket_pass.pass_seed_key = "only_stone"
-	pocket_pass.allowed_target_ids = PackedInt32Array([stone_id])
+	var pocket_pass = _hazard_pass("only_stone", PocketNoisePassScript.HazardType.SAND, 0.1, PackedInt32Array([stone_id]))
 	pocket_pass.frequency_x = 0.06
 	pocket_pass.frequency_y = 0.06
-	pocket_pass.sand_threshold = 0.1
-	pocket_pass.water_threshold = 0.99
-	pocket_pass.lava_threshold = 0.99
 	profile.passes.insert(1, pocket_pass)
 
 	var baseline := generator.generate(baseline_profile, registry, 2026)
@@ -306,14 +313,7 @@ func test_depth_range_and_blend_only_affect_targeted_band() -> void:
 	var dirt_id := FixtureLoader.terrain_id("Dirt")
 	var water_id := FixtureLoader.terrain_id("Water")
 
-	var pocket_pass = PocketNoisePassScript.new()
-	pocket_pass.pass_seed_key = "banded_water"
-	pocket_pass.allowed_target_ids = PackedInt32Array([dirt_id])
-	pocket_pass.frequency_x = 0.04
-	pocket_pass.frequency_y = 0.04
-	pocket_pass.sand_threshold = 0.99
-	pocket_pass.water_threshold = 0.2
-	pocket_pass.lava_threshold = 0.99
+	var pocket_pass = _hazard_pass("banded_water", PocketNoisePassScript.HazardType.WATER, 0.2, PackedInt32Array([dirt_id]))
 	pocket_pass.min_depth_ratio = 0.25
 	pocket_pass.max_depth_ratio = 0.5
 	pocket_pass.blend_distance_ratio = 0.1
@@ -328,3 +328,54 @@ func test_depth_range_and_blend_only_affect_targeted_band() -> void:
 				continue
 			var ratio := float(row) / float(max(1, profile.depth - 1))
 			assert_true(ratio >= 0.25 and ratio <= 0.5)
+
+
+func test_whitelist_all_allows_hazard_pockets_to_replace_air() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var profile := _base_profile_for_stack_tests()
+	var baseline_profile := _base_profile_for_stack_tests()
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	var air_id := FixtureLoader.terrain_id("Air")
+
+	var pocket_pass = _hazard_pass("air_fill", PocketNoisePassScript.HazardType.SAND, 0.1)
+	pocket_pass.min_depth_ratio = 0.0
+	pocket_pass.max_depth_ratio = 0.18
+	profile.passes.insert(1, pocket_pass)
+
+	var baseline := generator.generate(baseline_profile, registry, 909)
+	var result := generator.generate(profile, registry, 909)
+	assert_not_null(baseline)
+	assert_not_null(result)
+
+	var replaced_air_cells := 0
+	for row in range(profile.depth):
+		for col in range(profile.width):
+			if baseline.world.get_committed_by_offset(col, row) == air_id and result.world.get_committed_by_offset(col, row) == sand_id:
+				replaced_air_cells += 1
+	assert_gt(replaced_air_cells, 0)
+
+
+func test_whitelist_without_air_still_blocks_air_replacement() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var profile := _base_profile_for_stack_tests()
+	var baseline_profile := _base_profile_for_stack_tests()
+	var dirt_id := FixtureLoader.terrain_id("Dirt")
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	var air_id := FixtureLoader.terrain_id("Air")
+
+	var pocket_pass = _hazard_pass("no_air_fill", PocketNoisePassScript.HazardType.SAND, 0.1, PackedInt32Array([dirt_id]))
+	pocket_pass.min_depth_ratio = 0.0
+	pocket_pass.max_depth_ratio = 0.18
+	profile.passes.insert(1, pocket_pass)
+
+	var baseline := generator.generate(baseline_profile, registry, 910)
+	var result := generator.generate(profile, registry, 910)
+	assert_not_null(baseline)
+	assert_not_null(result)
+
+	for row in range(profile.depth):
+		for col in range(profile.width):
+			if baseline.world.get_committed_by_offset(col, row) == air_id:
+				assert_ne(result.world.get_committed_by_offset(col, row), sand_id)

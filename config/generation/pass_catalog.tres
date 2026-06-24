@@ -1,12 +1,11 @@
-[gd_resource type="Resource" script_class="GenerationPassCatalog" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="GenerationPassCatalog" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/generation/generation_pass_catalog.gd" id="1_catalog"]
 [ext_resource type="Script" path="res://src/generation/generation_pass_catalog_entry.gd" id="2_entry"]
 [ext_resource type="Script" path="res://src/generation/base_noise_pass.gd" id="3_base"]
 [ext_resource type="Script" path="res://src/generation/pocket_noise_pass.gd" id="4_pocket"]
 [ext_resource type="Script" path="res://src/generation/spawn_chamber_pass.gd" id="5_spawn"]
-[ext_resource type="Script" path="res://src/generation/showcase_pocket_pass.gd" id="6_showcase"]
-[ext_resource type="Script" path="res://src/generation/boundary_seal_pass.gd" id="7_boundary"]
+[ext_resource type="Script" path="res://src/generation/boundary_seal_pass.gd" id="6_boundary"]
 
 [sub_resource type="Resource" id="Resource_base"]
 script = ExtResource("2_entry")
@@ -15,7 +14,7 @@ pass_script = ExtResource("3_base")
 
 [sub_resource type="Resource" id="Resource_pocket"]
 script = ExtResource("2_entry")
-label = "Pocket Noise"
+label = "Hazard Pocket"
 pass_script = ExtResource("4_pocket")
 
 [sub_resource type="Resource" id="Resource_spawn"]
@@ -23,16 +22,11 @@ script = ExtResource("2_entry")
 label = "Spawn Chamber"
 pass_script = ExtResource("5_spawn")
 
-[sub_resource type="Resource" id="Resource_showcase"]
-script = ExtResource("2_entry")
-label = "Showcase Pockets"
-pass_script = ExtResource("6_showcase")
-
 [sub_resource type="Resource" id="Resource_boundary"]
 script = ExtResource("2_entry")
 label = "Boundary Seal"
-pass_script = ExtResource("7_boundary")
+pass_script = ExtResource("6_boundary")
 
 [resource]
 script = ExtResource("1_catalog")
-entries = Array[ExtResource("2_entry")]([SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_showcase"), SubResource("Resource_boundary")])
+entries = Array[ExtResource("2_entry")]([SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_boundary")])
