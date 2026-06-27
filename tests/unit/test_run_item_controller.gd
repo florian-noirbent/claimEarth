@@ -25,6 +25,18 @@ func test_flag_resolution_emits_depth_and_lava_outcome() -> void:
 	assert_signal_emitted(controller, "flag_destroyed")
 
 
+func test_flag_landing_above_surface_clamps_depth_to_zero() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	watch_signals(controller)
+
+	var landing_position := HexMetrics.center_for_offset(4, -1, 16.0)
+	controller.resolve_flag_landing(null, landing_position, null, &"impact")
+
+	assert_signal_emitted_with_parameters(controller, "flag_planted", [0, landing_position])
+
+
 func _item_registry() -> ItemRegistry:
 	var registry := ItemRegistry.new()
 	assert_true(registry.try_configure(load("res://config/items/catalog.tres")))

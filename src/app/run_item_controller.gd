@@ -122,7 +122,8 @@ func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _p
 	if resolution_kind == &"lava":
 		flag_destroyed.emit()
 	elif resolution_kind == &"impact":
-		flag_planted.emit(HexMetrics.offset_for_world(impact_position, _hex_radius).y, impact_position)
+		var landing_depth := maxi(0, HexMetrics.offset_for_world(impact_position, _hex_radius).y)
+		flag_planted.emit(landing_depth, impact_position)
 
 
 func inventory_status() -> Dictionary:
