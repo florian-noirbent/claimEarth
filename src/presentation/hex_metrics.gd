@@ -1,3 +1,4 @@
+## Converts flat-top hex coordinates into world positions and polygon geometry.
 class_name HexMetrics
 extends RefCounted
 

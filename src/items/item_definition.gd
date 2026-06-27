@@ -1,3 +1,4 @@
+## Defines item identity, inventory tuning, UI presentation, and action factory.
 class_name ItemDefinition
 extends Resource
 

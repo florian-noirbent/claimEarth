@@ -1,3 +1,4 @@
+## Abstract service boundary for leaderboard reads and submissions.
 class_name LeaderboardService
 extends Node
 

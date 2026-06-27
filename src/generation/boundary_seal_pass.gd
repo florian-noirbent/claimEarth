@@ -1,4 +1,5 @@
 @tool
+## Seals the bottom rows of generated worlds to preserve run bounds.
 extends GenerationPassResource
 
 

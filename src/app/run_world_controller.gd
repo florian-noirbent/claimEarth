@@ -1,3 +1,4 @@
+## Owns generation, player lifetime, terrain simulation, camera bounds, and world presentation.
 class_name RunWorldController
 extends Node
 

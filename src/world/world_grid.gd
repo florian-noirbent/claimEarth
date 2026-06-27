@@ -1,3 +1,4 @@
+## Owns committed and working terrain ID/fill buffers for a generated world.
 class_name WorldGrid
 extends RefCounted
 

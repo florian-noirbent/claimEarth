@@ -1,3 +1,4 @@
+## Coordinates chunk-scheduled, time-sliced terrain simulation and commits.
 class_name CooperativeChunkBackend
 extends TerrainSimulationBackend
 

@@ -1,3 +1,4 @@
+## Predicts projectile paths for aiming and presentation.
 class_name ItemTrajectoryService
 extends RefCounted
 

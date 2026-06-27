@@ -1,3 +1,4 @@
+## Owns inventory, projectile lifecycle, explosions, and flag resolution for a run.
 class_name RunItemController
 extends Node
 

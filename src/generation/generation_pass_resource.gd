@@ -1,4 +1,5 @@
 @tool
+## Base resource contract for deterministic world generation passes.
 class_name GenerationPassResource
 extends Resource
 

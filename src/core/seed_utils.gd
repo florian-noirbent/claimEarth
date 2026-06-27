@@ -1,3 +1,4 @@
+## Provides deterministic seed helpers shared by generation and tests.
 class_name SeedUtils
 extends RefCounted
 

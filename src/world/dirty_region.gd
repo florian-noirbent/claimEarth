@@ -1,3 +1,4 @@
+## Accumulates changed indices into a rectangular dirty region.
 class_name DirtyRegion
 extends RefCounted
 

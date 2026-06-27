@@ -1,3 +1,4 @@
+## Owns transient gameplay effects such as camera shake and impact rings.
 class_name GameplayFeedback
 extends Node2D
 

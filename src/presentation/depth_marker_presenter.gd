@@ -1,3 +1,4 @@
+## Displays non-colliding world markers for best depths.
 class_name DepthMarkerPresenter
 extends Node2D
 

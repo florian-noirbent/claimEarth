@@ -1,3 +1,4 @@
+## Coordinates visible chunk renderers, colliders, dirty rebuilds, and build jobs.
 class_name WorldPresenter
 extends Node2D
 

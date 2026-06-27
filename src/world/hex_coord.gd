@@ -1,3 +1,4 @@
+## Represents axial hex coordinates and neighbor/distance operations.
 class_name HexCoord
 extends RefCounted
 

@@ -1,3 +1,4 @@
+## Queries hookable terrain from committed world data for grapple attachment.
 class_name WorldGrappleAnchorQuery
 extends GrappleAnchorQuery
 

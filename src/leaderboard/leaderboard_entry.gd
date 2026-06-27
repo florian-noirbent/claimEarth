@@ -1,3 +1,4 @@
+## Represents one parsed leaderboard row.
 class_name LeaderboardEntry
 extends RefCounted
 

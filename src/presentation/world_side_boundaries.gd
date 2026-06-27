@@ -1,3 +1,4 @@
+## Creates invisible horizontal runtime bounds for the player.
 class_name WorldSideBoundaries
 extends StaticBody2D
 

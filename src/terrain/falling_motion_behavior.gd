@@ -1,3 +1,4 @@
+## Motion behavior defaults for falling granular terrain.
 class_name FallingMotionBehavior
 extends TerrainMotionBehavior
 

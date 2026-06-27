@@ -1,3 +1,4 @@
+## Defines canonical death causes used by run outcomes and UI.
 class_name DeathCause
 extends RefCounted
 

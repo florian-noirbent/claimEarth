@@ -1,3 +1,4 @@
+## Pure model for player acceleration, gravity, jump buffering, and coyote time.
 class_name PlayerMovementModel
 extends RefCounted
 

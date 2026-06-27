@@ -1,3 +1,4 @@
+## Owns the persistent application shell and routes UI intents to run-state changes.
 class_name AppRoot
 extends Control
 

@@ -1,4 +1,5 @@
 @tool
+## Defines an ordered, tunable stack of generation passes.
 class_name GenerationProfile
 extends Resource
 

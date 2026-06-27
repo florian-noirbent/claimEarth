@@ -1,3 +1,4 @@
+## Reads and writes save data under user storage with corrupt-data fallback.
 class_name SaveRepository
 extends RefCounted
 

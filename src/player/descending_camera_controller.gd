@@ -1,3 +1,4 @@
+## Applies descending camera model output to the active Camera2D.
 class_name DescendingCameraController
 extends Camera2D
 

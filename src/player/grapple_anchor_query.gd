@@ -1,3 +1,4 @@
+## Abstract boundary for querying grapple targets from a world representation.
 class_name GrappleAnchorQuery
 extends RefCounted
 

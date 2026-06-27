@@ -1,3 +1,4 @@
+## Tracks timed and immediate terrain hazard exposure for the player.
 class_name EnvironmentStatus
 extends RefCounted
 

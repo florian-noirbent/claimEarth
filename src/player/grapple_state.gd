@@ -1,3 +1,4 @@
+## Mutable grapple state shared between controller and model.
 class_name GrappleState
 extends RefCounted
 

@@ -1,3 +1,4 @@
+## Draws and animates a transient radial feedback ring.
 class_name RingEffect
 extends Node2D
 

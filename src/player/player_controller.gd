@@ -1,3 +1,4 @@
+## Coordinates player physics, movement model, grapple model, and environment sampling.
 class_name PlayerController
 extends CharacterBody2D
 

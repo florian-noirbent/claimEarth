@@ -1,3 +1,4 @@
+## Represents persisted local profile, best score, and pending submission state.
 class_name SaveData
 extends RefCounted
 

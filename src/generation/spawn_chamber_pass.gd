@@ -1,4 +1,5 @@
 @tool
+## Carves the initial safe spawn area from generated terrain.
 extends GenerationPassResource
 
 

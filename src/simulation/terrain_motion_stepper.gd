@@ -1,3 +1,4 @@
+## Owns per-cell motion priority: fall, side-down, then side-up.
 class_name TerrainMotionStepper
 extends RefCounted
 

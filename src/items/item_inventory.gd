@@ -1,3 +1,4 @@
+## Tracks item counts and current selection for a run.
 class_name ItemInventory
 extends RefCounted
 

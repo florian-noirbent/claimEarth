@@ -1,4 +1,5 @@
 @tool
+## Base resource contract for resolving fill-aware terrain hazards.
 class_name TerrainHazardBehavior
 extends Resource
 

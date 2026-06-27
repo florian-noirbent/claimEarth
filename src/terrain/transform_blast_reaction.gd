@@ -1,3 +1,4 @@
+## Blast reaction that transforms terrain into another registered type.
 class_name TransformBlastReaction
 extends BlastReaction
 

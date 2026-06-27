@@ -1,3 +1,4 @@
+## Defines the finite run phases used by AppRoot and UI presentation.
 class_name RunPhase
 extends RefCounted
 

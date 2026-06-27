@@ -1,3 +1,4 @@
+## Motion behavior for terrain that does not move in simulation.
 class_name StableMotionBehavior
 extends TerrainMotionBehavior
 

@@ -1,3 +1,4 @@
+## Terrain hazard behavior for full-fill water suffocation exposure.
 class_name SuffocationHazardBehavior
 extends TerrainHazardBehavior
 

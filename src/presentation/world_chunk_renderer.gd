@@ -1,3 +1,4 @@
+## Owns static, sand, and fluid mesh layers for one visible chunk.
 class_name WorldChunkRenderer
 extends Node2D
 

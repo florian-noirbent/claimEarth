@@ -1,4 +1,5 @@
 @tool
+## Base resource contract for terrain motion and fill-transfer tuning.
 class_name TerrainMotionBehavior
 extends Resource
 

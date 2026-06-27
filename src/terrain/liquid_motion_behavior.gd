@@ -1,3 +1,4 @@
+## Motion behavior defaults for liquids that flow through fill transfer.
 class_name LiquidMotionBehavior
 extends TerrainMotionBehavior
 

@@ -1,3 +1,4 @@
+## Blast reaction that leaves terrain unchanged.
 class_name NoBlastReaction
 extends BlastReaction
 

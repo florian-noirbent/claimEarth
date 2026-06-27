@@ -1,3 +1,4 @@
+## Terrain hazard behavior for full-fill sand burial exposure.
 class_name BurialHazardBehavior
 extends TerrainHazardBehavior
 

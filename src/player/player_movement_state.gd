@@ -1,3 +1,4 @@
+## Mutable movement state shared between controller and model.
 class_name PlayerMovementState
 extends RefCounted
 

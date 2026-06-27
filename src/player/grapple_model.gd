@@ -1,3 +1,4 @@
+## Pure model for hook launch, attachment, rope length, and swing forces.
 class_name GrappleModel
 extends RefCounted
 

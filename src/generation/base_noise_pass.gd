@@ -1,4 +1,5 @@
 @tool
+## Fills the world with deterministic base cave noise for a generation profile.
 extends GenerationPassResource
 
 

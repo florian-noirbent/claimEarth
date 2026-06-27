@@ -1,3 +1,4 @@
+## Validates and indexes item definitions by stable ID.
 class_name ItemRegistry
 extends RefCounted
 

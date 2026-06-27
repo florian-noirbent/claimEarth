@@ -1,3 +1,4 @@
+## Describes the result of applying a terrain blast reaction.
 class_name BlastEffect
 extends RefCounted
 

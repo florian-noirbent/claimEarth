@@ -1,3 +1,4 @@
+## Tracks visible chunks, dirty layer masks, and collision cell updates.
 class_name ChunkActivityIndex
 extends RefCounted
 

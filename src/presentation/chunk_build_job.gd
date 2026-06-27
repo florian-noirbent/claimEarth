@@ -1,3 +1,4 @@
+## Builds resource-free chunk mesh arrays and collision edge updates from world snapshots.
 class_name ChunkBuildJob
 extends RefCounted
 

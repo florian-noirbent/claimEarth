@@ -1,3 +1,4 @@
+## Resource tuning for grapple range, rope, and swing behavior.
 class_name GrappleConfig
 extends Resource
 

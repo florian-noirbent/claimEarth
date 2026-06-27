@@ -1,3 +1,4 @@
+## Owns local score persistence and leaderboard submission workflow.
 class_name ScoreController
 extends Node
 

@@ -1,3 +1,4 @@
+## Blast reaction that requests immediate projectile detonation.
 class_name DetonateBlastReaction
 extends BlastReaction
 

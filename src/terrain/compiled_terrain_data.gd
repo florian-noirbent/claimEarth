@@ -1,3 +1,4 @@
+## Maps terrain stable IDs to compact behavior and style data for hot loops.
 class_name CompiledTerrainData
 extends RefCounted
 

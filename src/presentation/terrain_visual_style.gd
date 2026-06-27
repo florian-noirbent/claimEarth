@@ -1,4 +1,5 @@
 @tool
+## Defines procedural terrain colors and pattern style for rendering.
 class_name TerrainVisualStyle
 extends Resource
 

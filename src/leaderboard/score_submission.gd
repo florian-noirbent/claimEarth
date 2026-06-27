@@ -1,3 +1,4 @@
+## Carries a player score submission and retry metadata.
 class_name ScoreSubmission
 extends RefCounted
 

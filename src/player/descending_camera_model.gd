@@ -1,3 +1,4 @@
+## Pure model for downward-only camera movement and bounds clamping.
 class_name DescendingCameraModel
 extends RefCounted
 

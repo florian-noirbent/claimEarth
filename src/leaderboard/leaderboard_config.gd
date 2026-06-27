@@ -1,3 +1,4 @@
+## Stores leaderboard service configuration for runtime resources.
 class_name LeaderboardConfig
 extends Resource
 

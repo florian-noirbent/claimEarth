@@ -1,3 +1,4 @@
+## Resource tuning for ground, air, jump, and step-up movement.
 class_name PlayerMovementConfig
 extends Resource
 

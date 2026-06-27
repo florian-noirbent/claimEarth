@@ -1,4 +1,5 @@
 @tool
+## Places deterministic material pockets within configured depth bands.
 extends GenerationPassResource
 
 

@@ -1,3 +1,4 @@
+## Displays one selectable inventory item in the in-run toolbar.
 class_name ItemToolbarSlot
 extends Button
 

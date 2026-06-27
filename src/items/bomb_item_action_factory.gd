@@ -1,3 +1,4 @@
+## Resource factory for bomb item actions and projectile tuning.
 class_name BombItemActionFactory
 extends ItemActionFactory
 

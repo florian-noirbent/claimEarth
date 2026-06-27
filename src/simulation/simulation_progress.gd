@@ -1,3 +1,4 @@
+## Reports progress from one time-budgeted simulation advance.
 class_name SimulationProgress
 extends RefCounted
 

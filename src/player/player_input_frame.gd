@@ -1,3 +1,4 @@
+## Input snapshot for one player movement step.
 class_name PlayerInputFrame
 extends RefCounted
 

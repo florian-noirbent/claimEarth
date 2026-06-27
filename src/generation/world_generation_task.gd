@@ -1,3 +1,4 @@
+## Runs generation with progress reporting and cancellation tolerance.
 class_name WorldGenerationTask
 extends RefCounted
 

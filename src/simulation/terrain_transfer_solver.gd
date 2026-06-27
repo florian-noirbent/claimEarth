@@ -1,3 +1,4 @@
+## Solves terrain transfer amounts, split flow, liquid contact, and displacement.
 class_name TerrainTransferSolver
 extends RefCounted
 

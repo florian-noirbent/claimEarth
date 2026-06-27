@@ -1,3 +1,4 @@
+## SimpleBoards implementation of the leaderboard service boundary.
 class_name SimpleBoardsLeaderboardService
 extends "res://src/leaderboard/leaderboard_service.gd"
 

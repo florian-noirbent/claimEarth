@@ -1,3 +1,4 @@
+## Resource factory for flag item actions and projectile tuning.
 class_name FlagItemActionFactory
 extends ItemActionFactory
 

@@ -1,3 +1,4 @@
+## Describes a terrain hazard effect and its fill activation threshold.
 class_name HazardEffect
 extends RefCounted
 

@@ -1,3 +1,4 @@
+## Maps gameplay and UI events to audio playback without owning gameplay state.
 class_name AudioDirector
 extends Node
 

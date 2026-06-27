@@ -1,3 +1,4 @@
+## Carries generated world data, dimensions, spawn, and final seed.
 class_name WorldGenerationResult
 extends RefCounted
 

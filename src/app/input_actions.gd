@@ -1,3 +1,4 @@
+## Centralizes input action names expected by gameplay and tests.
 class_name InputActions
 extends RefCounted
 

@@ -1,3 +1,4 @@
+## Validates and indexes terrain definitions by stable ID.
 class_name TerrainRegistry
 extends RefCounted
 

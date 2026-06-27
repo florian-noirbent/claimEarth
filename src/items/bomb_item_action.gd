@@ -1,3 +1,4 @@
+## Creates bomb projectiles from item use requests.
 class_name BombItemAction
 extends ItemAction
 

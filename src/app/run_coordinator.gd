@@ -1,3 +1,4 @@
+## Owns run-phase transitions and emits state changes for the app shell.
 class_name RunCoordinator
 extends RefCounted
 

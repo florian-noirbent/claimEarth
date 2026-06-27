@@ -1,3 +1,4 @@
+## Collects terrain changes and derives presentation/simulation dirty data.
 class_name TerrainChangeSet
 extends RefCounted
 

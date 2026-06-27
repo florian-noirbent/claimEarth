@@ -1,3 +1,4 @@
+## Describes a valid grapple attachment point in world space.
 class_name GrappleAnchor
 extends RefCounted
 

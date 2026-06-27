@@ -1,3 +1,4 @@
+## Blast reaction that reduces propagation through the terrain cell.
 class_name DiffuseBlastReaction
 extends BlastReaction
 

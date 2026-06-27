@@ -1,3 +1,4 @@
+## Owns one chunk collision body and applies keyed collision edge updates.
 class_name WorldChunkCollision
 extends StaticBody2D
 

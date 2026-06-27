@@ -1,3 +1,4 @@
+## Carries mutable world state and deterministic random sources through generation passes.
 class_name GenerationContext
 extends RefCounted
 

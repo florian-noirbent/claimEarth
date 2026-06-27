@@ -1,3 +1,4 @@
+## Terrain hazard behavior for lava lethal contact.
 class_name LavaHazardBehavior
 extends TerrainHazardBehavior
 

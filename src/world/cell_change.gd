@@ -1,3 +1,4 @@
+## Describes one terrain ID and fill change at a world index.
 class_name CellChange
 extends RefCounted
 

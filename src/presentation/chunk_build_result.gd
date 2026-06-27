@@ -1,3 +1,4 @@
+## Carries chunk mesh and collision output back to the presenter.
 class_name ChunkBuildResult
 extends RefCounted
 

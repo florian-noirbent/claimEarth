@@ -1,3 +1,4 @@
+## Owns projectile flight, terrain sampling, fuse/bounce behavior, and resolution signals.
 class_name ItemProjectile
 extends Node2D
 

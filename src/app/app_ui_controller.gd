@@ -1,3 +1,4 @@
+## Owns menu, HUD, pause, results, and leaderboard presentation.
 class_name AppUiController
 extends CanvasLayer
 

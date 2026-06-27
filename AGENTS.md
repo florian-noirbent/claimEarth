@@ -3,12 +3,17 @@
 These instructions apply to the entire repository. The base game is implemented;
 work is now maintenance, portfolio polish, and feature development.
 
+`README.md` is the human project entry point. This file is the operating guide for
+coding agents and should stay focused on implementation constraints.
+
 ## Start Here
 
 1. Read `docs/GAME_DESIGN.md` for the current player-facing contract.
 2. Read `docs/ARCHITECTURE.md` for ownership boundaries and extension recipes.
 3. Read `tools/README.md` for local commands.
-4. Inspect the closest implementation and tests before proposing a new abstraction.
+4. For visual or art changes, read `docs/ASSET_NOTES.md`.
+5. For export or release work, read `docs/RELEASE_CHECKLIST.md`.
+6. Inspect the closest implementation and tests before proposing a new abstraction.
 
 There is intentionally no execution ledger or prescribed build sequence. Use Git
 history for historical context. Keep documentation focused on the current system.

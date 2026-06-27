@@ -1,3 +1,4 @@
+## Composes the disposable gameplay session for one preview or active run.
 class_name RunSession
 extends Node
 

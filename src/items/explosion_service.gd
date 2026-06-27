@@ -1,3 +1,4 @@
+## Applies blast reactions to terrain and reports exact changed cells.
 class_name ExplosionService
 extends RefCounted
 

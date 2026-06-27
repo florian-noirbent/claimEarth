@@ -1,4 +1,5 @@
 @tool
+## Describes one generation pass type exposed by the tuning UI.
 class_name GenerationPassCatalogEntry
 extends Resource
 

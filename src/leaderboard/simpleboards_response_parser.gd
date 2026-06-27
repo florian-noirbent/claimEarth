@@ -1,3 +1,4 @@
+## Parses and validates SimpleBoards leaderboard responses.
 class_name SimpleBoardsResponseParser
 extends RefCounted
 

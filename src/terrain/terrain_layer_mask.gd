@@ -1,3 +1,4 @@
+## Defines dirty and render layer bits used by terrain presentation.
 class_name TerrainLayerMask
 extends RefCounted
 

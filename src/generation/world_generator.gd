@@ -1,3 +1,4 @@
+## Executes generation profiles into deterministic WorldGrid instances.
 class_name WorldGenerator
 extends RefCounted
 

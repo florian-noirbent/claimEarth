@@ -1,3 +1,4 @@
+## Test double for leaderboard flows that never contacts the network.
 class_name FakeLeaderboardService
 extends "res://src/leaderboard/leaderboard_service.gd"
 

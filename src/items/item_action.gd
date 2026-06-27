@@ -1,3 +1,4 @@
+## Base contract for selected item use behavior.
 class_name ItemAction
 extends RefCounted
 

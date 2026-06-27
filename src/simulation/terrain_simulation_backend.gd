@@ -1,3 +1,4 @@
+## Defines the replaceable terrain simulation backend contract.
 class_name TerrainSimulationBackend
 extends RefCounted
 

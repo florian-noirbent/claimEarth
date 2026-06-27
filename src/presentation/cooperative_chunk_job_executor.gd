@@ -1,3 +1,4 @@
+## Time-slices chunk build jobs and merges superseded chunk work.
 class_name CooperativeChunkJobExecutor
 extends RefCounted
 

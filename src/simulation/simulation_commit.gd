@@ -1,3 +1,4 @@
+## Reports a completed terrain simulation commit and its dirty region.
 class_name SimulationCommit
 extends RefCounted
 

@@ -1,4 +1,5 @@
 @tool
+## Base resource contract for terrain behavior under explosions.
 class_name BlastReaction
 extends Resource
 

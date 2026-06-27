@@ -1,3 +1,4 @@
+## Wraps data-only simulation buffers, touched cells, and wake sets for one tick.
 class_name TerrainSimulationContext
 extends RefCounted
 

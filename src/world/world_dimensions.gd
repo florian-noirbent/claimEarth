@@ -1,3 +1,4 @@
+## Owns rectangular world dimensions and index/offset conversion.
 class_name WorldDimensions
 extends RefCounted
 

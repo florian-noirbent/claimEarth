@@ -1,3 +1,4 @@
+## Creates the flag projectile used to claim a run depth.
 class_name FlagItemAction
 extends ItemAction
 

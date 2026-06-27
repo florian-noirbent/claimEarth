@@ -1,4 +1,5 @@
 @tool
+## Defines terrain identity, visual style, collision, and strategy resources.
 class_name TerrainDefinition
 extends Resource
 
