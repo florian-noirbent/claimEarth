@@ -138,6 +138,8 @@ func side_transfer_capacity(source_id: int, source_fill: int, target_fill: int, 
 	if direction_kind == DIRECTION_SIDE_DOWN:
 		equilibrium_distance = source_fill - target_fill + offset
 	elif direction_kind == DIRECTION_SIDE_UP:
+		if source_fill < metadata.side_up_source_threshold(source_id):
+			return 0
 		equilibrium_distance = source_fill - target_fill - offset
 	else:
 		return 0

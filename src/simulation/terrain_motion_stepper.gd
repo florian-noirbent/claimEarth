@@ -13,14 +13,19 @@ func step(index: int, context) -> void:
 	var source_fill: int = context.fill(index)
 	if source_fill <= 0 or not context.metadata.is_moving(source_id):
 		return
+	var original_source_id := source_id
 	var width: int = context.dimensions.width
 	var row := int(index / width)
 	var col: int = index % width
 
 	if context.metadata.can_fall(source_id):
 		var below: int = index + width
-		if below < context.cell_count() and transfer_solver.try_transfer(index, below, TerrainTransferSolverScript.DIRECTION_FALL, context):
-			return
+		if below < context.cell_count():
+			transfer_solver.try_transfer(index, below, TerrainTransferSolverScript.DIRECTION_FALL, context)
+			source_id = int(context.cell_id(index))
+			source_fill = int(context.fill(index))
+			if source_fill <= 0 or source_id != original_source_id or not context.metadata.is_moving(source_id):
+				return
 
 	if context.metadata.can_side_down(source_id):
 		transfer_solver.try_side_transfers(index, side_targets(col, row, TerrainTransferSolverScript.DIRECTION_SIDE_DOWN, context), TerrainTransferSolverScript.DIRECTION_SIDE_DOWN, context)

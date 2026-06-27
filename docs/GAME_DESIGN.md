@@ -69,11 +69,13 @@ Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, b
 partial fill controls movement and rendering. Moving terrain tries to fall first,
 then flow side-down, then side-up when its motion resource allows it. Side flow
 uses a cellular automata fill offset: side-down flow stops before crossing
-`source_fill == target_fill - 50`, and side-up flow stops before crossing
-`source_fill == target_fill + 50`. If both side targets can receive fluid in a
-tick, the transfer splits evenly. Water uses fast side-flow rates; lava uses the
-same rule with slower rates and a minimum fill difference. Water/lava contact
-creates stone whenever both have nonzero fill. Settled liquids do not oscillate
+`source_fill == target_fill - side_flow_offset`, and side-up flow stops before
+crossing `source_fill == target_fill + side_flow_offset`. Liquids use a
+geometry-matched offset so settled pools render with a flat surface across
+staggered hex columns. If both side targets can receive fluid in a tick, the
+transfer splits evenly. Water uses fast side-flow rates; lava uses the same rule
+with slower rates and a minimum fill difference. Water/lava contact creates
+stone whenever both have nonzero fill. Settled liquids do not oscillate
 indefinitely.
 Terrain simulation targets a commit every 0.1 seconds; simulation and presentation
 work are spread across frames so player physics, projectiles, and input remain

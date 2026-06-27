@@ -4,3 +4,4 @@
 
 [resource]
 script = ExtResource("1_63x0r")
+side_flow_offset = 128

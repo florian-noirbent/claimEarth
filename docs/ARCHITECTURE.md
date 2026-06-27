@@ -125,11 +125,13 @@ future moving materials: fall first, then side-down, then side-up when the motio
 resource allows it. Transfer rates, minimum fill differences, the side-flow fill offset,
 and optional falling displacement of passable moving terrain live on motion
 resources. Side transfers clamp to the configured offset equilibrium and split
-between both side targets when both can receive material. Moving solid terrain can
-also define a fill threshold for collision, so partial material below that
-threshold can skip collider edges. Newly visible chunks receive one bounded motion
-scan; afterward only active cells and their neighbors remain awake. Ticks preserve
-a deterministic order while
+between both side targets when both can receive material. Liquid resources use a
+geometry-matched side-flow offset so the equilibrium corresponds to a visually
+flat surface across staggered flat-top hex columns. Moving solid terrain can also
+define a fill threshold for collision, so partial material below that threshold
+can skip collider edges. Newly visible chunks receive one bounded motion scan;
+afterward only active cells and their neighbors remain awake. Ticks preserve a
+deterministic order while
 `advance(time_budget_usec)` spreads work across frames. Commits contain exact
 changed cells and fill changes rather than one broad dirty area.
 

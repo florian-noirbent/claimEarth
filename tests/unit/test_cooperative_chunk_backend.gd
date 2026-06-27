@@ -159,6 +159,30 @@ func test_stacked_liquid_column_spreads_diagonally_when_supported() -> void:
 	assert_gt(spread_fill, 0)
 
 
+func test_partial_fall_spreads_remaining_liquid_sideways_in_same_tick() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(3, 3, water_id)
+	world.set_committed_by_offset(3, 4, water_id, 127)
+	world.set_committed_by_offset(3, 5, stone_id)
+	world.set_committed_by_offset(2, 5, stone_id)
+	world.set_committed_by_offset(4, 5, stone_id)
+	world.set_committed_by_offset(4, 4, stone_id)
+
+	backend.advance(1000)
+	backend.commit_if_ready()
+
+	assert_eq(world.get_committed_by_offset(3, 3), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_fill_by_offset(3, 4), 255)
+	assert_eq(world.get_committed_by_offset(2, 4), water_id)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 127)
+
+
 func test_liquid_can_flow_down_right_and_down_left_when_blocked_below() -> void:
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
@@ -251,8 +275,8 @@ func test_side_up_overflow_clamps_at_offset_equilibrium() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 153)
-	assert_eq(world.get_committed_fill_by_offset(2, 3), 102)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 192)
+	assert_eq(world.get_committed_fill_by_offset(2, 3), 63)
 
 
 func test_side_down_flow_clamps_at_offset_equilibrium() -> void:
@@ -274,9 +298,9 @@ func test_side_down_flow_clamps_at_offset_equilibrium() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 103)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 64)
 	assert_eq(world.get_committed_by_offset(2, 4), water_id)
-	assert_eq(world.get_committed_fill_by_offset(2, 4), 152)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 191)
 
 
 func test_supported_equal_raw_water_slope_continues_leveling_side_down() -> void:
@@ -299,8 +323,8 @@ func test_supported_equal_raw_water_slope_continues_leveling_side_down() -> void
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 103)
-	assert_eq(world.get_committed_fill_by_offset(2, 4), 153)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 64)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 192)
 
 
 func test_side_flow_does_not_move_when_already_at_offset_equilibrium() -> void:
@@ -313,7 +337,7 @@ func test_side_flow_does_not_move_when_already_at_offset_equilibrium() -> void:
 	world.set_committed_by_offset(3, 3, water_id, 50)
 	world.set_committed_by_offset(3, 4, stone_id)
 	world.set_committed_by_offset(4, 4, stone_id)
-	world.set_committed_by_offset(2, 4, water_id, 100)
+	world.set_committed_by_offset(2, 4, water_id, 178)
 	world.set_committed_by_offset(2, 5, stone_id)
 	world.set_committed_by_offset(1, 4, stone_id)
 	world.set_committed_by_offset(1, 3, stone_id)
@@ -325,7 +349,7 @@ func test_side_flow_does_not_move_when_already_at_offset_equilibrium() -> void:
 
 	assert_false(commit.did_commit)
 	assert_eq(world.get_committed_fill_by_offset(3, 3), 50)
-	assert_eq(world.get_committed_fill_by_offset(2, 4), 100)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 178)
 
 
 func test_side_down_transfer_never_overshoots_offset_equilibrium() -> void:
@@ -348,11 +372,11 @@ func test_side_down_transfer_never_overshoots_offset_equilibrium() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 110)
-	assert_eq(world.get_committed_fill_by_offset(2, 4), 160)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 71)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 199)
 
 
-func test_side_up_flow_uses_ca_rule_below_half_fill() -> void:
+func test_side_up_flow_requires_source_threshold() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
 	var backend = CooperativeChunkBackendScript.new()
@@ -367,11 +391,11 @@ func test_side_up_flow_uses_ca_rule_below_half_fill() -> void:
 	world.set_committed_by_offset(1, 3, stone_id)
 
 	backend.advance(1000)
-	backend.commit_if_ready()
+	var commit = backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 75)
-	assert_eq(world.get_committed_by_offset(2, 3), water_id)
-	assert_eq(world.get_committed_fill_by_offset(2, 3), 25)
+	assert_false(commit.did_commit)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 100)
+	assert_eq(world.get_committed_fill_by_offset(2, 3), 0)
 
 
 func test_side_down_and_side_up_can_both_apply_in_one_cell_step() -> void:
@@ -381,7 +405,7 @@ func test_side_down_and_side_up_can_both_apply_in_one_cell_step() -> void:
 	backend.initialize(world, registry, 1)
 	var water_id := FixtureLoader.terrain_id("Water")
 	var stone_id := FixtureLoader.terrain_id("Stone")
-	world.set_committed_by_offset(3, 3, water_id, 200)
+	world.set_committed_by_offset(3, 3, water_id, 255)
 	world.set_committed_by_offset(2, 4, water_id, 180)
 	world.set_committed_by_offset(3, 4, stone_id)
 	world.set_committed_by_offset(4, 4, stone_id)
@@ -393,10 +417,10 @@ func test_side_down_and_side_up_can_both_apply_in_one_cell_step() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 108)
-	assert_eq(world.get_committed_fill_by_offset(2, 4), 215)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 154)
+	assert_eq(world.get_committed_fill_by_offset(2, 4), 255)
 	assert_eq(world.get_committed_by_offset(2, 3), water_id)
-	assert_eq(world.get_committed_fill_by_offset(2, 3), 57)
+	assert_eq(world.get_committed_fill_by_offset(2, 3), 26)
 
 
 func test_side_up_transfer_never_overshoots_offset_equilibrium() -> void:
@@ -406,7 +430,7 @@ func test_side_up_transfer_never_overshoots_offset_equilibrium() -> void:
 	backend.initialize(world, registry, 1)
 	var water_id := FixtureLoader.terrain_id("Water")
 	var stone_id := FixtureLoader.terrain_id("Stone")
-	world.set_committed_by_offset(3, 3, water_id, 170)
+	world.set_committed_by_offset(3, 3, water_id, 255)
 	world.set_committed_by_offset(3, 4, stone_id)
 	world.set_committed_by_offset(2, 4, stone_id)
 	world.set_committed_by_offset(4, 4, stone_id)
@@ -419,8 +443,8 @@ func test_side_up_transfer_never_overshoots_offset_equilibrium() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 160)
-	assert_eq(world.get_committed_fill_by_offset(2, 3), 110)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 242)
+	assert_eq(world.get_committed_fill_by_offset(2, 3), 113)
 
 
 func test_side_up_flow_splits_between_both_targets_when_possible() -> void:
@@ -438,11 +462,11 @@ func test_side_up_flow_splits_between_both_targets_when_possible() -> void:
 	backend.advance(1000)
 	backend.commit_if_ready()
 
-	assert_eq(world.get_committed_fill_by_offset(3, 3), 51)
+	assert_eq(world.get_committed_fill_by_offset(3, 3), 129)
 	assert_eq(world.get_committed_by_offset(2, 3), water_id)
-	assert_eq(world.get_committed_fill_by_offset(2, 3), 102)
+	assert_eq(world.get_committed_fill_by_offset(2, 3), 63)
 	assert_eq(world.get_committed_by_offset(4, 3), water_id)
-	assert_eq(world.get_committed_fill_by_offset(4, 3), 102)
+	assert_eq(world.get_committed_fill_by_offset(4, 3), 63)
 
 
 func test_lava_does_not_flow_below_minimum_fill_difference() -> void:
@@ -549,6 +573,35 @@ func test_supported_irregular_water_pool_settles_with_no_remaining_ca_side_flow(
 	assert_false(final_commit.did_commit)
 
 
+func test_wide_supported_water_pool_settles_to_flat_visual_surface() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(12, 8), FixtureLoader.terrain_id("Air"))
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	for col in range(0, 12):
+		world.set_committed_by_offset(col, 6, stone_id)
+	for row in range(2, 7):
+		world.set_committed_by_offset(0, row, stone_id)
+		world.set_committed_by_offset(11, row, stone_id)
+	for col in range(2, 10):
+		world.set_committed_by_offset(col, 4, water_id, 255 if col % 3 != 0 else 80)
+		world.set_committed_by_offset(col, 5, water_id, 255 if col % 2 == 0 else 120)
+
+	var settled_tick := -1
+	for step in range(80):
+		backend.advance(1000000)
+		var commit = backend.commit_if_ready()
+		if not commit.did_commit:
+			settled_tick = step
+			break
+
+	assert_ne(settled_tick, -1)
+	assert_lte(settled_tick, 40)
+	_assert_column_surfaces_flat(world, water_id, 2, 9)
+
+
 func test_different_time_budgets_produce_identical_tick_result() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var dimensions := WorldDimensions.new(30, 40)
@@ -587,3 +640,34 @@ func test_settled_scheduled_region_goes_to_sleep() -> void:
 
 	assert_eq(backend.active_cell_count(), 0)
 	assert_eq(backend.last_processed_cell_count(), 0)
+
+
+func _assert_column_surfaces_flat(world: WorldGrid, water_id: int, start_col: int, end_col: int) -> void:
+	var expected_y := INF
+	for col in range(start_col, end_col + 1):
+		var surface_y := _top_water_surface_y(world, water_id, col)
+		assert_ne(surface_y, INF)
+		if expected_y == INF:
+			expected_y = surface_y
+		else:
+			assert_almost_eq(surface_y, expected_y, 0.75)
+
+
+func _top_water_surface_y(world: WorldGrid, water_id: int, col: int) -> float:
+	for row in range(0, world.dimensions.depth):
+		if world.get_committed_by_offset(col, row) != water_id:
+			continue
+		var fill := world.get_committed_fill_by_offset(col, row)
+		if fill <= 0:
+			continue
+		return _cell_center_y(col, row) + _fill_line_y(fill)
+	return INF
+
+
+func _cell_center_y(col: int, row: int) -> float:
+	return 16.0 * sqrt(3.0) * (float(row) + float(col & 1) * 0.5)
+
+
+func _fill_line_y(fill: int) -> float:
+	var half_height := 16.0 * sqrt(3.0) * 0.5
+	return lerpf(half_height, -half_height, float(fill) / 255.0)

@@ -6,7 +6,7 @@ const TerrainSimulationContextScript = preload("res://src/simulation/terrain_sim
 const TerrainTransferSolverScript = preload("res://src/simulation/terrain_transfer_solver.gd")
 
 
-func test_fall_prevents_side_flow_in_same_cell_step() -> void:
+func test_full_fall_prevents_side_flow_after_source_empties() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
 	var water_id := FixtureLoader.terrain_id("Water")
@@ -21,12 +21,31 @@ func test_fall_prevents_side_flow_in_same_cell_step() -> void:
 	assert_eq(world.get_working_fill_by_offset(4, 4), 0)
 
 
+func test_partial_fall_can_be_followed_by_side_flow_in_same_cell_step() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(3, 3, water_id)
+	world.set_committed_by_offset(3, 4, water_id, 200)
+	world.set_committed_by_offset(4, 4, stone_id)
+	var context = _context_for(world, registry)
+	var stepper = TerrainMotionStepperScript.new()
+
+	stepper.step(_index(world, 3, 3), context)
+
+	assert_eq(world.get_working_fill_by_offset(3, 3), 36)
+	assert_eq(world.get_working_fill_by_offset(3, 4), 255)
+	assert_eq(world.get_working_by_offset(2, 4), water_id)
+	assert_eq(world.get_working_fill_by_offset(2, 4), 164)
+
+
 func test_side_down_can_be_followed_by_side_up_after_reread() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
 	var water_id := FixtureLoader.terrain_id("Water")
 	var stone_id := FixtureLoader.terrain_id("Stone")
-	world.set_committed_by_offset(3, 3, water_id, 200)
+	world.set_committed_by_offset(3, 3, water_id, 255)
 	world.set_committed_by_offset(2, 4, water_id, 180)
 	world.set_committed_by_offset(3, 4, stone_id)
 	world.set_committed_by_offset(4, 4, stone_id)
@@ -39,10 +58,10 @@ func test_side_down_can_be_followed_by_side_up_after_reread() -> void:
 
 	stepper.step(_index(world, 3, 3), context)
 
-	assert_eq(world.get_working_fill_by_offset(3, 3), 108)
-	assert_eq(world.get_working_fill_by_offset(2, 4), 215)
+	assert_eq(world.get_working_fill_by_offset(3, 3), 154)
+	assert_eq(world.get_working_fill_by_offset(2, 4), 255)
 	assert_eq(world.get_working_by_offset(2, 3), water_id)
-	assert_eq(world.get_working_fill_by_offset(2, 3), 57)
+	assert_eq(world.get_working_fill_by_offset(2, 3), 26)
 
 
 func test_sand_never_side_up_flows() -> void:

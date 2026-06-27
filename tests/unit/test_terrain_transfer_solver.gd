@@ -26,8 +26,18 @@ func test_side_transfer_capacity_clamps_to_offset_equilibrium() -> void:
 	var solver = TerrainTransferSolverScript.new()
 	var water_id := FixtureLoader.terrain_id("Water")
 
-	assert_eq(solver.side_transfer_capacity(water_id, 170, 100, TerrainTransferSolverScript.DIRECTION_SIDE_DOWN, metadata), 60)
-	assert_eq(solver.side_transfer_capacity(water_id, 170, 100, TerrainTransferSolverScript.DIRECTION_SIDE_UP, metadata), 10)
+	assert_eq(solver.side_transfer_capacity(water_id, 170, 100, TerrainTransferSolverScript.DIRECTION_SIDE_DOWN, metadata), 99)
+	assert_eq(solver.side_transfer_capacity(water_id, 230, 70, TerrainTransferSolverScript.DIRECTION_SIDE_UP, metadata), 16)
+
+
+func test_side_up_capacity_respects_source_threshold() -> void:
+	var metadata := CompiledTerrainData.compile(FixtureLoader.terrain_registry())
+	var solver = TerrainTransferSolverScript.new()
+	var water_id := FixtureLoader.terrain_id("Water")
+	metadata.side_up_source_threshold_by_id[water_id] = 200
+
+	assert_eq(solver.side_transfer_capacity(water_id, 199, 0, TerrainTransferSolverScript.DIRECTION_SIDE_UP, metadata), 0)
+	assert_eq(solver.side_transfer_capacity(water_id, 200, 0, TerrainTransferSolverScript.DIRECTION_SIDE_UP, metadata), 36)
 
 
 func test_split_budget_is_even_with_deterministic_remainder() -> void:

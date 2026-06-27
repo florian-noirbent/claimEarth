@@ -8,3 +8,4 @@ fall_rate = 128
 side_down_rate = 32
 side_up_rate = 8
 min_fill_difference = 51
+side_flow_offset = 128
