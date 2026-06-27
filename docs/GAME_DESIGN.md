@@ -12,7 +12,9 @@ the flag loses it.
 
 ## Core Loop
 
-1. The menu shows a generated cave preview and the current leaderboard owner.
+1. The menu shows illustrated cave background art, a top-centered title, stylized
+   action buttons, a corner leaderboard owner, and a Help page for theme, rules,
+   and controls.
 2. Starting creates a randomized deterministic map and a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
 4. The player throws the flag when ready to claim a depth.

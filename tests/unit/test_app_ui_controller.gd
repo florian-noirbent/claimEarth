@@ -13,15 +13,30 @@ func test_ui_controller_emits_intents_and_applies_phase_visibility() -> void:
 	ui.menu_start_button.pressed.emit()
 	assert_signal_emitted(ui, "start_requested")
 
+	ui.menu_help_button.pressed.emit()
+	assert_true(ui.help_panel.visible)
+	assert_false(ui.menu_panel.visible)
+	assert_false(ui.controls_label.visible)
+	ui.help_back_button.pressed.emit()
+	assert_false(ui.help_panel.visible)
+	assert_true(ui.menu_panel.visible)
+	assert_eq(ui.help_back_button.custom_minimum_size, ui.leaderboard_back_button.custom_minimum_size)
+	assert_eq(ui.help_back_button.icon, ui.leaderboard_back_button.icon)
+	assert_eq(ui.help_back_button.focus_mode, Control.FOCUS_NONE)
+
 	ui.apply_state(RunPhase.NAME_ENTRY, 42, "", 73, "Miner")
 	assert_true(ui.overlay_root.visible)
 	assert_true(ui.name_entry_panel.visible)
+	assert_eq(ui.name_entry_panel.get_theme_stylebox("panel"), ui.help_panel.get_theme_stylebox("panel"))
+	assert_eq(ui.confirm_score_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 	assert_eq(ui.name_entry_status.text, "Depth: 73")
 	assert_eq(ui.player_name_input.text, "Miner")
+	assert_not_null(ui.player_name_input.get_theme_stylebox("normal"))
 
 	ui.apply_state(RunPhase.MAIN_MENU, 42, "storage warning", -1, "")
 	assert_true(ui.menu_root.visible)
 	assert_true(ui.warning_label.visible)
+	assert_false(ui.controls_label.visible)
 	assert_string_contains(ui.status_label.text, "42")
 
 
@@ -45,6 +60,8 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 
 	assert_true(ui.item_toolbar.visible)
 	assert_true(ui.pause_button.visible)
+	assert_not_null(ui.pause_button.icon)
+	assert_eq(ui.pause_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 	assert_eq(ui.item_toolbar_content.get_child_count(), 3)
 	var selected_slot := ui.item_toolbar_content.get_child(0) as ItemToolbarSlot
 	assert_eq(selected_slot.mouse_filter, Control.MOUSE_FILTER_STOP)
@@ -76,6 +93,21 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	assert_false(ui.item_toolbar.visible)
 	assert_false(ui.pause_button.visible)
 	assert_true(ui.pause_panel.visible)
+	assert_eq(ui.resume_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_not_null(ui.resume_button.icon)
+	assert_eq(ui.pause_restart_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_eq(ui.pause_restart_button.text, "Restart")
+	assert_eq(ui.pause_menu_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_eq(ui.pause_menu_button.text, "Exit to Menu")
+	watch_signals(ui)
+	ui.pause_restart_button.pressed.emit()
+	assert_signal_emitted(ui, "restart_requested")
+
+	ui.apply_state(RunPhase.DEATH, 42, "", -1, "")
+	assert_true(ui.result_panel.visible)
+	assert_eq(ui.result_panel.get_theme_stylebox("panel"), ui.help_panel.get_theme_stylebox("panel"))
+	assert_eq(ui.restart_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_eq(ui.result_menu_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 
 
 func test_confirm_button_emits_current_editable_name() -> void:

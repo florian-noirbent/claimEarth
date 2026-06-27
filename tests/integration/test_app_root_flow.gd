@@ -2,12 +2,13 @@ extends GutTest
 
 
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
+const FakeLeaderboardServiceScript = preload("res://src/leaderboard/fake_leaderboard_service.gd")
 const GameplayAssertionsScript = preload("res://tests/helpers/gameplay_assertions.gd")
 const ScenarioDriverScript = preload("res://tests/helpers/scenario_driver.gd")
 
 
 func before_each() -> void:
-	for suffix in ["1", "2", "3", "4", "5", "move", "flag", "hazards", "inventory_reset", "pause_click", "projectile_disposal", "toolbar_button"]:
+	for suffix in ["1", "2", "3", "4", "5", "move", "flag", "hazards", "inventory_reset", "pause_click", "projectile_disposal", "static_menu", "toolbar_button"]:
 		var path := "user://gut_app_root_flow_%s.json" % suffix
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
@@ -36,7 +37,7 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_false(app_root.ui.menu_root.visible)
 	assert_false(app_root.ui.menu_background.visible)
 	assert_false(app_root.ui.menu_panel.visible)
-	assert_false(app_root.ui.title_label.visible)
+	assert_false(app_root.ui.title_image.visible)
 	assert_false(app_root.ui.status_label.visible)
 	var left_edge := HexMetrics.center_for_offset(0, 0, app_root.world_presenter.hex_radius).x - app_root.world_presenter.hex_radius
 	var right_edge := HexMetrics.center_for_offset(app_root.generation_profile.width - 1, 0, app_root.world_presenter.hex_radius).x + app_root.world_presenter.hex_radius
@@ -98,6 +99,24 @@ func test_back_to_menu_restores_menu_visibility() -> void:
 	assert_true(app_root.ui.menu_background.visible)
 	assert_true(app_root.ui.menu_panel.visible)
 	assert_false(app_root.ui.playing_panel.visible)
+
+
+func test_default_menu_uses_static_background_without_preview_session() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	var service: FakeLeaderboardService = FakeLeaderboardServiceScript.new()
+	app_root.configure_save_path_for_test("user://gut_app_root_flow_static_menu.json")
+	app_root.configure_leaderboard_service_for_test(service)
+	add_child_autofree(app_root)
+	await wait_process_frames(2)
+
+	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
+	assert_eq(app_root.active_session_count(), 0)
+	assert_true(app_root.ui.menu_art_background.visible)
+	assert_not_null(app_root.ui.menu_art_background.texture)
+	assert_true(app_root.ui.title_image.visible)
+	assert_not_null(app_root.ui.title_image.texture)
+	assert_true(app_root.ui.menu_background.visible)
 
 
 func test_flag_landing_opens_name_entry_and_confirming_shows_result() -> void:

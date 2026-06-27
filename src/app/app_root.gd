@@ -42,7 +42,7 @@ var _current_seed := 0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
 var _previous_play_state: StringName = RunPhase.PLAYING
-var _enable_menu_preview := true
+var _enable_menu_preview := false
 var _test_mode := false
 var _configured_save_path := ""
 var _injected_leaderboard_service: LeaderboardService

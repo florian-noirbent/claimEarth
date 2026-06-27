@@ -24,7 +24,7 @@ matrix in `docs/ARCHITECTURE.md`.
   - Start a run.
   - Move, jump, hook, shorten/lengthen rope, and throw each item.
   - Plant a valid flag, confirm a name, and verify the result screen.
-  - Return to menu and verify `Earth owned by:` plus the leaderboard panel.
+  - Return to menu and verify the corner `Best:` label plus the leaderboard panel.
 - Firefox:
   - Repeat the same loop once Firefox is available on the release machine.
 

@@ -12,16 +12,20 @@ signal item_selected(index: int)
 signal score_confirmed(player_name: String)
 signal restart_requested
 
-@onready var title_label: Label = %Title
+@onready var title_image: TextureRect = %Title
 @onready var owner_label: Label = %OwnerLabel
 @onready var status_label: Label = %Status
 @onready var warning_label: Label = %WarningLabel
 @onready var controls_label: Label = %ControlsLabel
+@onready var menu_art_background: TextureRect = $MenuBackground
 @onready var menu_background: ColorRect = $Background
 @onready var menu_root: CenterContainer = $Center
 @onready var menu_panel: VBoxContainer = %MenuPanel
 @onready var menu_start_button: Button = %StartButton
+@onready var menu_help_button: Button = %HelpButton
 @onready var menu_leaderboard_button: Button = %LeaderboardButton
+@onready var help_panel: PanelContainer = %HelpPanel
+@onready var help_back_button: Button = %HelpBackButton
 @onready var overlay_root: MarginContainer = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
 @onready var play_status_label: Label = %PlayStatus
@@ -42,6 +46,7 @@ signal restart_requested
 @onready var result_menu_button: Button = %ResultMenuButton
 @onready var pause_panel: PanelContainer = %PausePanel
 @onready var resume_button: Button = %ResumeButton
+@onready var pause_restart_button: Button = %PauseRestartButton
 @onready var pause_menu_button: Button = %PauseMenuButton
 @onready var leaderboard_panel: PanelContainer = %LeaderboardPanel
 @onready var leaderboard_status: Label = %LeaderboardStatus
@@ -53,29 +58,35 @@ var _selected_item_name := ""
 
 func _ready() -> void:
 	menu_start_button.pressed.connect(start_requested.emit)
+	menu_help_button.pressed.connect(_show_help_page)
 	menu_leaderboard_button.pressed.connect(leaderboard_requested.emit)
+	help_back_button.pressed.connect(_hide_help_page)
 	pause_button.pressed.connect(pause_requested.emit)
 	resume_button.pressed.connect(pause_requested.emit)
+	pause_restart_button.pressed.connect(restart_requested.emit)
 	pause_menu_button.pressed.connect(menu_requested.emit)
 	result_menu_button.pressed.connect(menu_requested.emit)
 	leaderboard_back_button.pressed.connect(menu_requested.emit)
 	restart_button.pressed.connect(restart_requested.emit)
 	confirm_score_button.pressed.connect(_on_confirm_score_pressed)
 	selection_name_timer.timeout.connect(_on_selection_name_timeout)
-	controls_label.text = "Plant the deepest flag to claim Earth (3).\nUse small bombs (1), large bombs (2), and your grappling hook (RMB)."
-	owner_label.text = "Earth owned by: Nobody yet"
+	controls_label.visible = false
+	owner_label.text = "Best: Nobody yet"
 
 
 func apply_state(state: StringName, run_seed: int, storage_warning: String, pending_depth: int, player_name: String) -> void:
 	var show_menu_shell := state in [RunPhase.MAIN_MENU, RunPhase.GENERATING, RunPhase.LEADERBOARD]
+	if state != RunPhase.MAIN_MENU:
+		_hide_help_page()
+	menu_art_background.visible = show_menu_shell
 	menu_background.visible = show_menu_shell
 	menu_root.visible = show_menu_shell
-	title_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD
+	title_image.visible = show_menu_shell and state != RunPhase.LEADERBOARD
 	owner_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD
 	status_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD
 	warning_label.visible = show_menu_shell and not storage_warning.is_empty()
-	controls_label.visible = show_menu_shell and state == RunPhase.MAIN_MENU
-	menu_panel.visible = state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]
+	controls_label.visible = false
+	menu_panel.visible = state in [RunPhase.MAIN_MENU, RunPhase.GENERATING] and not help_panel.visible
 	overlay_root.visible = state in [
 		RunPhase.PLAYING,
 		RunPhase.FLAG_IN_FLIGHT,
@@ -99,10 +110,8 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 
 	match state:
 		RunPhase.MAIN_MENU:
-			title_label.text = "CLAIM EARTH"
 			status_label.text = "Ready to descend | Seed %d" % run_seed
 		RunPhase.GENERATING:
-			title_label.text = "CLAIM EARTH"
 			status_label.text = "Generating run..."
 		RunPhase.NAME_ENTRY:
 			name_entry_status.text = "Depth: %d" % pending_depth
@@ -115,12 +124,37 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 
 
 func dismiss_menu_shell() -> void:
+	_hide_help_page()
+	menu_art_background.visible = false
 	menu_background.visible = false
 	menu_root.visible = false
-	title_label.visible = false
+	title_image.visible = false
 	owner_label.visible = false
 	status_label.visible = false
 	warning_label.visible = false
+	menu_panel.visible = false
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if help_panel.visible and event.is_action_pressed(InputActions.PAUSE):
+		_hide_help_page()
+		get_viewport().set_input_as_handled()
+
+
+func _show_help_page() -> void:
+	menu_panel.visible = false
+	status_label.visible = false
+	warning_label.visible = false
+	help_panel.visible = true
+
+
+func _hide_help_page() -> void:
+	if not is_node_ready():
+		return
+	help_panel.visible = false
+	menu_panel.visible = true
+	status_label.visible = true
+	warning_label.visible = not warning_label.text.is_empty()
 
 
 func show_generation_progress(progress: float, label: String) -> void:
@@ -207,12 +241,12 @@ func show_leaderboard_entries(entries: Array[LeaderboardEntry], failed: bool, me
 		show_leaderboard(message if not message.is_empty() else "Leaderboard unavailable.", "[center]Retry later. Local best still saves.[/center]")
 		return
 	if entries.is_empty():
-		show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Earth owned by: Nobody yet")
+		show_leaderboard("Nobody has claimed Earth yet.", "[center]No entries yet.[/center]", "Best: Nobody yet")
 		return
 	var lines := PackedStringArray()
 	for entry in entries:
 		lines.append("%d. %s - %d" % [entry.rank, entry.player_name, entry.score_depth])
-	show_leaderboard("Top depths", "[code]%s[/code]" % "\n".join(lines), "Earth owned by: %s" % entries[0].player_name)
+	show_leaderboard("Top depths", "[code]%s[/code]" % "\n".join(lines), "Best: %s - %d" % [entries[0].player_name, entries[0].score_depth])
 
 
 func _on_confirm_score_pressed() -> void:

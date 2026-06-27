@@ -37,8 +37,8 @@ tools/                  Import, test, export, and browser scripts
 `scenes/app/main.tscn` composes the persistent application shell. `AppRoot` owns
 `RunCoordinator`, UI, audio, scores, leaderboard workflows, and the active disposable
 `RunSession`. Starting or restarting frees the previous session before instantiating
-a fresh `scenes/app/run_session.tscn`; returning to the menu replaces gameplay with
-an optional preview session. This guarantees that players, projectiles, world data,
+a fresh `scenes/app/run_session.tscn`; returning to the menu disposes active gameplay
+and shows static menu art by default. This guarantees that players, projectiles, world data,
 simulation state, and inventory never cross run boundaries.
 
 Application responsibilities are split between the persistent shell and the active
@@ -70,8 +70,10 @@ flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
 
 `GENERATING` creates a new run session and resets inventory from item resources.
-`MAIN_MENU` disposes the active gameplay session; menu previews use their own fresh
-session. Generation tasks must tolerate their host session being cancelled and freed.
+`MAIN_MENU` disposes the active gameplay session. The legacy generated menu preview
+path remains opt-in for tests and development, and previews use their own fresh
+session when enabled. Generation tasks must tolerate their host session being
+cancelled and freed.
 
 ## World Data And Presentation
 

@@ -5,21 +5,126 @@
 [ext_resource type="Script" uid="uid://dbmagduv515l6" path="res://src/audio/audio_director.gd" id="5_audio"]
 [ext_resource type="Script" uid="uid://bhqvdn4txrc3r" path="res://src/app/app_ui_controller.gd" id="8_ui"]
 [ext_resource type="Script" uid="uid://cbg6nyfogmet2" path="res://src/app/score_controller.gd" id="9_score"]
-[ext_resource type="Resource" path="res://config/generation/default_profile.tres" id="12_generation_profile"]
-[ext_resource type="Resource" path="res://config/leaderboard/simpleboards.tres" id="13_leaderboard_config"]
+[ext_resource type="Texture2D" uid="uid://js0tt46vpvac" path="res://assets/generated/menu_background.jpg" id="14_menu_bg"]
+[ext_resource type="Texture2D" uid="uid://dpyhgwr3fnmsu" path="res://assets/generated/title.png" id="15_title"]
+[ext_resource type="Texture2D" uid="uid://gjybiodddakq" path="res://assets/vector/small_bomb.svg" id="16_small_bomb"]
+[ext_resource type="Texture2D" uid="uid://bgidyprkyaao2" path="res://assets/vector/flag.svg" id="17_flag"]
+[ext_resource type="Texture2D" uid="uid://d1m8v0y3f0n7q" path="res://assets/vector/help_icon.svg" id="18_help"]
+[ext_resource type="Texture2D" uid="uid://deiswgycc57at" path="res://assets/vector/pause_icon.svg" id="19_pause"]
+[ext_resource type="Texture2D" uid="uid://d38vd08dpjt1y" path="res://assets/vector/play_icon.svg" id="20_play"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.45, 0.22, 0.1, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 7
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.05, 0.03, 0.02, 0.45)
+shadow_size = 5
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_pressed"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.34, 0.16, 0.07, 1)
+border_width_left = 5
+border_width_top = 7
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.58, 0.29, 0.13, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 7
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.05, 0.03, 0.02, 0.45)
+shadow_size = 5
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_panel"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+bg_color = Color(0.08, 0.055, 0.035, 0.72)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.38, 0.2, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_input"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.12, 0.075, 0.045, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 4
+border_color = Color(0.38, 0.2, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_input_focus"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.16, 0.095, 0.055, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 4
+border_color = Color(0.96, 0.75, 0.19, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Main" type="Control" unique_id=739120312]
 layout_mode = 3
-mouse_filter = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_main")
-generation_profile = ExtResource("12_generation_profile")
 player_scene = ExtResource("3_player")
-leaderboard_config = ExtResource("13_leaderboard_config")
 
 [node name="ScoreController" type="Node" parent="." unique_id=397205212]
 unique_name_in_owner = true
@@ -33,13 +138,69 @@ script = ExtResource("5_audio")
 unique_name_in_owner = true
 script = ExtResource("8_ui")
 
+[node name="MenuBackground" type="TextureRect" parent="UiLayer" unique_id=1887254834]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_menu_bg")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Background" type="ColorRect" parent="UiLayer" unique_id=1619031388]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.04, 0.03, 0.07, 0.72)
+mouse_filter = 2
+color = Color(0.02, 0.015, 0.03, 0.58)
+
+[node name="TitleBar" type="MarginContainer" parent="UiLayer" unique_id=148739024]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 218.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 18
+
+[node name="TitleCenter" type="CenterContainer" parent="UiLayer/TitleBar" unique_id=563250114]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="TextureRect" parent="UiLayer/TitleBar/TitleCenter" unique_id=1279294258]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 200)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("15_title")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScoreCorner" type="MarginContainer" parent="UiLayer" unique_id=200880807]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -328.0
+offset_bottom = 70.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+
+[node name="OwnerLabel" type="Label" parent="UiLayer/ScoreCorner" unique_id=1693222855]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.43, 0.87, 0.94, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "Best: Nobody yet"
+horizontal_alignment = 2
+autowrap_mode = 2
 
 [node name="Center" type="CenterContainer" parent="UiLayer" unique_id=496009083]
 anchors_preset = 15
@@ -49,26 +210,10 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Content" type="VBoxContainer" parent="UiLayer/Center" unique_id=1482415018]
-custom_minimum_size = Vector2(560, 0)
+custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 12
-
-[node name="Title" type="Label" parent="UiLayer/Center/Content" unique_id=1279294258]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
-theme_override_font_sizes/font_size = 54
-text = "CLAIM EARTH"
-horizontal_alignment = 1
-
-[node name="OwnerLabel" type="Label" parent="UiLayer/Center/Content" unique_id=1693222855]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.43, 0.87, 0.94, 1)
-theme_override_font_sizes/font_size = 18
-text = "Earth owned by: Nobody yet"
-horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="UiLayer/Center/Content" unique_id=1900517500]
 unique_name_in_owner = true
@@ -88,6 +233,7 @@ autowrap_mode = 2
 
 [node name="ControlsLabel" type="Label" parent="UiLayer/Center/Content" unique_id=758744064]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 text = "Controls"
@@ -96,26 +242,119 @@ horizontal_alignment = 1
 [node name="MenuPanel" type="VBoxContainer" parent="UiLayer/Center/Content" unique_id=433400094]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="StartButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=1676925267]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Start"
+icon = ExtResource("16_small_bomb")
+expand_icon = true
+
+[node name="HelpButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=2042238065]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Help"
+icon = ExtResource("18_help")
+expand_icon = true
 
 [node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=831887216]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Leaderboard"
+icon = ExtResource("17_flag")
+expand_icon = true
+
+[node name="HelpPanel" type="PanelContainer" parent="UiLayer/Center/Content" unique_id=1841128060]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
+
+[node name="HelpMargin" type="MarginContainer" parent="UiLayer/Center/Content/HelpPanel" unique_id=367928415]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="HelpContent" type="VBoxContainer" parent="UiLayer/Center/Content/HelpPanel/HelpMargin" unique_id=1591884097]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HelpTitle" type="Label" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=1200302288]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 30
+text = "Help"
+horizontal_alignment = 1
+
+[node name="HelpBody" type="Label" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=578916850]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 17
+text = "Theme: race down toward Earth's center and plant your flag to claim the deepest point.
+
+Rules: deeper flags score higher. Your score saves only after the flag lands on solid ground. If you die, or lava destroys the flag, the run is lost.
+
+Controls:
+A/D - move or swing
+Space - jump
+W/S - shorten or lengthen rope
+Left mouse - throw selected item
+Right mouse hold - grapple
+1/2/3 - select bombs or flag
+Esc - pause or close menus"
+autowrap_mode = 2
+
+[node name="HelpBackButton" type="Button" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=505513980]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 58)
+layout_mode = 2
+focus_mode = 0
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Back"
+icon = ExtResource("17_flag")
+expand_icon = true
 
 [node name="LeaderboardPanel" type="PanelContainer" parent="UiLayer/Center/Content" unique_id=1903913946]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="LeaderboardContent" type="VBoxContainer" parent="UiLayer/Center/Content/LeaderboardPanel" unique_id=991276779]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="LeaderboardTitle" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=1213492498]
 layout_mode = 2
@@ -127,6 +366,8 @@ horizontal_alignment = 1
 [node name="LeaderboardStatus" type="Label" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=1126344963]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 17
 text = "Loading..."
 horizontal_alignment = 1
 
@@ -134,24 +375,39 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(520, 240)
 layout_mode = 2
+theme_override_colors/default_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/normal_font_size = 17
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
 [node name="LeaderboardBackButton" type="Button" parent="UiLayer/Center/Content/LeaderboardPanel/LeaderboardContent" unique_id=845548296]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 58)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Back"
+icon = ExtResource("17_flag")
+expand_icon = true
 
 [node name="OverlayRoot" type="MarginContainer" parent="UiLayer" unique_id=202866097]
 unique_name_in_owner = true
 visible = false
-mouse_filter = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
@@ -164,15 +420,14 @@ mouse_filter = 2
 [node name="PlayingPanel" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=708717385]
 unique_name_in_owner = true
 layout_mode = 0
-mouse_filter = 2
 offset_right = 360.0
 offset_bottom = 64.0
+mouse_filter = 2
 theme_override_constants/separation = 6
 
 [node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=163240117]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.95, 0.94, 0.9, 1)
 theme_override_font_sizes/font_size = 18
 text = "Depth 0"
@@ -180,27 +435,31 @@ text = "Depth 0"
 [node name="RunStateLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=1063391024]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
 text = "Free"
 
 [node name="PauseButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1227630892]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -48.0
-offset_bottom = 40.0
+offset_left = -58.0
+offset_bottom = 54.0
 grow_horizontal = 0
 tooltip_text = "Pause"
-theme_override_font_sizes/font_size = 18
-text = "||"
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+icon = ExtResource("19_pause")
+expand_icon = true
 
 [node name="ItemToolbar" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2011239212]
 unique_name_in_owner = true
 layout_mode = 1
-mouse_filter = 2
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -212,6 +471,7 @@ offset_right = 110.0
 offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 
 [node name="ItemToolbarMargin" type="MarginContainer" parent="UiLayer/OverlayRoot/OverlayContent/ItemToolbar" unique_id=2088349828]
 layout_mode = 2
@@ -232,7 +492,6 @@ alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
-mouse_filter = 2
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -256,10 +515,11 @@ offset_left = 360.0
 offset_top = 150.0
 offset_right = 920.0
 offset_bottom = 420.0
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="NameEntryContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel" unique_id=600408623]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="NameEntryTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=1909882641]
 layout_mode = 2
@@ -271,19 +531,38 @@ horizontal_alignment = 1
 [node name="NameEntryStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=926994201]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 17
 text = "Depth: 0"
 horizontal_alignment = 1
 
 [node name="PlayerNameInput" type="LineEdit" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=674480781]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_colors/font_placeholder_color = Color(0.72, 0.66, 0.58, 1)
+theme_override_colors/caret_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBox_menu_input")
+theme_override_styles/focus = SubResource("StyleBox_menu_input_focus")
 placeholder_text = "Player"
 max_length = 20
 
 [node name="ConfirmScoreButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=1284480067]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Confirm Score"
+icon = ExtResource("17_flag")
+expand_icon = true
 
 [node name="ResultPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=994695937]
 unique_name_in_owner = true
@@ -293,10 +572,11 @@ offset_left = 340.0
 offset_top = 150.0
 offset_right = 940.0
 offset_bottom = 420.0
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="ResultContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel" unique_id=623904716]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="ResultTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=2072216465]
 unique_name_in_owner = true
@@ -310,19 +590,40 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 17
 text = "Result placeholder"
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="RestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=725601985]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Start New Run"
+icon = ExtResource("16_small_bomb")
+expand_icon = true
 
 [node name="ResultMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=218252668]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Main Menu"
+icon = ExtResource("17_flag")
+expand_icon = true
 
 [node name="PausePanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=345381812]
 unique_name_in_owner = true
@@ -332,32 +633,70 @@ offset_left = 420.0
 offset_top = 140.0
 offset_right = 860.0
 offset_bottom = 390.0
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel" unique_id=447488270]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
 [node name="PauseTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1062585874]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Paused"
 horizontal_alignment = 1
 
 [node name="PauseBody" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=647601408]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 17
 text = "Press Esc to continue."
 horizontal_alignment = 1
 
 [node name="ResumeButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1941676487]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Resume"
+icon = ExtResource("20_play")
+expand_icon = true
+
+[node name="PauseRestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=348721915]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Restart"
+icon = ExtResource("16_small_bomb")
+expand_icon = true
 
 [node name="PauseMenuButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1110613241]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
-text = "Back to Menu"
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Exit to Menu"
+icon = ExtResource("17_flag")
+expand_icon = true
 
 [node name="SelectionNameTimer" type="Timer" parent="UiLayer" unique_id=2125176947]
 unique_name_in_owner = true

@@ -30,6 +30,9 @@ func test_leaderboard_panel_shows_entries_and_updates_owner_label() -> void:
 
 	app_root.transition_to(RunPhase.LEADERBOARD)
 
+	assert_eq(app_root.ui.leaderboard_panel.get_theme_stylebox("panel"), app_root.ui.help_panel.get_theme_stylebox("panel"))
+	assert_eq(app_root.ui.leaderboard_back_button.get_theme_stylebox("normal"), app_root.ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_not_null(app_root.ui.leaderboard_back_button.icon)
 	assert_string_contains(app_root.ui.owner_label.text, "Dana")
 	assert_string_contains(app_root.ui.leaderboard_rows.text, "123")
 
