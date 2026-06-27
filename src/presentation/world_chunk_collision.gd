@@ -67,13 +67,15 @@ func segment_count() -> int:
 
 
 func _build_segments(world: WorldGrid, terrain_registry: TerrainRegistry, hex_radius: float) -> PackedVector2Array:
+	var metadata := CompiledTerrainData.compile(terrain_registry)
 	var corners := HexMetrics.corners(hex_radius)
 	var segments := PackedVector2Array()
 
 	for row in range(chunk_rect.position.y, chunk_rect.end.y):
 		for col in range(chunk_rect.position.x, chunk_rect.end.x):
-			var definition := terrain_registry.get_definition(world.get_committed_by_offset(col, row))
-			if definition == null or not definition.is_solid:
+			var cell_id := world.get_committed_by_offset(col, row)
+			var fill := world.get_committed_fill_by_offset(col, row)
+			if not metadata.is_solid(cell_id, fill):
 				continue
 
 			var center := HexMetrics.center_for_offset(col, row, hex_radius)
@@ -82,10 +84,10 @@ func _build_segments(world: WorldGrid, terrain_registry: TerrainRegistry, hex_ra
 				var neighbor_offset := cell_coord.neighbor(direction).to_offset_odd_q()
 				var add_edge := true
 				if world.dimensions.is_in_bounds_offset(neighbor_offset.x, neighbor_offset.y):
-					var neighbor_definition := terrain_registry.get_definition(
-						world.get_committed_by_offset(neighbor_offset.x, neighbor_offset.y)
+					add_edge = not metadata.is_solid(
+						world.get_committed_by_offset(neighbor_offset.x, neighbor_offset.y),
+						world.get_committed_fill_by_offset(neighbor_offset.x, neighbor_offset.y)
 					)
-					add_edge = neighbor_definition == null or neighbor_definition.is_passable
 				if add_edge:
 					var edge_corners := HexMetrics.edge_corner_indices_for_direction(direction)
 					segments.append(center + corners[edge_corners.x])

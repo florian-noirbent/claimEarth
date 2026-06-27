@@ -34,6 +34,21 @@ func apply_result(result: ChunkBuildResult) -> void:
 
 
 func layer_vertex_count(layer_mask: int) -> int:
+	var vertices := _layer_vertices(layer_mask)
+	return vertices.size()
+
+
+func layer_min_vertex_y(layer_mask: int) -> float:
+	var vertices := _layer_vertices(layer_mask)
+	if vertices.is_empty():
+		return INF
+	var min_y := vertices[0].y
+	for vertex in vertices:
+		min_y = minf(min_y, vertex.y)
+	return min_y
+
+
+func _layer_vertices(layer_mask: int) -> PackedVector3Array:
 	var instance := _static_mesh
 	if layer_mask == TerrainLayerMask.SAND_VISUAL:
 		instance = _sand_mesh
@@ -41,9 +56,9 @@ func layer_vertex_count(layer_mask: int) -> int:
 		instance = _fluid_mesh
 	var mesh := instance.mesh as ArrayMesh
 	if mesh == null or mesh.get_surface_count() == 0:
-		return 0
+		return PackedVector3Array()
 	var arrays := mesh.surface_get_arrays(0)
-	return (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+	return arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array
 
 
 func _create_mesh(vertices: PackedVector3Array, colors: PackedColorArray, uvs: PackedVector2Array, indices: PackedInt32Array) -> ArrayMesh:

@@ -11,4 +11,5 @@ func resolve():
 	var effect = HazardEffectScript.new()
 	effect.cause = DeathCauseScript.LAVA
 	effect.lethal_on_touch = true
+	effect.minimum_fill = 26
 	return effect

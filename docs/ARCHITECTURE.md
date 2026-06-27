@@ -75,10 +75,12 @@ session. Generation tasks must tolerate their host session being cancelled and f
 
 ## World Data And Presentation
 
-`WorldGrid` owns two `PackedByteArray` buffers:
+`WorldGrid` owns four `PackedByteArray` buffers:
 
 - `committed_cells`: authoritative state read by gameplay and presentation.
 - `working_cells`: candidate state produced by terrain simulation.
+- `committed_fill`: authoritative 0-255 fill amount per cell.
+- `working_fill`: candidate fill amount produced by terrain simulation.
 
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
@@ -95,10 +97,11 @@ jobs; `WorldPresenter` alone creates engine resources and applies revision-check
 results on the main thread. This job boundary is suitable for a future worker
 executor without enabling Web threads today.
 
-Gameplay mutations currently update committed cells directly through focused
-services such as `ExplosionService`, then publish a `TerrainChangeSet`. Change sets
-contain exact cells and layer masks, wake nearby simulation cells, and invalidate an
-unfinished simulation snapshot before it can overwrite the mutation.
+Gameplay mutations currently update committed cells and fill directly through
+focused services such as `ExplosionService`, then publish a `TerrainChangeSet`.
+Change sets contain exact cells, fill changes, and layer masks, wake nearby
+simulation cells, and invalidate an unfinished simulation snapshot before it can
+overwrite the mutation.
 
 ## Terrain And Simulation
 
@@ -116,10 +119,28 @@ region read, and shutdown. `CooperativeChunkBackend` is the implemented backend.
 requests deterministic ticks at a 0.1-second cadence.
 
 The cooperative backend compiles resource definitions into packed ID-indexed motion,
-solidity, passability, visual, and color tables. Newly visible chunks receive one
-bounded motion scan; afterward only active cells and their neighbors remain awake.
-Ticks preserve a deterministic order while `advance(time_budget_usec)` spreads work
-across frames. Commits contain exact changed cells rather than one broad dirty area.
+directional transfer, fill-sensitive solidity, passability, visual, and color
+tables. Moving terrain uses one fill-transfer system for sand, water, lava, and
+future moving materials: fall first, then side-down, then side-up when the motion
+resource allows it. Transfer rates, minimum fill differences, the side-flow fill offset,
+and optional falling displacement of passable moving terrain live on motion
+resources. Side transfers clamp to the configured offset equilibrium and split
+between both side targets when both can receive material. Moving solid terrain can
+also define a fill threshold for collision, so partial material below that
+threshold can skip collider edges. Newly visible chunks receive one bounded motion
+scan; afterward only active cells and their neighbors remain awake. Ticks preserve
+a deterministic order while
+`advance(time_budget_usec)` spreads work across frames. Commits contain exact
+changed cells and fill changes rather than one broad dirty area.
+
+`CooperativeChunkBackend` owns scheduling, time slicing, commit production, and
+main-thread `WorldGrid` commits. Per-cell work is delegated to data-only
+collaborators: `TerrainSimulationContext` wraps the working buffers and wake/touch
+sets, `TerrainMotionStepper` owns fall/side-down/side-up ordering, and
+`TerrainTransferSolver` owns transfer math, liquid contact, and falling
+displacement. These collaborators must stay free of nodes, signals, renderer,
+physics-body, UI, and mutable resource dependencies so the simulation step remains
+portable to a worker boundary.
 
 Threaded and compute backends are not implemented. A future threaded backend must
 reuse the plain simulation/build inputs and outputs, keep scene-tree and resource

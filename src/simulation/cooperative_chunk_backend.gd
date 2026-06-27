@@ -2,10 +2,15 @@ class_name CooperativeChunkBackend
 extends TerrainSimulationBackend
 
 
+const TerrainMotionStepperScript = preload("res://src/simulation/terrain_motion_stepper.gd")
+const TerrainSimulationContextScript = preload("res://src/simulation/terrain_simulation_context.gd")
+
 var commit_interval_seconds := 0.1
 
 var _world: WorldGrid
 var _metadata: CompiledTerrainData
+var _context = TerrainSimulationContextScript.new()
+var _motion_stepper = TerrainMotionStepperScript.new()
 var _tick := 0
 var _revision := 0
 var _pending_commit := false
@@ -19,11 +24,10 @@ var _scheduled_lookup: Dictionary = {}
 var _scanned_chunks: Dictionary = {}
 var _pending_scan_chunks: Array[Vector2i] = []
 var _active_indices: Dictionary = {}
-var _next_active_indices: Dictionary = {}
 var _tick_indices: Array[int] = []
 var _tick_cursor := 0
 var _tick_in_progress := false
-var _touched_indices: Dictionary = {}
+var _force_rescan_next_tick := false
 var _last_commit_rect := Rect2i()
 var _last_commit_cell_count := 0
 var _last_advance_usec := 0
@@ -46,11 +50,12 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_scanned_chunks.clear()
 	_pending_scan_chunks.clear()
 	_active_indices.clear()
-	_next_active_indices.clear()
 	_tick_indices.clear()
 	_tick_cursor = 0
 	_tick_in_progress = false
-	_touched_indices.clear()
+	_context = TerrainSimulationContextScript.new()
+	_motion_stepper = TerrainMotionStepperScript.new()
+	_force_rescan_next_tick = false
 	_last_commit_rect = Rect2i()
 	_last_commit_cell_count = 0
 	_last_advance_usec = 0
@@ -66,7 +71,7 @@ func notify_external_changes(change_set: TerrainChangeSet) -> void:
 		return
 	_cancel_in_progress_tick()
 	for index in change_set.changed_indices:
-		_wake_index_and_neighbors(index, _active_indices)
+		TerrainSimulationContextScript.wake_index_and_neighbors_into(_world.dimensions, _world.committed_cells.size(), index, _active_indices)
 
 
 func schedule(active_chunks: Array[Vector2i]) -> void:
@@ -179,12 +184,18 @@ func last_commit_cell_count() -> int:
 
 func _start_tick() -> void:
 	_world.reset_working_from_committed()
-	_touched_indices.clear()
-	_next_active_indices.clear()
+	_context.configure(_world.dimensions, _metadata, _world.working_cells, _world.working_fill, _tick)
 	_apply_queued_changes()
 	for chunk_coord in _pending_scan_chunks:
 		_scan_chunk_for_motion(chunk_coord)
 	_pending_scan_chunks.clear()
+	if _force_rescan_next_tick:
+		_force_rescan_next_tick = false
+		if _scheduled_chunks.is_empty():
+			_scan_region_for_motion(Rect2i(0, 0, _world.dimensions.width, _world.dimensions.depth))
+		else:
+			for chunk_coord in _scheduled_chunks:
+				_scan_chunk_for_motion(chunk_coord)
 	if _active_indices.is_empty() and _scheduled_chunks.is_empty():
 		_scan_region_for_motion(Rect2i(0, 0, _world.dimensions.width, _world.dimensions.depth))
 	_tick_indices.clear()
@@ -204,12 +215,15 @@ func _finish_tick() -> void:
 	var change_set := TerrainChangeSet.new(_world.dimensions)
 	_revision += 1
 	change_set.revision = _revision
-	for index_variant in _touched_indices.keys():
+	for index_variant in _context.touched_indices().keys():
 		var index := int(index_variant)
-		change_set.add_change(index, _world.committed_cells[index], _world.working_cells[index], _metadata)
+		change_set.add_change(index, _world.committed_cells[index], _world.working_cells[index], _metadata, _world.committed_fill[index], _world.working_fill[index])
+	var has_changes := not change_set.is_empty()
 	_pending_change_set = change_set
-	_pending_commit = not change_set.is_empty()
-	_active_indices = _next_active_indices.duplicate()
+	_pending_commit = has_changes
+	_active_indices = _context.next_active_indices().duplicate()
+	if not has_changes:
+		_force_rescan_next_tick = true
 	_tick_indices.clear()
 	_tick_cursor = 0
 	_tick_in_progress = false
@@ -217,102 +231,15 @@ func _finish_tick() -> void:
 
 
 func _step_index(index: int) -> void:
-	var source_id := int(_world.committed_cells[index])
-	match _metadata.motion(source_id):
-		CompiledTerrainData.MOTION_FALLING:
-			_step_sand(index, source_id)
-		CompiledTerrainData.MOTION_LIQUID:
-			_step_liquid(index, source_id)
-
-
-func _step_sand(index: int, source_id: int) -> void:
-	var target := index + _world.dimensions.width
-	if target >= _world.committed_cells.size():
-		return
-	var target_id := int(_world.committed_cells[target])
-	if _metadata.is_passable(target_id):
-		_swap_indices(index, target, source_id, target_id)
-
-
-func _step_liquid(index: int, source_id: int) -> void:
-	var width := _world.dimensions.width
-	var row := int(index / width)
-	var col := index % width
-	var below := index + width
-	if below < _world.committed_cells.size():
-		var below_id := int(_world.committed_cells[below])
-		if _is_opposite_liquid(source_id, below_id):
-			_write_working(index, _metadata.air_id)
-			_write_working(below, _metadata.stone_id)
-			_wake_movement(index, below)
-			return
-		if _can_liquid_move_into(source_id, below_id):
-			_swap_indices(index, below, source_id, below_id)
-			return
-
-	var row_delta := col & 1
-	var first_delta: int = -1 if (_tick % 2 == 0) else 1
-	var column_deltas: Array[int] = [first_delta, -first_delta]
-	for col_delta: int in column_deltas:
-		var target_col: int = col + col_delta
-		var target_row: int = row + row_delta
-		if not _world.dimensions.is_in_bounds_offset(target_col, target_row):
-			continue
-		var target: int = target_row * width + target_col
-		var target_id := int(_world.working_cells[target])
-		if _is_opposite_liquid(source_id, target_id):
-			_write_working(index, _metadata.air_id)
-			_write_working(target, _metadata.stone_id)
-			_wake_movement(index, target)
-			return
-		if _can_liquid_move_into(source_id, target_id):
-			_swap_indices(index, target, source_id, target_id)
-			return
-
-
-func _swap_indices(source: int, target: int, source_id: int, target_id: int) -> void:
-	_write_working(source, target_id)
-	_write_working(target, source_id)
-	_wake_movement(source, target)
-
-
-func _write_working(index: int, cell_id: int) -> void:
-	_world.working_cells[index] = cell_id
-	_touched_indices[index] = true
-
-
-func _wake_movement(source: int, target: int) -> void:
-	_wake_index_and_neighbors(source, _next_active_indices)
-	_wake_index_and_neighbors(target, _next_active_indices)
-
-
-func _wake_index_and_neighbors(index: int, target_lookup: Dictionary) -> void:
-	if index < 0 or index >= _world.committed_cells.size():
-		return
-	target_lookup[index] = true
-	var width := _world.dimensions.width
-	var col := index % width
-	var row := int(index / width)
-	var parity := col & 1
-	_wake_offset(col + 1, row + parity, target_lookup)
-	_wake_offset(col + 1, row + parity - 1, target_lookup)
-	_wake_offset(col, row - 1, target_lookup)
-	_wake_offset(col - 1, row + parity - 1, target_lookup)
-	_wake_offset(col - 1, row + parity, target_lookup)
-	_wake_offset(col, row + 1, target_lookup)
-
-
-func _wake_offset(col: int, row: int, target_lookup: Dictionary) -> void:
-	if _world.dimensions.is_in_bounds_offset(col, row):
-		target_lookup[row * _world.dimensions.width + col] = true
+	_motion_stepper.step(index, _context)
 
 
 func _apply_queued_changes() -> void:
 	for change in _queued_changes:
 		if change.index < 0 or change.index >= _world.working_cells.size():
 			continue
-		_write_working(change.index, change.next_id)
-		_wake_index_and_neighbors(change.index, _next_active_indices)
+		_context.write_working(change.index, change.next_id, change.next_fill)
+		_context.wake_index_and_neighbors(change.index)
 	_queued_changes.clear()
 
 
@@ -329,7 +256,7 @@ func _scan_region_for_motion(region: Rect2i) -> void:
 	for row in range(region.position.y, region.end.y):
 		for col in range(region.position.x, region.end.x):
 			var index := row * width + col
-			if _metadata.motion(int(_world.committed_cells[index])) != CompiledTerrainData.MOTION_STABLE:
+			if _metadata.motion(int(_world.committed_cells[index])) != CompiledTerrainData.MOTION_STABLE and int(_world.committed_fill[index]) > 0:
 				_active_indices[index] = true
 
 
@@ -342,19 +269,11 @@ func _is_index_scheduled(index: int) -> bool:
 	return _scheduled_lookup.has(Vector2i(int(col / 20), int(row / 32)))
 
 
-func _is_opposite_liquid(source_id: int, target_id: int) -> bool:
-	return source_id != target_id and _metadata.motion(source_id) == CompiledTerrainData.MOTION_LIQUID and _metadata.motion(target_id) == CompiledTerrainData.MOTION_LIQUID
-
-
-func _can_liquid_move_into(source_id: int, target_id: int) -> bool:
-	return source_id != target_id and _metadata.is_passable(target_id) and _metadata.motion(target_id) != CompiledTerrainData.MOTION_LIQUID
-
-
 func _cancel_in_progress_tick() -> void:
 	_tick_in_progress = false
 	_tick_indices.clear()
 	_tick_cursor = 0
-	_touched_indices.clear()
-	_next_active_indices.clear()
+	_context = TerrainSimulationContextScript.new()
 	_pending_commit = false
 	_pending_change_set = null
+	_force_rescan_next_tick = false

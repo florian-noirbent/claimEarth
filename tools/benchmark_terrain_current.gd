@@ -60,11 +60,13 @@ func _make_world(scenario_name: String) -> WorldGrid:
 				for col in range(1, WIDTH - 1):
 					world.set_committed_by_offset(col, row, sand if (col + row) % 3 else water)
 	world.working_cells = world.committed_cells.duplicate()
+	world.working_fill = world.committed_fill.duplicate()
 	return world
 
 
 func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> Dictionary:
 	var original := source_world.committed_cells.duplicate()
+	var original_fill := source_world.committed_fill.duplicate()
 	var initial_tick_samples: Array[int] = []
 	var steady_tick_samples: Array[int] = []
 	var build_samples: Array[int] = []
@@ -75,6 +77,8 @@ func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> 
 		var world := WorldGrid.new(source_world.dimensions, 0)
 		world.committed_cells = original.duplicate()
 		world.working_cells = original.duplicate()
+		world.committed_fill = original_fill.duplicate()
+		world.working_fill = original_fill.duplicate()
 		var backend := CooperativeChunkBackend.new()
 		backend.initialize(world, registry, 12345)
 		var activity := ChunkActivityIndex.new(world.dimensions)
@@ -130,7 +134,7 @@ func _build_dirty_chunks(world: WorldGrid, registry: TerrainRegistry, activity: 
 		var snapshot_rect := chunk_rect.grow(1).intersection(Rect2i(Vector2i.ZERO, Vector2i(world.dimensions.width, world.dimensions.depth)))
 		var job := ChunkBuildJob.new()
 		var work := dirty_work[coord] as Dictionary
-		job.configure(coord, revision, int(work["mask"]), chunk_rect, snapshot_rect, world.copy_committed_region(snapshot_rect), metadata, 16.0, world.dimensions.width, work["collision_indices"] as PackedInt32Array)
+		job.configure(coord, revision, int(work["mask"]), chunk_rect, snapshot_rect, world.copy_committed_region(snapshot_rect), world.copy_committed_fill_region(snapshot_rect), metadata, 16.0, world.dimensions.width, work["collision_indices"] as PackedInt32Array)
 		while not job.advance(1000000):
 			pass
 

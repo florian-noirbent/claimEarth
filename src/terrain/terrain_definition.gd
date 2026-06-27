@@ -6,6 +6,7 @@ extends Resource
 @export_range(0, 255) var stable_id := 0
 @export var display_name := ""
 @export var is_solid := false
+@export_range(1, 255, 1) var moving_solid_fill_threshold := 1
 @export var is_passable := false
 @export var is_hookable := false
 @export var is_destructible := false

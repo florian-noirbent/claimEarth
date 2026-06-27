@@ -18,15 +18,22 @@ func _init(dimensions: WorldDimensions = null, chunk_width: int = 20, chunk_heig
 	_chunk_height = chunk_height
 
 
-func add_change(index: int, previous_id: int, next_id: int, metadata: CompiledTerrainData) -> void:
-	if previous_id == next_id or _dimensions == null:
+func add_change(index: int, previous_id: int, next_id: int, metadata: CompiledTerrainData, previous_fill: int = 255, next_fill: int = 255) -> void:
+	if _dimensions == null:
+		return
+	var id_changed := previous_id != next_id
+	var fill_changed := previous_fill != next_fill
+	if not id_changed and not fill_changed:
 		return
 	changed_indices.append(index)
 	var offset := _dimensions.index_to_offset(index)
 	_expand_dirty_rect(offset)
 	var owner_chunk := _chunk_for_offset(offset)
-	_mark_chunk(owner_chunk, metadata.visual_layer(previous_id) | metadata.visual_layer(next_id))
-	if metadata.is_solid(previous_id) == metadata.is_solid(next_id):
+	var visual_mask := metadata.visual_layer(previous_id) | metadata.visual_layer(next_id)
+	if fill_changed and (metadata.is_moving(previous_id) or metadata.is_moving(next_id)):
+		visual_mask |= TerrainLayerMask.SAND_VISUAL | TerrainLayerMask.FLUID_VISUAL
+	_mark_chunk(owner_chunk, visual_mask)
+	if metadata.is_solid(previous_id, previous_fill) == metadata.is_solid(next_id, next_fill):
 		return
 	collision_changed_indices.append(index)
 	_mark_chunk(owner_chunk, TerrainLayerMask.COLLISION)

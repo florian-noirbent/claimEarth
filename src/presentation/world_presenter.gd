@@ -122,6 +122,11 @@ func chunk_layer_vertex_count(chunk_coord: Vector2i, layer_mask: int) -> int:
 	return renderer.layer_vertex_count(layer_mask) if renderer != null else 0
 
 
+func chunk_layer_min_vertex_y(chunk_coord: Vector2i, layer_mask: int) -> float:
+	var renderer := _renderers.get(chunk_coord) as WorldChunkRenderer
+	return renderer.layer_min_vertex_y(layer_mask) if renderer != null else INF
+
+
 func refresh_count() -> int:
 	return _refresh_count
 
@@ -192,7 +197,7 @@ func _enqueue_chunk_job(chunk_coord: Vector2i, layer_mask: int, collision_indice
 	var chunk_rect := _chunk_activity_index.chunk_rect(chunk_coord)
 	var snapshot_rect := chunk_rect.grow(1).intersection(Rect2i(Vector2i.ZERO, Vector2i(_world.dimensions.width, _world.dimensions.depth)))
 	var job := ChunkBuildJob.new()
-	job.configure(chunk_coord, revision, layer_mask, chunk_rect, snapshot_rect, _world.copy_committed_region(snapshot_rect), _metadata, hex_radius, _world.dimensions.width, collision_indices)
+	job.configure(chunk_coord, revision, layer_mask, chunk_rect, snapshot_rect, _world.copy_committed_region(snapshot_rect), _world.copy_committed_fill_region(snapshot_rect), _metadata, hex_radius, _world.dimensions.width, collision_indices)
 	_executor.enqueue(job)
 
 

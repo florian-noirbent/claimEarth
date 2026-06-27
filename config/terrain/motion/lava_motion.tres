@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LiquidMotionBehavior" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/liquid_motion_behavior.gd" id="1_1n8gt"]
+
+[resource]
+script = ExtResource("1_1n8gt")
+fall_rate = 128
+side_down_rate = 32
+side_up_rate = 8
+min_fill_difference = 51

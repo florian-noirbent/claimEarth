@@ -61,14 +61,23 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Air | Passable | Stable | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
-| Sand | Solid | Falls and swaps downward through liquids; burial hazard | Becomes air |
-| Water | Passable | Falls diagonally; suffocation hazard | Diffuses propagation |
-| Lava | Passable | Falls diagonally; instant death | Detonates bombs |
+| Sand | Solid at half fill or more | Falls, can creep side-down, displaces passable moving terrain below, never rises; burial hazard only when full | Becomes air |
+| Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; suffocation hazard only when full | Diffuses propagation |
+| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; lethal at 10% fill or more | Detonates bombs |
 
-Water/lava contact creates stone. Settled liquids do not move truly sideways or
-oscillate indefinitely. Terrain simulation targets a commit every 0.1 seconds;
-simulation and presentation work are spread across frames so player physics,
-projectiles, and input remain responsive.
+Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
+partial fill controls movement and rendering. Moving terrain tries to fall first,
+then flow side-down, then side-up when its motion resource allows it. Side flow
+uses a cellular automata fill offset: side-down flow stops before crossing
+`source_fill == target_fill - 50`, and side-up flow stops before crossing
+`source_fill == target_fill + 50`. If both side targets can receive fluid in a
+tick, the transfer splits evenly. Water uses fast side-flow rates; lava uses the
+same rule with slower rates and a minimum fill difference. Water/lava contact
+creates stone whenever both have nonzero fill. Settled liquids do not oscillate
+indefinitely.
+Terrain simulation targets a commit every 0.1 seconds; simulation and presentation
+work are spread across frames so player physics, projectiles, and input remain
+responsive.
 
 ## Player And Camera
 
@@ -80,8 +89,9 @@ projectiles, and input remain responsive.
 - The camera remains horizontally fixed and zooms so the map width fills the
   viewport. It never scrolls upward during a run.
 
-The player dies from lava, prolonged water exposure, sand burial, a bomb's lethal
-radius, or falling below the world. Death never records current depth.
+The player dies from lava at 10% fill or more, prolonged full-water exposure, full
+sand burial, a bomb's lethal radius, or falling below the world. Death never records
+current depth.
 
 ## Items
 
@@ -100,7 +110,7 @@ under `config/items/`.
 ### Flag
 
 - The flag is thrown using projectile physics and does not bounce.
-- It ignores water, is destroyed by lava, and sticks on its first valid solid
+- It ignores water, is destroyed by lava at 10% fill or more, and sticks on its first valid solid
   landing.
 - Throwing it locks further item throws until it resolves.
 - Landing depth, not current player depth, is the score.
@@ -119,7 +129,9 @@ under `config/items/`.
 
 - Current art is original SVG or procedural drawing; terrain is procedurally styled.
 - Water, lava, sand, stone, and dirt must remain distinguishable by pattern and shape,
-  not color alone.
+  not color alone. Partial moving cells show their fill level; if a partial moving
+  cell has liquid above, the empty portion draws that liquid, and if it has solid
+  above, it renders as a full hex of its own material.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
 - Desktop keyboard and mouse are the supported input scheme. Mobile and touch are not

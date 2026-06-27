@@ -86,7 +86,7 @@ func _physics_process(delta: float) -> void:
 	global_position += velocity * delta
 	var definition := _sample_terrain(global_position)
 	if definition != null:
-		if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately:
+		if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately and definition.hazard_behavior.resolve_for_fill(_sample_fill(global_position)) != null:
 			resolved.emit(self, global_position, &"lava")
 			queue_free()
 			return
@@ -110,6 +110,15 @@ func _sample_terrain(world_position: Vector2) -> TerrainDefinition:
 	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return null
 	return terrain_registry.get_definition(world.get_committed_by_offset(offset.x, offset.y))
+
+
+func _sample_fill(world_position: Vector2) -> int:
+	if world == null:
+		return 0
+	var offset := HexMetrics.offset_for_world(world_position, hex_radius)
+	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return 0
+	return world.get_committed_fill_by_offset(offset.x, offset.y)
 
 
 func _bounce(previous_position: Vector2, delta: float) -> void:

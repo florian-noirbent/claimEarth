@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="TerrainDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_0dxqn"]
-[ext_resource type="Resource" path="res://config/terrain/motion/liquid_motion.tres" id="2_oh5bb"]
+[ext_resource type="Resource" path="res://config/terrain/motion/lava_motion.tres" id="2_oh5bb"]
 [ext_resource type="Resource" path="res://config/terrain/hazard/lava_hazard.tres" id="3_0ldem"]
 [ext_resource type="Resource" path="res://config/terrain/blast/lava_detonate.tres" id="4_8qfmx"]
 [ext_resource type="Resource" path="res://config/visual/lava_style.tres" id="5_l4h5v"]

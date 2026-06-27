@@ -231,4 +231,4 @@ func _hazard_effect_at(world_position: Vector2):
 	var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 	if definition == null:
 		return null
-	return definition.hazard_behavior.resolve()
+	return definition.hazard_behavior.resolve_for_fill(_world.get_committed_fill_by_offset(offset.x, offset.y))

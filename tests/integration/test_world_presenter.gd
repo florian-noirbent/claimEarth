@@ -39,6 +39,7 @@ func test_world_presenter_builds_collision_for_solid_exposed_edges() -> void:
 
 func test_world_presenter_rebuilds_only_dirty_or_newly_visible_chunks() -> void:
 	var presenter := WorldPresenter.new()
+	presenter.build_budget_usec = 1000000
 	add_child_autofree(presenter)
 
 	var registry := FixtureLoader.terrain_registry()
@@ -56,9 +57,9 @@ func test_world_presenter_rebuilds_only_dirty_or_newly_visible_chunks() -> void:
 	assert_eq(presenter.rebuild_count(), 0)
 
 	activity.mark_dirty_rect(Rect2i(0, 0, 1, 1))
-	for _frame in range(10):
+	for _frame in range(30):
 		presenter.refresh_visible_chunks(0)
-		if presenter.rebuild_count() > 0:
+		if presenter.pending_job_count() == 0 and presenter.rebuild_count() > 0:
 			break
 	assert_eq(presenter.rebuild_count(), 1)
 	assert_eq(presenter.dirty_rebuild_count(), 1)
@@ -97,6 +98,44 @@ func test_world_presenter_builds_separate_static_sand_and_fluid_meshes() -> void
 	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), 0)
 
 
+func test_world_presenter_renders_partial_fill_levels() -> void:
+	var presenter := WorldPresenter.new()
+	add_child_autofree(presenter)
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(4, 4, FixtureLoader.terrain_id("Water"), 128)
+	presenter.configure(world, registry, ChunkActivityIndex.new(world.dimensions, 20, 32))
+
+	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), 0)
+	var full_top_y := HexMetrics.center_for_offset(4, 4, presenter.hex_radius).y - presenter.hex_radius * sqrt(3.0) * 0.5
+	assert_gt(presenter.chunk_layer_min_vertex_y(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), full_top_y + 1.0)
+
+
+func test_world_presenter_renders_partial_moving_cell_full_under_solid() -> void:
+	var presenter := WorldPresenter.new()
+	add_child_autofree(presenter)
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(4, 3, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(4, 4, FixtureLoader.terrain_id("Water"), 128)
+	presenter.configure(world, registry, ChunkActivityIndex.new(world.dimensions, 20, 32))
+
+	assert_eq(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), 7)
+
+
+func test_world_presenter_draws_liquid_above_partial_moving_cell() -> void:
+	var presenter := WorldPresenter.new()
+	add_child_autofree(presenter)
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(4, 3, FixtureLoader.terrain_id("Water"))
+	world.set_committed_by_offset(4, 4, FixtureLoader.terrain_id("Sand"), 128)
+	presenter.configure(world, registry, ChunkActivityIndex.new(world.dimensions, 20, 32))
+
+	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), 7)
+	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.SAND_VISUAL), 0)
+
+
 func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
 	var presenter := WorldPresenter.new()
 	add_child_autofree(presenter)
@@ -110,6 +149,30 @@ func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
 	var change := world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Air"))
 	var changes := TerrainChangeSet.new(world.dimensions, 20, 32)
 	changes.add_change(change.index, change.previous_id, change.next_id, metadata)
+	activity.mark_change_set(changes)
+	for _frame in range(10):
+		presenter.refresh_visible_chunks(0)
+		if presenter.pending_job_count() == 0:
+			break
+
+	assert_gt(initial_segments, 0)
+	assert_eq(presenter.chunk_collision_segment_count(Vector2i.ZERO), 0)
+
+
+func test_incremental_collision_update_removes_sand_edges_below_half_fill() -> void:
+	var presenter := WorldPresenter.new()
+	add_child_autofree(presenter)
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	world.set_committed_by_offset(5, 5, sand_id)
+	var activity := ChunkActivityIndex.new(world.dimensions, 20, 32)
+	presenter.configure(world, registry, activity)
+	var initial_segments := presenter.chunk_collision_segment_count(Vector2i.ZERO)
+	var metadata := CompiledTerrainData.compile(registry)
+	var change := world.set_committed_by_offset(5, 5, sand_id, 127)
+	var changes := TerrainChangeSet.new(world.dimensions, 20, 32)
+	changes.add_change(change.index, change.previous_id, change.next_id, metadata, change.previous_fill, change.next_fill)
 	activity.mark_change_set(changes)
 	for _frame in range(10):
 		presenter.refresh_visible_chunks(0)
