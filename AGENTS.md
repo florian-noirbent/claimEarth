@@ -24,7 +24,8 @@ history for historical context. Keep documentation focused on the current system
 - Primary release target: itch.io Web on current desktop Chromium and Firefox.
 - Do not add C# runtime code, GDExtension, or a required threaded/compute path.
 - Keep the default Web export playable without cross-origin isolation.
-- Visual assets must be SVG/vector or procedurally generated.
+- Store visual assets under `assets/ui`, `assets/terrain`, or `assets/objects`
+  according to their runtime use.
 - Preserve deterministic world seeds and resource-driven tuning.
 - A score exists only after a valid flag landing. Death and a lava-destroyed flag
   never save a score.

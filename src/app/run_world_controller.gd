@@ -12,6 +12,7 @@ const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_
 
 var _profile: GenerationProfile
 var _player_scene: PackedScene
+var _world_background: WorldBackground
 var _world_presenter: WorldPresenter
 var _depth_markers: Node2D
 var _side_boundaries: WorldSideBoundaries
@@ -28,9 +29,10 @@ var _simulation_tick_requested := false
 var _generation_serial := 0
 
 
-func configure(profile: GenerationProfile, player_scene: PackedScene, world_presenter: WorldPresenter, depth_markers: Node2D, side_boundaries: WorldSideBoundaries) -> void:
+func configure(profile: GenerationProfile, player_scene: PackedScene, world_background: WorldBackground, world_presenter: WorldPresenter, depth_markers: Node2D, side_boundaries: WorldSideBoundaries) -> void:
 	_profile = profile
 	_player_scene = player_scene
+	_world_background = world_background
 	_world_presenter = world_presenter
 	_depth_markers = depth_markers
 	_side_boundaries = side_boundaries
@@ -173,6 +175,7 @@ func _configure_world_bounds() -> void:
 	var horizontal_zoom := maxf(0.1, get_viewport().get_visible_rect().size.x) / maxf(1.0, map_width - 16.0)
 	var top_edge := HexMetrics.center_for_offset(0, 0, _world_presenter.hex_radius).y - _world_presenter.hex_radius
 	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y + _world_presenter.hex_radius
+	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
 	_player.configure_horizontal_bounds(left_edge, right_edge)
@@ -183,6 +186,8 @@ func _configure_world_bounds() -> void:
 func _configure_marker_bounds() -> void:
 	var left_edge := HexMetrics.center_for_offset(0, 0, _world_presenter.hex_radius).x - _world_presenter.hex_radius
 	var right_edge := HexMetrics.center_for_offset(_profile.width - 1, 0, _world_presenter.hex_radius).x + _world_presenter.hex_radius
+	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y + _world_presenter.hex_radius
+	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
 	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
 
 

@@ -52,9 +52,9 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	ui.show_run_status(12, 20, false, {
 		"flag_in_flight": false,
 		"items": [
-			{"name": "Small Bomb", "icon": load("res://assets/vector/small_bomb.svg"), "count": 10, "selected": true, "shortcut": 1},
-			{"name": "Large Bomb", "icon": load("res://assets/vector/large_bomb.svg"), "count": 2, "selected": false, "shortcut": 2},
-			{"name": "Flag", "icon": load("res://assets/vector/flag.svg"), "count": 1, "selected": false, "shortcut": 3},
+			{"name": "Small Bomb", "icon": load("res://assets/objects/small_bomb.svg"), "count": 10, "selected": true, "shortcut": 1},
+			{"name": "Large Bomb", "icon": load("res://assets/objects/large_bomb.svg"), "count": 2, "selected": false, "shortcut": 2},
+			{"name": "Flag", "icon": load("res://assets/objects/flag.svg"), "count": 1, "selected": false, "shortcut": 3},
 		],
 	})
 
@@ -81,9 +81,9 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	ui.show_run_status(12, 20, false, {
 		"flag_in_flight": false,
 		"items": [
-			{"name": "Small Bomb", "icon": load("res://assets/vector/small_bomb.svg"), "count": 10, "selected": false, "shortcut": 1},
-			{"name": "Large Bomb", "icon": load("res://assets/vector/large_bomb.svg"), "count": 2, "selected": true, "shortcut": 2},
-			{"name": "Flag", "icon": load("res://assets/vector/flag.svg"), "count": 1, "selected": false, "shortcut": 3},
+			{"name": "Small Bomb", "icon": load("res://assets/objects/small_bomb.svg"), "count": 10, "selected": false, "shortcut": 1},
+			{"name": "Large Bomb", "icon": load("res://assets/objects/large_bomb.svg"), "count": 2, "selected": true, "shortcut": 2},
+			{"name": "Flag", "icon": load("res://assets/objects/flag.svg"), "count": 1, "selected": false, "shortcut": 3},
 		],
 	})
 	assert_true(ui.selection_name_label.visible)

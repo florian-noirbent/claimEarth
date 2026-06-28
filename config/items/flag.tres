@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/items/item_definition.gd" id="1_iwl6w"]
 [ext_resource type="Resource" path="res://config/items/factory/flag_factory.tres" id="2_1bpvf"]
-[ext_resource type="Texture2D" path="res://assets/vector/flag.svg" id="3_icon"]
+[ext_resource type="Texture2D" path="res://assets/objects/flag.svg" id="3_icon"]
 
 [resource]
 script = ExtResource("1_iwl6w")

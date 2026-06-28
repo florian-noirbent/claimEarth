@@ -15,6 +15,7 @@ signal item_thrown
 
 @onready var item_controller: RunItemController = %RunItemController
 @onready var world_controller: RunWorldController = %RunWorldController
+@onready var world_background: WorldBackground = %WorldBackground
 @onready var world_presenter: WorldPresenter = %WorldPresenter
 @onready var depth_markers: DepthMarkerPresenter = %DepthMarkers
 @onready var gameplay_feedback: GameplayFeedback = %GameplayFeedback
@@ -27,7 +28,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	if _configured:
 		return
 	_configured = true
-	world_controller.configure(profile, player_scene, world_presenter, depth_markers, world_side_boundaries)
+	world_controller.configure(profile, player_scene, world_background, world_presenter, depth_markers, world_side_boundaries)
 	item_controller.configure_catalog(world_controller.item_registry(), world_presenter.hex_radius)
 	world_controller.generation_progressed.connect(generation_progressed.emit)
 	world_controller.run_ready.connect(_on_run_ready)

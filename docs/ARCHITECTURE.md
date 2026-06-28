@@ -91,6 +91,11 @@ world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 static, sand, fluid, and collision masks plus changed collision cells, and computes
 the depth window used by simulation and presentation.
 
+`WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
+0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
+texture below it. It is presentation only and does not affect generation,
+simulation, collision, or score depth.
+
 `WorldPresenter` creates one `WorldChunkRenderer` and one `WorldChunkCollision` per
 visible chunk. Each renderer owns persistent static, sand, and fluid mesh layers.
 Plain `ChunkBuildJob` inputs snapshot packed world data and produce resource-free

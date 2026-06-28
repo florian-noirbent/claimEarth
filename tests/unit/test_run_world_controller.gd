@@ -3,10 +3,12 @@ extends GutTest
 
 func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	var controller := RunWorldController.new()
+	var background := WorldBackground.new()
 	var presenter := WorldPresenter.new()
 	var markers := Node2D.new()
 	var boundaries := WorldSideBoundaries.new()
 	add_child_autofree(controller)
+	add_child_autofree(background)
 	add_child_autofree(presenter)
 	add_child_autofree(markers)
 	add_child_autofree(boundaries)
@@ -14,6 +16,7 @@ func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	controller.configure(
 		load("res://config/generation/default_profile.tres"),
 		load("res://scenes/player/player.tscn"),
+		background,
 		presenter,
 		markers,
 		boundaries

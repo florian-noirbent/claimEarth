@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
 [ext_resource type="Resource" path="res://config/player/default_grapple.tres" id="3_grapple"]
-[ext_resource type="Texture2D" path="res://assets/vector/player_body.svg" id="4_body"]
+[ext_resource type="Texture2D" path="res://assets/objects/player_body.svg" id="4_body"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
 radius = 14.0
