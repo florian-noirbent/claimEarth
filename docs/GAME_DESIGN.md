@@ -138,9 +138,10 @@ under `config/items/`.
   0, a grass transition band on the surface edge, and a graded, tiled cave texture
   below it. Terrain is procedurally styled.
 - Water, lava, sand, stone, and dirt must remain distinguishable by pattern and shape,
-  not color alone. Partial moving cells show their fill level; if a partial moving
-  cell has liquid above, the empty portion draws that liquid, and if it has solid
-  above, it renders as a full hex of its own material.
+  not color alone. Partial moving cells show their fill level with smoothed surfaces
+  between matching neighboring moving terrain; if a partial moving cell has liquid
+  above, the empty portion draws that liquid, and if it has solid above, it renders
+  as a full hex of its own material.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
 - Desktop keyboard and mouse are the supported input scheme. Mobile and touch are not

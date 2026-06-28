@@ -53,7 +53,7 @@ allowed_target_ids = PackedInt32Array(1)
 
 [sub_resource type="Resource" id="Resource_fr6de"]
 script = ExtResource("4_spawn")
-shaft_target_depth = 256
+shaft_target_depth = 100
 shaft_width = 6.0
 shaft_steepness = 0.7
 zigzag_min_rows = 6

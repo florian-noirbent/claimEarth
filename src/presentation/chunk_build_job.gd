@@ -134,16 +134,71 @@ func _append_cell_visual(layer: int, col: int, row: int, cell_id: int, fill: int
 	if metadata.is_solid(above_id, above_fill):
 		_append_hex_polygon(layer, col, row, cell_id, _corners)
 		return
-	var fill_line := _fill_line_y(fill)
-	var bottom_polygon := _clip_polygon(_corners, fill_line, true)
+	var surface := _moving_surface_points(col, row, cell_id, fill)
+	var bottom_polygon := _filled_moving_polygon(surface)
 	if bottom_polygon.size() >= 3:
 		_append_hex_polygon(layer, col, row, cell_id, bottom_polygon)
 	if metadata.motion(above_id) == CompiledTerrainData.MOTION_LIQUID and above_fill > 0:
 		var above_layer := metadata.visual_layer(above_id)
 		if (layer_mask & above_layer) != 0:
-			var top_polygon := _clip_polygon(_corners, fill_line, false)
+			var top_polygon := _empty_moving_polygon(surface)
 			if top_polygon.size() >= 3:
 				_append_hex_polygon(above_layer, col, row, above_id, top_polygon)
+
+
+func _moving_surface_points(col: int, row: int, cell_id: int, fill: int) -> PackedVector2Array:
+	var center := _cell_center(col, row)
+	var center_y := _fill_line_y(fill)
+	var left_y := _side_surface_y(col, row, cell_id, fill, -1, center, center_y)
+	var right_y := _side_surface_y(col, row, cell_id, fill, 1, center, center_y)
+	return PackedVector2Array([
+		Vector2(_left_boundary_x(left_y), left_y),
+		Vector2(0.0, center_y),
+		Vector2(_right_boundary_x(right_y), right_y),
+	])
+
+
+func _side_surface_y(col: int, row: int, cell_id: int, fill: int, side: int, center: Vector2, center_y: float) -> float:
+	var neighbor := _surface_neighbor_for_side(col, row, side, center_y)
+	if _cell_at(neighbor.x, neighbor.y) != cell_id:
+		return center_y
+	var neighbor_fill := _fill_at(neighbor.x, neighbor.y)
+	if neighbor_fill <= 0:
+		return center_y
+	var neighbor_center := _cell_center(neighbor.x, neighbor.y)
+	var side_world_y := (center.y + _fill_line_y(fill) + neighbor_center.y + _fill_line_y(neighbor_fill)) * 0.5
+	var half_height := _half_height()
+	return clampf(side_world_y - center.y, -half_height, half_height)
+
+
+func _surface_neighbor_for_side(col: int, row: int, side: int, surface_y: float) -> Vector2i:
+	var parity := col & 1
+	var row_delta := parity - 1 if surface_y <= 0.0 else parity
+	return Vector2i(col + side, row + row_delta)
+
+
+func _filled_moving_polygon(surface: PackedVector2Array) -> PackedVector2Array:
+	var polygon := PackedVector2Array([surface[0], surface[1], surface[2]])
+	if surface[2].y <= 0.0:
+		polygon.append(_corners[1])
+	polygon.append(_corners[2])
+	polygon.append(_corners[3])
+	if surface[0].y < 0.0:
+		polygon.append(_corners[4])
+	return polygon
+
+
+func _empty_moving_polygon(surface: PackedVector2Array) -> PackedVector2Array:
+	var polygon := PackedVector2Array([surface[0]])
+	if surface[0].y >= 0.0:
+		polygon.append(_corners[4])
+	polygon.append(_corners[5])
+	polygon.append(_corners[0])
+	if surface[2].y > 0.0:
+		polygon.append(_corners[1])
+	polygon.append(surface[2])
+	polygon.append(surface[1])
+	return polygon
 
 
 func _append_hex_polygon(layer: int, col: int, row: int, cell_id: int, polygon: PackedVector2Array) -> void:
@@ -239,37 +294,20 @@ func _cell_center(col: int, row: int) -> Vector2:
 
 
 func _fill_line_y(fill: int) -> float:
-	var half_height := hex_radius * sqrt(3.0) * 0.5
+	var half_height := _half_height()
 	return lerpf(half_height, -half_height, float(fill) / 255.0)
 
 
-func _clip_polygon(source: PackedVector2Array, line_y: float, keep_below: bool) -> PackedVector2Array:
-	var output := PackedVector2Array()
-	if source.is_empty():
-		return output
-	var previous := source[source.size() - 1]
-	var previous_inside := _is_inside_fill_clip(previous, line_y, keep_below)
-	for current in source:
-		var current_inside := _is_inside_fill_clip(current, line_y, keep_below)
-		if current_inside != previous_inside:
-			output.append(_intersect_horizontal(previous, current, line_y))
-		if current_inside:
-			output.append(current)
-		previous = current
-		previous_inside = current_inside
-	return output
+func _half_height() -> float:
+	return hex_radius * sqrt(3.0) * 0.5
 
 
-func _is_inside_fill_clip(point: Vector2, line_y: float, keep_below: bool) -> bool:
-	return point.y >= line_y if keep_below else point.y <= line_y
+func _left_boundary_x(local_y: float) -> float:
+	return -hex_radius + absf(local_y) / sqrt(3.0)
 
 
-func _intersect_horizontal(a: Vector2, b: Vector2, line_y: float) -> Vector2:
-	var delta_y := b.y - a.y
-	if is_zero_approx(delta_y):
-		return Vector2(a.x, line_y)
-	var t := (line_y - a.y) / delta_y
-	return a.lerp(b, clampf(t, 0.0, 1.0))
+func _right_boundary_x(local_y: float) -> float:
+	return hex_radius - absf(local_y) / sqrt(3.0)
 
 
 func _polygon_centroid(polygon: PackedVector2Array) -> Vector2:
