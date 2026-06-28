@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TerrainMaterial" load_steps=4 format=3 uid="uid://dbksqr2cky6lq"]
+
+[ext_resource type="Script" uid="uid://dhyooeop2stts" path="res://src/presentation/terrain_material.gd" id="1_x1fcn"]
+[ext_resource type="Texture2D" uid="uid://dt6n287hrmwcw" path="res://assets/terrain/dirt.jpg" id="2_t7xo5"]
+[ext_resource type="Resource" path="res://config/visual/edges/dirt_edge.tres" id="3_y7uck"]
+
+[resource]
+script = ExtResource("1_x1fcn")
+fill_texture = ExtResource("2_t7xo5")
+fill_texture_world_scale = 1024.0
+edge_definition = ExtResource("3_y7uck")

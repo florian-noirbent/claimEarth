@@ -128,6 +128,16 @@ func chunk_layer_min_vertex_y(chunk_coord: Vector2i, layer_mask: int) -> float:
 	return renderer.layer_min_vertex_y(layer_mask) if renderer != null else INF
 
 
+func chunk_static_material_mesh_count(chunk_coord: Vector2i) -> int:
+	var renderer := _renderers.get(chunk_coord) as WorldChunkRenderer
+	return renderer.static_material_mesh_count() if renderer != null else 0
+
+
+func chunk_static_edge_vertex_count(chunk_coord: Vector2i) -> int:
+	var renderer := _renderers.get(chunk_coord) as WorldChunkRenderer
+	return renderer.static_edge_vertex_count() if renderer != null else 0
+
+
 func refresh_count() -> int:
 	return _refresh_count
 
@@ -171,7 +181,7 @@ func _ensure_chunk_nodes(chunk_coord: Vector2i) -> bool:
 	var chunk_rect := _chunk_activity_index.chunk_rect(chunk_coord)
 	var renderer := WorldChunkRenderer.new()
 	add_child(renderer)
-	renderer.configure(chunk_coord, chunk_rect)
+	renderer.configure(chunk_coord, chunk_rect, _metadata.materials)
 	_renderers[chunk_coord] = renderer
 	if build_collision:
 		var collider := WorldChunkCollision.new()

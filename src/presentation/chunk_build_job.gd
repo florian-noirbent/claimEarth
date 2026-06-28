@@ -22,6 +22,8 @@ var _static_vertices: Array[Vector3] = []
 var _static_colors: Array[Color] = []
 var _static_uvs: Array[Vector2] = []
 var _static_indices: Array[int] = []
+var _static_material_meshes := {}
+var _static_edge_meshes := {}
 var _sand_vertices: Array[Vector3] = []
 var _sand_colors: Array[Color] = []
 var _sand_uvs: Array[Vector2] = []
@@ -99,6 +101,8 @@ func advance(time_budget_usec: int) -> bool:
 	result.static_colors = PackedColorArray(_static_colors)
 	result.static_uvs = PackedVector2Array(_static_uvs)
 	result.static_indices = PackedInt32Array(_static_indices)
+	result.static_material_meshes = _static_material_meshes
+	result.static_edge_meshes = _static_edge_meshes
 	result.sand_vertices = PackedVector3Array(_sand_vertices)
 	result.sand_colors = PackedColorArray(_sand_colors)
 	result.sand_uvs = PackedVector2Array(_sand_uvs)
@@ -121,6 +125,8 @@ func _process_cell(col: int, row: int) -> void:
 	var visual_layer := metadata.visual_layer(cell_id)
 	if (layer_mask & visual_layer) != 0:
 		_append_cell_visual(visual_layer, col, row, cell_id, fill)
+		if visual_layer == TerrainLayerMask.STATIC_VISUAL:
+			_append_static_edges(col, row, cell_id, fill)
 
 
 func _append_cell_visual(layer: int, col: int, row: int, cell_id: int, fill: int) -> void:
@@ -206,6 +212,7 @@ func _append_hex_polygon(layer: int, col: int, row: int, cell_id: int, polygon: 
 	var colors: Array[Color]
 	var uvs: Array[Vector2]
 	var indices: Array[int]
+	var uv_scale := 64.0
 	if layer == TerrainLayerMask.SAND_VISUAL:
 		vertices = _sand_vertices
 		colors = _sand_colors
@@ -217,26 +224,117 @@ func _append_hex_polygon(layer: int, col: int, row: int, cell_id: int, polygon: 
 		uvs = _fluid_uvs
 		indices = _fluid_indices
 	else:
-		vertices = _static_vertices
-		colors = _static_colors
-		uvs = _static_uvs
-		indices = _static_indices
+		var material_index := int(metadata.material_index_by_id[cell_id])
+		if material_index > 0:
+			var mesh_arrays := _static_material_mesh(material_index)
+			vertices = mesh_arrays.vertices
+			colors = mesh_arrays.colors
+			uvs = mesh_arrays.uvs
+			indices = mesh_arrays.indices
+			uv_scale = maxf(metadata.fill_texture_world_scale_by_id[cell_id], 1.0)
+		else:
+			vertices = _static_vertices
+			colors = _static_colors
+			uvs = _static_uvs
+			indices = _static_indices
 	var center := _cell_center(col, row)
 	var base := vertices.size()
 	var polygon_center := _polygon_centroid(polygon)
 	var fan_center := center + polygon_center
+	var vertex_color := metadata.fill_color_by_id[cell_id]
 	vertices.append(Vector3(fan_center.x, fan_center.y, 0.0))
-	colors.append(metadata.fill_color_by_id[cell_id])
-	uvs.append(fan_center / 64.0)
+	colors.append(vertex_color)
+	uvs.append(fan_center / uv_scale)
 	for corner in polygon:
 		var point := center + corner
 		vertices.append(Vector3(point.x, point.y, 0.0))
-		colors.append(metadata.fill_color_by_id[cell_id])
-		uvs.append(point / 64.0)
+		colors.append(vertex_color)
+		uvs.append(point / uv_scale)
 	for corner_index in range(polygon.size()):
 		indices.append(base)
 		indices.append(base + 1 + corner_index)
 		indices.append(base + 1 + ((corner_index + 1) % polygon.size()))
+
+
+func _static_material_mesh(material_index: int) -> ChunkMeshArrays:
+	if not _static_material_meshes.has(material_index):
+		_static_material_meshes[material_index] = ChunkMeshArrays.new()
+	return _static_material_meshes[material_index] as ChunkMeshArrays
+
+
+func _append_static_edges(col: int, row: int, cell_id: int, fill: int) -> void:
+	var edge_width := metadata.edge_width_by_id[cell_id]
+	var edge_color := metadata.edge_color_by_id[cell_id]
+	if edge_width <= 0.0 or edge_color.a <= 0.0 or not metadata.is_solid(cell_id, fill):
+		return
+	var center := _cell_center(col, row)
+	var parity := col & 1
+	var neighbor_offsets: Array[Vector2i] = [
+		Vector2i(col + 1, row + parity),
+		Vector2i(col + 1, row + parity - 1),
+		Vector2i(col, row - 1),
+		Vector2i(col - 1, row + parity - 1),
+		Vector2i(col - 1, row + parity),
+		Vector2i(col, row + 1),
+	]
+	var material_index := int(metadata.material_index_by_id[cell_id])
+	for direction in range(6):
+		var neighbor := neighbor_offsets[direction]
+		if not _should_draw_static_edge(col, row, cell_id, fill, neighbor):
+			continue
+		var edge := HexMetrics.edge_corner_indices_for_direction(direction)
+		_append_edge_quad(
+			_static_edge_mesh(material_index),
+			center,
+			center + _corners[edge.x],
+			center + _corners[edge.y],
+			edge_width,
+			edge_color
+		)
+
+
+func _should_draw_static_edge(col: int, row: int, cell_id: int, fill: int, neighbor: Vector2i) -> bool:
+	if not _contains_snapshot(neighbor.x, neighbor.y):
+		return true
+	var neighbor_id := _cell_at(neighbor.x, neighbor.y)
+	var neighbor_fill := _fill_at(neighbor.x, neighbor.y)
+	if not metadata.is_solid(neighbor_id, neighbor_fill):
+		return true
+	if metadata.visual_layer(neighbor_id) != TerrainLayerMask.STATIC_VISUAL:
+		return true
+	var material_index := int(metadata.material_index_by_id[cell_id])
+	var neighbor_material_index := int(metadata.material_index_by_id[neighbor_id])
+	if material_index == neighbor_material_index:
+		return false
+	return row * world_width + col < neighbor.y * world_width + neighbor.x
+
+
+func _append_edge_quad(mesh_arrays: ChunkMeshArrays, center: Vector2, start: Vector2, end: Vector2, edge_width: float, edge_color: Color) -> void:
+	var outward := ((start + end) * 0.5 - center).normalized()
+	if outward == Vector2.ZERO:
+		return
+	var base := mesh_arrays.vertices.size()
+	var outer_start := start + outward * edge_width
+	var outer_end := end + outward * edge_width
+	mesh_arrays.vertices.append(Vector3(start.x, start.y, 0.0))
+	mesh_arrays.vertices.append(Vector3(end.x, end.y, 0.0))
+	mesh_arrays.vertices.append(Vector3(outer_end.x, outer_end.y, 0.0))
+	mesh_arrays.vertices.append(Vector3(outer_start.x, outer_start.y, 0.0))
+	for _index in range(4):
+		mesh_arrays.colors.append(edge_color)
+		mesh_arrays.uvs.append(Vector2.ZERO)
+	mesh_arrays.indices.append(base)
+	mesh_arrays.indices.append(base + 1)
+	mesh_arrays.indices.append(base + 2)
+	mesh_arrays.indices.append(base)
+	mesh_arrays.indices.append(base + 2)
+	mesh_arrays.indices.append(base + 3)
+
+
+func _static_edge_mesh(material_index: int) -> ChunkMeshArrays:
+	if not _static_edge_meshes.has(material_index):
+		_static_edge_meshes[material_index] = ChunkMeshArrays.new()
+	return _static_edge_meshes[material_index] as ChunkMeshArrays
 
 
 func _append_collision_cell_edges(index: int) -> void:

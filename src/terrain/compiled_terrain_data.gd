@@ -25,6 +25,11 @@ var side_up_source_threshold_by_id := PackedByteArray()
 var fill_color_by_id := PackedColorArray()
 var accent_color_by_id := PackedColorArray()
 var pattern_by_id := PackedByteArray()
+var material_index_by_id := PackedInt32Array()
+var fill_texture_world_scale_by_id := PackedFloat32Array()
+var edge_color_by_id := PackedColorArray()
+var edge_width_by_id := PackedFloat32Array()
+var materials: Array[TerrainMaterial] = [null]
 var air_id := 0
 var stone_id := 0
 
@@ -62,6 +67,23 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.fill_color_by_id[stable_id] = style.fill_color if style != null else definition.debug_color
 		result.accent_color_by_id[stable_id] = style.accent_color if style != null else definition.debug_color
 		result.pattern_by_id[stable_id] = _pattern_code(style.pattern_mode if style != null else "solid")
+		var material := style.material if style != null else null
+		var edge_definition := material.edge_definition if material != null else null
+		if edge_definition != null:
+			var edge_color := edge_definition.edge_color
+			edge_color.a *= edge_definition.edge_alpha
+			result.edge_color_by_id[stable_id] = edge_color
+			result.edge_width_by_id[stable_id] = edge_definition.edge_width
+		else:
+			result.edge_color_by_id[stable_id] = style.outline_color if style != null else Color.TRANSPARENT
+			result.edge_width_by_id[stable_id] = style.outline_width if style != null else 0.0
+		if material != null and material.fill_texture != null:
+			var material_index := result._material_index(material)
+			result.material_index_by_id[stable_id] = material_index
+			result.fill_texture_world_scale_by_id[stable_id] = maxf(material.fill_texture_world_scale, 1.0)
+		else:
+			result.material_index_by_id[stable_id] = 0
+			result.fill_texture_world_scale_by_id[stable_id] = 64.0
 		if definition.is_empty_space:
 			result.air_id = stable_id
 		if definition.is_liquid_contact_product:
@@ -151,6 +173,10 @@ func _resize_tables(size: int) -> void:
 	fill_color_by_id.resize(size)
 	accent_color_by_id.resize(size)
 	pattern_by_id.resize(size)
+	material_index_by_id.resize(size)
+	fill_texture_world_scale_by_id.resize(size)
+	edge_color_by_id.resize(size)
+	edge_width_by_id.resize(size)
 
 
 static func _pattern_code(pattern_mode: String) -> int:
@@ -162,3 +188,11 @@ static func _pattern_code(pattern_mode: String) -> int:
 		"cross":
 			return 3
 	return 0
+
+
+func _material_index(material: TerrainMaterial) -> int:
+	for index in range(1, materials.size()):
+		if materials[index] == material:
+			return index
+	materials.append(material)
+	return materials.size() - 1

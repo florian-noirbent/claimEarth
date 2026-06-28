@@ -89,13 +89,92 @@ func test_world_presenter_builds_separate_static_sand_and_fluid_meshes() -> void
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
 	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Stone"))
-	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Sand"))
-	world.set_committed_by_offset(4, 2, FixtureLoader.terrain_id("Water"))
+	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Dirt"))
+	world.set_committed_by_offset(4, 2, FixtureLoader.terrain_id("Sand"))
+	world.set_committed_by_offset(5, 2, FixtureLoader.terrain_id("Water"))
 	presenter.configure(world, registry, ChunkActivityIndex.new(world.dimensions, 20, 32))
 
 	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.STATIC_VISUAL), 0)
+	assert_eq(presenter.chunk_static_material_mesh_count(Vector2i.ZERO), 2)
+	assert_gt(presenter.chunk_static_edge_vertex_count(Vector2i.ZERO), 0)
 	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.SAND_VISUAL), 0)
 	assert_gt(presenter.chunk_layer_vertex_count(Vector2i.ZERO, TerrainLayerMask.FLUID_VISUAL), 0)
+
+
+func test_chunk_build_job_groups_static_meshes_by_material_and_uses_material_scale() -> void:
+	var registry := _terrain_registry_with_material_scale("Stone", 32.0)
+	var metadata := CompiledTerrainData.compile(registry)
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Dirt"))
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL, registry)
+	var stone_material_index := int(metadata.material_index_by_id[FixtureLoader.terrain_id("Stone")])
+	var dirt_material_index := int(metadata.material_index_by_id[FixtureLoader.terrain_id("Dirt")])
+	var stone_mesh := result.static_material_meshes[stone_material_index] as ChunkMeshArrays
+	var dirt_mesh := result.static_material_meshes[dirt_material_index] as ChunkMeshArrays
+
+	assert_eq(result.static_material_meshes.size(), 2)
+	assert_true(stone_material_index != dirt_material_index)
+	assert_eq(stone_mesh.uvs[0], Vector2(stone_mesh.vertices[0].x, stone_mesh.vertices[0].y) / 32.0)
+	assert_eq(
+		dirt_mesh.uvs[0],
+		Vector2(dirt_mesh.vertices[0].x, dirt_mesh.vertices[0].y) / metadata.fill_texture_world_scale_by_id[FixtureLoader.terrain_id("Dirt")]
+	)
+
+
+func test_chunk_build_job_falls_back_when_static_material_has_no_texture() -> void:
+	var registry := _terrain_registry_without_material_texture("Dirt")
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Dirt"))
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL, registry)
+
+	assert_gt(result.static_vertices.size(), 0)
+	assert_eq(result.static_material_meshes.size(), 0)
+
+
+func test_chunk_build_job_outlines_isolated_static_cell() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var metadata := CompiledTerrainData.compile(registry)
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(5, 5, stone_id)
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL, registry)
+	var stone_material_index := int(metadata.material_index_by_id[stone_id])
+	var stone_edges := result.static_edge_meshes[stone_material_index] as ChunkMeshArrays
+
+	assert_eq(stone_edges.vertices.size(), 24)
+
+
+func test_chunk_build_job_skips_shared_edge_between_same_material_cells() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(6, 5, FixtureLoader.terrain_id("Stone"))
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL)
+
+	assert_eq(_static_edge_vertex_count(result), 40)
+
+
+func test_chunk_build_job_outlines_boundary_between_different_static_materials_once() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(6, 5, FixtureLoader.terrain_id("Dirt"))
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL)
+
+	assert_eq(_static_edge_vertex_count(result), 44)
+
+
+func test_chunk_build_job_uses_visual_outline_when_material_has_no_edge_definition() -> void:
+	var registry := _terrain_registry_without_edge_definition("Stone", Color(1, 0, 0, 0.5), 3.5)
+	var metadata := CompiledTerrainData.compile(registry)
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(5, 5, stone_id)
+	var result := _build_chunk_result(world, TerrainLayerMask.STATIC_VISUAL, registry)
+	var stone_material_index := int(metadata.material_index_by_id[stone_id])
+	var stone_edges := result.static_edge_meshes[stone_material_index] as ChunkMeshArrays
+
+	assert_eq(stone_edges.colors[0], Color(1, 0, 0, 0.5))
+	assert_true(_has_edge_width(stone_edges.vertices, 3.5))
 
 
 func test_world_presenter_renders_partial_fill_levels() -> void:
@@ -208,8 +287,9 @@ func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
 	assert_eq(presenter.chunk_collision_segment_count(Vector2i.ZERO), 0)
 
 
-func _build_chunk_result(world: WorldGrid, mask: int) -> ChunkBuildResult:
+func _build_chunk_result(world: WorldGrid, mask: int, registry: TerrainRegistry = null) -> ChunkBuildResult:
 	var rect := Rect2i(Vector2i.ZERO, Vector2i(world.dimensions.width, world.dimensions.depth))
+	var terrain_registry := registry if registry != null else FixtureLoader.terrain_registry()
 	var job := ChunkBuildJob.new()
 	job.configure(
 		Vector2i.ZERO,
@@ -219,12 +299,65 @@ func _build_chunk_result(world: WorldGrid, mask: int) -> ChunkBuildResult:
 		rect,
 		world.copy_committed_region(rect),
 		world.copy_committed_fill_region(rect),
-		CompiledTerrainData.compile(FixtureLoader.terrain_registry()),
+		CompiledTerrainData.compile(terrain_registry),
 		16.0,
 		world.dimensions.width
 	)
 	assert_true(job.advance(1000000))
 	return job.result
+
+
+func _terrain_registry_with_material_scale(terrain_name: String, scale: float) -> TerrainRegistry:
+	var catalog := _duplicated_terrain_catalog()
+	var style := _style_for_terrain(catalog, terrain_name)
+	style.material = style.material.duplicate(true) as TerrainMaterial
+	style.material.fill_texture_world_scale = scale
+	return _registry_from_catalog(catalog)
+
+
+func _terrain_registry_without_material_texture(terrain_name: String) -> TerrainRegistry:
+	var catalog := _duplicated_terrain_catalog()
+	var style := _style_for_terrain(catalog, terrain_name)
+	style.material = style.material.duplicate(true) as TerrainMaterial
+	style.material.fill_texture = null
+	return _registry_from_catalog(catalog)
+
+
+func _terrain_registry_without_edge_definition(terrain_name: String, outline_color: Color, outline_width: float) -> TerrainRegistry:
+	var catalog := _duplicated_terrain_catalog()
+	var style := _style_for_terrain(catalog, terrain_name)
+	style.outline_color = outline_color
+	style.outline_width = outline_width
+	style.material = style.material.duplicate(true) as TerrainMaterial
+	style.material.edge_definition = null
+	return _registry_from_catalog(catalog)
+
+
+func _duplicated_terrain_catalog() -> TerrainCatalog:
+	var source := FixtureLoader.terrain_catalog()
+	var catalog := TerrainCatalog.new()
+	var definitions := []
+	for definition_variant in source.definitions:
+		var definition := (definition_variant as TerrainDefinition).duplicate(true) as TerrainDefinition
+		if definition.visual_style != null:
+			definition.visual_style = definition.visual_style.duplicate(true)
+		definitions.append(definition)
+	catalog.definitions = definitions
+	return catalog
+
+
+func _style_for_terrain(catalog: TerrainCatalog, terrain_name: String) -> TerrainVisualStyle:
+	for definition_variant in catalog.definitions:
+		var definition := definition_variant as TerrainDefinition
+		if definition.display_name == terrain_name:
+			return definition.visual_style as TerrainVisualStyle
+	return null
+
+
+func _registry_from_catalog(catalog: TerrainCatalog) -> TerrainRegistry:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(catalog))
+	return registry
 
 
 func _expected_side_surface_point(col: int, row: int, fill: int, neighbor_col: int, neighbor_row: int, neighbor_fill: int, side: int) -> Vector2:
@@ -265,6 +398,22 @@ func _assert_missing_vertex(vertices: PackedVector3Array, expected: Vector2) -> 
 func _has_vertex(vertices: PackedVector3Array, expected: Vector2) -> bool:
 	for vertex in vertices:
 		if Vector2(vertex.x, vertex.y).distance_to(expected) <= 0.05:
+			return true
+	return false
+
+
+func _static_edge_vertex_count(result: ChunkBuildResult) -> int:
+	var count := 0
+	for mesh_variant in result.static_edge_meshes.values():
+		count += (mesh_variant as ChunkMeshArrays).vertices.size()
+	return count
+
+
+func _has_edge_width(vertices: Array[Vector3], expected_width: float) -> bool:
+	for index in range(0, vertices.size(), 4):
+		var start := Vector2(vertices[index].x, vertices[index].y)
+		var outer_start := Vector2(vertices[index + 3].x, vertices[index + 3].y)
+		if is_equal_approx(start.distance_to(outer_start), expected_width):
 			return true
 	return false
 

@@ -12,8 +12,12 @@ Current art is original repository content stored by runtime use:
 - `assets/ui/title.png`
 - `assets/ui/menu_background.jpg`
 - `assets/terrain/background.jpg`
+- `assets/terrain/dirt.jpg`
 - `assets/terrain/grassBand.png`
-- Terrain surfaces/outlines are generated procedurally by `WorldChunkRenderer`.
+- `assets/terrain/stone.jpg`
+- Stone and dirt surfaces use looping textures and edge resources through
+  `TerrainMaterial` resources consumed by `WorldChunkRenderer`; other terrain
+  surfaces are generated procedurally.
 - Gameplay effects are generated procedurally by `GameplayFeedback`.
 - Audio cues are synthesized at runtime by `AudioDirector`.
 

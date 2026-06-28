@@ -93,8 +93,10 @@ the depth window used by simulation and presentation.
 
 `WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
 0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
-texture below it. It is presentation only and does not affect generation,
-simulation, collision, or score depth.
+texture below it. Static terrain visual styles can reference `TerrainMaterial`
+resources for world-space fill textures and `TerrainEdgeDefinition` resources
+consumed by `WorldChunkRenderer`. These are presentation only and do not affect
+generation, simulation, collision, or score depth.
 
 `WorldPresenter` creates one `WorldChunkRenderer` and one `WorldChunkCollision` per
 visible chunk. Each renderer owns persistent static, sand, and fluid mesh layers.

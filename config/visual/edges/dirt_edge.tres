@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TerrainEdgeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/terrain_edge_definition.gd" id="1_nhskt"]
+
+[resource]
+script = ExtResource("1_nhskt")
+edge_color = Color(0.09, 0.05, 0.03, 1)
+edge_width = 2.2
+edge_alpha = 1.0
