@@ -2,7 +2,7 @@ extends GutTest
 
 const BaseNoisePassScript = preload("res://src/generation/base_noise_pass.gd")
 const PocketNoisePassScript = preload("res://src/generation/pocket_noise_pass.gd")
-const SpawnChamberPassScript = preload("res://src/generation/spawn_chamber_pass.gd")
+const SpawnShaftPassScript = preload("res://src/generation/spawn_shaft_pass.gd")
 const BoundarySealPassScript = preload("res://src/generation/boundary_seal_pass.gd")
 
 
@@ -26,7 +26,7 @@ func _base_profile_for_stack_tests() -> GenerationProfile:
 	base_pass.cave_threshold = 0.12
 	base_pass.dirt_threshold = 0.44
 
-	var spawn_pass = SpawnChamberPassScript.new()
+	var spawn_pass = SpawnShaftPassScript.new()
 	spawn_pass.pass_seed_key = "spawn"
 
 	var boundary_pass = BoundarySealPassScript.new()
@@ -76,25 +76,15 @@ func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 	var result := generator.generate(profile, registry, 222)
 	assert_not_null(result)
 	assert_eq(result.spawn_rect.position.y, 0)
-	assert_eq(result.spawn_rect.size.y, 4)
+	assert_eq(result.spawn_rect.size.y, 101)
 
 	for row in range(profile.depth - 2, profile.depth):
 		for col in range(profile.width):
 			assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
 
-	for row in range(result.spawn_rect.position.y, result.spawn_rect.end.y):
-		for col in range(result.spawn_rect.position.x, result.spawn_rect.end.x):
-			if row == result.spawn_rect.end.y - 1 and col > result.spawn_rect.position.x and col < result.spawn_rect.end.x - 1:
-				continue
-			assert_eq(result.world.get_committed_by_offset(col, row), air_id)
-
-	var dirt_id := registry.get_definition(2).stable_id
-	for col in range(result.spawn_rect.position.x + 1, result.spawn_rect.end.x - 1):
-		assert_eq(result.world.get_committed_by_offset(col, result.spawn_rect.end.y - 1), dirt_id)
-
 	var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
-	for row in range(0, result.spawn_rect.end.y - 1):
-		assert_eq(result.world.get_committed_by_offset(spawn_col, row), air_id)
+	assert_eq(result.world.get_committed_by_offset(spawn_col, 0), air_id)
+	assert_true(_row_has_air(result.world, air_id, 100))
 
 
 func test_generated_world_uses_only_registered_ids() -> void:
@@ -161,7 +151,6 @@ func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
 	var stone_id := FixtureLoader.terrain_id("Stone")
 	var air_id := FixtureLoader.terrain_id("Air")
-	var dirt_id := FixtureLoader.terrain_id("Dirt")
 	var sample_seeds := [
 		SeedUtils.seed_from_text("generation-invariant-1"),
 		SeedUtils.seed_from_text("generation-invariant-2"),
@@ -179,16 +168,74 @@ func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
 			for col in range(profile.width):
 				assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
 
-		for row in range(result.spawn_rect.position.y, result.spawn_rect.end.y - 1):
-			for col in range(result.spawn_rect.position.x, result.spawn_rect.end.x):
-				assert_eq(result.world.get_committed_by_offset(col, row), air_id)
-
-		for col in range(result.spawn_rect.position.x + 1, result.spawn_rect.end.x - 1):
-			assert_eq(result.world.get_committed_by_offset(col, result.spawn_rect.end.y - 1), dirt_id)
+		assert_eq(result.spawn_rect.position.y, 0)
+		assert_eq(result.spawn_rect.size.y, 101)
+		var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
+		assert_eq(result.world.get_committed_by_offset(spawn_col, 0), air_id)
+		assert_true(_row_has_air(result.world, air_id, 100))
 
 		var air_ratio := float(result.world.count_committed(air_id)) / float(result.world.dimensions.cell_count())
 		assert_true(air_ratio >= 0.08, "Air ratio too low for seed %d: %f" % [run_seed, air_ratio])
 		assert_true(air_ratio <= 0.42, "Air ratio too high for seed %d: %f" % [run_seed, air_ratio])
+
+
+func test_spawn_shaft_seed_changes_shape_deterministically() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var profile := _default_profile()
+	var first := generator.generate(profile, registry, SeedUtils.seed_from_text("spawn-shaft-a"))
+	var second := generator.generate(profile, registry, SeedUtils.seed_from_text("spawn-shaft-b"))
+	var first_repeat := generator.generate(profile, registry, SeedUtils.seed_from_text("spawn-shaft-a"))
+	assert_not_null(first)
+	assert_not_null(second)
+	assert_not_null(first_repeat)
+	assert_eq(first.world_hash, first_repeat.world_hash)
+	assert_ne(_air_cells_for_rows(first.world, FixtureLoader.terrain_id("Air"), 0, 100), _air_cells_for_rows(second.world, FixtureLoader.terrain_id("Air"), 0, 100))
+
+
+func test_spawn_shaft_steepness_changes_shape_without_changing_target_depth() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var steep_profile := _default_profile()
+	var winding_profile := _default_profile()
+	var steep_pass: GenerationPassResource = _spawn_pass_for_profile(steep_profile)
+	var winding_pass: GenerationPassResource = _spawn_pass_for_profile(winding_profile)
+	assert_not_null(steep_pass)
+	assert_not_null(winding_pass)
+	steep_pass.set("shaft_steepness", 2.0)
+	steep_pass.set("segment_erase_threshold", 0.0)
+	winding_pass.set("shaft_steepness", 0.5)
+	winding_pass.set("segment_erase_threshold", 0.0)
+
+	var steep_result := generator.generate(steep_profile, registry, SeedUtils.seed_from_text("spawn-steepness"))
+	var winding_result := generator.generate(winding_profile, registry, SeedUtils.seed_from_text("spawn-steepness"))
+	assert_not_null(steep_result)
+	assert_not_null(winding_result)
+	assert_eq(steep_result.spawn_rect.size.y, 101)
+	assert_eq(winding_result.spawn_rect.size.y, 101)
+	assert_ne(_air_cells_for_rows(steep_result.world, FixtureLoader.terrain_id("Air"), 0, 100), _air_cells_for_rows(winding_result.world, FixtureLoader.terrain_id("Air"), 0, 100))
+
+
+func test_spawn_shaft_segment_erase_threshold_leaves_gaps() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var profile := GenerationProfile.new()
+	profile.width = 48
+	profile.depth = 128
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var air_id := FixtureLoader.terrain_id("Air")
+	var world := WorldGrid.new(profile.create_dimensions(), stone_id)
+	var context := GenerationContext.new(profile, SeedUtils.seed_from_text("spawn-segment-erase"), registry, world)
+	var spawn_pass: GenerationPassResource = SpawnShaftPassScript.new()
+	spawn_pass.pass_seed_key = "spawn-segment-erase"
+	spawn_pass.set("segment_erase_threshold", 0.48)
+	spawn_pass.set("protected_surface_rows", 3)
+
+	assert_true(spawn_pass.apply(context))
+	assert_eq(context.spawn_rect.position.y, 0)
+	assert_eq(context.spawn_rect.size.y, 101)
+	assert_true(_row_has_air(world, air_id, 0))
+	assert_true(_row_has_air(world, air_id, 100))
+	assert_gt(_solid_rows_in_range(world, air_id, 3, 99), 0)
 
 
 func test_disabling_a_pass_changes_output_deterministically() -> void:
@@ -213,9 +260,9 @@ func test_reordering_passes_changes_output_deterministically() -> void:
 	var profile_a := _base_profile_for_stack_tests()
 	var profile_b := _base_profile_for_stack_tests()
 	var registry := FixtureLoader.terrain_registry()
-	var dirt_id := FixtureLoader.terrain_id("Dirt")
 
-	var pocket_pass_a = _hazard_pass("reorder_pocket", PocketNoisePassScript.HazardType.SAND, 0.4, PackedInt32Array([dirt_id]))
+	var pocket_pass_a = _hazard_pass("reorder_pocket", PocketNoisePassScript.HazardType.SAND, 0.1)
+	pocket_pass_a.max_depth_ratio = 0.4
 	var pocket_pass_b: Resource = pocket_pass_a.duplicate(true)
 
 	profile_a.passes.insert(1, pocket_pass_a)
@@ -379,3 +426,34 @@ func test_whitelist_without_air_still_blocks_air_replacement() -> void:
 		for col in range(profile.width):
 			if baseline.world.get_committed_by_offset(col, row) == air_id:
 				assert_ne(result.world.get_committed_by_offset(col, row), sand_id)
+
+
+func _row_has_air(world: WorldGrid, air_id: int, row: int) -> bool:
+	for col in range(world.dimensions.width):
+		if world.get_committed_by_offset(col, row) == air_id:
+			return true
+	return false
+
+
+func _solid_rows_in_range(world: WorldGrid, air_id: int, start_row: int, end_row: int) -> int:
+	var result := 0
+	for row in range(start_row, end_row + 1):
+		if not _row_has_air(world, air_id, row):
+			result += 1
+	return result
+
+
+func _air_cells_for_rows(world: WorldGrid, air_id: int, start_row: int, end_row: int) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	for row in range(start_row, end_row + 1):
+		for col in range(world.dimensions.width):
+			if world.get_committed_by_offset(col, row) == air_id:
+				result.append(Vector2(float(col), float(row)))
+	return result
+
+
+func _spawn_pass_for_profile(profile: GenerationProfile) -> GenerationPassResource:
+	for pass_resource in profile.passes:
+		if pass_resource != null and pass_resource.get_pass_type_name() == "Spawn Shaft":
+			return pass_resource
+	return null

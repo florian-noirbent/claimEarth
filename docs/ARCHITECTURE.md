@@ -160,7 +160,7 @@ application on the main thread, and remain optional for the single-thread Web bu
 `WorldGenerator` iterates the ordered `GenerationProfile.passes` stack. Each pass is
 a resource instance with its own enable state, parameters, depth-range blend, and
 target-replacement whitelist. The default profile ships base noise, three typed
-hazard pocket instances for sand/water/lava, spawn chamber, and boundary seal
+hazard pocket instances for sand/water/lava, a noisy surface spawn shaft, and boundary seal
 behaviors, but the stack may be reordered, duplicated, or selectively disabled
 without code changes.
 

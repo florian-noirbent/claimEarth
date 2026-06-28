@@ -51,8 +51,11 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 - The camera is horizontally locked to the map and only follows downward.
 - Initial terrain is deterministic for a given seed.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
-  layers base cave noise, typed hazard pocket instances for sand/water/lava, spawn
-  carving, and bottom sealing.
+  layers base cave noise, typed hazard pocket instances for sand/water/lava, a
+  noisy surface spawn shaft, and bottom sealing.
+- The player starts at surface depth 0 in a roughly four-cell-wide zig-zag shaft
+  with noisy edges and occasional broken segments that winds down to about depth
+  100.
 - The generation profile and pass tuning live in
   `config/generation/default_profile.tres`.
 

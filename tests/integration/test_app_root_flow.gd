@@ -46,7 +46,7 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_almost_eq(app_root.world_side_boundaries.left_wall_inner_edge(), left_edge, 0.001)
 	assert_almost_eq(app_root.world_side_boundaries.right_wall_inner_edge(), right_edge, 0.001)
 	var spawn_offset := HexMetrics.offset_for_world(app_root.get_player().global_position, app_root.world_presenter.hex_radius)
-	assert_eq(spawn_offset.y, app_root.last_generation_result_for_test().spawn_rect.position.y + 1)
+	assert_eq(spawn_offset.y, app_root.last_generation_result_for_test().spawn_rect.position.y)
 	app_root.get_player().global_position.x = left_edge - 100.0
 	app_root.get_player().velocity.x = -500.0
 	await wait_physics_frames(1)
