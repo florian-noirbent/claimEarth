@@ -22,6 +22,7 @@ static func parse_entries(body_text: String) -> Dictionary:
 			return {"ok": false, "message": "Leaderboard entry payload was incomplete.", "entries": []}
 		entries.append(entry)
 		rank += 1
+	_sort_entries_by_best_depth(entries)
 	return {"ok": true, "message": "", "entries": entries}
 
 
@@ -50,3 +51,13 @@ static func _entry_from_dictionary(source: Dictionary, entry_rank: int) -> Leade
 	if metadata_parser.parse(metadata_text) == OK and metadata_parser.data is Dictionary:
 		entry.metadata = metadata_parser.data as Dictionary
 	return entry
+
+
+static func _sort_entries_by_best_depth(entries: Array[LeaderboardEntry]) -> void:
+	entries.sort_custom(func(left: LeaderboardEntry, right: LeaderboardEntry) -> bool:
+		if left.score_depth == right.score_depth:
+			return left.rank < right.rank
+		return left.score_depth > right.score_depth
+	)
+	for index in entries.size():
+		entries[index].rank = index + 1

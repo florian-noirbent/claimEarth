@@ -13,6 +13,19 @@ func test_parse_entries_accepts_valid_array() -> void:
 	assert_eq(parsed.entries[0].score_depth, 42)
 
 
+func test_parse_entries_orders_highest_depth_as_best() -> void:
+	var parsed = ParserScript.parse_entries('[{"playerDisplayName":"Shallow","score":"12"},{"playerDisplayName":"Deep","score":"99"},{"playerDisplayName":"Middle","score":"35"}]')
+
+	assert_true(parsed.ok)
+	assert_eq(parsed.entries[0].player_name, "Deep")
+	assert_eq(parsed.entries[0].score_depth, 99)
+	assert_eq(parsed.entries[0].rank, 1)
+	assert_eq(parsed.entries[1].player_name, "Middle")
+	assert_eq(parsed.entries[1].rank, 2)
+	assert_eq(parsed.entries[2].player_name, "Shallow")
+	assert_eq(parsed.entries[2].rank, 3)
+
+
 func test_parse_entries_rejects_malformed_body() -> void:
 	var parsed = ParserScript.parse_entries('{"bad":true}')
 

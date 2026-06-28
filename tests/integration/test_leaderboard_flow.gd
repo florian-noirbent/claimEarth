@@ -37,6 +37,33 @@ func test_leaderboard_panel_shows_entries_and_updates_owner_label() -> void:
 	assert_string_contains(app_root.ui.leaderboard_rows.text, "123")
 
 
+func test_leaderboard_panel_treats_highest_depth_as_best() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	var service: FakeLeaderboardService = FakeLeaderboardServiceScript.new()
+	var shallow_entry: LeaderboardEntry = LeaderboardEntryScript.new()
+	shallow_entry.rank = 1
+	shallow_entry.player_name = "Shallow"
+	shallow_entry.score_depth = 12
+	var deep_entry: LeaderboardEntry = LeaderboardEntryScript.new()
+	deep_entry.rank = 2
+	deep_entry.player_name = "Deep"
+	deep_entry.score_depth = 99
+	var top_entries: Array[LeaderboardEntry] = [shallow_entry, deep_entry]
+	service.top_entries = top_entries
+	app_root.configure_save_path_for_test("user://gut_leaderboard_ok.json")
+	app_root.configure_leaderboard_service_for_test(service)
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+
+	app_root.transition_to(RunPhase.LEADERBOARD)
+
+	assert_string_contains(app_root.ui.owner_label.text, "Deep")
+	assert_string_contains(app_root.ui.owner_label.text, "99")
+	assert_string_contains(app_root.ui.leaderboard_rows.text, "1. Deep - 99")
+
+
 func test_failed_submission_is_saved_as_pending_and_result_still_opens() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
