@@ -18,10 +18,11 @@ func test_world_presenter_uses_chunk_nodes_instead_of_cell_nodes() -> void:
 
 	assert_eq(presenter.visible_chunk_count(), 4)
 	assert_eq(presenter.total_renderer_nodes(), 4)
-	assert_eq(presenter.get_child_count(), 8)
+	assert_eq(presenter.total_collider_nodes(), 0)
+	assert_eq(presenter.get_child_count(), 4)
 
 
-func test_world_presenter_builds_collision_for_solid_exposed_edges() -> void:
+func test_world_presenter_does_not_build_terrain_collider_nodes() -> void:
 	var presenter := WorldPresenter.new()
 	add_child_autofree(presenter)
 
@@ -34,7 +35,8 @@ func test_world_presenter_builds_collision_for_solid_exposed_edges() -> void:
 	var activity := ChunkActivityIndex.new(world.dimensions, 20, 20)
 	presenter.configure(world, registry, activity)
 
-	assert_true(presenter.chunk_collision_segment_count(Vector2i.ZERO) >= 6)
+	assert_eq(presenter.total_collider_nodes(), 0)
+	assert_eq(presenter.chunk_collision_segment_count(Vector2i.ZERO), 0)
 
 
 func test_world_presenter_rebuilds_only_dirty_or_newly_visible_chunks() -> void:
@@ -79,7 +81,7 @@ func test_world_presenter_discards_offscreen_chunks_to_keep_node_count_bounded()
 	presenter.refresh_visible_chunks(96)
 
 	assert_eq(presenter.total_renderer_nodes(), presenter.visible_chunk_count())
-	assert_eq(presenter.total_collider_nodes(), presenter.visible_chunk_count())
+	assert_eq(presenter.total_collider_nodes(), 0)
 	assert_lte(presenter.visible_chunk_count(), initial_visible + 5)
 
 
@@ -264,7 +266,7 @@ func test_chunk_build_job_does_not_smooth_between_different_moving_terrain() -> 
 	_assert_missing_vertex(result.sand_vertices, smoothed_expected)
 
 
-func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
+func test_terrain_change_keeps_presenter_collision_free() -> void:
 	var presenter := WorldPresenter.new()
 	add_child_autofree(presenter)
 	var registry := FixtureLoader.terrain_registry()
@@ -272,7 +274,6 @@ func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
 	world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Stone"))
 	var activity := ChunkActivityIndex.new(world.dimensions, 20, 32)
 	presenter.configure(world, registry, activity)
-	var initial_segments := presenter.chunk_collision_segment_count(Vector2i.ZERO)
 	var metadata := CompiledTerrainData.compile(registry)
 	var change := world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Air"))
 	var changes := TerrainChangeSet.new(world.dimensions, 20, 32)
@@ -283,7 +284,6 @@ func test_incremental_collision_update_removes_changed_boundary_edges() -> void:
 		if presenter.pending_job_count() == 0:
 			break
 
-	assert_gt(initial_segments, 0)
 	assert_eq(presenter.chunk_collision_segment_count(Vector2i.ZERO), 0)
 
 
@@ -418,7 +418,7 @@ func _has_edge_width(vertices: Array[Vector3], expected_width: float) -> bool:
 	return false
 
 
-func test_incremental_collision_update_removes_sand_edges_below_half_fill() -> void:
+func test_sand_fill_change_keeps_presenter_collision_free() -> void:
 	var presenter := WorldPresenter.new()
 	add_child_autofree(presenter)
 	var registry := FixtureLoader.terrain_registry()
@@ -427,7 +427,6 @@ func test_incremental_collision_update_removes_sand_edges_below_half_fill() -> v
 	world.set_committed_by_offset(5, 5, sand_id)
 	var activity := ChunkActivityIndex.new(world.dimensions, 20, 32)
 	presenter.configure(world, registry, activity)
-	var initial_segments := presenter.chunk_collision_segment_count(Vector2i.ZERO)
 	var metadata := CompiledTerrainData.compile(registry)
 	var change := world.set_committed_by_offset(5, 5, sand_id, 127)
 	var changes := TerrainChangeSet.new(world.dimensions, 20, 32)
@@ -438,5 +437,4 @@ func test_incremental_collision_update_removes_sand_edges_below_half_fill() -> v
 		if presenter.pending_job_count() == 0:
 			break
 
-	assert_gt(initial_segments, 0)
 	assert_eq(presenter.chunk_collision_segment_count(Vector2i.ZERO), 0)

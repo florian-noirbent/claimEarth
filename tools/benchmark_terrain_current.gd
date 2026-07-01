@@ -93,11 +93,7 @@ func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> 
 		if commit.did_commit:
 			activity.mark_change_set(commit.change_set)
 			dirty_chunk_counts.append(commit.change_set.chunk_masks.size())
-			var collision_chunks := 0
-			for mask_variant in commit.change_set.chunk_masks.values():
-				if (int(mask_variant) & TerrainLayerMask.COLLISION) != 0:
-					collision_chunks += 1
-			collision_chunk_counts.append(collision_chunks)
+			collision_chunk_counts.append(0)
 			started = Time.get_ticks_usec()
 			_build_dirty_chunks(world, registry, activity, commit.revision)
 			build_samples.append(Time.get_ticks_usec() - started)
@@ -134,7 +130,7 @@ func _build_dirty_chunks(world: WorldGrid, registry: TerrainRegistry, activity: 
 		var snapshot_rect := chunk_rect.grow(1).intersection(Rect2i(Vector2i.ZERO, Vector2i(world.dimensions.width, world.dimensions.depth)))
 		var job := ChunkBuildJob.new()
 		var work := dirty_work[coord] as Dictionary
-		job.configure(coord, revision, int(work["mask"]), chunk_rect, snapshot_rect, world.copy_committed_region(snapshot_rect), world.copy_committed_fill_region(snapshot_rect), metadata, 16.0, world.dimensions.width, work["collision_indices"] as PackedInt32Array)
+		job.configure(coord, revision, int(work["mask"]) & TerrainLayerMask.ALL_VISUAL, chunk_rect, snapshot_rect, world.copy_committed_region(snapshot_rect), world.copy_committed_fill_region(snapshot_rect), metadata, 16.0, world.dimensions.width)
 		while not job.advance(1000000):
 			pass
 

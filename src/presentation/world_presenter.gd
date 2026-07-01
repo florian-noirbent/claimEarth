@@ -1,4 +1,4 @@
-## Coordinates visible chunk renderers, colliders, dirty rebuilds, and build jobs.
+## Coordinates visible chunk renderers, dirty rebuilds, and build jobs.
 class_name WorldPresenter
 extends Node2D
 
@@ -7,14 +7,13 @@ extends Node2D
 @export var visible_row_count := 96
 @export var build_budget_usec := 1200
 @export var max_results_applied_per_frame := 1
-@export var build_collision := true
+@export var build_collision := false
 
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _metadata: CompiledTerrainData
 var _chunk_activity_index: ChunkActivityIndex
 var _renderers: Dictionary = {}
-var _colliders: Dictionary = {}
 var _visible_lookup: Dictionary = {}
 var _chunk_revisions: Dictionary = {}
 var _executor := CooperativeChunkJobExecutor.new()
@@ -30,10 +29,7 @@ var _last_build_usec := 0
 func reset() -> void:
 	for renderer_variant in _renderers.values():
 		(renderer_variant as Node).queue_free()
-	for collider_variant in _colliders.values():
-		(collider_variant as Node).queue_free()
 	_renderers.clear()
-	_colliders.clear()
 	_visible_lookup.clear()
 	_chunk_revisions.clear()
 	_executor.clear()
@@ -75,10 +71,7 @@ func refresh_visible_chunks(start_row: int) -> void:
 		if visible_lookup.has(existing_coord):
 			continue
 		(_renderers[existing_coord] as Node).queue_free()
-		if _colliders.has(existing_coord):
-			(_colliders[existing_coord] as Node).queue_free()
 		_renderers.erase(existing_coord)
-		_colliders.erase(existing_coord)
 		_chunk_revisions.erase(existing_coord)
 	var dirty_work := _chunk_activity_index.consume_dirty_work()
 	for coord_variant in dirty_work.keys():
@@ -88,10 +81,7 @@ func refresh_visible_chunks(start_row: int) -> void:
 			requested_masks[coord] = _effective_layer_mask(int(requested_masks.get(coord, TerrainLayerMask.NONE)) | int(work["mask"]))
 	for coord_variant in requested_masks.keys():
 		var coord := coord_variant as Vector2i
-		var collision_indices := PackedInt32Array()
-		if build_collision and dirty_work.has(coord):
-			collision_indices = (dirty_work[coord] as Dictionary)["collision_indices"] as PackedInt32Array
-		_enqueue_chunk_job(coord, int(requested_masks[coord]), collision_indices)
+		_enqueue_chunk_job(coord, int(requested_masks[coord]))
 	_visible_lookup = visible_lookup
 	var started := Time.get_ticks_usec()
 	_executor.advance(build_budget_usec)
@@ -108,14 +98,11 @@ func total_renderer_nodes() -> int:
 
 
 func total_collider_nodes() -> int:
-	return _colliders.size() if build_collision else 0
+	return 0
 
 
 func chunk_collision_segment_count(chunk_coord: Vector2i) -> int:
-	if not build_collision:
-		return 0
-	var collider := _colliders.get(chunk_coord) as WorldChunkCollision
-	return collider.segment_count() if collider != null else 0
+	return 0
 
 
 func chunk_layer_vertex_count(chunk_coord: Vector2i, layer_mask: int) -> int:
@@ -183,24 +170,16 @@ func _ensure_chunk_nodes(chunk_coord: Vector2i) -> bool:
 	add_child(renderer)
 	renderer.configure(chunk_coord, chunk_rect, _metadata.materials)
 	_renderers[chunk_coord] = renderer
-	if build_collision:
-		var collider := WorldChunkCollision.new()
-		add_child(collider)
-		collider.chunk_coord = chunk_coord
-		collider.chunk_rect = chunk_rect
-		_colliders[chunk_coord] = collider
 	_chunk_revisions[chunk_coord] = 0
 	return true
 
 
-func _enqueue_chunk_job(chunk_coord: Vector2i, layer_mask: int, collision_indices: PackedInt32Array = PackedInt32Array()) -> void:
+func _enqueue_chunk_job(chunk_coord: Vector2i, layer_mask: int) -> void:
 	if layer_mask == TerrainLayerMask.NONE:
 		return
 	for index in range(_pending_results.size() - 1, -1, -1):
 		if _pending_results[index].chunk_coord == chunk_coord:
 			layer_mask |= _pending_results[index].layer_mask
-			if (_pending_results[index].layer_mask & TerrainLayerMask.COLLISION) != 0:
-				collision_indices = PackedInt32Array()
 			_pending_results.remove_at(index)
 			_discarded_result_count += 1
 	var revision := int(_chunk_revisions.get(chunk_coord, 0)) + 1
@@ -208,7 +187,7 @@ func _enqueue_chunk_job(chunk_coord: Vector2i, layer_mask: int, collision_indice
 	var chunk_rect := _chunk_activity_index.chunk_rect(chunk_coord)
 	var snapshot_rect := chunk_rect.grow(1).intersection(Rect2i(Vector2i.ZERO, Vector2i(_world.dimensions.width, _world.dimensions.depth)))
 	var job := ChunkBuildJob.new()
-	job.configure(chunk_coord, revision, layer_mask, chunk_rect, snapshot_rect, _world.copy_committed_region(snapshot_rect), _world.copy_committed_fill_region(snapshot_rect), _metadata, hex_radius, _world.dimensions.width, collision_indices)
+	job.configure(chunk_coord, revision, layer_mask, chunk_rect, snapshot_rect, _world.copy_committed_region(snapshot_rect), _world.copy_committed_fill_region(snapshot_rect), _metadata, hex_radius, _world.dimensions.width)
 	_executor.enqueue(job)
 
 
@@ -221,8 +200,6 @@ func _apply_completed_results(limit: int) -> void:
 			_discarded_result_count += 1
 			continue
 		(_renderers[result.chunk_coord] as WorldChunkRenderer).apply_result(result)
-		if build_collision and (result.layer_mask & TerrainLayerMask.COLLISION) != 0 and _colliders.has(result.chunk_coord):
-			(_colliders[result.chunk_coord] as WorldChunkCollision).apply_result(result)
 		_rebuild_count += 1
 		_dirty_rebuild_count += 1
 		_last_refresh_rebuild_count += 1
@@ -230,4 +207,4 @@ func _apply_completed_results(limit: int) -> void:
 
 
 func _effective_layer_mask(layer_mask: int) -> int:
-	return layer_mask if build_collision else layer_mask & ~TerrainLayerMask.COLLISION
+	return layer_mask & TerrainLayerMask.ALL_VISUAL

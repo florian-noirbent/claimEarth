@@ -24,7 +24,7 @@ src/generation/         Deterministic generation passes
 src/items/              Definitions, actions, projectiles, explosions
 src/leaderboard/        Service contract, fake, SimpleBoards adapter
 src/player/             Movement, grapple, hazards, camera
-src/presentation/       Chunk rendering/collision, markers, effects
+src/presentation/       Chunk rendering, markers, effects
 src/simulation/         Replaceable terrain simulation backend
 src/terrain/            Terrain definitions and behavior strategies
 src/world/              Packed grid and hex coordinate types
@@ -88,8 +88,10 @@ cancelled and freed.
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 
 `ChunkActivityIndex` uses 20x32-cell chunks by default. It tracks exact per-chunk
-static, sand, fluid, and collision masks plus changed collision cells, and computes
-the depth window used by simulation and presentation.
+static, sand, fluid, and collision-related dirty masks, and computes the depth
+window used by simulation and presentation. Presentation consumes only visual
+masks; collision-related dirtying is retained for terrain rule tests and future
+systems that need exact solid-boundary invalidation.
 
 `WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
 0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
@@ -98,13 +100,18 @@ resources for world-space fill textures and `TerrainEdgeDefinition` resources
 consumed by `WorldChunkRenderer`. These are presentation only and do not affect
 generation, simulation, collision, or score depth.
 
-`WorldPresenter` creates one `WorldChunkRenderer` and one `WorldChunkCollision` per
-visible chunk. Each renderer owns persistent static, sand, and fluid mesh layers.
-Plain `ChunkBuildJob` inputs snapshot packed world data and produce resource-free
-mesh arrays and collision-edge updates. The cooperative executor time-slices those
-jobs; `WorldPresenter` alone creates engine resources and applies revision-checked
-results on the main thread. This job boundary is suitable for a future worker
-executor without enabling Web threads today.
+`WorldPresenter` creates one `WorldChunkRenderer` per visible chunk. Each renderer
+owns persistent static, sand, and fluid mesh layers. Plain `ChunkBuildJob` inputs
+snapshot packed world data and produces resource-free mesh arrays. The cooperative
+executor time-slices those jobs; `WorldPresenter` alone creates engine resources
+and applies revision-checked results on the main thread. This job boundary is
+suitable for a future worker executor without enabling Web threads today.
+
+Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
+reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
+then tests circular bodies against nearby solid hex polygons from `HexMetrics`.
+`TerrainBodyMotionSolver` resolves circular body movement, floor support, and
+step-up behavior without creating physics-server shapes or chunk collider nodes.
 
 Gameplay mutations currently update committed cells and fill directly through
 focused services such as `ExplosionService`, then publish a `TerrainChangeSet`.
@@ -184,9 +191,11 @@ walls.
 
 ## Player, Camera, And Items
 
-`PlayerController` is a `CharacterBody2D` coordinating `PlayerMovementModel`,
-`GrappleModel`, environment sampling, step-up behavior, and horizontal clamping.
-Movement and grapple tuning are resources under `config/player/`.
+`PlayerController` is a `CharacterBody2D` node coordinating `PlayerMovementModel`,
+`GrappleModel`, environment sampling, grid-backed terrain motion, and horizontal
+clamping. It does not use Godot terrain colliders for movement; terrain collision
+is delegated to the world-level query and motion solver. Movement and grapple
+tuning are resources under `config/player/`.
 
 `DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
 to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
@@ -241,7 +250,7 @@ model it as a server secret. Never use the live service from automated tests.
 
 1. Add deterministic counters/fixtures before optimizing.
 2. Keep player physics independent from terrain commit cadence.
-3. Dirty only affected chunks and keep renderer/collider node counts bounded.
+3. Dirty only affected chunks and keep renderer node counts bounded.
 4. Run both fast and performance suites; use the Web milestone gate for renderer or
    export changes.
 

@@ -4,4 +4,4 @@
 
 `WorldDimensions`, `HexCoord`, and presentation `HexMetrics` define indexing and hex coordinate conversion. `CellChange`, `TerrainChangeSet`, and `DirtyRegion` describe what changed so simulation and presentation can update exact regions.
 
-World data stays policy-free: gameplay rules belong in terrain, simulation, item, or player systems.
+`TerrainCollisionQuery` and `TerrainBodyMotionSolver` provide reusable grid-backed collision and circular body motion against committed terrain. They depend on compiled terrain solidity/fill rules, but remain free of scene nodes and player-specific input.

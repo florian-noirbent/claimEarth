@@ -1,4 +1,4 @@
-## Builds resource-free chunk mesh arrays and collision edge updates from world snapshots.
+## Builds resource-free chunk mesh arrays from world snapshots.
 class_name ChunkBuildJob
 extends RefCounted
 
@@ -10,7 +10,6 @@ var chunk_rect := Rect2i()
 var snapshot_rect := Rect2i()
 var snapshot_cells := PackedByteArray()
 var snapshot_fill := PackedByteArray()
-var collision_indices := PackedInt32Array()
 var metadata: CompiledTerrainData
 var hex_radius := 16.0
 var world_width := 0
@@ -32,11 +31,6 @@ var _fluid_vertices: Array[Vector3] = []
 var _fluid_colors: Array[Color] = []
 var _fluid_uvs: Array[Vector2] = []
 var _fluid_indices: Array[int] = []
-var _collision_segments: Array[Vector2] = []
-var _collision_cursor := 0
-var _collision_edge_keys: Array[int] = []
-var _collision_edge_enabled: Array[int] = []
-var _collision_edge_points: Array[Vector2] = []
 
 
 func configure(
@@ -49,8 +43,7 @@ func configure(
 	snapshot_fill_value: PackedByteArray,
 	metadata_value: CompiledTerrainData,
 	hex_radius_value: float,
-	world_width_value: int,
-	collision_indices_value: PackedInt32Array = PackedInt32Array()
+	world_width_value: int
 ) -> void:
 	chunk_coord = chunk_coord_value
 	revision = revision_value
@@ -59,7 +52,6 @@ func configure(
 	snapshot_rect = snapshot_rect_value
 	snapshot_cells = snapshot_cells_value
 	snapshot_fill = snapshot_fill_value
-	collision_indices = collision_indices_value
 	metadata = metadata_value
 	hex_radius = hex_radius_value
 	world_width = world_width_value
@@ -67,7 +59,6 @@ func configure(
 	result.chunk_coord = chunk_coord
 	result.revision = revision
 	result.layer_mask = layer_mask
-	result.collision_full_rebuild = (layer_mask & TerrainLayerMask.COLLISION) != 0 and collision_indices.is_empty()
 	_started_usec = Time.get_ticks_usec()
 
 
@@ -83,20 +74,6 @@ func advance(time_budget_usec: int) -> bool:
 		_cursor += 1
 		if Time.get_ticks_usec() >= deadline:
 			return false
-	if (layer_mask & TerrainLayerMask.COLLISION) != 0:
-		var collision_count := cell_count if result.collision_full_rebuild else collision_indices.size()
-		while _collision_cursor < collision_count:
-			var collision_index: int
-			if result.collision_full_rebuild:
-				var local_col := _collision_cursor % chunk_rect.size.x
-				var local_row := int(_collision_cursor / chunk_rect.size.x)
-				collision_index = (chunk_rect.position.y + local_row) * world_width + chunk_rect.position.x + local_col
-			else:
-				collision_index = collision_indices[_collision_cursor]
-			_append_collision_cell_edges(collision_index)
-			_collision_cursor += 1
-			if Time.get_ticks_usec() >= deadline:
-				return false
 	result.static_vertices = PackedVector3Array(_static_vertices)
 	result.static_colors = PackedColorArray(_static_colors)
 	result.static_uvs = PackedVector2Array(_static_uvs)
@@ -111,10 +88,6 @@ func advance(time_budget_usec: int) -> bool:
 	result.fluid_colors = PackedColorArray(_fluid_colors)
 	result.fluid_uvs = PackedVector2Array(_fluid_uvs)
 	result.fluid_indices = PackedInt32Array(_fluid_indices)
-	result.collision_segments = PackedVector2Array(_collision_segments)
-	result.collision_edge_keys = PackedInt64Array(_collision_edge_keys)
-	result.collision_edge_enabled = PackedByteArray(_collision_edge_enabled)
-	result.collision_edge_points = PackedVector2Array(_collision_edge_points)
 	result.build_usec = Time.get_ticks_usec() - _started_usec
 	return true
 
@@ -335,33 +308,6 @@ func _static_edge_mesh(material_index: int) -> ChunkMeshArrays:
 	if not _static_edge_meshes.has(material_index):
 		_static_edge_meshes[material_index] = ChunkMeshArrays.new()
 	return _static_edge_meshes[material_index] as ChunkMeshArrays
-
-
-func _append_collision_cell_edges(index: int) -> void:
-	var col := index % world_width
-	var row := int(index / world_width)
-	if not chunk_rect.has_point(Vector2i(col, row)):
-		return
-	var center := _cell_center(col, row)
-	var parity := col & 1
-	var neighbor_offsets: Array[Vector2i] = [
-		Vector2i(col + 1, row + parity),
-		Vector2i(col + 1, row + parity - 1),
-		Vector2i(col, row - 1),
-		Vector2i(col - 1, row + parity - 1),
-		Vector2i(col - 1, row + parity),
-		Vector2i(col, row + 1),
-	]
-	for direction in range(6):
-		var neighbor := neighbor_offsets[direction]
-		var exposed := metadata.is_solid(_cell_at(col, row), _fill_at(col, row)) and (not _contains_snapshot(neighbor.x, neighbor.y) or not metadata.is_solid(_cell_at(neighbor.x, neighbor.y), _fill_at(neighbor.x, neighbor.y)))
-		_collision_edge_keys.append(index * 6 + direction)
-		_collision_edge_enabled.append(1 if exposed else 0)
-		if not exposed:
-			continue
-		var edge := HexMetrics.edge_corner_indices_for_direction(direction)
-		_collision_edge_points.append(center + _corners[edge.x])
-		_collision_edge_points.append(center + _corners[edge.y])
 
 
 func _cell_at(col: int, row: int) -> int:

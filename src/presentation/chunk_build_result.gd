@@ -1,4 +1,4 @@
-## Carries chunk mesh and collision output back to the presenter.
+## Carries chunk mesh output back to the presenter.
 class_name ChunkBuildResult
 extends RefCounted
 
@@ -20,9 +20,4 @@ var fluid_vertices := PackedVector3Array()
 var fluid_colors := PackedColorArray()
 var fluid_uvs := PackedVector2Array()
 var fluid_indices := PackedInt32Array()
-var collision_segments := PackedVector2Array()
-var collision_full_rebuild := false
-var collision_edge_keys := PackedInt64Array()
-var collision_edge_enabled := PackedByteArray()
-var collision_edge_points := PackedVector2Array()
 var build_usec := 0

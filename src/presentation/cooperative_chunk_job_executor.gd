@@ -11,22 +11,8 @@ func enqueue(job: ChunkBuildJob) -> void:
 	for index in range(_jobs.size() - 1, -1, -1):
 		if _jobs[index].chunk_coord == job.chunk_coord:
 			var previous := _jobs[index]
-			var previous_full_collision := (previous.layer_mask & TerrainLayerMask.COLLISION) != 0 and previous.collision_indices.is_empty()
 			job.layer_mask |= previous.layer_mask
 			job.result.layer_mask = job.layer_mask
-			if previous_full_collision:
-				job.collision_indices = PackedInt32Array()
-				job.result.collision_full_rebuild = true
-			else:
-				var merged := {}
-				for changed_index in previous.collision_indices:
-					merged[changed_index] = true
-				for changed_index in job.collision_indices:
-					merged[changed_index] = true
-				job.collision_indices = PackedInt32Array()
-				for changed_index in merged.keys():
-					job.collision_indices.append(int(changed_index))
-				job.collision_indices.sort()
 			_jobs.remove_at(index)
 	_jobs.append(job)
 

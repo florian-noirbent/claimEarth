@@ -10,11 +10,12 @@ const GrappleModelScript = preload("res://src/player/grapple_model.gd")
 const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd")
 const EnvironmentStatusScript = preload("res://src/player/environment_status.gd")
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
+const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
+const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
 
 @export var movement_config: PlayerMovementConfig = preload("res://config/player/default_movement.tres")
 @export var grapple_config = preload("res://config/player/default_grapple.tres")
 @export var world_bottom_y := 100000.0
-@export var floor_snap_distance := 18.0
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0
 @export var horizontal_collision_radius := 14.0
@@ -30,18 +31,21 @@ var _grapple_model
 var _environment_status = EnvironmentStatusScript.new()
 var _terrain_registry: TerrainRegistry
 var _world: WorldGrid
+var _terrain_query = TerrainCollisionQueryScript.new()
+var _terrain_motion_solver = TerrainBodyMotionSolverScript.new()
 var _hex_radius := 16.0
 var _physics_frame_count := 0
 var _pending_anchor_query: GrappleAnchorQuery
 var _horizontal_bounds_enabled := false
 var _horizontal_min_x := 0.0
 var _horizontal_max_x := 0.0
+var _grounded := false
 
 
 func _ready() -> void:
 	_movement_model = PlayerMovementModel.new(movement_config)
 	_grapple_model = GrappleModelScript.new(grapple_config)
-	floor_snap_length = floor_snap_distance
+	_terrain_motion_solver.configure(_terrain_query)
 	if _pending_anchor_query != null:
 		_grapple_model.set_anchor_query(_pending_anchor_query)
 	if camera != null:
@@ -54,13 +58,26 @@ func _physics_process(delta: float) -> void:
 	var grounded_for_input := _is_grounded_for_movement()
 	_movement_model.step(input_frame, grounded_for_input, delta)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
-	_try_step_up(delta)
-	if velocity.y >= 0.0:
-		apply_floor_snap()
-	move_and_slide()
+	var attached_before_constraint: bool = _grapple_model.state.is_attached
+	var motion_result = _terrain_motion_solver.move_circle(
+		global_position,
+		velocity,
+		delta,
+		horizontal_collision_radius,
+		step_up_height,
+		support_probe_distance,
+		grounded_for_input and not attached_before_constraint
+	)
+	global_position = motion_result.position
+	velocity = motion_result.velocity
+	_grounded = motion_result.grounded
 	var grapple_resolution: Dictionary = _grapple_model.constrain_position(global_position, velocity)
-	global_position = grapple_resolution.position
-	velocity = grapple_resolution.velocity
+	global_position = grapple_resolution["position"] as Vector2
+	velocity = grapple_resolution["velocity"] as Vector2
+	var post_grapple_result = _terrain_motion_solver.resolve_circle(global_position, velocity, horizontal_collision_radius)
+	global_position = post_grapple_result.position
+	velocity = post_grapple_result.velocity
+	_grounded = _grounded or post_grapple_result.grounded
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
 	_enforce_horizontal_bounds()
@@ -90,12 +107,13 @@ func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, 
 	_world = world
 	_terrain_registry = terrain_registry
 	_hex_radius = hex_radius
+	_terrain_query.configure(world, CompiledTerrainData.compile(terrain_registry), hex_radius)
 	_environment_status.reset()
 
 
 func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
-	_horizontal_min_x = left_edge + horizontal_collision_radius
-	_horizontal_max_x = right_edge - horizontal_collision_radius
+	_horizontal_min_x = _snap_min_bound(left_edge + horizontal_collision_radius)
+	_horizontal_max_x = _snap_max_bound(right_edge - horizontal_collision_radius)
 	_horizontal_bounds_enabled = _horizontal_min_x <= _horizontal_max_x
 	_enforce_horizontal_bounds()
 
@@ -133,32 +151,9 @@ func _create_input_frame():
 
 
 func _is_grounded_for_movement() -> bool:
-	if is_on_floor():
-		return true
 	if velocity.y < 0.0:
 		return false
-	return test_move(global_transform, Vector2(0.0, support_probe_distance))
-
-
-func _try_step_up(delta: float) -> void:
-	if absf(velocity.x) < 1.0 or velocity.y < 0.0:
-		return
-	var horizontal_motion := Vector2(velocity.x * delta, 0.0)
-	if horizontal_motion.length_squared() <= 0.0001:
-		return
-	if not test_move(global_transform, horizontal_motion):
-		return
-
-	var step_increments := [step_up_height * 0.34, step_up_height * 0.67, step_up_height]
-	for step_height in step_increments:
-		var upward_motion := Vector2(0.0, -step_height)
-		if test_move(global_transform, upward_motion):
-			continue
-		var raised_transform := global_transform.translated(upward_motion)
-		if test_move(raised_transform, horizontal_motion):
-			continue
-		global_position += upward_motion
-		return
+	return _grounded
 
 
 func _update_visual_state() -> void:
@@ -207,14 +202,22 @@ func _sample_environment(delta: float) -> void:
 func _enforce_horizontal_bounds() -> void:
 	if not _horizontal_bounds_enabled:
 		return
-	var clamped_x := clampf(global_position.x, _horizontal_min_x, _horizontal_max_x)
-	if is_equal_approx(clamped_x, global_position.x):
+	if global_position.x >= _horizontal_min_x and global_position.x <= _horizontal_max_x:
 		return
+	var clamped_x := clampf(global_position.x, _horizontal_min_x, _horizontal_max_x)
 	global_position.x = clamped_x
 	if global_position.x <= _horizontal_min_x and velocity.x < 0.0:
 		velocity.x = 0.0
 	elif global_position.x >= _horizontal_max_x and velocity.x > 0.0:
 		velocity.x = 0.0
+
+
+func _snap_min_bound(value: float) -> float:
+	return ceilf(value * 1000.0) / 1000.0
+
+
+func _snap_max_bound(value: float) -> float:
+	return floorf(value * 1000.0) / 1000.0
 
 
 func _occupied_sample_positions() -> Array[Vector2]:
