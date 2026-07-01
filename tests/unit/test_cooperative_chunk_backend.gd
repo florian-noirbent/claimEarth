@@ -494,6 +494,54 @@ func test_lava_does_not_flow_below_minimum_fill_difference() -> void:
 	assert_eq(world.get_committed_fill_by_offset(2, 3), 100)
 
 
+func test_low_lava_puddle_decays_by_one_fill_per_tick() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	var lava_id := FixtureLoader.terrain_id("Lava")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(2, 2, lava_id, 50)
+	world.set_committed_by_offset(2, 3, stone_id)
+	world.set_committed_by_offset(1, 2, stone_id)
+	world.set_committed_by_offset(3, 2, stone_id)
+	world.set_committed_by_offset(1, 1, stone_id)
+	world.set_committed_by_offset(3, 1, stone_id)
+	world.set_committed_by_offset(1, 3, stone_id)
+	world.set_committed_by_offset(3, 3, stone_id)
+
+	backend.advance(1000)
+	var commit = backend.commit_if_ready()
+
+	assert_true(commit.did_commit)
+	assert_eq(world.get_committed_by_offset(2, 2), lava_id)
+	assert_eq(world.get_committed_fill_by_offset(2, 2), 49)
+
+
+func test_low_water_puddle_decays_by_one_fill_per_tick() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(2, 2, water_id, 12)
+	world.set_committed_by_offset(2, 3, stone_id)
+	world.set_committed_by_offset(1, 2, stone_id)
+	world.set_committed_by_offset(3, 2, stone_id)
+	world.set_committed_by_offset(1, 1, stone_id)
+	world.set_committed_by_offset(3, 1, stone_id)
+	world.set_committed_by_offset(1, 3, stone_id)
+	world.set_committed_by_offset(3, 3, stone_id)
+
+	backend.advance(1000)
+	var commit = backend.commit_if_ready()
+
+	assert_true(commit.did_commit)
+	assert_eq(world.get_committed_by_offset(2, 2), water_id)
+	assert_eq(world.get_committed_fill_by_offset(2, 2), 11)
+
+
 func test_lava_side_down_uses_same_equilibrium_when_difference_is_large_enough() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))

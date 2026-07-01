@@ -22,6 +22,8 @@ var side_up_rate_by_id := PackedByteArray()
 var min_fill_difference_by_id := PackedByteArray()
 var side_flow_offset_by_id := PackedByteArray()
 var side_up_source_threshold_by_id := PackedByteArray()
+var low_fill_decay_threshold_by_id := PackedByteArray()
+var low_fill_decay_rate_by_id := PackedByteArray()
 var fill_color_by_id := PackedColorArray()
 var accent_color_by_id := PackedColorArray()
 var pattern_by_id := PackedByteArray()
@@ -63,6 +65,8 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.min_fill_difference_by_id[stable_id] = motion.min_fill_difference
 		result.side_flow_offset_by_id[stable_id] = motion.side_flow_offset
 		result.side_up_source_threshold_by_id[stable_id] = motion.side_up_source_threshold
+		result.low_fill_decay_threshold_by_id[stable_id] = motion.low_fill_decay_threshold
+		result.low_fill_decay_rate_by_id[stable_id] = motion.low_fill_decay_rate
 		var style := definition.visual_style as TerrainVisualStyle
 		result.fill_color_by_id[stable_id] = style.fill_color if style != null else definition.debug_color
 		result.accent_color_by_id[stable_id] = style.accent_color if style != null else definition.debug_color
@@ -154,6 +158,14 @@ func side_up_source_threshold(cell_id: int) -> int:
 	return int(side_up_source_threshold_by_id[cell_id]) if cell_id >= 0 and cell_id < side_up_source_threshold_by_id.size() else 128
 
 
+func low_fill_decay_threshold(cell_id: int) -> int:
+	return int(low_fill_decay_threshold_by_id[cell_id]) if cell_id >= 0 and cell_id < low_fill_decay_threshold_by_id.size() else 0
+
+
+func low_fill_decay_rate(cell_id: int) -> int:
+	return int(low_fill_decay_rate_by_id[cell_id]) if cell_id >= 0 and cell_id < low_fill_decay_rate_by_id.size() else 0
+
+
 func _resize_tables(size: int) -> void:
 	motion_by_id.resize(size)
 	layer_by_id.resize(size)
@@ -170,6 +182,8 @@ func _resize_tables(size: int) -> void:
 	min_fill_difference_by_id.resize(size)
 	side_flow_offset_by_id.resize(size)
 	side_up_source_threshold_by_id.resize(size)
+	low_fill_decay_threshold_by_id.resize(size)
+	low_fill_decay_rate_by_id.resize(size)
 	fill_color_by_id.resize(size)
 	accent_color_by_id.resize(size)
 	pattern_by_id.resize(size)

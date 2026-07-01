@@ -139,9 +139,9 @@ directional transfer, fill-sensitive solidity, passability, visual, and color
 tables. Moving terrain uses one fill-transfer system for sand, water, lava, and
 future moving materials: fall first, then side-down, then side-up when the motion
 resource allows it. Transfer rates, minimum fill differences, the side-flow fill offset,
-and optional falling displacement of passable moving terrain live on motion
-resources. Side transfers clamp to the configured offset equilibrium and split
-between both side targets when both can receive material. Liquid resources use a
+low-fill decay thresholds/rates, and optional falling displacement of passable
+moving terrain live on motion resources. Side transfers clamp to the configured
+offset equilibrium and split between both side targets when both can receive material. Liquid resources use a
 geometry-matched side-flow offset so the equilibrium corresponds to a visually
 flat surface across staggered flat-top hex columns. Moving solid terrain can also
 define a fill threshold for collision, so partial material below that threshold

@@ -32,9 +32,12 @@ func step(index: int, context) -> void:
 
 	source_id = int(context.cell_id(index))
 	source_fill = int(context.fill(index))
-	if source_fill <= 0 or not context.metadata.can_side_up(source_id):
+	if source_fill <= 0:
 		return
-	transfer_solver.try_side_transfers(index, side_targets(col, row, TerrainTransferSolverScript.DIRECTION_SIDE_UP, context), TerrainTransferSolverScript.DIRECTION_SIDE_UP, context)
+	if context.metadata.can_side_up(source_id):
+		transfer_solver.try_side_transfers(index, side_targets(col, row, TerrainTransferSolverScript.DIRECTION_SIDE_UP, context), TerrainTransferSolverScript.DIRECTION_SIDE_UP, context)
+
+	_try_decay_low_fill(index, context)
 
 
 func side_targets(col: int, row: int, direction_kind: int, context) -> Array[int]:
@@ -49,3 +52,17 @@ func side_targets(col: int, row: int, direction_kind: int, context) -> Array[int
 			continue
 		result.append(target_row * context.dimensions.width + target_col)
 	return result
+
+
+func _try_decay_low_fill(index: int, context) -> void:
+	var source_id: int = context.cell_id(index)
+	var source_fill: int = context.fill(index)
+	if source_fill <= 0 or not context.metadata.is_moving(source_id):
+		return
+	var decay_threshold: int = context.metadata.low_fill_decay_threshold(source_id)
+	var decay_rate: int = context.metadata.low_fill_decay_rate(source_id)
+	if decay_rate <= 0 or decay_threshold <= 0 or source_fill >= decay_threshold:
+		return
+	var next_fill := maxi(0, source_fill - decay_rate)
+	context.write_working(index, source_id if next_fill > 0 else context.metadata.air_id, next_fill)
+	context.wake_index_and_neighbors(index)

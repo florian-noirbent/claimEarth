@@ -5,3 +5,5 @@
 [resource]
 script = ExtResource("1_63x0r")
 side_flow_offset = 128
+low_fill_decay_threshold = 13
+low_fill_decay_rate = 1

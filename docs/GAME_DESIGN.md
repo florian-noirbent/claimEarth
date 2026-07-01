@@ -80,8 +80,9 @@ geometry-matched offset so settled pools render with a flat surface across
 staggered hex columns. If both side targets can receive fluid in a tick, the
 transfer splits evenly. Water uses fast side-flow rates; lava uses the same rule
 with slower rates and a minimum fill difference. Water/lava contact creates
-stone whenever both have nonzero fill. Settled liquids do not oscillate
-indefinitely.
+stone whenever both have nonzero fill. Liquids below their configured low-fill
+decay threshold lose one fill unit per simulation tick. Settled liquids do not
+oscillate indefinitely.
 Terrain simulation targets a commit every 0.1 seconds; simulation and presentation
 work are spread across frames so player physics, projectiles, and input remain
 responsive.
