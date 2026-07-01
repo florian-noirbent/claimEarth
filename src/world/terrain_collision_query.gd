@@ -58,6 +58,31 @@ func support_contact(position: Vector2, radius: float, probe_distance: float) ->
 	return best
 
 
+func nearest_air_cell_center(position: Vector2, max_ring: int):
+	if not is_configured() or max_ring < 0:
+		return null
+	var origin := HexMetrics.offset_for_world(position, hex_radius)
+	var best_cell := Vector2i(-1, -1)
+	var best_distance_sq := INF
+	for ring in range(0, max_ring + 1):
+		for row in range(origin.y - ring, origin.y + ring + 1):
+			for col in range(origin.x - ring, origin.x + ring + 1):
+				if maxi(absi(col - origin.x), absi(row - origin.y)) != ring:
+					continue
+				if not world.dimensions.is_in_bounds_offset(col, row):
+					continue
+				if world.get_committed_by_offset(col, row) != metadata.air_id:
+					continue
+				var center := HexMetrics.center_for_offset(col, row, hex_radius)
+				var distance_sq := position.distance_squared_to(center)
+				if distance_sq < best_distance_sq:
+					best_distance_sq = distance_sq
+					best_cell = Vector2i(col, row)
+		if best_cell != Vector2i(-1, -1):
+			return HexMetrics.center_for_offset(best_cell.x, best_cell.y, hex_radius)
+	return null
+
+
 func _candidate_cells(position: Vector2, radius: float) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	if world == null:

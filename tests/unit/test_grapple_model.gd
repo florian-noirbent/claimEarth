@@ -13,8 +13,10 @@ class FakeAnchorQuery:
 
 	var anchor_to_return: GrappleAnchor
 	var valid := true
+	var last_target := Vector2.ZERO
 
 	func find_anchor(_origin: Vector2, _target: Vector2) -> GrappleAnchor:
+		last_target = _target
 		return anchor_to_return
 
 	func is_anchor_valid(_anchor: GrappleAnchor) -> bool:
@@ -78,10 +80,68 @@ func test_constraint_prevents_moving_farther_outward_than_rope_length() -> void:
 	attach_frame.aim_position = Vector2.RIGHT * 30.0
 	model.update(attach_frame, Vector2.RIGHT * 40.0, Vector2.RIGHT * 80.0, 0.016)
 
-	var resolved := model.constrain_position(Vector2.RIGHT * 100.0, Vector2.RIGHT * 60.0)
+	var resolved := model.constrain_position(Vector2.RIGHT * 100.0, Vector2.RIGHT * 60.0, 1.0)
 
 	assert_almost_eq((resolved.position as Vector2).length(), model.state.rope_length, 0.001)
 	assert_eq((resolved.velocity as Vector2).x, 0.0)
+
+
+func test_anchor_within_leeway_pulls_in_smoothly_and_preserves_tangent() -> void:
+	var query := FakeAnchorQuery.new()
+	query.anchor_to_return = GrappleAnchorScript.new(Vector2i(1, 1), Vector2.ZERO)
+	var config = GrappleConfigScript.new()
+	config.max_rope_length = 100.0
+	config.attach_range_leeway_ratio = 0.1
+	config.pull_in_speed = 50.0
+	var model = GrappleModelScript.new(config, query)
+
+	var attach_frame = GrappleInputFrameScript.new()
+	attach_frame.hook_pressed = true
+	attach_frame.aim_position = Vector2.ZERO
+	model.update(attach_frame, Vector2.LEFT * 109.0, Vector2.ZERO, 0.016)
+
+	assert_true(model.state.is_attached)
+	assert_eq(model.state.rope_length, config.max_rope_length)
+
+	var resolved := model.constrain_position(Vector2.LEFT * 109.0, Vector2(-20.0, 30.0), 0.1)
+
+	assert_almost_eq((resolved.position as Vector2).length(), 104.0, 0.001)
+	assert_eq((resolved.velocity as Vector2).x, 0.0)
+	assert_eq((resolved.velocity as Vector2).y, 30.0)
+
+
+func test_anchor_beyond_leeway_does_not_attach_or_change_velocity() -> void:
+	var query := FakeAnchorQuery.new()
+	query.anchor_to_return = GrappleAnchorScript.new(Vector2i(1, 1), Vector2.ZERO)
+	var config = GrappleConfigScript.new()
+	config.max_rope_length = 100.0
+	config.attach_range_leeway_ratio = 0.1
+	var model = GrappleModelScript.new(config, query)
+	var input_frame = GrappleInputFrameScript.new()
+	input_frame.hook_pressed = true
+	input_frame.aim_position = Vector2.LEFT * 111.0
+
+	var velocity := model.update(input_frame, Vector2.LEFT * 111.0, Vector2(12.0, 34.0), 0.016)
+
+	assert_false(model.state.is_attached)
+	assert_eq(velocity, Vector2(12.0, 34.0))
+
+
+func test_hook_press_queries_full_range_in_mouse_direction() -> void:
+	var query := FakeAnchorQuery.new()
+	query.anchor_to_return = GrappleAnchorScript.new(Vector2i(1, 1), Vector2.RIGHT * 40.0)
+	var config = GrappleConfigScript.new()
+	config.max_rope_length = 100.0
+	config.attach_range_leeway_ratio = 0.1
+	var model = GrappleModelScript.new(config, query)
+	var input_frame = GrappleInputFrameScript.new()
+	input_frame.hook_pressed = true
+	input_frame.aim_position = Vector2.RIGHT * 10.0
+
+	model.update(input_frame, Vector2.ZERO, Vector2.ZERO, 0.016)
+
+	assert_eq(query.last_target, Vector2.RIGHT * config.effective_attach_range())
+	assert_true(model.state.is_attached)
 
 
 func test_invalid_anchor_drops_attachment() -> void:

@@ -37,6 +37,35 @@ func test_sand_at_collision_threshold_is_solid() -> void:
 	assert_true(query.circle_overlaps_solid(HexMetrics.center_for_offset(2, 2, 16.0), 14.0))
 
 
+func test_nearest_air_cell_center_finds_closest_air() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(4, 2, FixtureLoader.terrain_id("Air"))
+	var query = _query_for_world(world)
+
+	var center = query.nearest_air_cell_center(HexMetrics.center_for_offset(2, 2, 16.0), 3)
+
+	assert_eq(center, HexMetrics.center_for_offset(4, 2, 16.0))
+
+
+func test_nearest_air_cell_center_uses_deterministic_tie_order() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(1, 2, FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Air"))
+	var query = _query_for_world(world)
+
+	var center = query.nearest_air_cell_center(HexMetrics.center_for_offset(2, 2, 16.0), 1)
+
+	assert_eq(center, HexMetrics.center_for_offset(1, 2, 16.0))
+
+
+func test_nearest_air_cell_center_returns_null_when_no_air_is_in_range() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(4, 4, FixtureLoader.terrain_id("Air"))
+	var query = _query_for_world(world)
+
+	assert_null(query.nearest_air_cell_center(HexMetrics.center_for_offset(2, 2, 16.0), 1))
+
+
 func test_motion_stops_against_wall_and_preserves_tangent_velocity() -> void:
 	var world := WorldGrid.new(WorldDimensions.new(7, 5), FixtureLoader.terrain_id("Air"))
 	world.set_committed_by_offset(3, 2, FixtureLoader.terrain_id("Stone"))

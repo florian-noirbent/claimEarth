@@ -17,10 +17,41 @@ func test_query_returns_first_hookable_cell_on_probe_line() -> void:
 	var world := WorldGrid.new(WorldDimensions.new(6, 6), 0)
 	world.set_committed_by_offset(3, 2, 1)
 	var query = WorldGrappleAnchorQueryScript.new()
-	query.configure(world, registry, 16.0, 12.0, 8.0)
+	query.configure(world, registry, 16.0, 8.0, 200.0)
 
 	var anchor := query.find_anchor(Vector2.ZERO, HexMetrics.center_for_offset(3, 2, 16.0))
 
 	assert_not_null(anchor)
 	assert_eq(anchor.cell, Vector2i(3, 2))
+	assert_ne(anchor.position, HexMetrics.center_for_offset(3, 2, 16.0) + Vector2(0.0, -12.0))
 	assert_true(query.is_anchor_valid(anchor))
+
+
+func test_query_ignores_hookable_cell_beyond_max_range() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var world := WorldGrid.new(WorldDimensions.new(12, 2), 0)
+	world.set_committed_by_offset(8, 0, 1)
+	var query = WorldGrappleAnchorQueryScript.new()
+	query.configure(world, registry, 16.0, 8.0, 120.0)
+
+	var anchor := query.find_anchor(Vector2.ZERO, HexMetrics.center_for_offset(8, 0, 16.0))
+
+	assert_null(anchor)
+
+
+func test_query_anchors_at_ray_contact_point_on_hex_edge() -> void:
+	var registry := TerrainRegistry.new()
+	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
+	var world := WorldGrid.new(WorldDimensions.new(6, 2), 0)
+	world.set_committed_by_offset(3, 0, 1)
+	var query = WorldGrappleAnchorQueryScript.new()
+	query.configure(world, registry, 16.0, 8.0, 200.0)
+	var center := HexMetrics.center_for_offset(3, 0, 16.0)
+
+	var anchor := query.find_anchor(Vector2(0.0, center.y), center)
+
+	assert_not_null(anchor)
+	assert_eq(anchor.cell, Vector2i(3, 0))
+	assert_almost_eq(anchor.position.x, center.x - 16.0, 0.001)
+	assert_almost_eq(anchor.position.y, center.y, 0.001)

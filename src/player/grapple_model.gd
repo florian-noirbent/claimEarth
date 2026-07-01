@@ -44,7 +44,7 @@ func update(input_frame: GrappleInputFrame, player_position: Vector2, velocity: 
 	return velocity + tangent * (input_frame.move_axis * config.tangential_acceleration * delta)
 
 
-func constrain_position(player_position: Vector2, velocity: Vector2) -> Dictionary:
+func constrain_position(player_position: Vector2, velocity: Vector2, delta: float) -> Dictionary:
 	if not state.is_attached or state.anchor == null:
 		return {
 			"position": player_position,
@@ -60,7 +60,9 @@ func constrain_position(player_position: Vector2, velocity: Vector2) -> Dictiona
 		}
 
 	var radial_direction := rope_vector / distance
-	var corrected_position := state.anchor.position + radial_direction * state.rope_length
+	var overshoot := distance - state.rope_length
+	var pull_distance := minf(overshoot, config.pull_in_speed * delta)
+	var corrected_position := player_position - radial_direction * pull_distance
 	var corrected_velocity := velocity
 	var radial_speed := corrected_velocity.dot(radial_direction)
 	if radial_speed > 0.0:
@@ -82,17 +84,23 @@ func _try_attach(player_position: Vector2, target_position: Vector2) -> void:
 	if _anchor_query == null:
 		return
 
-	var anchor := _anchor_query.find_anchor(player_position, target_position)
+	var target_delta := target_position - player_position
+	var target_distance := target_delta.length()
+	if target_distance <= 0.001:
+		return
+
+	var projected_target := player_position + target_delta / target_distance * config.effective_attach_range()
+	var anchor := _anchor_query.find_anchor(player_position, projected_target)
 	if anchor == null:
+		return
+
+	var anchor_distance := player_position.distance_to(anchor.position)
+	if anchor_distance > config.effective_attach_range():
 		return
 
 	state.anchor = anchor
 	state.is_attached = true
-	state.rope_length = clampf(
-		player_position.distance_to(anchor.position),
-		config.min_rope_length,
-		config.max_rope_length
-	)
+	state.rope_length = clampf(minf(anchor_distance, config.max_rope_length), config.min_rope_length, config.max_rope_length)
 
 
 func _is_anchor_valid() -> bool:

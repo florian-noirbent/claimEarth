@@ -11,6 +11,6 @@ func _init() -> void:
 func resolve():
 	var effect = HazardEffectScript.new()
 	effect.cause = DeathCauseScript.SUFFOCATION
-	effect.exposure_seconds = 1.25
+	effect.exposure_seconds = 3
 	effect.minimum_fill = 255
 	return effect

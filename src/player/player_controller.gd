@@ -19,6 +19,9 @@ const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_moti
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0
 @export var horizontal_collision_radius := 14.0
+@export var terrain_unstuck_search_ring := 8
+@export var terrain_unstuck_push_speed := 900.0
+@export var hook_launch_animation_seconds := 0.08
 
 @onready var body_polygon: Polygon2D = %BodyPolygon
 @onready var body_visual: Node2D = %BodyVisual
@@ -40,6 +43,9 @@ var _horizontal_bounds_enabled := false
 var _horizontal_min_x := 0.0
 var _horizontal_max_x := 0.0
 var _grounded := false
+var _hook_launch_elapsed := 0.0
+var _hook_launch_duration := 0.0
+var _hook_launch_target := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -58,6 +64,10 @@ func _physics_process(delta: float) -> void:
 	var grounded_for_input := _is_grounded_for_movement()
 	_movement_model.step(input_frame, grounded_for_input, delta)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
+	if input_frame.hook_pressed:
+		_start_hook_launch_animation(input_frame.aim_position)
+	elif input_frame.hook_released:
+		_stop_hook_launch_animation()
 	var attached_before_constraint: bool = _grapple_model.state.is_attached
 	var motion_result = _terrain_motion_solver.move_circle(
 		global_position,
@@ -71,18 +81,19 @@ func _physics_process(delta: float) -> void:
 	global_position = motion_result.position
 	velocity = motion_result.velocity
 	_grounded = motion_result.grounded
-	var grapple_resolution: Dictionary = _grapple_model.constrain_position(global_position, velocity)
+	var grapple_resolution: Dictionary = _grapple_model.constrain_position(global_position, velocity, delta)
 	global_position = grapple_resolution["position"] as Vector2
 	velocity = grapple_resolution["velocity"] as Vector2
 	var post_grapple_result = _terrain_motion_solver.resolve_circle(global_position, velocity, horizontal_collision_radius)
 	global_position = post_grapple_result.position
 	velocity = post_grapple_result.velocity
 	_grounded = _grounded or post_grapple_result.grounded
+	_enforce_horizontal_bounds()
+	_apply_terrain_unstuck(delta)
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
-	_enforce_horizontal_bounds()
 	_update_visual_state()
-	_update_grapple_visuals()
+	_update_grapple_visuals(delta)
 	_sample_environment(delta)
 	if global_position.y > world_bottom_y:
 		death_requested.emit(DeathCauseScript.BOUNDS)
@@ -171,7 +182,23 @@ func _update_visual_state() -> void:
 		body_visual.scale.x = absf(body_visual.scale.x) * signf(velocity.x)
 
 
-func _update_grapple_visuals() -> void:
+func _update_grapple_visuals(delta: float) -> void:
+	if _hook_launch_duration > 0.0:
+		_hook_launch_elapsed = minf(_hook_launch_duration, _hook_launch_elapsed + delta)
+		var progress := _hook_launch_elapsed / _hook_launch_duration
+		rope_line.visible = true
+		hook_indicator.visible = true
+		var local_target := to_local(_hook_launch_target)
+		var animated_end := local_target * progress
+		rope_line.points = PackedVector2Array([
+			Vector2.ZERO,
+			animated_end,
+		])
+		hook_indicator.position = animated_end
+		if _hook_launch_elapsed < _hook_launch_duration:
+			return
+		_stop_hook_launch_animation()
+
 	if not _grapple_model.state.is_attached or _grapple_model.state.anchor == null:
 		rope_line.visible = false
 		hook_indicator.visible = false
@@ -184,6 +211,26 @@ func _update_grapple_visuals() -> void:
 		to_local(_grapple_model.state.anchor.position),
 	])
 	hook_indicator.position = to_local(_grapple_model.state.anchor.position)
+
+
+func _start_hook_launch_animation(aim_position: Vector2) -> void:
+	_hook_launch_elapsed = 0.0
+	_hook_launch_duration = maxf(hook_launch_animation_seconds, 0.001)
+	if _grapple_model.state.is_attached and _grapple_model.state.anchor != null:
+		_hook_launch_target = _grapple_model.state.anchor.position
+		return
+
+	var aim_delta := aim_position - global_position
+	var aim_distance := aim_delta.length()
+	if aim_distance <= 0.001:
+		_hook_launch_target = global_position
+		return
+	_hook_launch_target = global_position + aim_delta / aim_distance * grapple_config.effective_attach_range()
+
+
+func _stop_hook_launch_animation() -> void:
+	_hook_launch_elapsed = 0.0
+	_hook_launch_duration = 0.0
 
 
 func _sample_environment(delta: float) -> void:
@@ -210,6 +257,27 @@ func _enforce_horizontal_bounds() -> void:
 		velocity.x = 0.0
 	elif global_position.x >= _horizontal_max_x and velocity.x > 0.0:
 		velocity.x = 0.0
+
+
+func _apply_terrain_unstuck(delta: float) -> void:
+	if delta <= 0.0 or not _terrain_query.is_configured():
+		return
+	if not _terrain_query.circle_overlaps_solid(global_position, horizontal_collision_radius):
+		return
+	var air_center_variant = _terrain_query.nearest_air_cell_center(global_position, terrain_unstuck_search_ring)
+	if air_center_variant == null:
+		return
+	var air_center := air_center_variant as Vector2
+	var escape_vector := air_center - global_position
+	var distance := escape_vector.length()
+	if distance <= 0.001:
+		return
+	var escape_direction := escape_vector / distance
+	var push_distance := minf(distance, terrain_unstuck_push_speed * delta)
+	global_position += escape_direction * push_distance
+	var escape_speed := velocity.dot(escape_direction)
+	if escape_speed < 0.0:
+		velocity -= escape_direction * escape_speed
 
 
 func _snap_min_bound(value: float) -> float:

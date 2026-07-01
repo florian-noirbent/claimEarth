@@ -150,7 +150,13 @@ func _ensure_player() -> void:
 	var spawn_row := _generation_result.spawn_rect.position.y
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, _profile.depth + 6, _world_presenter.hex_radius).y
 	_player.set_spawn_position(HexMetrics.center_for_offset(spawn_col, spawn_row, _world_presenter.hex_radius))
-	_grapple_anchor_query.configure(_generation_result.world, _terrain_registry, _world_presenter.hex_radius, _player.grapple_config.attach_radius, _player.grapple_config.probe_step)
+	_grapple_anchor_query.configure(
+		_generation_result.world,
+		_terrain_registry,
+		_world_presenter.hex_radius,
+		_player.grapple_config.probe_step,
+		_player.grapple_config.effective_attach_range()
+	)
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_generation_result.world, _terrain_registry, _world_presenter.hex_radius)
 	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
