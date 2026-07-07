@@ -37,7 +37,8 @@ func step(input_frame: PlayerInputFrame, grounded: bool, delta: float) -> void:
 	var acceleration := config.ground_acceleration if grounded else config.air_acceleration
 
 	if absf(input_frame.move_axis) > 0.001:
-		velocity.x = move_toward(velocity.x, target_speed, acceleration * delta)
+		if not _is_preserving_horizontal_overspeed(input_frame.move_axis, target_speed):
+			velocity.x = move_toward(velocity.x, target_speed, acceleration * delta)
 	elif grounded:
 		velocity.x = move_toward(velocity.x, 0.0, config.ground_friction * delta)
 
@@ -63,3 +64,7 @@ func _update_state(grounded: bool) -> void:
 		current_state = PlayerMovementState.JUMP
 	else:
 		current_state = PlayerMovementState.FALL
+
+
+func _is_preserving_horizontal_overspeed(move_axis: float, target_speed: float) -> bool:
+	return signf(move_axis) == signf(velocity.x) and absf(velocity.x) > absf(target_speed)

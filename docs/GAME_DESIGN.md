@@ -93,7 +93,8 @@ responsive.
 - Movement includes ground acceleration, air control, coyote time, jump buffering,
   and floor support probing.
 - The hook attaches only to hookable terrain within its configured range.
-- `A/D` adds tangential momentum while hooked; `W/S` adjusts rope length.
+- `A/D` adds tangential momentum while hooked without forcing same-direction
+  overspeed back to walk or air speed caps; `W/S` adjusts rope length.
 - The camera remains horizontally fixed and zooms so the map width fills the
   viewport. It never scrolls upward during a run.
 

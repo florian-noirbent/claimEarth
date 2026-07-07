@@ -57,5 +57,41 @@ func test_air_control_and_gravity_apply_in_air() -> void:
 	assert_eq(model.current_state, PlayerMovementState.FALL)
 
 
+func test_same_direction_air_input_preserves_rightward_overspeed() -> void:
+	var model := PlayerMovementModel.new(_config())
+	var frame := PlayerInputFrame.new()
+	var start_speed := model.config.max_air_speed + 100.0
+	model.velocity.x = start_speed
+	frame.move_axis = 1.0
+
+	model.step(frame, false, 0.1)
+
+	assert_eq(model.velocity.x, start_speed)
+
+
+func test_opposite_air_input_reduces_rightward_overspeed() -> void:
+	var model := PlayerMovementModel.new(_config())
+	var frame := PlayerInputFrame.new()
+	var start_speed := model.config.max_air_speed + 100.0
+	model.velocity.x = start_speed
+	frame.move_axis = -1.0
+
+	model.step(frame, false, 0.1)
+
+	assert_lt(model.velocity.x, start_speed)
+
+
+func test_same_direction_air_input_preserves_leftward_overspeed() -> void:
+	var model := PlayerMovementModel.new(_config())
+	var frame := PlayerInputFrame.new()
+	var start_speed := -model.config.max_air_speed - 100.0
+	model.velocity.x = start_speed
+	frame.move_axis = -1.0
+
+	model.step(frame, false, 0.1)
+
+	assert_eq(model.velocity.x, start_speed)
+
+
 func _config() -> PlayerMovementConfig:
 	return load("res://config/player/default_movement.tres") as PlayerMovementConfig
