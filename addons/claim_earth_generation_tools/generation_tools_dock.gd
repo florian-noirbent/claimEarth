@@ -238,7 +238,8 @@ func _load_profile(path: String) -> void:
 	var loaded := load(path) as GenerationProfile
 	if loaded == null:
 		return
-	_profile = loaded
+	_profile = loaded.duplicate(true) as GenerationProfile
+	_profile.take_over_path(path)
 	_saved_profile_snapshot = loaded.duplicate(true) as GenerationProfile
 	_profile.ensure_pass_seed_keys()
 	_capture_saved_pass_values(_profile)

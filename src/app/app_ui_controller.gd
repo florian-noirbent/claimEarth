@@ -2,8 +2,6 @@
 class_name AppUiController
 extends CanvasLayer
 
-const ItemToolbarSlotScene := preload("res://scenes/ui/item_toolbar_slot.tscn")
-
 signal start_requested
 signal leaderboard_requested
 signal menu_requested
@@ -11,6 +9,8 @@ signal pause_requested
 signal item_selected(index: int)
 signal score_confirmed(player_name: String)
 signal restart_requested
+
+@export var item_toolbar_slot_scene: PackedScene
 
 @onready var title_image: TextureRect = %Title
 @onready var owner_label: Label = %OwnerLabel
@@ -179,7 +179,7 @@ func _update_item_toolbar(items: Array) -> void:
 		for child in item_toolbar_content.get_children():
 			child.free()
 		for index in items.size():
-			var slot := ItemToolbarSlotScene.instantiate() as ItemToolbarSlot
+			var slot := item_toolbar_slot_scene.instantiate() as ItemToolbarSlot
 			item_toolbar_content.add_child(slot)
 			slot.pressed.connect(_on_item_slot_pressed.bind(index))
 	for index in items.size():

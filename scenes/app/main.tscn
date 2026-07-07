@@ -1,8 +1,12 @@
 [gd_scene format=3 uid="uid://bxndgutwe3l0o"]
 
 [ext_resource type="Script" uid="uid://dx7a7pt13ex5h" path="res://src/app/app_root.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://bjcil7ntf6ppu" path="res://scenes/app/run_session.tscn" id="2_run_session"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="Resource" uid="uid://k51yn6p208lp" path="res://config/generation/default_profile.tres" id="4_generation_profile"]
 [ext_resource type="Script" uid="uid://dbmagduv515l6" path="res://src/audio/audio_director.gd" id="5_audio"]
+[ext_resource type="Resource" path="res://config/leaderboard/simpleboards.tres" id="6_leaderboard_config"]
+[ext_resource type="PackedScene" path="res://scenes/ui/item_toolbar_slot.tscn" id="7_toolbar_slot"]
 [ext_resource type="Script" uid="uid://bhqvdn4txrc3r" path="res://src/app/app_ui_controller.gd" id="8_ui"]
 [ext_resource type="Script" uid="uid://cbg6nyfogmet2" path="res://src/app/score_controller.gd" id="9_score"]
 [ext_resource type="Texture2D" uid="uid://js0tt46vpvac" path="res://assets/ui/menu_background.jpg" id="14_menu_bg"]
@@ -124,7 +128,10 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_main")
+run_session_scene = ExtResource("2_run_session")
+generation_profile = ExtResource("4_generation_profile")
 player_scene = ExtResource("3_player")
+leaderboard_config = ExtResource("6_leaderboard_config")
 
 [node name="ScoreController" type="Node" parent="." unique_id=397205212]
 unique_name_in_owner = true
@@ -137,6 +144,7 @@ script = ExtResource("5_audio")
 [node name="UiLayer" type="CanvasLayer" parent="." unique_id=772962582]
 unique_name_in_owner = true
 script = ExtResource("8_ui")
+item_toolbar_slot_scene = ExtResource("7_toolbar_slot")
 
 [node name="MenuBackground" type="TextureRect" parent="UiLayer" unique_id=1887254834]
 anchors_preset = 15

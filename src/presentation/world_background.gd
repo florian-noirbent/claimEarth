@@ -4,8 +4,7 @@ class_name WorldBackground
 extends Node2D
 
 
-const BackgroundShader = preload("res://src/presentation/world_background.gdshader")
-
+@export var background_shader: Shader
 @export var cave_texture: Texture2D
 @export var cave_texture_scale := 1.0
 @export var grass_band_texture: Texture2D
@@ -37,7 +36,7 @@ var _shader_material := ShaderMaterial.new()
 func _ready() -> void:
 	z_index = -100
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	_shader_material.shader = BackgroundShader
+	_shader_material.shader = background_shader
 	material = _shader_material
 	_sync_shader_parameters()
 	set_process(Engine.is_editor_hint())

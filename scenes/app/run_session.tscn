@@ -11,6 +11,8 @@
 [ext_resource type="Script" uid="uid://c8m7dvhyp5opv" path="res://src/presentation/world_background.gd" id="8_background"]
 [ext_resource type="Texture2D" uid="uid://b67oyht43g8uu" path="res://assets/terrain/background.jpg" id="9_background_texture"]
 [ext_resource type="Texture2D" uid="uid://c5pbegwgjdfju" path="res://assets/terrain/grassBand.png" id="10_grass_band"]
+[ext_resource type="Resource" path="res://config/terrain/catalog.tres" id="11_terrain_catalog"]
+[ext_resource type="Resource" path="res://config/items/catalog.tres" id="12_item_catalog"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3w1ny"]
 shader = ExtResource("4_87qye")
@@ -39,6 +41,8 @@ script = ExtResource("2_items")
 [node name="RunWorldController" type="Node" parent="." unique_id=1221077346]
 unique_name_in_owner = true
 script = ExtResource("3_world_controller")
+terrain_catalog = ExtResource("11_terrain_catalog")
+item_catalog = ExtResource("12_item_catalog")
 
 [node name="WorldBackground" type="Node2D" parent="." unique_id=1606310285]
 unique_name_in_owner = true
@@ -46,6 +50,7 @@ z_index = -100
 texture_repeat = 2
 material = SubResource("ShaderMaterial_3w1ny")
 script = ExtResource("8_background")
+background_shader = ExtResource("4_87qye")
 cave_texture = ExtResource("9_background_texture")
 grass_band_texture = ExtResource("10_grass_band")
 grass_band_scale = 0.2

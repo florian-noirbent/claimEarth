@@ -3,6 +3,8 @@ extends GutTest
 
 func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	var controller := RunWorldController.new()
+	controller.terrain_catalog = load("res://config/terrain/catalog.tres")
+	controller.item_catalog = load("res://config/items/catalog.tres")
 	var background := WorldBackground.new()
 	var presenter := WorldPresenter.new()
 	var markers := Node2D.new()

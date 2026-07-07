@@ -6,11 +6,10 @@ extends Control
 signal generation_started
 signal gameplay_started
 
-const RunSessionScene := preload("res://scenes/app/run_session.tscn")
-
-@export var generation_profile: GenerationProfile = preload("res://config/generation/default_profile.tres")
+@export var run_session_scene: PackedScene
+@export var generation_profile: GenerationProfile
 @export var player_scene: PackedScene
-@export var leaderboard_config: LeaderboardConfig = preload("res://config/leaderboard/simpleboards.tres")
+@export var leaderboard_config: LeaderboardConfig
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
@@ -281,7 +280,7 @@ func _replace_session(serial: int) -> RunSession:
 	await _dispose_current_session()
 	if serial != _session_change_serial:
 		return null
-	var session := RunSessionScene.instantiate() as RunSession
+	var session := run_session_scene.instantiate() as RunSession
 	add_child(session)
 	session.configure(generation_profile, player_scene)
 	_connect_session_signals(session)

@@ -13,8 +13,8 @@ const DeathCauseScript = preload("res://src/player/death_cause.gd")
 const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
 
-@export var movement_config: PlayerMovementConfig = preload("res://config/player/default_movement.tres")
-@export var grapple_config = preload("res://config/player/default_grapple.tres")
+@export var movement_config: PlayerMovementConfig
+@export var grapple_config: GrappleConfig
 @export var world_bottom_y := 100000.0
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0

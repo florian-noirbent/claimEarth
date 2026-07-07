@@ -10,6 +10,9 @@ signal player_died(cause: StringName)
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
 
+@export var terrain_catalog: TerrainCatalog
+@export var item_catalog: ItemCatalog
+
 var _profile: GenerationProfile
 var _player_scene: PackedScene
 var _world_background: WorldBackground
@@ -166,10 +169,8 @@ func _ensure_player() -> void:
 
 
 func _configure_registries() -> void:
-	var terrain_catalog := load("res://config/terrain/catalog.tres") as TerrainCatalog
 	if not _terrain_registry.try_configure(terrain_catalog):
 		push_error("\n".join(_terrain_registry.validation_errors))
-	var item_catalog := load("res://config/items/catalog.tres") as ItemCatalog
 	if not _item_registry.try_configure(item_catalog):
 		push_error("\n".join(_item_registry.validation_errors))
 

@@ -20,6 +20,29 @@ func test_no_central_type_branching_patterns_exist_in_src() -> void:
 	assert_eq(violations.size(), 0, "Forbidden branching pattern found in:\n%s" % "\n".join(violations))
 
 
+func test_runtime_resource_path_loads_do_not_exist_in_src() -> void:
+	var forbidden_pattern := RegEx.create_from_string("\\bload\\s*\\(\\s*\"res://")
+	var violations := _files_matching(forbidden_pattern)
+
+	assert_eq(violations.size(), 0, "Use exported scene/resource references instead of runtime load paths:\n%s" % "\n".join(violations))
+
+
+func test_non_script_preloads_do_not_exist_in_src() -> void:
+	var forbidden_pattern := RegEx.create_from_string("\\bpreload\\s*\\(\\s*\"res://[^\"]+\\.(tscn|tres|res|png|jpg|jpeg|svg|gdshader)\"\\s*\\)")
+	var violations := _files_matching(forbidden_pattern)
+
+	assert_eq(violations.size(), 0, "Use exported scene/resource references instead of non-script preloads:\n%s" % "\n".join(violations))
+
+
+func _files_matching(pattern: RegEx) -> PackedStringArray:
+	var violations := PackedStringArray()
+	for file_path in _gd_files_in("res://src"):
+		var text := FileAccess.get_file_as_string(file_path)
+		if pattern.search(text) != null:
+			violations.append(file_path)
+	return violations
+
+
 func _gd_files_in(root: String) -> PackedStringArray:
 	var result := PackedStringArray()
 	var directory := DirAccess.open(root)
