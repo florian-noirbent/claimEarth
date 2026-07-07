@@ -3,6 +3,7 @@ extends Control
 
 
 const WorldPresenterScript = preload("res://src/presentation/world_presenter.gd")
+const WorldPresenterShader = preload("res://src/presentation/world_presenter.gdshader")
 
 var _subviewport: SubViewport
 var _subviewport_container: SubViewportContainer
@@ -11,7 +12,6 @@ var _camera: Camera2D
 var _presenter
 var _status_label := Label.new()
 var _terrain_registry := TerrainRegistry.new()
-var _chunk_activity_index: ChunkActivityIndex
 var _current_profile: GenerationProfile
 var _current_seed := 0
 var _pending_preview_request := false
@@ -152,7 +152,7 @@ func _ensure_runtime() -> void:
 	_subviewport.add_child(_root)
 	_presenter = WorldPresenterScript.new()
 	_presenter.name = "WorldPresenter"
-	_presenter.build_collision = false
+	_presenter.terrain_shader = WorldPresenterShader
 	_root.add_child(_presenter)
 	_camera = Camera2D.new()
 	_camera.name = "PreviewCamera"
@@ -170,7 +170,6 @@ func _free_runtime() -> void:
 	_root = null
 	_camera = null
 	_presenter = null
-	_chunk_activity_index = null
 
 
 func _attempt_preview() -> void:
@@ -193,9 +192,8 @@ func _attempt_preview() -> void:
 	if result == null:
 		_set_status("Generation failed")
 		return
-	_chunk_activity_index = ChunkActivityIndex.new(result.world.dimensions)
 	_presenter.visible_row_count = result.world.dimensions.depth
-	_presenter.configure(result.world, _terrain_registry, _chunk_activity_index)
+	_presenter.configure(result.world, _terrain_registry)
 	_has_rendered_once = true
 	_attempt_camera_fit()
 	_set_status("")

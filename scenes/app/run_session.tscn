@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://c5pbegwgjdfju" path="res://assets/terrain/grassBand.png" id="10_grass_band"]
 [ext_resource type="Resource" path="res://config/terrain/catalog.tres" id="11_terrain_catalog"]
 [ext_resource type="Resource" path="res://config/items/catalog.tres" id="12_item_catalog"]
+[ext_resource type="Shader" uid="uid://bnouge1mepmdx" path="res://src/presentation/world_presenter.gdshader" id="13_terrain_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3w1ny"]
 shader = ExtResource("4_87qye")
@@ -63,6 +64,7 @@ sky_gradient_steps = 256
 [node name="WorldPresenter" type="Node2D" parent="." unique_id=1326804246]
 unique_name_in_owner = true
 script = ExtResource("4_presenter")
+terrain_shader = ExtResource("13_terrain_shader")
 
 [node name="DepthMarkers" type="Node2D" parent="." unique_id=1116532002]
 unique_name_in_owner = true

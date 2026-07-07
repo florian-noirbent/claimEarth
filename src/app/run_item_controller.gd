@@ -9,6 +9,7 @@ signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
+signal terrain_changed(change_set: TerrainChangeSet)
 
 const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
@@ -21,7 +22,6 @@ var _explosion_service: ExplosionService = ExplosionServiceScript.new()
 var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
-var _chunk_activity_index: ChunkActivityIndex
 var _simulation_backend: TerrainSimulationBackend
 var _hex_radius := 8.0
 var _throw_lock_remaining := 0.0
@@ -33,12 +33,11 @@ func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
 	_hex_radius = hex_radius
 
 
-func configure_run(player: PlayerController, world: WorldGrid, terrain_registry: TerrainRegistry, chunk_activity_index: ChunkActivityIndex, hex_radius: float, simulation_backend: TerrainSimulationBackend = null) -> void:
+func configure_run(player: PlayerController, world: WorldGrid, terrain_registry: TerrainRegistry, hex_radius: float, simulation_backend: TerrainSimulationBackend = null) -> void:
 	_inventory.reset()
 	_player = player
 	_world = world
 	_terrain_registry = terrain_registry
-	_chunk_activity_index = chunk_activity_index
 	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
 	_active_flag_projectile = null
@@ -49,7 +48,6 @@ func configure_run(player: PlayerController, world: WorldGrid, terrain_registry:
 func clear_run() -> void:
 	_player = null
 	_world = null
-	_chunk_activity_index = null
 	_simulation_backend = null
 	_active_flag_projectile = null
 	for child in get_children():
@@ -105,13 +103,14 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 
 
 func resolve_bomb_explosion(item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile) -> void:
-	if _world == null or _chunk_activity_index == null:
+	if _world == null:
 		return
 	if _player != null and _player.global_position.distance_to(impact_position) <= item_action.factory.lethal_radius * _hex_radius:
 		player_killed.emit(DeathCause.BOMB)
-	var change_set := _explosion_service.explode_with_changes(_world, _terrain_registry, _chunk_activity_index, impact_position, _hex_radius, item_action.factory.blast_radius, item_action.factory.lethal_radius)
+	var change_set := _explosion_service.explode_with_changes(_world, _terrain_registry, impact_position, _hex_radius, item_action.factory.blast_radius, item_action.factory.lethal_radius)
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
+	terrain_changed.emit(change_set)
 	var is_large: bool = item_action.factory.blast_radius >= 4
 	bomb_exploded.emit(impact_position, item_action.factory.projectile_color, item_action.factory.blast_radius, is_large)
 

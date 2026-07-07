@@ -10,9 +10,8 @@ static func assert_app_is_playing(test_case: GutTest, app_root: AppRoot) -> void
 	test_case.assert_true(app_root.get_player().is_physics_processing())
 
 
-static func assert_no_scene_leaks(test_case: GutTest, presenter: WorldPresenter, max_visible_chunks: int) -> void:
-	test_case.assert_lte(presenter.visible_chunk_count(), max_visible_chunks)
-	test_case.assert_eq(presenter.total_collider_nodes(), 0)
+static func assert_no_scene_leaks(test_case: GutTest, presenter: WorldPresenter, _max_visible_chunks: int) -> void:
+	test_case.assert_eq(presenter.total_renderer_nodes(), 1)
 
 
 static func assert_projectile_visual_configured(test_case: GutTest, projectile: ItemProjectile, expected_point_count: int) -> void:

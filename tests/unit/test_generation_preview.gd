@@ -154,7 +154,7 @@ func test_preview_successful_generation_configures_presenter_and_reactivation_re
 	var request_count: int = preview._active_request_count
 
 	assert_true(preview._has_rendered_once)
-	assert_gt(_presenter(preview).visible_chunk_count(), 0)
+	assert_eq(_presenter(preview).total_renderer_nodes(), 1)
 	assert_lt(_camera(preview).zoom.x, 1.0)
 
 	preview.deactivate()

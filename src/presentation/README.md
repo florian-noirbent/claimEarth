@@ -1,7 +1,7 @@
 # Presentation
 
-`src/presentation` turns committed world data into visible chunks, markers, and effects. Presentation code consumes `WorldGrid`; it does not own gameplay decisions or terrain collision.
+`src/presentation` turns committed world data into terrain visuals, markers, and effects. Presentation code consumes `WorldGrid`; it does not own gameplay decisions or terrain collision.
 
-`WorldPresenter` creates one renderer per visible chunk. `ChunkActivityIndex` tracks dirty static, sand, and fluid visual layers. `ChunkBuildJob` snapshots packed world data and produces resource-free mesh arrays; `WorldPresenter` applies revision-checked results and creates engine resources on the main thread.
+`WorldPresenter` renders terrain with one shader-driven world quad. `WorldGridTexture` mirrors committed terrain IDs, fill amounts, and a reserved lighting byte into a nearest-filtered GPU data texture. Terrain material fill textures are packed into a smooth material-index atlas for shader sampling. `ChunkActivityIndex` only computes visible chunk windows for simulation scheduling.
 
-Keep renderer node counts bounded, dirty only affected chunks, and preserve the build-job boundary so chunk work can remain time-sliced or move behind a worker executor later.
+Keep renderer node counts bounded and refresh the terrain texture only from committed world state.

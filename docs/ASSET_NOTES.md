@@ -15,9 +15,9 @@ Current art is original repository content stored by runtime use:
 - `assets/terrain/dirt.jpg`
 - `assets/terrain/grassBand.png`
 - `assets/terrain/stone.jpg`
-- Stone and dirt surfaces use looping textures and edge resources through
-  `TerrainMaterial` resources consumed by `WorldChunkRenderer`; other terrain
-  surfaces are generated procedurally.
+- Stone and dirt surfaces use looping textures from `TerrainMaterial` resources.
+  The shader terrain renderer packs those textures into a smooth material-index atlas.
+  Edge resources are retained for deferred visual polish.
 - Gameplay effects are generated procedurally by `GameplayFeedback`.
 - Audio cues are synthesized at runtime by `AudioDirector`.
 

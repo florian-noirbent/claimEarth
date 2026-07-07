@@ -6,19 +6,17 @@ extends RefCounted
 func explode(
 	world: WorldGrid,
 	terrain_registry: TerrainRegistry,
-	chunk_activity_index: ChunkActivityIndex,
 	impact_position: Vector2,
 	hex_radius: float,
 	blast_radius: int,
 	lethal_radius: int = 0
 ) -> Rect2i:
-	return explode_with_changes(world, terrain_registry, chunk_activity_index, impact_position, hex_radius, blast_radius, lethal_radius).dirty_rect
+	return explode_with_changes(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).dirty_rect
 
 
 func explode_with_changes(
 	world: WorldGrid,
 	terrain_registry: TerrainRegistry,
-	chunk_activity_index: ChunkActivityIndex,
 	impact_position: Vector2,
 	hex_radius: float,
 	blast_radius: int,
@@ -27,7 +25,7 @@ func explode_with_changes(
 	var origin := HexMetrics.offset_for_world(impact_position, hex_radius)
 	var air_id := _terrain_id(terrain_registry, "Air")
 	var metadata := CompiledTerrainData.compile(terrain_registry)
-	var change_set := TerrainChangeSet.new(world.dimensions, chunk_activity_index.chunk_width, chunk_activity_index.chunk_height)
+	var change_set := TerrainChangeSet.new(world.dimensions)
 	var queue: Array[Dictionary] = [{
 		"cell": origin,
 		"strength": float(blast_radius),
@@ -71,7 +69,6 @@ func explode_with_changes(
 		change_set.dirty_rect = Rect2i(origin, Vector2i.ONE)
 		return change_set
 
-	chunk_activity_index.mark_change_set(change_set)
 	return change_set
 
 

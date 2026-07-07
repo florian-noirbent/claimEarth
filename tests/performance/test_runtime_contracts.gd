@@ -9,7 +9,7 @@ func before_each() -> void:
 		DirAccess.remove_absolute(path)
 
 
-func test_idle_play_does_not_rebuild_visible_chunks_every_frame() -> void:
+func test_idle_play_keeps_shader_renderer_stable() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
 	app_root.configure_save_path_for_test("user://gut_perf_runtime.json")
@@ -23,21 +23,11 @@ func test_idle_play_does_not_rebuild_visible_chunks_every_frame() -> void:
 	, 1.0)
 
 	GameplayAssertionsScript.assert_app_is_playing(self, app_root)
-	app_root.world_presenter.reset_stats()
 	await ScenarioDriverScript.wait_process_frames(1)
-	app_root.world_presenter.reset_stats()
-	var terrain_frame_usec: Array[int] = []
 	for _frame in range(60):
 		await ScenarioDriverScript.wait_process_frames(1)
-		terrain_frame_usec.append(app_root.world_presenter.last_build_usec())
-	terrain_frame_usec.sort()
-	var p95_index := mini(terrain_frame_usec.size() - 1, int(ceil(terrain_frame_usec.size() * 0.95)) - 1)
 
-	assert_lt(app_root.world_presenter.rebuild_count(), app_root.world_presenter.refresh_count())
-	assert_lte(app_root.world_presenter.last_refresh_rebuild_count(), 1)
-	assert_true(app_root.world_presenter.refresh_count() >= 60)
-	assert_lte(terrain_frame_usec[p95_index], 2000)
-	assert_lte(terrain_frame_usec[-1], 16700)
+	assert_eq(app_root.world_presenter.total_renderer_nodes(), 1)
 
 
 func test_long_idle_run_keeps_scene_sizes_bounded_and_player_physics_active() -> void:
@@ -53,7 +43,6 @@ func test_long_idle_run_keeps_scene_sizes_bounded_and_player_physics_active() ->
 		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
 	, 1.0)
 
-	app_root.world_presenter.reset_stats()
 	var start_physics_frames := app_root.get_player().physics_frame_count()
 	await ScenarioDriverScript.wait_physics_frames(300)
 

@@ -99,9 +99,8 @@ func advance(delta: float) -> void:
 		if progress.step_completed:
 			_simulation_tick_requested = false
 		var commit: SimulationCommit = _simulation_backend.commit_if_ready()
-		if commit.did_commit and _chunk_activity_index != null:
-			_chunk_activity_index.mark_change_set(commit.change_set)
-	_world_presenter.refresh_visible_chunks(visible_start_row)
+		if commit.did_commit:
+			_world_presenter.upload_world()
 
 
 func player() -> PlayerController:
@@ -130,6 +129,10 @@ func item_registry() -> ItemRegistry:
 
 func chunk_activity_index() -> ChunkActivityIndex:
 	return _chunk_activity_index
+
+
+func refresh_terrain_presentation(_change_set: TerrainChangeSet = null) -> void:
+	_world_presenter.upload_world()
 
 
 func spawn_rect() -> Rect2i:

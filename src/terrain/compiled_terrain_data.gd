@@ -8,7 +8,6 @@ const MOTION_FALLING := 1
 const MOTION_LIQUID := 2
 
 var motion_by_id := PackedByteArray()
-var layer_by_id := PackedByteArray()
 var solid_by_id := PackedByteArray()
 var passable_by_id := PackedByteArray()
 var moving_solid_fill_threshold_by_id := PackedByteArray()
@@ -44,13 +43,10 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		var motion_name := definition.motion_behavior.behavior_name
 		if motion_name == "falling":
 			result.motion_by_id[stable_id] = MOTION_FALLING
-			result.layer_by_id[stable_id] = TerrainLayerMask.SAND_VISUAL
 		elif motion_name == "liquid":
 			result.motion_by_id[stable_id] = MOTION_LIQUID
-			result.layer_by_id[stable_id] = TerrainLayerMask.FLUID_VISUAL
 		else:
 			result.motion_by_id[stable_id] = MOTION_STABLE
-			result.layer_by_id[stable_id] = TerrainLayerMask.STATIC_VISUAL if definition.debug_color.a > 0.0 else TerrainLayerMask.NONE
 		result.solid_by_id[stable_id] = 1 if definition.is_solid else 0
 		result.passable_by_id[stable_id] = 1 if definition.is_passable else 0
 		result.moving_solid_fill_threshold_by_id[stable_id] = definition.moving_solid_fill_threshold
@@ -93,10 +89,6 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		if definition.is_liquid_contact_product:
 			result.stone_id = stable_id
 	return result
-
-
-func visual_layer(cell_id: int) -> int:
-	return int(layer_by_id[cell_id]) if cell_id >= 0 and cell_id < layer_by_id.size() else TerrainLayerMask.NONE
 
 
 func is_solid(cell_id: int, fill: int = 255) -> bool:
@@ -168,7 +160,6 @@ func low_fill_decay_rate(cell_id: int) -> int:
 
 func _resize_tables(size: int) -> void:
 	motion_by_id.resize(size)
-	layer_by_id.resize(size)
 	solid_by_id.resize(size)
 	passable_by_id.resize(size)
 	moving_solid_fill_threshold_by_id.resize(size)

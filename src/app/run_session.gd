@@ -39,6 +39,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	item_controller.flag_destroyed.connect(flag_destroyed.emit)
 	item_controller.flag_flight_changed.connect(flag_flight_changed.emit)
 	item_controller.item_thrown.connect(item_thrown.emit)
+	item_controller.terrain_changed.connect(world_controller.refresh_terrain_presentation)
 
 
 func start_run(run_seed: int) -> void:
@@ -77,7 +78,6 @@ func _on_run_ready(next_seed: int) -> void:
 		player,
 		world,
 		world_controller.terrain_registry(),
-		world_controller.chunk_activity_index(),
 		world_presenter.hex_radius,
 		world_controller.simulation_backend()
 	)

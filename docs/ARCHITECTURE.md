@@ -87,25 +87,23 @@ cancelled and freed.
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 
-`ChunkActivityIndex` uses 20x32-cell chunks by default. It tracks exact per-chunk
-static, sand, fluid, and collision-related dirty masks, and computes the depth
-window used by simulation and presentation. Presentation consumes only visual
-masks; collision-related dirtying is retained for terrain rule tests and future
-systems that need exact solid-boundary invalidation.
+`ChunkActivityIndex` uses 20x32-cell chunks by default. It computes the depth
+window used by simulation scheduling; rendering no longer consumes chunk dirty
+state.
 
 `WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
 0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
-texture below it. Static terrain visual styles can reference `TerrainMaterial`
-resources for world-space fill textures and `TerrainEdgeDefinition` resources
-consumed by `WorldChunkRenderer`. These are presentation only and do not affect
-generation, simulation, collision, or score depth.
+texture below it. Terrain visual styles provide shader colors, and terrain
+materials with fill textures are packed into a material-index atlas for shader
+sampling. Edge resources are retained as assets/resources but are not part of the
+current terrain renderer.
 
-`WorldPresenter` creates one `WorldChunkRenderer` per visible chunk. Each renderer
-owns persistent static, sand, and fluid mesh layers. Plain `ChunkBuildJob` inputs
-snapshot packed world data and produces resource-free mesh arrays. The cooperative
-executor time-slices those jobs; `WorldPresenter` alone creates engine resources
-and applies revision-checked results on the main thread. This job boundary is
-suitable for a future worker executor without enabling Web threads today.
+`WorldPresenter` draws one shader-driven world quad. `WorldGridTexture` mirrors
+committed cell ID, fill amount, and a reserved lighting byte into an RGBA8 data
+texture. The fragment shader converts pixels to hex grid coordinates, samples the
+grid texture, samples terrain style/material data, and draws the matching terrain
+color or atlas texture. Terrain edge outlines are shader-rendered from resource
+style data; neighbor blending is intentionally deferred.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
@@ -115,9 +113,9 @@ step-up behavior without creating physics-server shapes or chunk collider nodes.
 
 Gameplay mutations currently update committed cells and fill directly through
 focused services such as `ExplosionService`, then publish a `TerrainChangeSet`.
-Change sets contain exact cells, fill changes, and layer masks, wake nearby
-simulation cells, and invalidate an unfinished simulation snapshot before it can
-overwrite the mutation.
+Change sets contain exact changed cells and their dirty rectangle, wake nearby
+simulation cells, refresh the terrain texture, and invalidate an unfinished
+simulation snapshot before it can overwrite the mutation.
 
 ## Terrain And Simulation
 
@@ -135,7 +133,7 @@ region read, and shutdown. `CooperativeChunkBackend` is the implemented backend.
 requests deterministic ticks at a 0.1-second cadence.
 
 The cooperative backend compiles resource definitions into packed ID-indexed motion,
-directional transfer, fill-sensitive solidity, passability, visual, and color
+directional transfer, fill-sensitive solidity, passability, and color
 tables. Moving terrain uses one fill-transfer system for sand, water, lava, and
 future moving materials: fall first, then side-down, then side-up when the motion
 resource allows it. Transfer rates, minimum fill differences, the side-flow fill offset,

@@ -7,6 +7,7 @@ func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	controller.item_catalog = load("res://config/items/catalog.tres")
 	var background := WorldBackground.new()
 	var presenter := WorldPresenter.new()
+	presenter.terrain_shader = load("res://src/presentation/world_presenter.gdshader")
 	var markers := Node2D.new()
 	var boundaries := WorldSideBoundaries.new()
 	add_child_autofree(controller)
