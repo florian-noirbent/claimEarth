@@ -7,6 +7,14 @@ extends Node2D
 @export var visible_row_count := 96
 @export var material_atlas_tile_size := 1024
 @export var terrain_shader: Shader
+@export_range(0.0, 1.0, 0.01) var fluid_alpha := 0.56
+@export_range(0.0, 1.0, 0.01) var fluid_caustic_strength := 0.28
+@export var fluid_caustic_scale := 0.012
+@export var fluid_caustic_speed := 0.35
+@export_range(0.0, 1.0, 0.01) var fluid_shimmer_strength := 0.1
+@export_range(0.0, 24.0, 0.25) var fluid_surface_glow_width := 5.0
+@export_range(0.0, 1.0, 0.01) var fluid_surface_glow_strength := 0.35
+@export_range(0.0, 2.0, 0.01) var fluid_hot_glow_strength := 0.65
 
 const WorldGridTextureScript = preload("res://src/presentation/world_grid_texture.gd")
 const MATERIAL_ATLAS_GUTTER_SIZE := 1
@@ -114,6 +122,14 @@ func _configure_shader() -> void:
 	_material.set_shader_parameter("material_atlas_tile_size", float(maxi(1, material_atlas_tile_size)))
 	_material.set_shader_parameter("material_atlas_gutter_size", float(MATERIAL_ATLAS_GUTTER_SIZE))
 	_material.set_shader_parameter("material_atlas_size", _material_atlas_size)
+	_material.set_shader_parameter("fluid_alpha", fluid_alpha)
+	_material.set_shader_parameter("fluid_caustic_strength", fluid_caustic_strength)
+	_material.set_shader_parameter("fluid_caustic_scale", fluid_caustic_scale)
+	_material.set_shader_parameter("fluid_caustic_speed", fluid_caustic_speed)
+	_material.set_shader_parameter("fluid_shimmer_strength", fluid_shimmer_strength)
+	_material.set_shader_parameter("fluid_surface_glow_width", fluid_surface_glow_width)
+	_material.set_shader_parameter("fluid_surface_glow_strength", fluid_surface_glow_strength)
+	_material.set_shader_parameter("fluid_hot_glow_strength", fluid_hot_glow_strength)
 	_material.set_shader_parameter("hex_radius", hex_radius)
 	_material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
 	_polygon.material = _material

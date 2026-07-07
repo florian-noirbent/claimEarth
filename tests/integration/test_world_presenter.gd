@@ -88,6 +88,24 @@ func test_world_presenter_edge_style_texture_packs_edge_color_and_width() -> voi
 	assert_eq(_color_byte(edge_style.a), roundi(clampf(expected_width / 16.0, 0.0, 1.0) * 255.0))
 
 
+func test_world_presenter_binds_fluid_material_uniforms() -> void:
+	var presenter := _presenter()
+	add_child_autofree(presenter)
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Water"))
+
+	presenter.configure(world, FixtureLoader.terrain_registry())
+
+	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_eq(material.get_shader_parameter("fluid_alpha"), presenter.fluid_alpha)
+	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), presenter.fluid_caustic_strength)
+	assert_eq(material.get_shader_parameter("fluid_caustic_scale"), presenter.fluid_caustic_scale)
+	assert_eq(material.get_shader_parameter("fluid_caustic_speed"), presenter.fluid_caustic_speed)
+	assert_eq(material.get_shader_parameter("fluid_shimmer_strength"), presenter.fluid_shimmer_strength)
+	assert_eq(material.get_shader_parameter("fluid_surface_glow_width"), presenter.fluid_surface_glow_width)
+	assert_eq(material.get_shader_parameter("fluid_surface_glow_strength"), presenter.fluid_surface_glow_strength)
+	assert_eq(material.get_shader_parameter("fluid_hot_glow_strength"), presenter.fluid_hot_glow_strength)
+
+
 func test_world_presenter_upload_world_reflects_committed_grid_changes() -> void:
 	var presenter := _presenter()
 	add_child_autofree(presenter)
