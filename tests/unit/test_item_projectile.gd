@@ -59,6 +59,34 @@ func test_bomb_projectile_bounces_on_solid_terrain_until_fuse_expires() -> void:
 	assert_true(projectile.velocity.y < 0.0)
 
 
+func test_buried_bouncing_projectile_resolves_when_fuse_expires() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Stone"))
+
+	var projectile := ItemProjectile.new()
+	projectile.world = world
+	projectile.terrain_registry = registry
+	projectile.hex_radius = 16.0
+	projectile.global_position = HexMetrics.center_for_offset(2, 2, projectile.hex_radius)
+	projectile.configure({
+		"fuse_seconds": 0.01,
+		"bounce_on_impact": true,
+		"gravity": 0.0,
+		"velocity": Vector2.ZERO,
+	})
+	add_child_autofree(projectile)
+	var resolved_kinds: Array[StringName] = []
+	projectile.resolved.connect(func(_projectile: ItemProjectile, _impact_position: Vector2, resolution_kind: StringName) -> void:
+		resolved_kinds.append(resolution_kind)
+	)
+
+	projectile._physics_process(0.02)
+
+	assert_eq(resolved_kinds, [&"fuse"])
+	assert_true(projectile.is_queued_for_deletion())
+
+
 func test_lava_sensitive_projectile_ignores_lava_below_hazard_fill_threshold() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))

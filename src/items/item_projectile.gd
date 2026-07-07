@@ -97,7 +97,7 @@ func _physics_process(delta: float) -> void:
 			else:
 				resolved.emit(self, previous_position, &"impact")
 				queue_free()
-			return
+				return
 
 	if remaining_fuse <= 0.0:
 		resolved.emit(self, global_position, &"fuse")
