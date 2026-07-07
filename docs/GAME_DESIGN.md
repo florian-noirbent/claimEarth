@@ -66,7 +66,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Air | Passable | Stable | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
-| Sand | Solid at half fill or more | Falls, can creep side-down, displaces passable moving terrain below, never rises; burial hazard only when full | Becomes air |
+| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; burial hazard only when full | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; suffocation hazard only when full | Diffuses propagation |
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; lethal at 10% fill or more | Detonates bombs |
 

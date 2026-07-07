@@ -76,13 +76,61 @@ func test_opposite_liquid_contact_resolves_to_stone_generically() -> void:
 	assert_eq(world.get_working_fill_by_offset(2, 2), 255)
 
 
-func test_falling_material_displaces_passable_moving_terrain_generically() -> void:
+func test_falling_material_pushes_passable_moving_terrain_sideways_first() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
 	var sand_id := FixtureLoader.terrain_id("Sand")
 	var water_id := FixtureLoader.terrain_id("Water")
+	world.set_committed_by_offset(2, 1, sand_id)
+	world.set_committed_by_offset(2, 2, water_id)
+	var context = _context_for(world, registry)
+	var solver = TerrainTransferSolverScript.new()
+
+	assert_true(solver.try_transfer(_index(world, 2, 1), _index(world, 2, 2), TerrainTransferSolverScript.DIRECTION_FALL, context))
+
+	assert_eq(world.get_working_by_offset(2, 1), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_working_fill_by_offset(2, 1), 0)
+	assert_eq(world.get_working_by_offset(2, 2), sand_id)
+	assert_eq(world.get_working_fill_by_offset(2, 2), 255)
+	assert_eq(world.get_working_by_offset(1, 2), water_id)
+	assert_eq(world.get_working_fill_by_offset(1, 2), 128)
+	assert_eq(world.get_working_by_offset(3, 2), water_id)
+	assert_eq(world.get_working_fill_by_offset(3, 2), 127)
+
+
+func test_falling_material_swaps_remaining_displaced_fill_after_partial_side_push() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(2, 1, sand_id)
+	world.set_committed_by_offset(2, 2, water_id)
+	world.set_committed_by_offset(1, 2, water_id, 250)
+	world.set_committed_by_offset(3, 2, stone_id)
+	var context = _context_for(world, registry)
+	var solver = TerrainTransferSolverScript.new()
+
+	assert_true(solver.try_transfer(_index(world, 2, 1), _index(world, 2, 2), TerrainTransferSolverScript.DIRECTION_FALL, context))
+
+	assert_eq(world.get_working_by_offset(2, 1), water_id)
+	assert_eq(world.get_working_fill_by_offset(2, 1), 250)
+	assert_eq(world.get_working_by_offset(2, 2), sand_id)
+	assert_eq(world.get_working_fill_by_offset(2, 2), 255)
+	assert_eq(world.get_working_by_offset(1, 2), water_id)
+	assert_eq(world.get_working_fill_by_offset(1, 2), 255)
+
+
+func test_falling_material_keeps_swap_fallback_when_displaced_fill_is_trapped() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
 	world.set_committed_by_offset(2, 1, sand_id, 96)
 	world.set_committed_by_offset(2, 2, water_id, 192)
+	world.set_committed_by_offset(1, 2, stone_id)
+	world.set_committed_by_offset(3, 2, stone_id)
 	var context = _context_for(world, registry)
 	var solver = TerrainTransferSolverScript.new()
 

@@ -70,6 +70,35 @@ func test_partial_sand_displaces_water_below_without_mixing_cells() -> void:
 	assert_eq(world.get_committed_fill_by_offset(2, 2), 96)
 
 
+func test_sand_pushes_water_sideways_before_swapping_upward() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var backend = CooperativeChunkBackendScript.new()
+	backend.initialize(world, registry, 1)
+	var sand_id := FixtureLoader.terrain_id("Sand")
+	var water_id := FixtureLoader.terrain_id("Water")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	world.set_committed_by_offset(2, 1, sand_id)
+	world.set_committed_by_offset(2, 2, water_id)
+	world.set_committed_by_offset(0, 3, stone_id)
+	world.set_committed_by_offset(1, 3, stone_id)
+	world.set_committed_by_offset(2, 3, stone_id)
+	world.set_committed_by_offset(3, 3, stone_id)
+	world.set_committed_by_offset(4, 3, stone_id)
+
+	backend.advance(1000)
+	backend.commit_if_ready()
+
+	assert_eq(world.get_committed_by_offset(2, 1), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_fill_by_offset(2, 1), 0)
+	assert_eq(world.get_committed_by_offset(2, 2), sand_id)
+	assert_eq(world.get_committed_fill_by_offset(2, 2), 255)
+	assert_eq(world.get_committed_by_offset(1, 2), water_id)
+	assert_eq(world.get_committed_fill_by_offset(1, 2), 128)
+	assert_eq(world.get_committed_by_offset(3, 2), water_id)
+	assert_eq(world.get_committed_fill_by_offset(3, 2), 127)
+
+
 func test_water_and_lava_turn_to_stone_on_contact() -> void:
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))

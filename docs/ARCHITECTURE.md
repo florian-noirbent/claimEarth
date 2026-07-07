@@ -153,10 +153,10 @@ changed cells and fill changes rather than one broad dirty area.
 main-thread `WorldGrid` commits. Per-cell work is delegated to data-only
 collaborators: `TerrainSimulationContext` wraps the working buffers and wake/touch
 sets, `TerrainMotionStepper` owns fall/side-down/side-up ordering, and
-`TerrainTransferSolver` owns transfer math, liquid contact, and falling
-displacement. These collaborators must stay free of nodes, signals, renderer,
-physics-body, UI, and mutable resource dependencies so the simulation step remains
-portable to a worker boundary.
+`TerrainTransferSolver` owns transfer math, liquid contact, and sideways-first
+falling displacement of passable moving terrain. These collaborators must stay
+free of nodes, signals, renderer, physics-body, UI, and mutable resource
+dependencies so the simulation step remains portable to a worker boundary.
 
 Threaded and compute backends are not implemented. A future threaded backend must
 reuse the plain simulation/build inputs and outputs, keep scene-tree and resource

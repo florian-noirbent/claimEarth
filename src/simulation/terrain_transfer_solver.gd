@@ -159,10 +159,69 @@ func _try_displace_passable_moving(source: int, target: int, source_id: int, tar
 		return false
 	if not context.metadata.is_moving(target_id) or not context.metadata.is_passable(target_id):
 		return false
-	context.write_working(source, target_id, target_fill)
+	var sideways_amount := _push_displaced_moving_sideways(target, target_id, target_fill, context)
+	var remaining_target_fill := target_fill - sideways_amount
+	context.write_working(source, target_id if remaining_target_fill > 0 else context.metadata.air_id, remaining_target_fill)
 	context.write_working(target, source_id, source_fill)
 	context.wake_movement(source, target)
 	return true
+
+
+func _push_displaced_moving_sideways(source: int, source_id: int, source_fill: int, context) -> int:
+	var candidates: Array[Dictionary] = []
+	var total_capacity := 0
+	for target in _side_down_targets(source, context):
+		var target_id: int = context.cell_id(target)
+		var target_fill: int = context.fill(target)
+		if not _can_transfer_into(source_id, target_id, target_fill, context.metadata):
+			continue
+		var capacity := side_transfer_capacity(source_id, source_fill, target_fill, DIRECTION_SIDE_DOWN, context.metadata)
+		if capacity <= 0:
+			continue
+		candidates.append({
+			"index": target,
+			"fill": target_fill,
+			"capacity": capacity,
+			"amount": 0,
+		})
+		total_capacity += capacity
+	if candidates.is_empty():
+		return 0
+	var budget := mini(context.metadata.transfer_rate(source_id, DIRECTION_SIDE_DOWN), mini(source_fill, total_capacity))
+	if budget <= 0:
+		return 0
+	allocate_split_budget(candidates, budget)
+	var total_amount := 0
+	for candidate in candidates:
+		total_amount += int(candidate["amount"])
+	if total_amount <= 0:
+		return 0
+	for candidate in candidates:
+		var amount := int(candidate["amount"])
+		if amount <= 0:
+			continue
+		var target := int(candidate["index"])
+		var target_fill := int(candidate["fill"])
+		context.write_working(target, source_id, target_fill + amount)
+		context.wake_movement(source, target)
+	return total_amount
+
+
+func _side_down_targets(index: int, context) -> Array[int]:
+	var result: Array[int] = []
+	var width: int = context.dimensions.width
+	var row := int(index / width)
+	var col: int = index % width
+	var row_delta := col & 1
+	var first_delta: int = -1 if (context.tick % 2 == 0) else 1
+	var column_deltas: Array[int] = [first_delta, -first_delta]
+	for col_delta: int in column_deltas:
+		var target_col: int = col + col_delta
+		var target_row: int = row + row_delta
+		if not context.dimensions.is_in_bounds_offset(target_col, target_row):
+			continue
+		result.append(target_row * context.dimensions.width + target_col)
+	return result
 
 
 func _can_transfer_into(source_id: int, target_id: int, target_fill: int, metadata: CompiledTerrainData) -> bool:
