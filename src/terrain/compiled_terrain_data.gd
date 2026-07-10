@@ -10,6 +10,7 @@ const MOTION_LIQUID := 2
 var motion_by_id := PackedByteArray()
 var solid_by_id := PackedByteArray()
 var passable_by_id := PackedByteArray()
+var density_by_id := PackedByteArray()
 var moving_solid_fill_threshold_by_id := PackedByteArray()
 var can_fall_by_id := PackedByteArray()
 var can_side_down_by_id := PackedByteArray()
@@ -20,7 +21,6 @@ var side_down_rate_by_id := PackedByteArray()
 var side_up_rate_by_id := PackedByteArray()
 var min_fill_difference_by_id := PackedByteArray()
 var side_flow_offset_by_id := PackedByteArray()
-var side_up_source_threshold_by_id := PackedByteArray()
 var low_fill_decay_threshold_by_id := PackedByteArray()
 var low_fill_decay_rate_by_id := PackedByteArray()
 var fill_color_by_id := PackedColorArray()
@@ -49,6 +49,7 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 			result.motion_by_id[stable_id] = MOTION_STABLE
 		result.solid_by_id[stable_id] = 1 if definition.is_solid else 0
 		result.passable_by_id[stable_id] = 1 if definition.is_passable else 0
+		result.density_by_id[stable_id] = definition.block_density
 		result.moving_solid_fill_threshold_by_id[stable_id] = definition.moving_solid_fill_threshold
 		var motion := definition.motion_behavior
 		result.can_fall_by_id[stable_id] = 1 if motion.can_fall else 0
@@ -60,7 +61,6 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.side_up_rate_by_id[stable_id] = motion.side_up_rate
 		result.min_fill_difference_by_id[stable_id] = motion.min_fill_difference
 		result.side_flow_offset_by_id[stable_id] = motion.side_flow_offset
-		result.side_up_source_threshold_by_id[stable_id] = motion.side_up_source_threshold
 		result.low_fill_decay_threshold_by_id[stable_id] = motion.low_fill_decay_threshold
 		result.low_fill_decay_rate_by_id[stable_id] = motion.low_fill_decay_rate
 		var style := definition.visual_style as TerrainVisualStyle
@@ -101,6 +101,10 @@ func is_solid(cell_id: int, fill: int = 255) -> bool:
 
 func is_passable(cell_id: int) -> bool:
 	return cell_id >= 0 and cell_id < passable_by_id.size() and passable_by_id[cell_id] != 0
+
+
+func density(cell_id: int) -> int:
+	return int(density_by_id[cell_id]) if cell_id >= 0 and cell_id < density_by_id.size() else 0
 
 
 func motion(cell_id: int) -> int:
@@ -146,10 +150,6 @@ func side_flow_offset(cell_id: int) -> int:
 	return int(side_flow_offset_by_id[cell_id]) if cell_id >= 0 and cell_id < side_flow_offset_by_id.size() else 50
 
 
-func side_up_source_threshold(cell_id: int) -> int:
-	return int(side_up_source_threshold_by_id[cell_id]) if cell_id >= 0 and cell_id < side_up_source_threshold_by_id.size() else 128
-
-
 func low_fill_decay_threshold(cell_id: int) -> int:
 	return int(low_fill_decay_threshold_by_id[cell_id]) if cell_id >= 0 and cell_id < low_fill_decay_threshold_by_id.size() else 0
 
@@ -162,6 +162,7 @@ func _resize_tables(size: int) -> void:
 	motion_by_id.resize(size)
 	solid_by_id.resize(size)
 	passable_by_id.resize(size)
+	density_by_id.resize(size)
 	moving_solid_fill_threshold_by_id.resize(size)
 	can_fall_by_id.resize(size)
 	can_side_down_by_id.resize(size)
@@ -172,7 +173,6 @@ func _resize_tables(size: int) -> void:
 	side_up_rate_by_id.resize(size)
 	min_fill_difference_by_id.resize(size)
 	side_flow_offset_by_id.resize(size)
-	side_up_source_threshold_by_id.resize(size)
 	low_fill_decay_threshold_by_id.resize(size)
 	low_fill_decay_rate_by_id.resize(size)
 	fill_color_by_id.resize(size)

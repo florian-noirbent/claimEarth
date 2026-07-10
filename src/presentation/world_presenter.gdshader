@@ -1,6 +1,7 @@
 shader_type canvas_item;
 
 uniform sampler2D world_data : filter_nearest;
+uniform sampler2D even_world : filter_nearest;
 uniform sampler2D style_data : filter_nearest;
 uniform sampler2D terrain_properties : filter_nearest;
 uniform sampler2D edge_style_data : filter_nearest;
@@ -138,6 +139,10 @@ vec4 sample_world_cell(vec2 cell) {
 	return texture(world_data, (cell + vec2(0.5)) / world_size);
 }
 
+vec4 sample_even_cell(vec2 cell) {
+	return texture(even_world, (cell + vec2(0.5)) / world_size);
+}
+
 float terrain_kind(vec4 terrain) {
 	return floor(terrain.r * 255.0 + 0.5);
 }
@@ -243,6 +248,24 @@ bool has_same_source(vec2 cell, float cell_kind, int side) {
 	return source.g > 0.0 && abs(terrain_kind(source) - cell_kind) < 0.5;
 }
 
+bool has_even_phase_vertical_source(vec2 cell, float cell_kind) {
+	vec2 above_cell = neighbor_for_edge(cell, 4);
+	if (!in_world(above_cell)) {
+		return false;
+	}
+	vec4 even_above = sample_even_cell(above_cell);
+	vec4 even_current = sample_even_cell(cell);
+	vec4 final_current = sample_world_cell(cell);
+	float even_current_kind = terrain_kind(even_current);
+	if (even_above.g <= 0.0 || abs(terrain_kind(even_above) - cell_kind) > 0.5) {
+		return false;
+	}
+	if (even_current_kind > 0.5 && abs(even_current_kind - cell_kind) > 0.5) {
+		return false;
+	}
+	return final_current.g > even_current.g;
+}
+
 float source_stream_mask(vec2 local, float fill_amount, bool above_source, bool left_source, bool right_source) {
 	float width = mix(0.22, 0.72, clamp(fill_amount, 0.0, 1.0)) * hex_radius;
 	float softness = max(2.0, hex_radius * 0.18);
@@ -339,6 +362,33 @@ vec4 render_liquid_above_partial_cell(vec2 cell, vec2 local) {
 	return render_liquid(above_cell, cell_kind, style, local, 1.0, false, 1.0);
 }
 
+float vertical_trail_mask(vec2 local, float fill_amount) {
+	float width = mix(0.16, 0.42, clamp(fill_amount, 0.0, 1.0)) * hex_radius;
+	float softness = max(2.0, hex_radius * 0.18);
+	return 1.0 - smoothstep(width, width + softness, abs(local.x));
+}
+
+vec4 render_even_phase_liquid_trail(vec2 cell, vec2 local) {
+	vec4 even_terrain = sample_even_cell(cell);
+	float cell_kind = terrain_kind(even_terrain);
+	if (cell_kind <= 0.5 || even_terrain.g <= 0.0 || terrain_motion(cell_kind) <= 1.5) {
+		return vec4(0.0);
+	}
+	vec2 below_cell = neighbor_for_edge(cell, 1);
+	if (!in_world(below_cell)) {
+		return vec4(0.0);
+	}
+	vec4 even_below = sample_even_cell(below_cell);
+	vec4 final_below = sample_world_cell(below_cell);
+	if (abs(terrain_kind(final_below) - cell_kind) > 0.5 || final_below.g <= even_below.g) {
+		return vec4(0.0);
+	}
+	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
+	vec4 style = texture(style_data, style_uv);
+	float mask = vertical_trail_mask(local, even_terrain.g);
+	return render_liquid(cell, cell_kind, style, local, even_terrain.g, true, mask);
+}
+
 void fragment() {
 	vec4 out_color = vec4(0.0);
 	vec2 cell = world_to_offset(world_pos);
@@ -346,7 +396,10 @@ void fragment() {
 		vec4 terrain = sample_world_cell(cell);
 		float cell_kind = terrain_kind(terrain);
 		vec2 local = world_pos - center_for_offset(cell);
-		if (cell_kind > 0.5 && inside_hex(local)) {
+		if (inside_hex(local)) {
+			if (cell_kind <= 0.5) {
+				out_color = render_even_phase_liquid_trail(cell, local);
+			} else {
 			vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
 			vec4 style = texture(style_data, style_uv);
 			vec4 properties = texture(terrain_properties, style_uv);
@@ -357,7 +410,7 @@ void fragment() {
 				float liquid_mask = 1.0;
 				if (fill_amount < 0.999) {
 					if (stream) {
-						bool above_source = has_same_source(cell, cell_kind, 4);
+						bool above_source = has_same_source(cell, cell_kind, 4) || has_even_phase_vertical_source(cell, cell_kind);
 						bool left_source = has_same_source(cell, cell_kind, 3);
 						bool right_source = has_same_source(cell, cell_kind, 5);
 						liquid_mask = source_stream_mask(local, fill_amount, above_source, left_source, right_source);
@@ -398,6 +451,7 @@ void fragment() {
 						out_color = mix(out_color, vec4(edge_style.rgb, 1.0), edge_alpha);
 					}
 				}
+			}
 			}
 		}
 	}

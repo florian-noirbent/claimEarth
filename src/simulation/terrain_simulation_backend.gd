@@ -11,10 +11,6 @@ func queue_change(_change: CellChange) -> void:
 	pass
 
 
-func schedule(_active_chunks: Array[Vector2i]) -> void:
-	pass
-
-
 func advance(_time_budget_usec: int) -> SimulationProgress:
 	return SimulationProgress.new()
 
@@ -29,6 +25,22 @@ func read_region(_region: Rect2i) -> PackedByteArray:
 
 func shutdown() -> void:
 	pass
+
+
+func attach_to(_parent: Node) -> void:
+	pass
+
+
+func active_texture() -> Texture2D:
+	return null
+
+
+func presentation_texture() -> Texture2D:
+	return active_texture()
+
+
+func presentation_even_texture() -> Texture2D:
+	return presentation_texture()
 
 
 func notify_external_changes(_change_set: TerrainChangeSet) -> void:

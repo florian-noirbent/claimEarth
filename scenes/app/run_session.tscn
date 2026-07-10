@@ -14,6 +14,7 @@
 [ext_resource type="Resource" path="res://config/terrain/catalog.tres" id="11_terrain_catalog"]
 [ext_resource type="Resource" path="res://config/items/catalog.tres" id="12_item_catalog"]
 [ext_resource type="Shader" uid="uid://bnouge1mepmdx" path="res://src/presentation/world_presenter.gdshader" id="13_terrain_shader"]
+[ext_resource type="Shader" uid="uid://prjnm80y6o23" path="res://src/simulation/render_texture_simulation.gdshader" id="14_simulation_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3w1ny"]
 shader = ExtResource("4_87qye")
@@ -44,6 +45,7 @@ unique_name_in_owner = true
 script = ExtResource("3_world_controller")
 terrain_catalog = ExtResource("11_terrain_catalog")
 item_catalog = ExtResource("12_item_catalog")
+simulation_shader = ExtResource("14_simulation_shader")
 
 [node name="WorldBackground" type="Node2D" parent="." unique_id=1606310285]
 unique_name_in_owner = true

@@ -1,18 +1,7 @@
 extends GutTest
 
-const WorldGridTextureScript = preload("res://src/presentation/world_grid_texture.gd")
 const WorldPresenterShader = preload("res://src/presentation/world_presenter.gdshader")
-
-
-func test_world_grid_texture_packs_committed_cell_id_fill_and_lighting() -> void:
-	var world := WorldGrid.new(WorldDimensions.new(3, 2), FixtureLoader.terrain_id("Air"))
-	world.set_committed_by_offset(1, 0, FixtureLoader.terrain_id("Water"), 128)
-	var grid_texture = WorldGridTextureScript.new()
-
-	grid_texture.upload_full(world)
-
-	assert_eq(grid_texture.texel_bytes(1, 0), PackedByteArray([FixtureLoader.terrain_id("Water"), 128, 255, 255]))
-	assert_eq(grid_texture.upload_count, 1)
+const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
 
 
 func test_world_presenter_uses_single_shader_renderer_and_uploads_full_grid() -> void:
@@ -28,7 +17,7 @@ func test_world_presenter_uses_single_shader_renderer_and_uploads_full_grid() ->
 	assert_eq(presenter.get_child_count(), 1)
 	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
 	assert_eq(material.shader, WorldPresenterShader)
-	assert_eq(presenter.grid_texture().texel_bytes(2, 2)[0], FixtureLoader.terrain_id("Stone"))
+	assert_eq(_world_pixel_bytes(world, 2, 2)[0], FixtureLoader.terrain_id("Stone"))
 	assert_not_null(presenter.material_atlas_texture())
 
 
@@ -112,13 +101,13 @@ func test_world_presenter_upload_world_reflects_committed_grid_changes() -> void
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
 	presenter.configure(world, registry)
-	var before_uploads: int = presenter.grid_texture().upload_count
+	var before_revision: int = world.texture_revision
 
 	world.set_committed_by_offset(5, 5, FixtureLoader.terrain_id("Sand"), 127)
 	presenter.upload_world()
 
-	assert_eq(presenter.grid_texture().upload_count, before_uploads + 1)
-	assert_eq(presenter.grid_texture().texel_bytes(5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 255, 255]))
+	assert_eq(world.texture_revision, before_revision + 1)
+	assert_eq(_world_pixel_bytes(world, 5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 255, 255]))
 
 
 func test_world_presenter_keeps_single_renderer_after_repeated_uploads() -> void:
@@ -131,7 +120,26 @@ func test_world_presenter_keeps_single_renderer_after_repeated_uploads() -> void
 		presenter.upload_world()
 
 	assert_eq(presenter.total_renderer_nodes(), 1)
-	assert_eq(presenter.grid_texture().upload_count, 11)
+	assert_eq(world.texture_revision, 12)
+
+
+func test_world_presenter_can_bind_backend_phase_textures() -> void:
+	var presenter := _presenter()
+	add_child_autofree(presenter)
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(2, 0, FixtureLoader.terrain_id("Sand"))
+	presenter.configure(world, FixtureLoader.terrain_registry())
+	var backend = RenderTextureSimulationBackendScript.new()
+	backend.initialize(world, FixtureLoader.terrain_registry(), 123)
+	add_child_autofree(backend.render_root())
+
+	for _pass in range(RenderTextureSimulationBackendScript.PASS_COUNT):
+		backend.advance(0)
+	presenter.use_simulation_textures(backend.presentation_texture(), backend.presentation_even_texture())
+
+	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_eq(material.get_shader_parameter("world_data"), backend.presentation_texture())
+	assert_eq(material.get_shader_parameter("even_world"), backend.presentation_even_texture())
 
 
 func _presenter() -> WorldPresenter:
@@ -144,6 +152,16 @@ func _texture_byte(texture: ImageTexture, x: int, channel: int) -> int:
 	var pixel := texture.get_image().get_pixel(x, 0)
 	var channels := [pixel.r, pixel.g, pixel.b, pixel.a]
 	return roundi(channels[channel] * 255.0)
+
+
+func _world_pixel_bytes(world: WorldGrid, x: int, y: int) -> PackedByteArray:
+	var pixel := world.cell_image.get_pixel(x, y)
+	return PackedByteArray([
+		_color_byte(pixel.r),
+		_color_byte(pixel.g),
+		_color_byte(pixel.b),
+		_color_byte(pixel.a),
+	])
 
 
 func _color_byte(value: float) -> int:

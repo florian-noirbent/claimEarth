@@ -10,6 +10,7 @@
 script = ExtResource("1_14pcm")
 stable_id = 4
 display_name = "Water"
+block_density = 64
 is_solid = false
 is_passable = true
 is_hookable = false

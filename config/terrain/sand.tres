@@ -10,6 +10,7 @@
 script = ExtResource("1_4t44v")
 stable_id = 3
 display_name = "Sand"
+block_density = 160
 is_solid = true
 moving_solid_fill_threshold = 128
 is_passable = false

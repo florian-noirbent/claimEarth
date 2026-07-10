@@ -9,7 +9,7 @@ var dirty_rect := Rect2i()
 var _dimensions: WorldDimensions
 
 
-func _init(dimensions: WorldDimensions = null, _chunk_width: int = 20, _chunk_height: int = 32) -> void:
+func _init(dimensions: WorldDimensions = null) -> void:
 	_dimensions = dimensions
 
 

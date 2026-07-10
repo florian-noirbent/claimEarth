@@ -1,6 +1,6 @@
 # World
 
-`src/world` contains packed terrain state and grid math. `WorldGrid` is authoritative and stores committed/working terrain IDs plus committed/working fill amounts in packed byte arrays.
+`src/world` contains packed terrain state and grid math. `WorldGrid` is authoritative and stores one RGBA8 terrain cell buffer plus its GPU texture mirror.
 
 `WorldDimensions`, `HexCoord`, and presentation `HexMetrics` define indexing and hex coordinate conversion. `CellChange`, `TerrainChangeSet`, and `DirtyRegion` describe what changed so simulation and presentation can update exact regions.
 

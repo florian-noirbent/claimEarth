@@ -76,7 +76,7 @@ func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 	var result := generator.generate(profile, registry, 222)
 	assert_not_null(result)
 	assert_eq(result.spawn_rect.position.y, 0)
-	assert_eq(result.spawn_rect.size.y, 101)
+	assert_eq(result.spawn_rect.size.y, _spawn_shaft_target_depth(profile) + 1)
 
 	for row in range(profile.depth - 2, profile.depth):
 		for col in range(profile.width):
@@ -95,7 +95,8 @@ func test_generated_world_uses_only_registered_ids() -> void:
 	var result := generator.generate(profile, registry, 999)
 	assert_not_null(result)
 
-	for cell_id in result.world.committed_cells:
+	for index in range(result.world.dimensions.cell_count()):
+		var cell_id := result.world.get_committed_by_index(index)
 		assert_true(registry.has_definition(cell_id), "Unknown terrain id %d" % cell_id)
 
 
@@ -169,7 +170,7 @@ func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
 				assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
 
 		assert_eq(result.spawn_rect.position.y, 0)
-		assert_eq(result.spawn_rect.size.y, 101)
+		assert_eq(result.spawn_rect.size.y, _spawn_shaft_target_depth(profile) + 1)
 		var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
 		assert_eq(result.world.get_committed_by_offset(spawn_col, 0), air_id)
 		assert_true(_row_has_air(result.world, air_id, 100))
@@ -211,8 +212,8 @@ func test_spawn_shaft_steepness_changes_shape_without_changing_target_depth() ->
 	var winding_result := generator.generate(winding_profile, registry, SeedUtils.seed_from_text("spawn-steepness"))
 	assert_not_null(steep_result)
 	assert_not_null(winding_result)
-	assert_eq(steep_result.spawn_rect.size.y, 101)
-	assert_eq(winding_result.spawn_rect.size.y, 101)
+	assert_eq(steep_result.spawn_rect.size.y, _spawn_shaft_target_depth(steep_profile) + 1)
+	assert_eq(winding_result.spawn_rect.size.y, _spawn_shaft_target_depth(winding_profile) + 1)
 	assert_ne(_air_cells_for_rows(steep_result.world, FixtureLoader.terrain_id("Air"), 0, 100), _air_cells_for_rows(winding_result.world, FixtureLoader.terrain_id("Air"), 0, 100))
 
 
@@ -457,3 +458,8 @@ func _spawn_pass_for_profile(profile: GenerationProfile) -> GenerationPassResour
 		if pass_resource != null and pass_resource.get_pass_type_name() == "Spawn Shaft":
 			return pass_resource
 	return null
+
+
+func _spawn_shaft_target_depth(profile: GenerationProfile) -> int:
+	var spawn_pass := _spawn_pass_for_profile(profile)
+	return mini(int(spawn_pass.get("shaft_target_depth")), profile.depth - 3) if spawn_pass != null else 0

@@ -45,7 +45,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 ## World
 
-- The default map is 100 columns by 2000 rows of flat-top hexes.
+- The default map is 100 columns by 512 rows of flat-top hexes.
 - The final two rows are stone. Horizontal escape is prevented by invisible player
   bounds rather than visible stone columns.
 - The camera is horizontally locked to the map and only follows downward.
@@ -53,9 +53,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
   layers base cave noise, typed hazard pocket instances for sand/water/lava, a
   noisy surface spawn shaft, and bottom sealing.
-- The player starts at surface depth 0 in a roughly four-cell-wide zig-zag shaft
-  with noisy edges and occasional broken segments that winds down to about depth
-  100.
+- The player starts at surface depth 0 in a roughly six-cell-wide zig-zag shaft
+  with noisy edges and occasional broken segments that winds down to the configured
+  shaft target depth.
 - The generation profile and pass tuning live in
   `config/generation/default_profile.tres`.
 
@@ -71,21 +71,15 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; lethal at 10% fill or more | Detonates bombs |
 
 Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
-partial fill controls movement and rendering. Moving terrain tries to fall first,
-then flow side-down, then side-up when its motion resource allows it. Side flow
-uses a cellular automata fill offset: side-down flow stops before crossing
-`source_fill == target_fill - side_flow_offset`, and side-up flow stops before
-crossing `source_fill == target_fill + side_flow_offset`. Liquids use a
-geometry-matched offset so settled pools render with a flat surface across
-staggered hex columns. If both side targets can receive fluid in a tick, the
-transfer splits evenly. Water uses fast side-flow rates; lava uses the same rule
-with slower rates and a minimum fill difference. Water/lava contact creates
-stone whenever both have nonzero fill. Liquids below their configured low-fill
-decay threshold lose one fill unit per simulation tick. Settled liquids do not
-oscillate indefinitely.
-Terrain simulation targets a commit every 0.1 seconds; simulation and presentation
-work are spread across frames so player physics, projectiles, and input remain
-responsive.
+partial fill controls movement and rendering. Terrain simulation advances as a
+six-pass cellular automata tick spread across six frames: vertical even,
+down-right even, down-left even, then the same three odd connection pairs. Each pair resolves
+from its two source cells so a cell is not written by multiple pairs in one pass.
+Block density, configured on terrain definitions, resolves fall and displacement
+priority rather than terrain IDs. Water/lava contact creates stone whenever both
+have nonzero fill. The renderer uses the completed even phase only to bridge proven
+vertical liquid falls in the final state. Simulation and presentation work remain spread across frames so
+player physics, projectiles, and input stay responsive.
 
 ## Player And Camera
 

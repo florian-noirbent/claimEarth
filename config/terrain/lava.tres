@@ -10,6 +10,7 @@
 script = ExtResource("1_0dxqn")
 stable_id = 5
 display_name = "Lava"
+block_density = 96
 is_solid = false
 is_passable = true
 is_hookable = false

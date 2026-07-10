@@ -8,10 +8,11 @@ signal run_ready(next_seed: int)
 signal player_died(cause: StringName)
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
-const CooperativeChunkBackendScript = preload("res://src/simulation/cooperative_chunk_backend.gd")
+const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
 
 @export var terrain_catalog: TerrainCatalog
 @export var item_catalog: ItemCatalog
+@export var simulation_shader: Shader
 
 var _profile: GenerationProfile
 var _player_scene: PackedScene
@@ -23,12 +24,9 @@ var _terrain_registry: TerrainRegistry = TerrainRegistry.new()
 var _item_registry: ItemRegistry = ItemRegistry.new()
 var _generation_task: WorldGenerationTask = WorldGenerationTask.new()
 var _generation_result: WorldGenerationResult
-var _chunk_activity_index: ChunkActivityIndex
 var _player: PlayerController
 var _grapple_anchor_query: WorldGrappleAnchorQuery = WorldGrappleAnchorQueryScript.new()
-var _simulation_backend: TerrainSimulationBackend = CooperativeChunkBackendScript.new()
-var _simulation_accumulator := 0.0
-var _simulation_tick_requested := false
+var _simulation_backend: TerrainSimulationBackend = RenderTextureSimulationBackendScript.new()
 var _generation_serial := 0
 
 
@@ -48,9 +46,6 @@ func start_run(run_seed: int) -> void:
 	var serial := _generation_serial
 	_clear_player()
 	_generation_result = null
-	_chunk_activity_index = null
-	_simulation_accumulator = 0.0
-	_simulation_tick_requested = false
 	_world_presenter.reset()
 	var generated_result: WorldGenerationResult = await _generation_task.generate_async(self, _profile, _terrain_registry, run_seed)
 	if serial != _generation_serial or generated_result == null:
@@ -69,8 +64,7 @@ func start_preview(run_seed: int) -> void:
 		return
 	_generation_result = generated_result
 	_clear_player()
-	_chunk_activity_index = ChunkActivityIndex.new(generated_result.world.dimensions)
-	_world_presenter.configure(generated_result.world, _terrain_registry, _chunk_activity_index)
+	_world_presenter.configure(generated_result.world, _terrain_registry)
 	_configure_marker_bounds()
 
 
@@ -86,21 +80,13 @@ func set_active(is_active: bool) -> void:
 func advance(delta: float) -> void:
 	if _player == null or _generation_result == null:
 		return
-	var player_offset := HexMetrics.offset_for_world(_player.global_position, _world_presenter.hex_radius)
-	var visible_start_row := maxi(0, player_offset.y - int(_world_presenter.visible_row_count / 3))
-	if _chunk_activity_index != null:
-		_simulation_backend.schedule(_chunk_activity_index.visible_chunks_for_depth_window(visible_start_row, _world_presenter.visible_row_count))
-	_simulation_accumulator += delta
-	if _simulation_accumulator >= _simulation_backend.commit_interval_seconds:
-		_simulation_accumulator = fmod(_simulation_accumulator, _simulation_backend.commit_interval_seconds)
-		_simulation_tick_requested = true
-	if _simulation_tick_requested or _simulation_backend.is_tick_in_progress():
-		var progress := _simulation_backend.advance(1500)
-		if progress.step_completed:
-			_simulation_tick_requested = false
-		var commit: SimulationCommit = _simulation_backend.commit_if_ready()
-		if commit.did_commit:
-			_world_presenter.upload_world()
+	_simulation_backend.advance(0)
+	var commit: SimulationCommit = _simulation_backend.commit_if_ready()
+	if commit.did_commit:
+		_world_presenter.use_simulation_textures(
+			_simulation_backend.presentation_texture(),
+			_simulation_backend.presentation_even_texture()
+		)
 
 
 func player() -> PlayerController:
@@ -127,10 +113,6 @@ func item_registry() -> ItemRegistry:
 	return _item_registry
 
 
-func chunk_activity_index() -> ChunkActivityIndex:
-	return _chunk_activity_index
-
-
 func refresh_terrain_presentation(_change_set: TerrainChangeSet = null) -> void:
 	_world_presenter.upload_world()
 
@@ -140,8 +122,7 @@ func spawn_rect() -> Rect2i:
 
 
 func _attach_run_world() -> void:
-	_chunk_activity_index = ChunkActivityIndex.new(_generation_result.world.dimensions)
-	_world_presenter.configure(_generation_result.world, _terrain_registry, _chunk_activity_index)
+	_world_presenter.configure(_generation_result.world, _terrain_registry)
 	_ensure_player()
 
 
@@ -165,8 +146,10 @@ func _ensure_player() -> void:
 	)
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_generation_result.world, _terrain_registry, _world_presenter.hex_radius)
+	if _simulation_backend.has_method("set_simulation_shader"):
+		_simulation_backend.set_simulation_shader(simulation_shader)
 	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
-	_simulation_backend.schedule([])
+	_simulation_backend.attach_to(self)
 	_configure_world_bounds()
 	set_active(false)
 

@@ -59,30 +59,19 @@ func _make_world(scenario_name: String) -> WorldGrid:
 			for row in range(1, ACTIVE_ROWS, 2):
 				for col in range(1, WIDTH - 1):
 					world.set_committed_by_offset(col, row, sand if (col + row) % 3 else water)
-	world.working_cells = world.committed_cells.duplicate()
-	world.working_fill = world.committed_fill.duplicate()
 	return world
 
 
 func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> Dictionary:
-	var original := source_world.committed_cells.duplicate()
-	var original_fill := source_world.committed_fill.duplicate()
+	var original := source_world.copy_rgba_bytes()
 	var initial_tick_samples: Array[int] = []
 	var steady_tick_samples: Array[int] = []
-	var build_samples: Array[int] = []
 	var changed_counts: Array[int] = []
-	var dirty_chunk_counts: Array[int] = []
-	var collision_chunk_counts: Array[int] = []
 	for _sample in range(SAMPLE_COUNT):
 		var world := WorldGrid.new(source_world.dimensions, 0)
-		world.committed_cells = original.duplicate()
-		world.working_cells = original.duplicate()
-		world.committed_fill = original_fill.duplicate()
-		world.working_fill = original_fill.duplicate()
-		var backend := CooperativeChunkBackend.new()
+		world.replace_from_rgba_bytes(original)
+		var backend := RenderTextureSimulationBackend.new()
 		backend.initialize(world, registry, 12345)
-		var activity := ChunkActivityIndex.new(world.dimensions)
-		backend.schedule(activity.visible_chunks_for_depth_window(0, ACTIVE_ROWS))
 		var started := Time.get_ticks_usec()
 		var progress := backend.advance(1000000)
 		while not progress.step_completed:
@@ -90,17 +79,6 @@ func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> 
 		initial_tick_samples.append(Time.get_ticks_usec() - started)
 		var commit := backend.commit_if_ready()
 		changed_counts.append(commit.changed_cell_count())
-		if commit.did_commit:
-			activity.mark_change_set(commit.change_set)
-			dirty_chunk_counts.append(commit.change_set.chunk_masks.size())
-			collision_chunk_counts.append(0)
-			started = Time.get_ticks_usec()
-			_build_dirty_chunks(world, registry, activity, commit.revision)
-			build_samples.append(Time.get_ticks_usec() - started)
-		else:
-			dirty_chunk_counts.append(0)
-			collision_chunk_counts.append(0)
-			build_samples.append(0)
 		started = Time.get_ticks_usec()
 		progress = backend.advance(1000000)
 		while not progress.step_completed:
@@ -109,30 +87,8 @@ func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> 
 	return {
 		"initial_tick_usec": _stats(initial_tick_samples),
 		"steady_tick_usec": _stats(steady_tick_samples),
-		"chunk_data_build_usec": _stats(build_samples),
 		"changed_cells": _stats(changed_counts),
-		"dirty_chunks": _stats(dirty_chunk_counts),
-		"collision_chunks": _stats(collision_chunk_counts),
 	}
-
-
-func _build_dirty_chunks(world: WorldGrid, registry: TerrainRegistry, activity: ChunkActivityIndex, revision: int) -> void:
-	var metadata := CompiledTerrainData.compile(registry)
-	var visible_lookup := {}
-	for chunk in activity.visible_chunks_for_depth_window(0, ACTIVE_ROWS):
-		visible_lookup[chunk] = true
-	var dirty_work := activity.consume_dirty_work()
-	for coord_variant in dirty_work.keys():
-		var coord := coord_variant as Vector2i
-		if not visible_lookup.has(coord):
-			continue
-		var chunk_rect := activity.chunk_rect(coord)
-		var snapshot_rect := chunk_rect.grow(1).intersection(Rect2i(Vector2i.ZERO, Vector2i(world.dimensions.width, world.dimensions.depth)))
-		var job := ChunkBuildJob.new()
-		var work := dirty_work[coord] as Dictionary
-		job.configure(coord, revision, int(work["mask"]) & TerrainLayerMask.ALL_VISUAL, chunk_rect, snapshot_rect, world.copy_committed_region(snapshot_rect), world.copy_committed_fill_region(snapshot_rect), metadata, 16.0, world.dimensions.width)
-		while not job.advance(1000000):
-			pass
 
 
 func _stats(values: Array[int]) -> Dictionary:

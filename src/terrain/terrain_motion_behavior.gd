@@ -14,6 +14,5 @@ extends Resource
 @export_range(0, 255, 1) var side_up_rate := 0
 @export_range(0, 255, 1) var min_fill_difference := 0
 @export_range(0, 255, 1) var side_flow_offset := 50
-@export_range(0, 255, 1) var side_up_source_threshold := 128
 @export_range(0, 255, 1) var low_fill_decay_threshold := 0
 @export_range(0, 255, 1) var low_fill_decay_rate := 0

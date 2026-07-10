@@ -9,7 +9,7 @@ historical build plan.
 - Single-threaded Web export is the required baseline.
 - No C# runtime, GDExtension, or required compute/thread support.
 - Terrain is a fixed packed grid; scene nodes exist only for active gameplay and
-  visible chunks.
+  bounded world presentation.
 
 ## Repository Map
 
@@ -77,19 +77,21 @@ cancelled and freed.
 
 ## World Data And Presentation
 
-`WorldGrid` owns four `PackedByteArray` buffers:
+`WorldGrid` owns the packed terrain state as one RGBA8 cell buffer plus an
+`ImageTexture` mirror:
 
-- `committed_cells`: authoritative state read by gameplay and presentation.
-- `working_cells`: candidate state produced by terrain simulation.
-- `committed_fill`: authoritative 0-255 fill amount per cell.
-- `working_fill`: candidate fill amount produced by terrain simulation.
+- `R`: terrain stable ID.
+- `G`: 0-255 fill amount.
+- `B`: lighting/reserved byte.
+- `A`: flags/reserved byte.
+
+CPU gameplay reads the packed RAM buffer through `WorldGrid` accessors. At runtime,
+rendering samples the backend's final GPU simulation texture directly; the packed
+`WorldGrid` texture remains the CPU snapshot mirror for gameplay writes, previews,
+and reset state.
 
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
-
-`ChunkActivityIndex` uses 20x32-cell chunks by default. It computes the depth
-window used by simulation scheduling; rendering no longer consumes chunk dirty
-state.
 
 `WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
 0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
@@ -98,12 +100,11 @@ materials with fill textures are packed into a material-index atlas for shader
 sampling. Edge resources are retained as assets/resources but are not part of the
 current terrain renderer.
 
-`WorldPresenter` draws one shader-driven world quad. `WorldGridTexture` mirrors
-committed cell ID, fill amount, and a reserved lighting byte into an RGBA8 data
-texture. The fragment shader converts pixels to hex grid coordinates, samples the
-grid texture, samples terrain style/material data, and draws the matching terrain
-color or atlas texture. Terrain edge outlines are shader-rendered from resource
-style data; neighbor blending is intentionally deferred.
+`WorldPresenter` draws one shader-driven world quad. The fragment shader converts
+pixels to hex grid coordinates, samples the `WorldGrid` RGBA8 terrain texture,
+samples terrain style/material data, and draws the matching terrain color or atlas
+texture. Terrain edge outlines are shader-rendered from resource style data;
+neighbor blending is intentionally deferred.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
@@ -111,52 +112,43 @@ then tests circular bodies against nearby solid hex polygons from `HexMetrics`.
 `TerrainBodyMotionSolver` resolves circular body movement, floor support, and
 step-up behavior without creating physics-server shapes or chunk collider nodes.
 
-Gameplay mutations currently update committed cells and fill directly through
-focused services such as `ExplosionService`, then publish a `TerrainChangeSet`.
-Change sets contain exact changed cells and their dirty rectangle, wake nearby
-simulation cells, refresh the terrain texture, and invalidate an unfinished
-simulation snapshot before it can overwrite the mutation.
+Gameplay mutations update `WorldGrid`'s packed CPU buffer directly through focused
+services such as `ExplosionService`, then publish a `TerrainChangeSet`. Change sets
+contain exact changed cells and their dirty rectangle, refresh the terrain texture,
+and cancel any unfinished simulation tick so mixed pre-mutation and post-mutation
+passes cannot overwrite authoritative gameplay writes.
 
 ## Terrain And Simulation
 
-`TerrainDefinition` resources contain identity, collision/passability, visual style,
-hookability, and strategy resources for motion, hazards, and blast response. The
-catalog is `config/terrain/catalog.tres`.
+`TerrainDefinition` resources contain identity, block density,
+collision/passability, visual style, hookability, and strategy resources for motion,
+hazards, and blast response. The catalog is `config/terrain/catalog.tres`.
 
 Call sites must not branch on terrain ID, display name, script class, or resource
 path. Add behavior through the existing strategy/resource boundary. The simulation
 backend may compile registry data into IDs for its hot loop.
 
-`TerrainSimulationBackend` defines initialization, scheduling, advancement, commit,
-region read, and shutdown. `CooperativeChunkBackend` is the implemented backend.
-`RunWorldController` schedules chunks around the player's visible depth window and
-requests deterministic ticks at a 0.1-second cadence.
+`TerrainSimulationBackend` defines initialization, advancement, commit, region
+read, render attachment, active texture access, mutation notification, and shutdown.
+`RenderTextureSimulationBackend` is the implemented backend. `RunWorldController`
+advances at most one CA pass per gameplay frame while playing.
 
-The cooperative backend compiles resource definitions into packed ID-indexed motion,
-directional transfer, fill-sensitive solidity, passability, and color
-tables. Moving terrain uses one fill-transfer system for sand, water, lava, and
-future moving materials: fall first, then side-down, then side-up when the motion
-resource allows it. Transfer rates, minimum fill differences, the side-flow fill offset,
-low-fill decay thresholds/rates, and optional falling displacement of passable
-moving terrain live on motion resources. Side transfers clamp to the configured
-offset equilibrium and split between both side targets when both can receive material. Liquid resources use a
-geometry-matched side-flow offset so the equilibrium corresponds to a visually
-flat surface across staggered flat-top hex columns. Moving solid terrain can also
-define a fill threshold for collision, so partial material below that threshold
-can skip collider edges. Newly visible chunks receive one bounded motion scan;
-afterward only active cells and their neighbors remain awake. Ticks preserve a
-deterministic order while
-`advance(time_budget_usec)` spreads work across frames. Commits contain exact
-changed cells and fill changes rather than one broad dirty area.
+The backend compiles resource definitions into packed ID-indexed motion,
+directional transfer, block density, fill-sensitive solidity, passability, and
+color tables. One logical simulation tick is six pairwise CA passes over the full
+world: the three even connection pairs, then the three odd pairs. The backend
+retains the GPU result after the even phase in alternating render targets alongside
+the final odd-phase texture, so the next tick cannot overwrite a displayed trail.
+`WorldPresenter` renders final terrain only, consulting the even texture solely to
+draw verified vertical liquid trails through final-air cells. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
+liquid contact or gameplay mutation. Commits contain exact changed cells and fill
+changes for the completed six-pass tick.
 
-`CooperativeChunkBackend` owns scheduling, time slicing, commit production, and
-main-thread `WorldGrid` commits. Per-cell work is delegated to data-only
-collaborators: `TerrainSimulationContext` wraps the working buffers and wake/touch
-sets, `TerrainMotionStepper` owns fall/side-down/side-up ordering, and
-`TerrainTransferSolver` owns transfer math, liquid contact, and sideways-first
-falling displacement of passable moving terrain. These collaborators must stay
-free of nodes, signals, renderer, physics-body, UI, and mutable resource
-dependencies so the simulation step remains portable to a worker boundary.
+Gameplay writes are authoritative. External `TerrainChangeSet`s cancel any
+unfinished six-pass tick, upload the patched packed world texture, and restart
+simulation from that known state. This keeps player physics and item effects
+independent from the visual simulation cadence while preventing simulation races
+with explosions or digging.
 
 Threaded and compute backends are not implemented. A future threaded backend must
 reuse the plain simulation/build inputs and outputs, keep scene-tree and resource
@@ -248,7 +240,7 @@ model it as a server secret. Never use the live service from automated tests.
 
 1. Add deterministic counters/fixtures before optimizing.
 2. Keep player physics independent from terrain commit cadence.
-3. Dirty only affected chunks and keep renderer node counts bounded.
+3. Keep renderer node counts bounded and avoid per-cell scene nodes.
 4. Run both fast and performance suites; use the Web milestone gate for renderer or
    export changes.
 

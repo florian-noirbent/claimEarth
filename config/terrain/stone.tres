@@ -10,6 +10,7 @@
 script = ExtResource("1_erfmy")
 stable_id = 1
 display_name = "Stone"
+block_density = 255
 is_solid = true
 is_passable = false
 is_hookable = true

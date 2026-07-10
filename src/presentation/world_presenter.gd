@@ -16,14 +16,12 @@ extends Node2D
 @export_range(0.0, 1.0, 0.01) var fluid_surface_glow_strength := 0.35
 @export_range(0.0, 2.0, 0.01) var fluid_hot_glow_strength := 0.65
 
-const WorldGridTextureScript = preload("res://src/presentation/world_grid_texture.gd")
 const MATERIAL_ATLAS_GUTTER_SIZE := 1
 const EDGE_WIDTH_NORMALIZATION := 16.0
 
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _metadata: CompiledTerrainData
-var _grid_texture = WorldGridTextureScript.new()
 var _style_texture: ImageTexture
 var _property_texture: ImageTexture
 var _edge_style_texture: ImageTexture
@@ -42,7 +40,6 @@ func reset() -> void:
 	_world = null
 	_terrain_registry = null
 	_metadata = null
-	_grid_texture = WorldGridTextureScript.new()
 	_style_texture = null
 	_property_texture = null
 	_edge_style_texture = null
@@ -54,7 +51,7 @@ func reset() -> void:
 		_polygon.material = null
 
 
-func configure(world: WorldGrid, terrain_registry: TerrainRegistry, _chunk_activity_index: ChunkActivityIndex = null) -> void:
+func configure(world: WorldGrid, terrain_registry: TerrainRegistry) -> void:
 	_world = world
 	_terrain_registry = terrain_registry
 	_metadata = CompiledTerrainData.compile(terrain_registry)
@@ -71,8 +68,16 @@ func configure(world: WorldGrid, terrain_registry: TerrainRegistry, _chunk_activ
 func upload_world() -> void:
 	if _world == null:
 		return
-	_grid_texture.upload_full(_world)
-	_material.set_shader_parameter("world_data", _grid_texture.texture)
+	_world.upload_cpu_snapshot_to_texture()
+	_material.set_shader_parameter("world_data", _world.texture())
+	_material.set_shader_parameter("even_world", _world.texture())
+
+
+func use_simulation_textures(final_texture: Texture2D, even_texture: Texture2D) -> void:
+	if final_texture == null or even_texture == null:
+		return
+	_material.set_shader_parameter("world_data", final_texture)
+	_material.set_shader_parameter("even_world", even_texture)
 
 
 func total_renderer_nodes() -> int:
@@ -80,7 +85,7 @@ func total_renderer_nodes() -> int:
 
 
 func grid_texture():
-	return _grid_texture
+	return _world.texture() if _world != null else null
 
 
 func material_atlas_texture() -> ImageTexture:
@@ -112,7 +117,8 @@ func _configure_shader() -> void:
 		_polygon.material = null
 		return
 	_material.shader = terrain_shader
-	_material.set_shader_parameter("world_data", _grid_texture.texture)
+	_material.set_shader_parameter("world_data", _world.texture())
+	_material.set_shader_parameter("even_world", _world.texture())
 	_material.set_shader_parameter("style_data", _style_texture)
 	_material.set_shader_parameter("terrain_properties", _property_texture)
 	_material.set_shader_parameter("edge_style_data", _edge_style_texture)
