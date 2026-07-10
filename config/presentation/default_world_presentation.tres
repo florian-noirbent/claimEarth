@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WorldPresentationConfig" format=3 uid="uid://dow2vhhcb5f5u"]
+
+[ext_resource type="Script" uid="uid://bmt3meui6avqm" path="res://src/presentation/world_presentation_config.gd" id="1_config"]
+[ext_resource type="Shader" uid="uid://bnouge1mepmdx" path="res://src/presentation/world_presenter.gdshader" id="2_terrain_shader"]
+[ext_resource type="Shader" uid="uid://dh5emhhc7vogy" path="res://src/presentation/world_background.gdshader" id="3_background_shader"]
+[ext_resource type="Texture2D" uid="uid://b67oyht43g8uu" path="res://assets/terrain/background.jpg" id="4_cave_texture"]
+[ext_resource type="Texture2D" uid="uid://c5pbegwgjdfju" path="res://assets/terrain/grassBand.png" id="5_grass_band"]
+
+[resource]
+script = ExtResource("1_config")
+terrain_shader = ExtResource("2_terrain_shader")
+exposed_edge_corner_radius = 10.25
+exposed_edge_jitter_strength = 2.75
+exposed_edge_jitter_scale = 0.22
+background_shader = ExtResource("3_background_shader")
+cave_texture = ExtResource("4_cave_texture")
+grass_band_texture = ExtResource("5_grass_band")

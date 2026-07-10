@@ -93,12 +93,13 @@ and reset state.
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 
-`WorldBackground` draws the run backdrop behind terrain: a sky gradient above depth
-0, a tiled grass transition band on the surface edge, and a shader-graded tiled cave
-texture below it. Terrain visual styles provide shader colors, and terrain
-materials with fill textures are packed into a material-index atlas for shader
-sampling. Edge resources are retained as assets/resources but are not part of the
-current terrain renderer.
+`WorldPresentationConfig` owns shared visual tuning for playable runs and the static
+World Gen preview: terrain/fluid shader controls plus the sky, grass, and cave
+backdrop. `WorldBackground` draws that backdrop behind terrain. Editing the shared
+resource refreshes active renderer parameters without regenerating the world.
+Terrain visual styles provide shader colors, and terrain materials with fill
+textures are packed into a material-index atlas for shader sampling. Edge resources
+are retained as assets/resources but are not part of the current terrain renderer.
 
 `WorldPresenter` draws one shader-driven world quad. The fragment shader converts
 pixels to hex grid coordinates, samples the `WorldGrid` RGBA8 terrain texture,

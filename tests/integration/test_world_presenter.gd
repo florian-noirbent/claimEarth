@@ -58,6 +58,21 @@ func test_world_presenter_properties_store_material_index_and_scale() -> void:
 	assert_eq(_texture_byte(presenter.property_texture(), stone_id, 3), 255)
 
 
+func test_world_presenter_density_texture_packs_terrain_block_density() -> void:
+	var presenter := _presenter()
+	add_child_autofree(presenter)
+	var registry := FixtureLoader.terrain_registry()
+	var metadata := CompiledTerrainData.compile(registry)
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Stone"))
+
+	presenter.configure(world, registry)
+
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var water_id := FixtureLoader.terrain_id("Water")
+	assert_eq(_texture_byte(presenter.density_texture(), stone_id, 0), int(metadata.density_by_id[stone_id]))
+	assert_eq(_texture_byte(presenter.density_texture(), water_id, 0), int(metadata.density_by_id[water_id]))
+
+
 func test_world_presenter_edge_style_texture_packs_edge_color_and_width() -> void:
 	var presenter := _presenter()
 	add_child_autofree(presenter)
@@ -77,7 +92,7 @@ func test_world_presenter_edge_style_texture_packs_edge_color_and_width() -> voi
 	assert_eq(_color_byte(edge_style.a), roundi(clampf(expected_width / 16.0, 0.0, 1.0) * 255.0))
 
 
-func test_world_presenter_binds_fluid_material_uniforms() -> void:
+func test_world_presenter_binds_presentation_config_uniforms() -> void:
 	var presenter := _presenter()
 	add_child_autofree(presenter)
 	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Water"))
@@ -85,14 +100,32 @@ func test_world_presenter_binds_fluid_material_uniforms() -> void:
 	presenter.configure(world, FixtureLoader.terrain_registry())
 
 	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
-	assert_eq(material.get_shader_parameter("fluid_alpha"), presenter.fluid_alpha)
-	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), presenter.fluid_caustic_strength)
-	assert_eq(material.get_shader_parameter("fluid_caustic_scale"), presenter.fluid_caustic_scale)
-	assert_eq(material.get_shader_parameter("fluid_caustic_speed"), presenter.fluid_caustic_speed)
-	assert_eq(material.get_shader_parameter("fluid_shimmer_strength"), presenter.fluid_shimmer_strength)
-	assert_eq(material.get_shader_parameter("fluid_surface_glow_width"), presenter.fluid_surface_glow_width)
-	assert_eq(material.get_shader_parameter("fluid_surface_glow_strength"), presenter.fluid_surface_glow_strength)
-	assert_eq(material.get_shader_parameter("fluid_hot_glow_strength"), presenter.fluid_hot_glow_strength)
+	var config := presenter.presentation_config
+	assert_eq(material.get_shader_parameter("fluid_alpha"), config.fluid_alpha)
+	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), config.fluid_caustic_strength)
+	assert_eq(material.get_shader_parameter("fluid_caustic_scale"), config.fluid_caustic_scale)
+	assert_eq(material.get_shader_parameter("fluid_caustic_speed"), config.fluid_caustic_speed)
+	assert_eq(material.get_shader_parameter("fluid_shimmer_strength"), config.fluid_shimmer_strength)
+	assert_eq(material.get_shader_parameter("fluid_surface_glow_width"), config.fluid_surface_glow_width)
+	assert_eq(material.get_shader_parameter("fluid_surface_glow_strength"), config.fluid_surface_glow_strength)
+	assert_eq(material.get_shader_parameter("fluid_hot_glow_strength"), config.fluid_hot_glow_strength)
+	assert_eq(material.get_shader_parameter("exposed_edge_corner_radius"), config.exposed_edge_corner_radius)
+	assert_eq(material.get_shader_parameter("exposed_edge_jitter_strength"), config.exposed_edge_jitter_strength)
+	assert_eq(material.get_shader_parameter("exposed_edge_jitter_scale"), config.exposed_edge_jitter_scale)
+
+
+func test_world_presenter_refreshes_shader_parameters_when_presentation_config_changes() -> void:
+	var presenter := _presenter()
+	add_child_autofree(presenter)
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Water"))
+	presenter.configure(world, FixtureLoader.terrain_registry())
+
+	presenter.presentation_config.fluid_caustic_strength = 0.73
+	presenter.presentation_config.exposed_edge_jitter_strength = 3.25
+
+	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), 0.73)
+	assert_eq(material.get_shader_parameter("exposed_edge_jitter_strength"), 3.25)
 
 
 func test_world_presenter_upload_world_reflects_committed_grid_changes() -> void:
@@ -144,7 +177,7 @@ func test_world_presenter_can_bind_backend_phase_textures() -> void:
 
 func _presenter() -> WorldPresenter:
 	var presenter := WorldPresenter.new()
-	presenter.terrain_shader = WorldPresenterShader
+	presenter.presentation_config = load("res://config/presentation/default_world_presentation.tres").duplicate(true) as WorldPresentationConfig
 	return presenter
 
 

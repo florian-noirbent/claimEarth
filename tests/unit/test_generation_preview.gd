@@ -24,6 +24,10 @@ func _presenter(preview: Control):
 	return preview._presenter
 
 
+func _background(preview: Control) -> WorldBackground:
+	return preview._background as WorldBackground
+
+
 func test_preview_request_while_inactive_is_queued() -> void:
 	var host := Control.new()
 	host.custom_minimum_size = Vector2(1200, 800)
@@ -155,6 +159,9 @@ func test_preview_successful_generation_configures_presenter_and_reactivation_re
 
 	assert_true(preview._has_rendered_once)
 	assert_eq(_presenter(preview).total_renderer_nodes(), 1)
+	assert_not_null(_background(preview))
+	assert_same(_background(preview).presentation_config, _presenter(preview).presentation_config)
+	assert_gt(_background(preview).cave_rect().size.y, 0.0)
 	assert_lt(_camera(preview).zoom.x, 1.0)
 
 	preview.deactivate()
@@ -163,6 +170,34 @@ func test_preview_successful_generation_configures_presenter_and_reactivation_re
 
 	assert_true(preview._has_rendered_once)
 	assert_eq(preview._active_request_count, request_count + 1)
+
+
+func test_preview_applies_shared_presentation_changes_without_regenerating() -> void:
+	var host := Control.new()
+	host.custom_minimum_size = Vector2(1200, 800)
+	host.size = Vector2(1200, 800)
+	add_child_autofree(host)
+	var preview = GenerationPreviewScript.new()
+	preview.size = Vector2(900, 700)
+	host.add_child(preview)
+	await wait_process_frames(1)
+
+	preview.request_preview(_default_profile(), 12345)
+	preview.activate()
+	await wait_process_frames(2)
+	var request_count: int = preview._active_request_count
+	var config: WorldPresentationConfig = _presenter(preview).presentation_config as WorldPresentationConfig
+	var original_caustic_strength := config.fluid_caustic_strength
+	var original_corner_radius := config.exposed_edge_corner_radius
+	config.fluid_caustic_strength = 0.71
+	config.exposed_edge_corner_radius = 7.5
+
+	var material := (_presenter(preview).get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_eq(preview._active_request_count, request_count)
+	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), 0.71)
+	assert_eq(material.get_shader_parameter("exposed_edge_corner_radius"), 7.5)
+	config.fluid_caustic_strength = original_caustic_strength
+	config.exposed_edge_corner_radius = original_corner_radius
 
 
 func test_preview_wheel_up_increases_zoom_value_and_wheel_down_decreases_it() -> void:

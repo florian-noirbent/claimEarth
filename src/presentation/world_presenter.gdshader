@@ -4,6 +4,7 @@ uniform sampler2D world_data : filter_nearest;
 uniform sampler2D even_world : filter_nearest;
 uniform sampler2D style_data : filter_nearest;
 uniform sampler2D terrain_properties : filter_nearest;
+uniform sampler2D terrain_density : filter_nearest;
 uniform sampler2D edge_style_data : filter_nearest;
 uniform sampler2D material_atlas : filter_linear;
 uniform float hex_radius = 16.0;
@@ -21,6 +22,9 @@ uniform float fluid_shimmer_strength = 0.1;
 uniform float fluid_surface_glow_width = 5.0;
 uniform float fluid_surface_glow_strength = 0.35;
 uniform float fluid_hot_glow_strength = 0.65;
+uniform float exposed_edge_corner_radius = 10.0;
+uniform float exposed_edge_jitter_strength = 5.0;
+uniform float exposed_edge_jitter_scale = 0.12;
 
 varying vec2 world_pos;
 
@@ -72,6 +76,24 @@ bool inside_hex(vec2 local) {
 	return ay <= 1.7320508 * (hex_radius - ax);
 }
 
+float hash21(vec2 value) {
+	vec3 hash = fract(vec3(value.xyx) * 0.1031);
+	hash += dot(hash, hash.yzx + 33.33);
+	return fract((hash.x + hash.y) * hash.z);
+}
+
+float edge_jitter(vec2 position) {
+	vec2 scaled_position = position * exposed_edge_jitter_scale;
+	vec2 grid = floor(scaled_position);
+	vec2 fraction = fract(scaled_position);
+	fraction = fraction * fraction * (3.0 - 2.0 * fraction);
+	float lower_left = hash21(grid);
+	float lower_right = hash21(grid + vec2(1.0, 0.0));
+	float upper_left = hash21(grid + vec2(0.0, 1.0));
+	float upper_right = hash21(grid + vec2(1.0, 1.0));
+	return mix(mix(lower_left, lower_right, fraction.x), mix(upper_left, upper_right, fraction.x), fraction.y);
+}
+
 float fill_line_y(float fill_amount) {
 	float half_height = hex_radius * 1.7320508 * 0.5;
 	return mix(half_height, -half_height, fill_amount);
@@ -109,6 +131,101 @@ int nearest_edge(vec2 local, out float distance_to_edge) {
 		}
 	}
 	return nearest;
+}
+
+void nearest_two_edges(vec2 local, out int nearest, out float nearest_distance, out int second, out float second_distance) {
+	nearest = 0;
+	second = 1;
+	nearest_distance = edge_distance(local, nearest);
+	second_distance = edge_distance(local, second);
+	if (second_distance < nearest_distance) {
+		float distance_swap = nearest_distance;
+		nearest_distance = second_distance;
+		second_distance = distance_swap;
+		int side_swap = nearest;
+		nearest = second;
+		second = side_swap;
+	}
+	for (int side = 2; side < 6; side++) {
+		float candidate = edge_distance(local, side);
+		if (candidate < nearest_distance) {
+			second_distance = nearest_distance;
+			second = nearest;
+			nearest_distance = candidate;
+			nearest = side;
+		} else if (candidate < second_distance) {
+			second_distance = candidate;
+			second = side;
+		}
+	}
+}
+
+vec2 corner_position(int corner) {
+	float half_height = hex_radius * 1.7320508 * 0.5;
+	if (corner == 0) {
+		return vec2(hex_radius, 0.0);
+	}
+	if (corner == 1) {
+		return vec2(hex_radius * 0.5, half_height);
+	}
+	if (corner == 2) {
+		return vec2(-hex_radius * 0.5, half_height);
+	}
+	if (corner == 3) {
+		return vec2(-hex_radius, 0.0);
+	}
+	if (corner == 4) {
+		return vec2(-hex_radius * 0.5, -half_height);
+	}
+	return vec2(hex_radius * 0.5, -half_height);
+}
+
+void corner_sides(int corner, out int first_side, out int second_side) {
+	if (corner == 0) {
+		first_side = 5;
+		second_side = 0;
+		return;
+	}
+	first_side = corner - 1;
+	second_side = corner;
+}
+
+int nearest_corner(vec2 local, out vec2 vertex) {
+	int nearest = 0;
+	vertex = corner_position(0);
+	float nearest_distance = length(local - vertex);
+	for (int corner = 1; corner < 6; corner++) {
+		vec2 candidate_vertex = corner_position(corner);
+		float candidate_distance = length(local - candidate_vertex);
+		if (candidate_distance < nearest_distance) {
+			nearest = corner;
+			vertex = candidate_vertex;
+			nearest_distance = candidate_distance;
+		}
+	}
+	return nearest;
+}
+
+float corner_radius_at(vec2 cell, vec2 vertex) {
+	return max(0.001, exposed_edge_corner_radius);
+}
+
+bool in_corner_arc_region(vec2 local, int corner, vec2 vertex, float radius) {
+	vec2 previous_vertex = corner_position((corner + 5) % 6);
+	vec2 next_vertex = corner_position((corner + 1) % 6);
+	vec2 previous_direction = normalize(previous_vertex - vertex);
+	vec2 next_direction = normalize(next_vertex - vertex);
+	vec2 from_vertex = local - vertex;
+	float tangent_length = radius * 0.57735027;
+	return dot(from_vertex, previous_direction) <= tangent_length
+		&& dot(from_vertex, next_direction) <= tangent_length
+		&& dot(from_vertex, normalize(-vertex)) >= 0.0;
+}
+
+float corner_circle_distance(vec2 local, vec2 vertex, float radius) {
+	vec2 inward = normalize(-vertex);
+	vec2 circle_center = vertex + inward * radius * 1.15470054;
+	return length(local - circle_center) - radius;
 }
 
 vec2 neighbor_for_edge(vec2 cell, int side) {
@@ -153,6 +270,11 @@ float terrain_motion(float cell_kind) {
 	return floor(properties.r * 255.0 + 0.5);
 }
 
+float terrain_block_density(float cell_kind) {
+	vec2 density_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
+	return floor(texture(terrain_density, density_uv).r * 255.0 + 0.5);
+}
+
 bool should_draw_edge(vec2 cell, float current_kind, int side) {
 	vec2 neighbor_cell = neighbor_for_edge(cell, side);
 	if (!in_world(neighbor_cell)) {
@@ -161,6 +283,13 @@ bool should_draw_edge(vec2 cell, float current_kind, int side) {
 	vec4 neighbor = sample_world_cell(neighbor_cell);
 	float neighbor_kind = terrain_kind(neighbor);
 	return abs(neighbor_kind - current_kind) > 0.5;
+}
+
+vec4 sample_world_or_air(vec2 cell) {
+	if (!in_world(cell)) {
+		return vec4(0.0);
+	}
+	return sample_world_cell(cell);
 }
 
 bool has_exposed_liquid_surface(vec2 cell, float current_kind) {
@@ -389,6 +518,192 @@ vec4 render_even_phase_liquid_trail(vec2 cell, vec2 local) {
 	return render_liquid(cell, cell_kind, style, local, even_terrain.g, true, mask);
 }
 
+bool has_render_priority(float current_kind, float neighbor_kind) {
+	float current_density = terrain_block_density(current_kind);
+	float neighbor_density = terrain_block_density(neighbor_kind);
+	return neighbor_density > current_density || (abs(neighbor_density - current_density) < 0.5 && neighbor_kind > current_kind);
+}
+
+vec4 render_boundary_material(vec2 source_cell, vec4 source_terrain) {
+	float source_kind = terrain_kind(source_terrain);
+	vec2 style_uv = vec2((source_kind + 0.5) / 256.0, 0.5);
+	vec4 style = texture(style_data, style_uv);
+	vec4 properties = texture(terrain_properties, style_uv);
+	vec2 source_local = world_pos - center_for_offset(source_cell);
+	float motion = terrain_motion(source_kind);
+	float fill_amount = source_terrain.g;
+	if (motion > 1.5) {
+		bool stream = is_streaming_liquid(source_cell, fill_amount);
+		float liquid_mask = 1.0;
+		if (fill_amount < 0.999) {
+			if (stream) {
+				bool above_source = has_same_source(source_cell, source_kind, 4) || has_even_phase_vertical_source(source_cell, source_kind);
+				bool left_source = has_same_source(source_cell, source_kind, 3);
+				bool right_source = has_same_source(source_cell, source_kind, 5);
+				liquid_mask = source_stream_mask(source_local, fill_amount, above_source, left_source, right_source);
+			} else if (source_local.y < fill_line_y(fill_amount)) {
+				liquid_mask = 0.0;
+			}
+		}
+		if (liquid_mask <= 0.001) {
+			return vec4(0.0);
+		}
+		return render_liquid(source_cell, source_kind, style, source_local, fill_amount, stream, liquid_mask);
+	}
+	if (motion > 0.5 && fill_amount < 0.999) {
+		bool stream = is_streaming_falling_solid(source_cell, fill_amount);
+		float solid_mask = 1.0;
+		if (stream) {
+			bool above_source = has_same_source(source_cell, source_kind, 4);
+			bool left_source = has_same_source(source_cell, source_kind, 3);
+			bool right_source = has_same_source(source_cell, source_kind, 5);
+			solid_mask = source_stream_mask(source_local, fill_amount, above_source, left_source, right_source);
+		} else if (source_local.y < fill_line_y(fill_amount)) {
+			solid_mask = 0.0;
+		}
+		if (solid_mask <= 0.001) {
+			return render_liquid_above_partial_cell(source_cell, source_local);
+		}
+		return render_solid_material(style, properties, solid_mask);
+	}
+	return render_solid_material(style, properties, 1.0);
+}
+
+bool is_upward_moving_free_surface(vec2 moving_cell, vec4 moving_terrain, vec2 other_cell, vec4 other_terrain) {
+	float moving_kind = terrain_kind(moving_terrain);
+	if (moving_kind <= 0.5 || moving_terrain.g <= 0.0 || terrain_motion(moving_kind) <= 0.5) {
+		return false;
+	}
+	if (terrain_kind(other_terrain) > 0.5 && other_terrain.g > 0.0) {
+		return false;
+	}
+	return center_for_offset(other_cell).y < center_for_offset(moving_cell).y - 0.001;
+}
+
+void resolve_jittered_boundary(
+	vec2 cell,
+	vec4 terrain,
+	vec2 local,
+	out vec2 resolved_cell,
+	out vec4 resolved_terrain,
+	out float owner_kind,
+	out float owner_distance,
+	out bool has_boundary
+) {
+	resolved_cell = cell;
+	resolved_terrain = terrain;
+	owner_kind = terrain_kind(terrain);
+	owner_distance = 9999.0;
+	has_boundary = false;
+	float current_kind = terrain_kind(terrain);
+	float current_density = terrain_block_density(current_kind);
+	float jitter = (edge_jitter(world_pos) * 2.0 - 1.0) * exposed_edge_jitter_strength;
+
+	vec2 vertex;
+	int corner = nearest_corner(local, vertex);
+	float radius = corner_radius_at(cell, vertex);
+	if (in_corner_arc_region(local, corner, vertex, radius)) {
+		int first_side;
+		int second_side;
+		corner_sides(corner, first_side, second_side);
+		vec2 first_cell = neighbor_for_edge(cell, first_side);
+		vec2 second_cell = neighbor_for_edge(cell, second_side);
+		vec4 first_terrain = sample_world_or_air(first_cell);
+		vec4 second_terrain = sample_world_or_air(second_cell);
+		float first_kind = terrain_kind(first_terrain);
+		float second_kind = terrain_kind(second_terrain);
+		float first_density = terrain_block_density(first_kind);
+		float second_density = terrain_block_density(second_kind);
+		float circle_distance = corner_circle_distance(local, vertex, radius);
+		bool current_top_surface = is_upward_moving_free_surface(cell, terrain, first_cell, first_terrain)
+			|| is_upward_moving_free_surface(cell, terrain, second_cell, second_terrain);
+		bool neighbor_top_surface = is_upward_moving_free_surface(first_cell, first_terrain, cell, terrain)
+			|| is_upward_moving_free_surface(second_cell, second_terrain, cell, terrain);
+		if (current_top_surface || neighbor_top_surface) {
+			return;
+		}
+
+		if (current_density > first_density && current_density > second_density) {
+			has_boundary = true;
+			owner_kind = current_kind;
+			owner_distance = -circle_distance + jitter;
+			if (owner_distance < 0.0) {
+				float first_edge_distance = edge_distance(local, first_side);
+				float second_edge_distance = edge_distance(local, second_side);
+				if (first_edge_distance <= second_edge_distance) {
+					resolved_cell = first_cell;
+					resolved_terrain = first_terrain;
+				} else {
+					resolved_cell = second_cell;
+					resolved_terrain = second_terrain;
+				}
+			}
+			return;
+		}
+
+		if (first_density > current_density && second_density > current_density
+				&& first_kind > 0.5 && abs(first_kind - second_kind) < 0.5) {
+			has_boundary = true;
+			owner_kind = first_kind;
+			owner_distance = circle_distance + jitter;
+			if (owner_distance >= 0.0) {
+				resolved_cell = first_cell;
+				resolved_terrain = first_terrain;
+			}
+			return;
+		}
+	}
+
+	float distance_to_edge;
+	int side = nearest_edge(local, distance_to_edge);
+	float maximum_band = exposed_edge_jitter_strength + edge_width_normalization;
+	if (distance_to_edge > maximum_band) {
+		return;
+	}
+	vec2 neighbor_cell = neighbor_for_edge(cell, side);
+	vec4 neighbor = sample_world_or_air(neighbor_cell);
+	float neighbor_kind = terrain_kind(neighbor);
+	if (abs(neighbor_kind - current_kind) < 0.5) {
+		return;
+	}
+	if (is_upward_moving_free_surface(cell, terrain, neighbor_cell, neighbor)
+			|| is_upward_moving_free_surface(neighbor_cell, neighbor, cell, terrain)) {
+		return;
+	}
+	float neighbor_density = terrain_block_density(neighbor_kind);
+	has_boundary = true;
+	if (has_render_priority(current_kind, neighbor_kind)) {
+		owner_kind = neighbor_kind;
+		owner_distance = jitter - distance_to_edge;
+		if (owner_distance >= 0.0) {
+			resolved_cell = neighbor_cell;
+			resolved_terrain = neighbor;
+		}
+	} else {
+		owner_kind = current_kind;
+		owner_distance = distance_to_edge + jitter;
+		if (owner_distance < 0.0) {
+			resolved_cell = neighbor_cell;
+			resolved_terrain = neighbor;
+		}
+	}
+}
+
+vec4 apply_resolved_outline(vec4 color, float resolved_kind, float owner_kind, float owner_distance, bool has_boundary) {
+	if (!has_boundary || color.a <= 0.001 || owner_distance < 0.0 || abs(resolved_kind - owner_kind) > 0.5) {
+		return color;
+	}
+	vec2 style_uv = vec2((owner_kind + 0.5) / 256.0, 0.5);
+	vec4 edge_style = texture(edge_style_data, style_uv);
+	float edge_width = edge_style.a * edge_width_normalization;
+	if (edge_width <= 0.0) {
+		return color;
+	}
+	float antialias_width = max(fwidth(owner_distance), 0.35);
+	float edge_alpha = 1.0 - smoothstep(max(0.0, edge_width - antialias_width), edge_width + antialias_width, owner_distance);
+	return mix(color, vec4(edge_style.rgb, 1.0), edge_alpha);
+}
+
 void fragment() {
 	vec4 out_color = vec4(0.0);
 	vec2 cell = world_to_offset(world_pos);
@@ -441,18 +756,23 @@ void fragment() {
 				} else if (partial_falling) {
 					out_color = render_liquid_above_partial_cell(cell, local);
 				}
-				vec4 edge_style = texture(edge_style_data, style_uv);
-				float edge_width = edge_style.a * edge_width_normalization;
-				if (edge_width > 0.0 && current_fill_visible) {
-					float distance_to_edge;
-					int side = nearest_edge(local, distance_to_edge);
-					if (distance_to_edge <= edge_width && should_draw_edge(cell, cell_kind, side)) {
-						float edge_alpha = clamp((edge_width - distance_to_edge) / max(edge_width, 0.001), 0.0, 1.0);
-						out_color = mix(out_color, vec4(edge_style.rgb, 1.0), edge_alpha);
-					}
 				}
 			}
+			vec2 resolved_cell;
+			vec4 resolved_terrain;
+			float owner_kind;
+			float owner_distance;
+			bool has_boundary;
+			resolve_jittered_boundary(cell, terrain, local, resolved_cell, resolved_terrain, owner_kind, owner_distance, has_boundary);
+			float resolved_kind = terrain_kind(resolved_terrain);
+			if (abs(resolved_kind - cell_kind) > 0.5 || distance(resolved_cell, cell) > 0.1) {
+				if (resolved_kind <= 0.5 || resolved_terrain.g <= 0.0) {
+					out_color = vec4(0.0);
+				} else {
+					out_color = render_boundary_material(resolved_cell, resolved_terrain);
+				}
 			}
+			out_color = apply_resolved_outline(out_color, resolved_kind, owner_kind, owner_distance, has_boundary);
 		}
 	}
 	COLOR = out_color;

@@ -133,7 +133,9 @@ under `config/items/`.
 - Current art is original repository content; runs show a sky gradient above depth
   0, a grass transition band on the surface edge, and a graded, tiled cave texture
   below it. Stone and dirt terrain use looping world-space textures, while other
-  terrain surfaces are procedurally styled.
+  terrain surfaces are procedurally styled. Terrain boundaries have rounded,
+  deterministic irregularity: denser terrain visually takes mixed-material seams,
+  while matching terrain can round outward into concave gaps.
 - Water, lava, sand, stone, and dirt must remain distinguishable by pattern and shape,
   not color alone. Partial moving cells show their fill level with smoothed surfaces
   between matching neighboring moving terrain; if a partial moving cell has liquid

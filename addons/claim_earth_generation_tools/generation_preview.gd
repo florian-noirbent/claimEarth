@@ -3,13 +3,15 @@ extends Control
 
 
 const WorldPresenterScript = preload("res://src/presentation/world_presenter.gd")
-const WorldPresenterShader = preload("res://src/presentation/world_presenter.gdshader")
+const WorldBackgroundScript = preload("res://src/presentation/world_background.gd")
+const WorldPresentationConfigResource = preload("res://config/presentation/default_world_presentation.tres")
 
 var _subviewport: SubViewport
 var _subviewport_container: SubViewportContainer
 var _root: Node2D
 var _camera: Camera2D
 var _presenter
+var _background: WorldBackground
 var _status_label := Label.new()
 var _terrain_registry := TerrainRegistry.new()
 var _current_profile: GenerationProfile
@@ -150,9 +152,13 @@ func _ensure_runtime() -> void:
 	_root = Node2D.new()
 	_root.name = "PreviewRoot"
 	_subviewport.add_child(_root)
+	_background = WorldBackgroundScript.new()
+	_background.name = "WorldBackground"
+	_background.presentation_config = WorldPresentationConfigResource
+	_root.add_child(_background)
 	_presenter = WorldPresenterScript.new()
 	_presenter.name = "WorldPresenter"
-	_presenter.terrain_shader = WorldPresenterShader
+	_presenter.presentation_config = WorldPresentationConfigResource
 	_root.add_child(_presenter)
 	_camera = Camera2D.new()
 	_camera.name = "PreviewCamera"
@@ -170,6 +176,7 @@ func _free_runtime() -> void:
 	_root = null
 	_camera = null
 	_presenter = null
+	_background = null
 
 
 func _attempt_preview() -> void:
@@ -193,6 +200,7 @@ func _attempt_preview() -> void:
 		_set_status("Generation failed")
 		return
 	_presenter.visible_row_count = result.world.dimensions.depth
+	_configure_background_bounds(result.world)
 	_presenter.configure(result.world, _terrain_registry)
 	_has_rendered_once = true
 	_attempt_camera_fit()
@@ -235,6 +243,15 @@ func _fit_camera(profile: GenerationProfile) -> void:
 	zoom_factor = clampf(zoom_factor, 0.05, 10.0)
 	_camera.zoom = Vector2(zoom_factor, zoom_factor)
 	_camera.position = Vector2((left_edge + right_edge) * 0.5, (top_edge + bottom_edge) * 0.5)
+
+
+func _configure_background_bounds(world: WorldGrid) -> void:
+	if _background == null or _presenter == null:
+		return
+	var left_edge: float = HexMetrics.center_for_offset(0, 0, _presenter.hex_radius).x - _presenter.hex_radius
+	var right_edge: float = HexMetrics.center_for_offset(world.dimensions.width - 1, 0, _presenter.hex_radius).x + _presenter.hex_radius
+	var bottom_edge: float = HexMetrics.center_for_offset(0, world.dimensions.depth - 1, _presenter.hex_radius).y + _presenter.hex_radius
+	_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
 
 
 func _refresh_camera_fit() -> void:

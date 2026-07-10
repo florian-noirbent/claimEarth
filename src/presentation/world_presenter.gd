@@ -1,3 +1,4 @@
+@tool
 ## Renders committed terrain grid data with one shader-driven world quad.
 class_name WorldPresenter
 extends Node2D
@@ -6,15 +7,14 @@ extends Node2D
 @export var hex_radius := 16.0
 @export var visible_row_count := 96
 @export var material_atlas_tile_size := 1024
-@export var terrain_shader: Shader
-@export_range(0.0, 1.0, 0.01) var fluid_alpha := 0.56
-@export_range(0.0, 1.0, 0.01) var fluid_caustic_strength := 0.28
-@export var fluid_caustic_scale := 0.012
-@export var fluid_caustic_speed := 0.35
-@export_range(0.0, 1.0, 0.01) var fluid_shimmer_strength := 0.1
-@export_range(0.0, 24.0, 0.25) var fluid_surface_glow_width := 5.0
-@export_range(0.0, 1.0, 0.01) var fluid_surface_glow_strength := 0.35
-@export_range(0.0, 2.0, 0.01) var fluid_hot_glow_strength := 0.65
+@export var presentation_config: WorldPresentationConfig:
+	set(value):
+		if presentation_config == value:
+			return
+		_disconnect_presentation_config(presentation_config)
+		presentation_config = value
+		_connect_presentation_config()
+		_refresh_presentation_config()
 
 const MATERIAL_ATLAS_GUTTER_SIZE := 1
 const EDGE_WIDTH_NORMALIZATION := 16.0
@@ -24,6 +24,7 @@ var _terrain_registry: TerrainRegistry
 var _metadata: CompiledTerrainData
 var _style_texture: ImageTexture
 var _property_texture: ImageTexture
+var _density_texture: ImageTexture
 var _edge_style_texture: ImageTexture
 var _material_atlas_texture: ImageTexture
 var _material_atlas_columns := 1
@@ -34,6 +35,11 @@ var _material := ShaderMaterial.new()
 
 func _ready() -> void:
 	_ensure_nodes()
+	_connect_presentation_config()
+
+
+func _exit_tree() -> void:
+	_disconnect_presentation_config(presentation_config)
 
 
 func reset() -> void:
@@ -42,6 +48,7 @@ func reset() -> void:
 	_metadata = null
 	_style_texture = null
 	_property_texture = null
+	_density_texture = null
 	_edge_style_texture = null
 	_material_atlas_texture = null
 	_material_atlas_columns = 1
@@ -58,6 +65,7 @@ func configure(world: WorldGrid, terrain_registry: TerrainRegistry) -> void:
 	_ensure_nodes()
 	_style_texture = _create_style_texture(_metadata)
 	_property_texture = _create_property_texture(_metadata)
+	_density_texture = _create_density_texture(_metadata)
 	_edge_style_texture = _create_edge_style_texture(_metadata)
 	_material_atlas_texture = _create_material_atlas_texture(_metadata)
 	_configure_shader()
@@ -96,6 +104,10 @@ func property_texture() -> ImageTexture:
 	return _property_texture
 
 
+func density_texture() -> ImageTexture:
+	return _density_texture
+
+
 func edge_style_texture() -> ImageTexture:
 	return _edge_style_texture
 
@@ -111,16 +123,17 @@ func _ensure_nodes() -> void:
 
 
 func _configure_shader() -> void:
-	if terrain_shader == null:
-		push_error("WorldPresenter requires a terrain_shader resource before configure().")
+	if presentation_config == null or presentation_config.terrain_shader == null:
+		push_error("WorldPresenter requires a presentation_config with a terrain_shader before configure().")
 		_material.shader = null
 		_polygon.material = null
 		return
-	_material.shader = terrain_shader
+	_material.shader = presentation_config.terrain_shader
 	_material.set_shader_parameter("world_data", _world.texture())
 	_material.set_shader_parameter("even_world", _world.texture())
 	_material.set_shader_parameter("style_data", _style_texture)
 	_material.set_shader_parameter("terrain_properties", _property_texture)
+	_material.set_shader_parameter("terrain_density", _density_texture)
 	_material.set_shader_parameter("edge_style_data", _edge_style_texture)
 	_material.set_shader_parameter("edge_width_normalization", EDGE_WIDTH_NORMALIZATION)
 	_material.set_shader_parameter("material_atlas", _material_atlas_texture)
@@ -128,17 +141,47 @@ func _configure_shader() -> void:
 	_material.set_shader_parameter("material_atlas_tile_size", float(maxi(1, material_atlas_tile_size)))
 	_material.set_shader_parameter("material_atlas_gutter_size", float(MATERIAL_ATLAS_GUTTER_SIZE))
 	_material.set_shader_parameter("material_atlas_size", _material_atlas_size)
-	_material.set_shader_parameter("fluid_alpha", fluid_alpha)
-	_material.set_shader_parameter("fluid_caustic_strength", fluid_caustic_strength)
-	_material.set_shader_parameter("fluid_caustic_scale", fluid_caustic_scale)
-	_material.set_shader_parameter("fluid_caustic_speed", fluid_caustic_speed)
-	_material.set_shader_parameter("fluid_shimmer_strength", fluid_shimmer_strength)
-	_material.set_shader_parameter("fluid_surface_glow_width", fluid_surface_glow_width)
-	_material.set_shader_parameter("fluid_surface_glow_strength", fluid_surface_glow_strength)
-	_material.set_shader_parameter("fluid_hot_glow_strength", fluid_hot_glow_strength)
+	_sync_presentation_parameters()
 	_material.set_shader_parameter("hex_radius", hex_radius)
 	_material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
 	_polygon.material = _material
+
+
+func _sync_presentation_parameters() -> void:
+	if presentation_config == null:
+		return
+	_material.set_shader_parameter("fluid_alpha", presentation_config.fluid_alpha)
+	_material.set_shader_parameter("fluid_caustic_strength", presentation_config.fluid_caustic_strength)
+	_material.set_shader_parameter("fluid_caustic_scale", presentation_config.fluid_caustic_scale)
+	_material.set_shader_parameter("fluid_caustic_speed", presentation_config.fluid_caustic_speed)
+	_material.set_shader_parameter("fluid_shimmer_strength", presentation_config.fluid_shimmer_strength)
+	_material.set_shader_parameter("fluid_surface_glow_width", presentation_config.fluid_surface_glow_width)
+	_material.set_shader_parameter("fluid_surface_glow_strength", presentation_config.fluid_surface_glow_strength)
+	_material.set_shader_parameter("fluid_hot_glow_strength", presentation_config.fluid_hot_glow_strength)
+	_material.set_shader_parameter("exposed_edge_corner_radius", presentation_config.exposed_edge_corner_radius)
+	_material.set_shader_parameter("exposed_edge_jitter_strength", presentation_config.exposed_edge_jitter_strength)
+	_material.set_shader_parameter("exposed_edge_jitter_scale", presentation_config.exposed_edge_jitter_scale)
+
+
+func _connect_presentation_config() -> void:
+	if presentation_config != null and not presentation_config.changed.is_connected(_on_presentation_config_changed):
+		presentation_config.changed.connect(_on_presentation_config_changed)
+
+
+func _disconnect_presentation_config(config: WorldPresentationConfig) -> void:
+	if config != null and config.changed.is_connected(_on_presentation_config_changed):
+		config.changed.disconnect(_on_presentation_config_changed)
+
+
+func _on_presentation_config_changed() -> void:
+	_refresh_presentation_config()
+
+
+func _refresh_presentation_config() -> void:
+	if _world == null or presentation_config == null or presentation_config.terrain_shader == null:
+		return
+	_configure_shader()
+	queue_redraw()
 
 
 func _configure_world_polygon() -> void:
@@ -195,6 +238,20 @@ func _create_property_texture(metadata: CompiledTerrainData) -> ImageTexture:
 		data[offset + 1] = int(metadata.pattern_by_id[id]) if id < metadata.pattern_by_id.size() else 0
 		data[offset + 2] = clampi(material_index, 0, 255)
 		data[offset + 3] = roundi(clampf(scale / 1024.0, 0.0, 1.0) * 255.0)
+	var image := Image.create_from_data(256, 1, false, Image.FORMAT_RGBA8, data)
+	return ImageTexture.create_from_image(image)
+
+
+func _create_density_texture(metadata: CompiledTerrainData) -> ImageTexture:
+	var data := PackedByteArray()
+	data.resize(256 * 4)
+	for id in range(256):
+		var density := metadata.density_by_id[id] if id < metadata.density_by_id.size() else 0
+		var offset := id * 4
+		data[offset] = density
+		data[offset + 1] = density
+		data[offset + 2] = density
+		data[offset + 3] = 255
 	var image := Image.create_from_data(256, 1, false, Image.FORMAT_RGBA8, data)
 	return ImageTexture.create_from_image(image)
 

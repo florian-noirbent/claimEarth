@@ -3,25 +3,23 @@
 [ext_resource type="Script" uid="uid://ehg5psku827t" path="res://src/app/run_session.gd" id="1_session"]
 [ext_resource type="Script" uid="uid://cc0hh6yxi3t8y" path="res://src/app/run_item_controller.gd" id="2_items"]
 [ext_resource type="Script" uid="uid://yricpip2gti8" path="res://src/app/run_world_controller.gd" id="3_world_controller"]
-[ext_resource type="Shader" uid="uid://dh5emhhc7vogy" path="res://src/presentation/world_background.gdshader" id="4_87qye"]
 [ext_resource type="Script" uid="uid://crqfd0y6v3xmq" path="res://src/presentation/world_presenter.gd" id="4_presenter"]
 [ext_resource type="Script" uid="uid://yy5ptlbwykbr" path="res://src/presentation/depth_marker_presenter.gd" id="5_markers"]
 [ext_resource type="Script" uid="uid://utv1nw4blrvy" path="res://src/presentation/gameplay_feedback.gd" id="6_feedback"]
 [ext_resource type="Script" uid="uid://cfg7amhyovnbe" path="res://src/presentation/world_side_boundaries.gd" id="7_boundaries"]
+[ext_resource type="Shader" uid="uid://dh5emhhc7vogy" path="res://src/presentation/world_background.gdshader" id="7_u8yu8"]
 [ext_resource type="Script" uid="uid://c8m7dvhyp5opv" path="res://src/presentation/world_background.gd" id="8_background"]
-[ext_resource type="Texture2D" uid="uid://b67oyht43g8uu" path="res://assets/terrain/background.jpg" id="9_background_texture"]
-[ext_resource type="Texture2D" uid="uid://c5pbegwgjdfju" path="res://assets/terrain/grassBand.png" id="10_grass_band"]
 [ext_resource type="Resource" path="res://config/terrain/catalog.tres" id="11_terrain_catalog"]
 [ext_resource type="Resource" path="res://config/items/catalog.tres" id="12_item_catalog"]
-[ext_resource type="Shader" uid="uid://bnouge1mepmdx" path="res://src/presentation/world_presenter.gdshader" id="13_terrain_shader"]
 [ext_resource type="Shader" uid="uid://prjnm80y6o23" path="res://src/simulation/render_texture_simulation.gdshader" id="14_simulation_shader"]
+[ext_resource type="Resource" uid="uid://dow2vhhcb5f5u" path="res://config/presentation/default_world_presentation.tres" id="15_presentation_config"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_3w1ny"]
-shader = ExtResource("4_87qye")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u8yu8"]
+shader = ExtResource("7_u8yu8")
 shader_parameter/level_zero_y = 0.0
 shader_parameter/left_edge = -512.0
 shader_parameter/right_edge = 512.0
-shader_parameter/grass_band_top = -35.0
+shader_parameter/grass_band_top = -34.8
 shader_parameter/grass_band_bottom = 5.0
 shader_parameter/cave_saturation = 0.9
 shader_parameter/cave_brightness = 0.85
@@ -51,22 +49,14 @@ simulation_shader = ExtResource("14_simulation_shader")
 unique_name_in_owner = true
 z_index = -100
 texture_repeat = 2
-material = SubResource("ShaderMaterial_3w1ny")
+material = SubResource("ShaderMaterial_u8yu8")
 script = ExtResource("8_background")
-background_shader = ExtResource("4_87qye")
-cave_texture = ExtResource("9_background_texture")
-grass_band_texture = ExtResource("10_grass_band")
-grass_band_scale = 0.2
-grass_band_y_offset = 5.0
-cave_saturation = 0.9
-cave_brightness = 0.85
-sky_height = 800.0
-sky_gradient_steps = 256
+presentation_config = ExtResource("15_presentation_config")
 
 [node name="WorldPresenter" type="Node2D" parent="." unique_id=1326804246]
 unique_name_in_owner = true
 script = ExtResource("4_presenter")
-terrain_shader = ExtResource("13_terrain_shader")
+presentation_config = ExtResource("15_presentation_config")
 
 [node name="DepthMarkers" type="Node2D" parent="." unique_id=1116532002]
 unique_name_in_owner = true
