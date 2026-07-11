@@ -58,7 +58,7 @@ func test_world_presenter_properties_store_material_index_and_scale() -> void:
 	assert_eq(_texture_byte(presenter.property_texture(), stone_id, 3), 255)
 
 
-func test_world_presenter_density_texture_packs_terrain_block_density() -> void:
+func test_world_presenter_properties_pack_terrain_block_density() -> void:
 	var presenter := _presenter()
 	add_child_autofree(presenter)
 	var registry := FixtureLoader.terrain_registry()
@@ -69,8 +69,8 @@ func test_world_presenter_density_texture_packs_terrain_block_density() -> void:
 
 	var stone_id := FixtureLoader.terrain_id("Stone")
 	var water_id := FixtureLoader.terrain_id("Water")
-	assert_eq(_texture_byte(presenter.density_texture(), stone_id, 0), int(metadata.density_by_id[stone_id]))
-	assert_eq(_texture_byte(presenter.density_texture(), water_id, 0), int(metadata.density_by_id[water_id]))
+	assert_eq(_texture_byte(presenter.property_texture(), stone_id, 1), int(metadata.density_by_id[stone_id]))
+	assert_eq(_texture_byte(presenter.property_texture(), water_id, 1), int(metadata.density_by_id[water_id]))
 
 
 func test_world_presenter_edge_style_texture_packs_edge_color_and_width() -> void:

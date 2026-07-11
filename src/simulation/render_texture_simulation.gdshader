@@ -9,6 +9,8 @@ uniform ivec2 player_light_offset = ivec2(-1, -1);
 uniform int player_light_level = 190;
 uniform int player_light_update_radius = 18;
 
+#include "../shader/hex_grid.gdshaderinc"
+
 const int PASS_VERTICAL_EVEN = 0;
 const int PASS_RIGHT_DOWN_EVEN = 1;
 const int PASS_LEFT_DOWN_EVEN = 2;
@@ -145,15 +147,14 @@ int pass_parity() {
 }
 
 ivec2 pair_neighbor(ivec2 owner) {
-	int parity = owner.x & 1;
 	if (pass_kind == PASS_VERTICAL_EVEN || pass_kind == PASS_VERTICAL_ODD) {
-		return ivec2(owner.x, owner.y + 1);
+		return hex_neighbor(owner, HEX_DIRECTION_DOWN);
 	}
 	if (pass_kind == PASS_RIGHT_DOWN_EVEN || pass_kind == PASS_RIGHT_DOWN_ODD) {
-		return ivec2(owner.x + 1, owner.y + parity);
+		return hex_neighbor(owner, HEX_DIRECTION_DOWN_RIGHT);
 	}
 	if (pass_kind == PASS_LEFT_DOWN_EVEN || pass_kind == PASS_LEFT_DOWN_ODD) {
-		return ivec2(owner.x - 1, owner.y + parity);
+		return hex_neighbor(owner, HEX_DIRECTION_DOWN_LEFT);
 	}
 	return owner;
 }
@@ -184,28 +185,9 @@ bool in_bounds(ivec2 coord) {
 	return coord.x >= 0 && coord.y >= 0 && coord.x < int(world_size.x) && coord.y < int(world_size.y);
 }
 
-int hex_distance(ivec2 a, ivec2 b) {
-	int a_r = a.y - (a.x - (a.x & 1)) / 2;
-	int b_r = b.y - (b.x - (b.x & 1)) / 2;
-	int dq = a.x - b.x;
-	int dr = a_r - b_r;
-	int ds = -dq - dr;
-	return (abs(dq) + abs(dr) + abs(ds)) / 2;
-}
-
 bool updates_player_light(ivec2 coord) {
 	return player_light_offset.x >= 0 && player_light_offset.y >= 0
 		&& hex_distance(coord, player_light_offset) <= player_light_update_radius;
-}
-
-ivec2 light_neighbor(ivec2 coord, int direction) {
-	int parity = coord.x & 1;
-	if (direction == 0) return ivec2(coord.x + 1, coord.y + parity);
-	if (direction == 1) return ivec2(coord.x + 1, coord.y + parity - 1);
-	if (direction == 2) return ivec2(coord.x, coord.y - 1);
-	if (direction == 3) return ivec2(coord.x - 1, coord.y + parity - 1);
-	if (direction == 4) return ivec2(coord.x - 1, coord.y + parity);
-	return ivec2(coord.x, coord.y + 1);
 }
 
 int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
@@ -220,7 +202,7 @@ int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
 	int persistent_light = byte_from_float(current.b) >= 130 ? byte_from_float(current.b) : 0;
 	int propagated_light = 0;
 	for (int direction = 0; direction < 6; direction++) {
-		ivec2 neighbor = light_neighbor(coord, direction);
+		ivec2 neighbor = hex_neighbor(coord, direction);
 		if (in_bounds(neighbor)) {
 			vec4 neighbor_cell = read_cell(neighbor);
 			int neighbor_light = byte_from_float(neighbor_cell.b);
@@ -361,7 +343,7 @@ int side_up_transfer_amount(vec4 source_cell, vec4 target_cell) {
 }
 
 bool direct_bottom_blocked(ivec2 coord, vec4 source_cell) {
-	ivec2 below_coord = ivec2(coord.x, coord.y + 1);
+	ivec2 below_coord = hex_neighbor(coord, HEX_DIRECTION_DOWN);
 	return !in_bounds(below_coord) || fall_amount(source_cell, read_cell(below_coord)) <= 0;
 }
 

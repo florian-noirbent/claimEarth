@@ -24,7 +24,6 @@ var _terrain_registry: TerrainRegistry
 var _metadata: CompiledTerrainData
 var _style_texture: ImageTexture
 var _property_texture: ImageTexture
-var _density_texture: ImageTexture
 var _edge_style_texture: ImageTexture
 var _material_atlas_texture: ImageTexture
 var _material_atlas_columns := 1
@@ -48,7 +47,6 @@ func reset() -> void:
 	_metadata = null
 	_style_texture = null
 	_property_texture = null
-	_density_texture = null
 	_edge_style_texture = null
 	_material_atlas_texture = null
 	_material_atlas_columns = 1
@@ -65,7 +63,6 @@ func configure(world: WorldGrid, terrain_registry: TerrainRegistry) -> void:
 	_ensure_nodes()
 	_style_texture = _create_style_texture(_metadata)
 	_property_texture = _create_property_texture(_metadata)
-	_density_texture = _create_density_texture(_metadata)
 	_edge_style_texture = _create_edge_style_texture(_metadata)
 	_material_atlas_texture = _create_material_atlas_texture(_metadata)
 	_configure_shader()
@@ -104,10 +101,6 @@ func property_texture() -> ImageTexture:
 	return _property_texture
 
 
-func density_texture() -> ImageTexture:
-	return _density_texture
-
-
 func edge_style_texture() -> ImageTexture:
 	return _edge_style_texture
 
@@ -133,7 +126,6 @@ func _configure_shader() -> void:
 	_material.set_shader_parameter("even_world", _world.texture())
 	_material.set_shader_parameter("style_data", _style_texture)
 	_material.set_shader_parameter("terrain_properties", _property_texture)
-	_material.set_shader_parameter("terrain_density", _density_texture)
 	_material.set_shader_parameter("edge_style_data", _edge_style_texture)
 	_material.set_shader_parameter("edge_width_normalization", EDGE_WIDTH_NORMALIZATION)
 	_material.set_shader_parameter("material_atlas", _material_atlas_texture)
@@ -236,24 +228,11 @@ func _create_property_texture(metadata: CompiledTerrainData) -> ImageTexture:
 		var material_index := int(metadata.material_index_by_id[id]) if id < metadata.material_index_by_id.size() else 0
 		var scale := metadata.fill_texture_world_scale_by_id[id] if id < metadata.fill_texture_world_scale_by_id.size() else 64.0
 		var offset := id * 4
+		# RGBA: motion, block density, material atlas slot, texture scale / 1024.
 		data[offset] = int(metadata.motion_by_id[id]) if id < metadata.motion_by_id.size() else 0
-		data[offset + 1] = int(metadata.pattern_by_id[id]) if id < metadata.pattern_by_id.size() else 0
+		data[offset + 1] = int(metadata.density_by_id[id]) if id < metadata.density_by_id.size() else 0
 		data[offset + 2] = clampi(material_index, 0, 255)
 		data[offset + 3] = roundi(clampf(scale / 1024.0, 0.0, 1.0) * 255.0)
-	var image := Image.create_from_data(256, 1, false, Image.FORMAT_RGBA8, data)
-	return ImageTexture.create_from_image(image)
-
-
-func _create_density_texture(metadata: CompiledTerrainData) -> ImageTexture:
-	var data := PackedByteArray()
-	data.resize(256 * 4)
-	for id in range(256):
-		var density := metadata.density_by_id[id] if id < metadata.density_by_id.size() else 0
-		var offset := id * 4
-		data[offset] = density
-		data[offset + 1] = density
-		data[offset + 2] = density
-		data[offset + 3] = 255
 	var image := Image.create_from_data(256, 1, false, Image.FORMAT_RGBA8, data)
 	return ImageTexture.create_from_image(image)
 

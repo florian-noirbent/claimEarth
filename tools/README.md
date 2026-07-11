@@ -21,6 +21,8 @@ From the repository root:
 .\tools\test_performance.ps1
 .\tools\validate_generation_plugin.ps1
 .\tools\benchmark_terrain.ps1
+.\tools\benchmark_world_presenter.ps1 -SaveBaseline
+.\tools\benchmark_world_presenter.ps1 -Compare
 .\tools\run_smoke.ps1
 .\tools\export_web.ps1
 .\tools\serve_web.ps1
@@ -38,6 +40,14 @@ From the repository root:
 - `validate_generation_plugin.ps1` launches the editor with the `World Gen` main screen selected, waits for startup stability, and fails on a native editor crash.
 - `benchmark_terrain.ps1` reports current terrain simulation, chunk drawing, and
   collision-build timing distributions for sparse, dense, and settled fixtures.
+- `benchmark_world_presenter.ps1` renders deterministic presenter fixtures at
+  1280×720 with VSync disabled, saves a five-run native reference under
+  `build/benchmarks/world_presenter/baseline`, and compares subsequent five-run
+  measurements. It also saves a Chromium Web-export screenshot as an export
+  reference; it is not a browser GPU-timing measurement. Use `-Force` only to
+  replace the saved baseline and `-SkipChromium` when Web export is unavailable.
+  `-ProjectRoot <path>` lets a detached checkout supply the game assets for a
+  native pre-change baseline while retaining this harness script.
 - `run_smoke.ps1` starts the configured main scene for two frames.
 - `export_web.ps1` creates a release build under `build/web`.
 - `serve_web.ps1` starts a local static server for the exported build on `127.0.0.1:8936`.

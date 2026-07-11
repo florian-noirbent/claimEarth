@@ -1,6 +1,6 @@
 {
   "files.exclude": {
-    "**/*.gd.uid": true,
+    "**/*.uid": true,
     "**/.import": true,
     "**/build": true,
     "**/logs": true

@@ -111,8 +111,11 @@ are retained as assets/resources but are not part of the current terrain rendere
 `WorldPresenter` draws one shader-driven world quad. The fragment shader converts
 pixels to hex grid coordinates, samples the `WorldGrid` RGBA8 terrain texture,
 samples terrain style/material data, and draws the matching terrain color or atlas
-texture. Terrain edge outlines are shader-rendered from resource style data;
-neighbor blending is intentionally deferred.
+texture. Terrain edge outlines and mixed-material boundaries are shader-rendered
+from resource style data. The shader is split into includes for maintainable source
+ownership but still compiles as one material and one draw call. See
+[`TERRAIN_RENDERING.md`](TERRAIN_RENDERING.md) for its data flow, canonical hex
+direction order, and performance benchmark contract.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
@@ -148,7 +151,9 @@ world: the three even connection pairs, then the three odd pairs. The backend
 retains the GPU result after the even phase in alternating render targets alongside
 the final odd-phase texture, so the next tick cannot overwrite a displayed trail.
 `WorldPresenter` renders final terrain only, consulting the even texture solely to
-draw verified vertical liquid trails through final-air cells. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
+draw verified vertical liquid trails through final-air cells. Presenter and
+simulation shaders share only canonical hex topology helpers; pair ownership and
+cellular-automata resolution remain simulation-specific. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
 liquid contact or gameplay mutation. Commits contain exact changed cells and fill
 changes for the completed six-pass tick.
 

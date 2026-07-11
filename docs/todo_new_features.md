@@ -2,34 +2,6 @@
 ## Terrain
 * simulate map during loading to settle down (100 steps)
 
-## light
-### light source levels:
-- player: 190
-- lava: 90
-- radiation: 0.2 x radition_level
-- chests: 60
-- flare: 255
-
-### diffusion
-light never decrease once an hexagon is "fully" lit  (130/255), like an exploration fog of war
-each step, light_level = highest_neigbhour * current_hexagon_diffusion_coefficient
-- air: 0.9
-- dirt: 0.3
-- sand: 0.3
-- stone: 0.1
-- water: 0.7
-- sulfuric_acid: 0.7
-- sulfur_dioxide: 0.85
-- lava: 0.7
-
-### rendering
-- light level goes into the reserved texture slot
-- optimize rendering of fully black hexagons
-- rendering brightness range (in config):
-    - 0 to 30: full black
-    - 30 to 160: gradiant
-    - 160 to 255: full brightness
-
 ## hazard
 - stack hazard bar to warn the player when any hazard is ticking.
 - each bar slowly recover when the player is out of danger instead of immediate turn off
