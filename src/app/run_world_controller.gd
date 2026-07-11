@@ -9,6 +9,8 @@ signal player_died(cause: StringName)
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
+const PLAYER_LIGHT_LEVEL := 190
+const PLAYER_LIGHT_UPDATE_RADIUS := 18
 
 @export var terrain_catalog: TerrainCatalog
 @export var item_catalog: ItemCatalog
@@ -80,6 +82,11 @@ func set_active(is_active: bool) -> void:
 func advance(delta: float) -> void:
 	if _player == null or _generation_result == null:
 		return
+	_simulation_backend.set_player_light_source(
+		HexMetrics.offset_for_world(_player.global_position, _world_presenter.hex_radius),
+		PLAYER_LIGHT_LEVEL,
+		PLAYER_LIGHT_UPDATE_RADIUS
+	)
 	_simulation_backend.advance(0)
 	var commit: SimulationCommit = _simulation_backend.commit_if_ready()
 	if commit.did_commit:

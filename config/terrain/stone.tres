@@ -16,6 +16,7 @@ is_passable = false
 is_hookable = true
 is_destructible = true
 is_liquid_contact_product = true
+light_diffusion_coefficient = 0.7
 debug_color = Color(0.42, 0.44, 0.5, 1)
 visual_style = ExtResource("5_g38x9")
 motion_behavior = ExtResource("2_6grxq")

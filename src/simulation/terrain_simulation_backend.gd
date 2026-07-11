@@ -47,6 +47,10 @@ func notify_external_changes(_change_set: TerrainChangeSet) -> void:
 	pass
 
 
+func set_player_light_source(_offset: Vector2i, _light_level: int, _update_radius: int) -> void:
+	pass
+
+
 func is_tick_in_progress() -> bool:
 	return false
 

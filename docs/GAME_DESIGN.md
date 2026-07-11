@@ -143,6 +143,14 @@ under `config/items/`.
   as a full hex of its own material.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
+- Lighting diffuses through neighboring hexes using the emitting hex's
+  terrain-specific coefficient. The surface row starts fully lit.
+  Lava emits light and the player emits a stronger moving light. Light at or above
+  the exploration threshold is permanent; dim unsupported light fades. Player-local
+  diffusion advances every terrain pass, while the rest of the map advances once per
+  six-pass terrain tick. World rendering is black through light level 30, grades to
+  full brightness by 160, and keeps fully dark air opaque so the cave backdrop does
+  not leak through unexplored space.
 - Desktop keyboard and mouse are the supported input scheme. Mobile and touch are not
   current targets.
 

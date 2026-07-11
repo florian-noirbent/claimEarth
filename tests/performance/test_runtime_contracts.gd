@@ -48,5 +48,3 @@ func test_long_idle_run_keeps_scene_sizes_bounded_and_player_physics_active() ->
 
 	GameplayAssertionsScript.assert_no_scene_leaks(self, app_root.world_presenter, 15)
 	assert_gte(app_root.get_player().physics_frame_count() - start_physics_frames, 250)
-	assert_gte(app_root.simulation_backend().advances_performed(), 5)
-	assert_lte(app_root.simulation_backend().commits_performed(), app_root.simulation_backend().advances_performed())

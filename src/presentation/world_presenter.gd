@@ -150,6 +150,8 @@ func _configure_shader() -> void:
 func _sync_presentation_parameters() -> void:
 	if presentation_config == null:
 		return
+	_material.set_shader_parameter("light_black_threshold", presentation_config.light_black_threshold)
+	_material.set_shader_parameter("light_full_brightness_threshold", presentation_config.light_full_brightness_threshold)
 	_material.set_shader_parameter("fluid_alpha", presentation_config.fluid_alpha)
 	_material.set_shader_parameter("fluid_caustic_strength", presentation_config.fluid_caustic_strength)
 	_material.set_shader_parameter("fluid_caustic_scale", presentation_config.fluid_caustic_scale)

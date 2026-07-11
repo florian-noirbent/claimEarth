@@ -5,6 +5,9 @@ uniform sampler2D source_world : filter_nearest, repeat_disable;
 uniform sampler2D rule_texture : filter_nearest, repeat_disable;
 uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
+uniform ivec2 player_light_offset = ivec2(-1, -1);
+uniform int player_light_level = 190;
+uniform int player_light_update_radius = 18;
 
 const int PASS_VERTICAL_EVEN = 0;
 const int PASS_RIGHT_DOWN_EVEN = 1;
@@ -113,9 +116,17 @@ int stone_id() {
 	return rule_byte(0, 3, 1);
 }
 
+int light_diffusion(int id) {
+	return rule_byte(id, 3, 2);
+}
+
+int emitted_light(int id) {
+	return rule_byte(id, 3, 3);
+}
+
 vec4 make_cell(int cell_id, int fill) {
 	int resolved_fill = cell_id == air_id() ? 0 : clamp(fill, 0, 255);
-	return color_from_bytes(cell_id, resolved_fill, 255, 255);
+	return color_from_bytes(cell_id, resolved_fill, 0, 255);
 }
 
 bool is_moving(int id) {
@@ -171,6 +182,52 @@ ivec2 pair_owner_for(ivec2 coord) {
 
 bool in_bounds(ivec2 coord) {
 	return coord.x >= 0 && coord.y >= 0 && coord.x < int(world_size.x) && coord.y < int(world_size.y);
+}
+
+int hex_distance(ivec2 a, ivec2 b) {
+	int a_r = a.y - (a.x - (a.x & 1)) / 2;
+	int b_r = b.y - (b.x - (b.x & 1)) / 2;
+	int dq = a.x - b.x;
+	int dr = a_r - b_r;
+	int ds = -dq - dr;
+	return (abs(dq) + abs(dr) + abs(ds)) / 2;
+}
+
+bool updates_player_light(ivec2 coord) {
+	return player_light_offset.x >= 0 && player_light_offset.y >= 0
+		&& hex_distance(coord, player_light_offset) <= player_light_update_radius;
+}
+
+ivec2 light_neighbor(ivec2 coord, int direction) {
+	int parity = coord.x & 1;
+	if (direction == 0) return ivec2(coord.x + 1, coord.y + parity);
+	if (direction == 1) return ivec2(coord.x + 1, coord.y + parity - 1);
+	if (direction == 2) return ivec2(coord.x, coord.y - 1);
+	if (direction == 3) return ivec2(coord.x - 1, coord.y + parity - 1);
+	if (direction == 4) return ivec2(coord.x - 1, coord.y + parity);
+	return ivec2(coord.x, coord.y + 1);
+}
+
+int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
+	if (pass_kind != PASS_LEFT_DOWN_ODD && !updates_player_light(coord)) {
+		return byte_from_float(current.b);
+	}
+	int cell_id = terrain_id(terrain_result);
+	int source_light = emitted_light(cell_id) * fill_amount(terrain_result) / 255;
+	if (coord == player_light_offset) {
+		source_light = max(source_light, player_light_level);
+	}
+	int persistent_light = byte_from_float(current.b) >= 130 ? byte_from_float(current.b) : 0;
+	int propagated_light = 0;
+	for (int direction = 0; direction < 6; direction++) {
+		ivec2 neighbor = light_neighbor(coord, direction);
+		if (in_bounds(neighbor)) {
+			vec4 neighbor_cell = read_cell(neighbor);
+			int neighbor_light = byte_from_float(neighbor_cell.b);
+			propagated_light = max(propagated_light, neighbor_light * light_diffusion(terrain_id(neighbor_cell)) / 255);
+		}
+	}
+	return max(source_light, max(persistent_light, propagated_light));
 }
 
 int fall_amount(vec4 upper, vec4 lower) {
@@ -379,5 +436,7 @@ void fragment() {
 			result = resolve_diagonal_for_side(owner, neighbor, a, b, output_a);
 		}
 	}
+	result.b = float(resolved_light(coord, current, result)) / 255.0;
+	result.a = current.a;
 	COLOR = result;
 }

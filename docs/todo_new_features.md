@@ -2,16 +2,6 @@
 ## Terrain
 * simulate map during loading to settle down (100 steps)
 
-### half static blocks
-
-half static block allow for flat ground in caves and visually interesting variation on wall and ceilling.
-
-- static blocks can have half value (dirt/stone).
-- happen only during map generation, bombs always breaks full blocks
-- prevent generation of fully enclosed half blocks, should only generate in cave edges, never fully enclosed for performance.
-- rendering: lookup and connect solid neighbours
-- physics: collide the middle of the hexagon
-
 ## light
 ### light source levels:
 - player: 190

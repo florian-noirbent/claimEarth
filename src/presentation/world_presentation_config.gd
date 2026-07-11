@@ -9,6 +9,15 @@ extends Resource
 	set(value):
 		terrain_shader = value
 		emit_changed()
+@export_category("Lighting")
+@export_range(0, 255, 1) var light_black_threshold := 30:
+	set(value):
+		light_black_threshold = value
+		emit_changed()
+@export_range(0, 255, 1) var light_full_brightness_threshold := 160:
+	set(value):
+		light_full_brightness_threshold = value
+		emit_changed()
 @export_range(0.0, 1.0, 0.01) var fluid_alpha := 0.56:
 	set(value):
 		fluid_alpha = value

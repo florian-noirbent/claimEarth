@@ -23,6 +23,8 @@ var min_fill_difference_by_id := PackedByteArray()
 var side_flow_offset_by_id := PackedByteArray()
 var low_fill_decay_threshold_by_id := PackedByteArray()
 var low_fill_decay_rate_by_id := PackedByteArray()
+var light_diffusion_by_id := PackedByteArray()
+var emitted_light_by_id := PackedByteArray()
 var fill_color_by_id := PackedColorArray()
 var accent_color_by_id := PackedColorArray()
 var pattern_by_id := PackedByteArray()
@@ -63,6 +65,8 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.side_flow_offset_by_id[stable_id] = motion.side_flow_offset
 		result.low_fill_decay_threshold_by_id[stable_id] = motion.low_fill_decay_threshold
 		result.low_fill_decay_rate_by_id[stable_id] = motion.low_fill_decay_rate
+		result.light_diffusion_by_id[stable_id] = roundi(definition.light_diffusion_coefficient * 255.0)
+		result.emitted_light_by_id[stable_id] = definition.emitted_light
 		var style := definition.visual_style as TerrainVisualStyle
 		result.fill_color_by_id[stable_id] = style.fill_color if style != null else definition.debug_color
 		result.accent_color_by_id[stable_id] = style.accent_color if style != null else definition.debug_color
@@ -158,6 +162,14 @@ func low_fill_decay_rate(cell_id: int) -> int:
 	return int(low_fill_decay_rate_by_id[cell_id]) if cell_id >= 0 and cell_id < low_fill_decay_rate_by_id.size() else 0
 
 
+func light_diffusion(cell_id: int) -> int:
+	return int(light_diffusion_by_id[cell_id]) if cell_id >= 0 and cell_id < light_diffusion_by_id.size() else 0
+
+
+func emitted_light(cell_id: int) -> int:
+	return int(emitted_light_by_id[cell_id]) if cell_id >= 0 and cell_id < emitted_light_by_id.size() else 0
+
+
 func _resize_tables(size: int) -> void:
 	motion_by_id.resize(size)
 	solid_by_id.resize(size)
@@ -175,6 +187,8 @@ func _resize_tables(size: int) -> void:
 	side_flow_offset_by_id.resize(size)
 	low_fill_decay_threshold_by_id.resize(size)
 	low_fill_decay_rate_by_id.resize(size)
+	light_diffusion_by_id.resize(size)
+	emitted_light_by_id.resize(size)
 	fill_color_by_id.resize(size)
 	accent_color_by_id.resize(size)
 	pattern_by_id.resize(size)

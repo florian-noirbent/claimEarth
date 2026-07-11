@@ -43,16 +43,37 @@ func get_committed_fill_by_offset(col: int, row: int) -> int:
 	return get_committed_fill_by_index(dimensions.offset_to_index(col, row))
 
 
+func get_committed_light_by_index(index: int) -> int:
+	return cell_bytes[_byte_offset(index) + CELL_LIGHT]
+
+
+func get_committed_light_by_offset(col: int, row: int) -> int:
+	return get_committed_light_by_index(dimensions.offset_to_index(col, row))
+
+
 func set_committed_by_index(index: int, cell_id: int, fill: int = -1) -> CellChange:
 	var previous_id := get_committed_by_index(index)
 	var previous_fill := get_committed_fill_by_index(index)
 	var next_fill := _resolved_fill(cell_id, fill)
+	var offset := _byte_offset(index)
+	var previous_light := cell_bytes[offset + CELL_LIGHT]
+	var previous_flags := cell_bytes[offset + CELL_FLAGS]
 	_write_cell_bytes(index, cell_id, next_fill)
+	cell_bytes[offset + CELL_LIGHT] = previous_light
+	cell_bytes[offset + CELL_FLAGS] = previous_flags
 	return CellChange.new(index, previous_id, cell_id, previous_fill, next_fill)
 
 
 func set_committed_by_offset(col: int, row: int, cell_id: int, fill: int = -1) -> CellChange:
 	return set_committed_by_index(dimensions.offset_to_index(col, row), cell_id, fill)
+
+
+func set_committed_light_by_index(index: int, light: int) -> void:
+	cell_bytes[_byte_offset(index) + CELL_LIGHT] = clampi(light, 0, 255)
+
+
+func set_committed_light_by_offset(col: int, row: int, light: int) -> void:
+	set_committed_light_by_index(dimensions.offset_to_index(col, row), light)
 
 
 func fill_committed(cell_id: int, fill: int = -1) -> void:

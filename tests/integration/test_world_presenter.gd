@@ -101,6 +101,8 @@ func test_world_presenter_binds_presentation_config_uniforms() -> void:
 
 	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
 	var config := presenter.presentation_config
+	assert_eq(material.get_shader_parameter("light_black_threshold"), config.light_black_threshold)
+	assert_eq(material.get_shader_parameter("light_full_brightness_threshold"), config.light_full_brightness_threshold)
 	assert_eq(material.get_shader_parameter("fluid_alpha"), config.fluid_alpha)
 	assert_eq(material.get_shader_parameter("fluid_caustic_strength"), config.fluid_caustic_strength)
 	assert_eq(material.get_shader_parameter("fluid_caustic_scale"), config.fluid_caustic_scale)

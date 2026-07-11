@@ -15,6 +15,7 @@ is_solid = true
 is_passable = false
 is_hookable = true
 is_destructible = true
+light_diffusion_coefficient = 0.8
 debug_color = Color(0.59, 0.34, 0.19, 1)
 visual_style = ExtResource("5_6rqio")
 motion_behavior = ExtResource("2_7kg4n")

@@ -30,6 +30,14 @@ func test_copy_committed_region_returns_row_major_bytes() -> void:
 	assert_eq(grid.copy_rgba_region(Rect2i(1, 0, 1, 1)), PackedByteArray([1, 64, 255, 255]))
 
 
+func test_terrain_write_preserves_location_lighting() -> void:
+	var grid := WorldGrid.new(WorldDimensions.new(1, 1), 0)
+	grid.set_committed_light_by_offset(0, 0, 180)
+	grid.set_committed_by_offset(0, 0, FixtureLoader.terrain_id("Stone"))
+
+	assert_eq(grid.get_committed_light_by_offset(0, 0), 180)
+
+
 func test_committed_hash_includes_fill_amounts() -> void:
 	var left := WorldGrid.new(WorldDimensions.new(2, 2), 0)
 	var right := WorldGrid.new(WorldDimensions.new(2, 2), 0)

@@ -85,6 +85,13 @@ cancelled and freed.
 - `B`: lighting/reserved byte.
 - `A`: flags/reserved byte.
 
+The simulation backend owns lighting updates in the `B` byte. It preserves light by
+map location as terrain moves, injects terrain-defined emitters and the current
+player source, and evaluates the player-local radius on every CA pass; other cells
+update only on the sixth pass. Values at the presentation-config exploration
+threshold are retained as fog-of-war state. The terrain shader converts the byte to
+black, graded, and full-brightness output.
+
 CPU gameplay reads the packed RAM buffer through `WorldGrid` accessors. At runtime,
 rendering samples the backend's final GPU simulation texture directly; the packed
 `WorldGrid` texture remains the CPU snapshot mirror for gameplay writes, previews,
@@ -151,7 +158,8 @@ simulation from that known state. This keeps player physics and item effects
 independent from the visual simulation cadence while preventing simulation races
 with explosions or digging.
 
-Threaded and compute backends are not implemented. A future threaded backend must
+The shipped backend is GPU render-texture only; headless tests do not emulate terrain
+motion. Threaded and compute backends are not implemented. A future threaded backend must
 reuse the plain simulation/build inputs and outputs, keep scene-tree and resource
 application on the main thread, and remain optional for the single-thread Web build.
 
