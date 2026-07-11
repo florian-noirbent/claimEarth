@@ -41,6 +41,11 @@ briefly shows the item name above the toolbar.
 A compact pause button opens the pause menu, which contains Resume and Back to Menu
 actions.
 
+Active hazards appear as an icon-only stack of filling bars at the top center. Building
+bars pulse with a gold warning outline; recovering bars are dimmed with a downward
+indicator. The stack is generic so future terrain hazards can add their own icon and
+color without HUD-specific logic.
+
 The first second of a run blocks throws so the Start click cannot fire an item.
 
 ## World
@@ -66,9 +71,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Air | Passable | Stable | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
-| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; burial hazard only when full | Becomes air |
-| Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; suffocation hazard only when full | Diffuses propagation |
-| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; lethal at 10% fill or more | Detonates bombs |
+| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; pushes the player out rather than burying them | Becomes air |
+| Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; contributes no terrain-specific player hazard | Diffuses propagation |
+| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
 
 Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
 partial fill controls movement and rendering. Terrain simulation advances as a
@@ -92,9 +97,13 @@ player physics, projectiles, and input stay responsive.
 - The camera remains horizontally fixed and zooms so the map width fills the
   viewport. It never scrolls upward during a run.
 
-The player dies from lava at 10% fill or more, prolonged full-water exposure, full
-sand burial, a bomb's lethal radius, or falling below the world. Death never records
-current depth.
+The player dies when a hazard meter fills, from a bomb's lethal radius, or by falling
+below the world. A full lava hex fills in 0.2 seconds; lava from its 10% activation
+threshold ramps linearly from 10% to full meter-fill speed as terrain fill rises. Suffocation
+fills while the head has no breathable Air: a partially filled head hex samples the
+hex above it, while a full non-Air hex blocks breathing. Hazard meters recover over
+time after escape, with lava recovering in one second and suffocation in three.
+Death never records current depth.
 
 ## Items
 

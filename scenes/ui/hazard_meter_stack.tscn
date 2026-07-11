@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/app/hazard_meter_stack.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hazard_meter_row.tscn" id="2_row"]
+
+[node name="HazardMeterStack" type="Control"]
+custom_minimum_size = Vector2(286, 0)
+mouse_filter = 2
+script = ExtResource("1_script")
+row_scene = ExtResource("2_row")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 6

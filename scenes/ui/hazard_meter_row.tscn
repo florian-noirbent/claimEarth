@@ -1,0 +1,71 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/app/hazard_meter_row.gd" id="1_script"]
+
+[node name="HazardMeterRow" type="Control"]
+custom_minimum_size = Vector2(286, 44)
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+clip_contents = true
+mouse_filter = 2
+
+[node name="ForwardSweep" type="ColorRect" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = -34.0
+offset_top = 4.0
+offset_right = 0.0
+offset_bottom = 40.0
+mouse_filter = 2
+color = Color(1, 0.82, 0.35, 0.18)
+
+[node name="Icon" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = 42.0
+offset_bottom = 40.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Meter" type="ProgressBar" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 51.0
+offset_top = 12.0
+offset_right = -30.0
+offset_bottom = 32.0
+grow_horizontal = 2
+mouse_filter = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="StateIndicator" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -26.0
+offset_top = 6.0
+offset_right = -5.0
+offset_bottom = 38.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 22
+text = ">"
+horizontal_alignment = 1
+vertical_alignment = 1

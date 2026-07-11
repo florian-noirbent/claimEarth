@@ -245,8 +245,13 @@ func test_hazards_apply_in_live_run() -> void:
 	var world := app_root.current_world()
 	var lava_id := FixtureLoader.terrain_id("Lava")
 	var player_offset := HexMetrics.offset_for_world(app_root.get_player().global_position, app_root.world_presenter.hex_radius)
-	world.set_committed_by_offset(player_offset.x, player_offset.y, lava_id)
-	await wait_physics_frames(2)
+	for row in range(player_offset.y - 2, player_offset.y + 12):
+		for col in range(player_offset.x - 2, player_offset.x + 3):
+			if world.dimensions.is_in_bounds_offset(col, row):
+				world.set_committed_by_offset(col, row, lava_id)
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 0.5)
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 

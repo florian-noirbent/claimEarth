@@ -1,6 +1,15 @@
-[gd_resource type="Resource" script_class="LavaHazardBehavior" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LavaHazardBehavior" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/lava_hazard_behavior.gd" id="1_fn2il"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_lava.svg" id="2_lava_icon"]
 
 [resource]
 script = ExtResource("1_fn2il")
+icon = ExtResource("2_lava_icon")
+bar_color = Color(0.941176, 0.415686, 0.196078, 1)
+fill_seconds = 0.2
+recovery_seconds = 1.0
+display_order = 20
+minimum_fill = 26
+fill_rate_at_minimum_fill = 0.1
+fill_rate_at_full_fill = 1.0

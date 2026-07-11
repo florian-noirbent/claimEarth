@@ -6,6 +6,7 @@ extends Node
 signal generation_progressed(progress: float, label: String)
 signal run_ready(next_seed: int)
 signal player_died(cause: StringName)
+signal player_hazard_status_changed(statuses: Array)
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
@@ -140,6 +141,7 @@ func _ensure_player() -> void:
 	_player = _player_scene.instantiate() as PlayerController
 	add_child(_player)
 	_player.death_requested.connect(player_died.emit)
+	_player.hazard_status_changed.connect(player_hazard_status_changed.emit)
 	var spawn_col := _generation_result.spawn_rect.position.x + int(_generation_result.spawn_rect.size.x / 2)
 	var spawn_row := _generation_result.spawn_rect.position.y
 	_player.world_bottom_y = HexMetrics.center_for_offset(0, _profile.depth + 6, _world_presenter.hex_radius).y

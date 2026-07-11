@@ -5,6 +5,7 @@ extends CharacterBody2D
 
 signal bounds_exited
 signal death_requested(cause: StringName)
+signal hazard_status_changed(statuses: Array)
 
 const GrappleModelScript = preload("res://src/player/grapple_model.gd")
 const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd")
@@ -15,6 +16,7 @@ const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_moti
 
 @export var movement_config: PlayerMovementConfig
 @export var grapple_config: GrappleConfig
+@export var suffocation_hazard_behavior: TerrainHazardBehavior
 @export var world_bottom_y := 100000.0
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0
@@ -120,6 +122,7 @@ func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, 
 	_hex_radius = hex_radius
 	_terrain_query.configure(world, CompiledTerrainData.compile(terrain_registry), hex_radius)
 	_environment_status.reset()
+	hazard_status_changed.emit([])
 
 
 func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
@@ -241,7 +244,11 @@ func _sample_environment(delta: float) -> void:
 		var effect = _hazard_effect_at(sample_position)
 		if effect != null:
 			effects.append(effect)
+	var suffocation_effect = _suffocation_effect_at_head()
+	if suffocation_effect != null:
+		effects.append(suffocation_effect)
 	var cause := _environment_status.evaluate(effects, delta)
+	hazard_status_changed.emit(_environment_status.statuses())
 	if cause != DeathCauseScript.NONE:
 		death_requested.emit(cause)
 
@@ -304,3 +311,21 @@ func _hazard_effect_at(world_position: Vector2):
 	if definition == null:
 		return null
 	return definition.hazard_behavior.resolve_for_fill(_world.get_committed_fill_by_offset(offset.x, offset.y))
+
+
+func _suffocation_effect_at_head():
+	if suffocation_hazard_behavior == null or _head_has_breathable_air():
+		return null
+	return suffocation_hazard_behavior.resolve()
+
+
+func _head_has_breathable_air() -> bool:
+	var offset := HexMetrics.offset_for_world(global_position + Vector2(0.0, -10.0), _hex_radius)
+	while _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+		if definition == null or definition.is_empty_space:
+			return true
+		if _world.get_committed_fill_by_offset(offset.x, offset.y) >= 255:
+			return false
+		offset = HexCoord.from_offset_odd_q(offset.x, offset.y).neighbor(2).to_offset_odd_q()
+	return true

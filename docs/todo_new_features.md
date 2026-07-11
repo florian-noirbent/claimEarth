@@ -1,18 +1,4 @@
 # New features
-## Terrain
-* simulate map during loading to settle down (100 steps)
-
-## hazard
-- stack hazard bar to warn the player when any hazard is ticking.
-- each bar slowly recover when the player is out of danger instead of immediate turn off
-- low fill level of lava/sulfuric_acid/sulfur_dioxide fill the hazard bar more slowly
-
-* remove drawning hazard and suffocation hazard (sand and water, make breathing hazard when not in air insteads)
-* lava (update): 0.2s delay before death instead of immediate
-* acid:  1.5s delay. touch sulfuric_acid
-* poison: 10s delay. touch sulfur_dioxide
-* radiation
-* fall and swing impact: medium impact knock out and ragdoll the player. high speed impact kills the player
 
 ## perks
 breath underwater:

@@ -155,3 +155,52 @@ func test_playing_ui_only_buttons_capture_mouse() -> void:
 	assert_has(capturing_paths, str(ui.pause_button.get_path()))
 	for child in ui.item_toolbar_content.get_children():
 		assert_has(capturing_paths, str(child.get_path()))
+
+
+func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.show_hazard_statuses([
+		{
+			"cause": &"lava",
+			"icon": load("res://assets/ui/hazard_lava.svg"),
+			"bar_color": Color(0.94, 0.42, 0.2),
+			"level": 0.6,
+			"is_active": true,
+			"display_order": 20,
+		},
+		{
+			"cause": &"suffocation",
+			"icon": load("res://assets/ui/hazard_suffocation.svg"),
+			"bar_color": Color(0.35, 0.72, 0.91),
+			"level": 0.25,
+			"is_active": false,
+			"display_order": 10,
+		},
+	])
+
+	assert_true(ui.hazard_meter_stack.visible)
+	assert_eq(ui.hazard_meter_stack.meter_count(), 2)
+	var suffocation_row = ui.hazard_meter_stack.rows.get_child(0)
+	var lava_row = ui.hazard_meter_stack.rows.get_child(1)
+	assert_eq(suffocation_row.meter.value, 25.0)
+	assert_eq(suffocation_row.state_indicator.text, "v")
+	assert_false(suffocation_row.forward_sweep.visible)
+	assert_eq(lava_row.meter.value, 60.0)
+	assert_true(lava_row.is_building())
+	assert_eq(lava_row.state_indicator.text, ">")
+	assert_true(lava_row.forward_sweep.visible)
+	assert_eq(lava_row.mouse_filter, Control.MOUSE_FILTER_IGNORE)
+	assert_not_null(lava_row.icon_rect.texture)
+
+	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
+	assert_false(ui.hazard_meter_stack.visible)
+	assert_eq(ui.hazard_meter_stack.meter_count(), 2)
+	ui.apply_state(RunPhase.GENERATING, 42, "", -1, "")
+	assert_eq(ui.hazard_meter_stack.meter_count(), 0)

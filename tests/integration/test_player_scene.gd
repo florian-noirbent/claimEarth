@@ -138,3 +138,39 @@ func test_player_unstuck_push_moves_gradually_toward_nearest_air() -> void:
 	assert_almost_eq(player.global_position.distance_to(start_position), 4.0, 0.001)
 	assert_eq(player.velocity.x, 0.0)
 	assert_eq(player.velocity.y, 30.0)
+
+
+func test_suffocation_samples_air_above_a_partial_head_hex() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Stone"))
+	var head_cell := Vector2i(3, 3)
+	var above_cell := HexCoord.from_offset_odd_q(head_cell.x, head_cell.y).neighbor(2).to_offset_odd_q()
+	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 128)
+	world.set_committed_by_offset(above_cell.x, above_cell.y, FixtureLoader.terrain_id("Air"))
+	player.configure_environment(world, registry, 16.0)
+	player.global_position = HexMetrics.center_for_offset(head_cell.x, head_cell.y, 16.0)
+
+	assert_true(player._head_has_breathable_air())
+	assert_null(player._suffocation_effect_at_head())
+
+
+func test_suffocation_starts_when_the_head_hex_is_full_non_air() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
+	var head_cell := Vector2i(3, 3)
+	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 255)
+	player.configure_environment(world, registry, 16.0)
+	player.global_position = HexMetrics.center_for_offset(head_cell.x, head_cell.y, 16.0)
+
+	assert_false(player._head_has_breathable_air())
+	assert_not_null(player._suffocation_effect_at_head())

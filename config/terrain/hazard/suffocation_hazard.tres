@@ -1,6 +1,13 @@
-[gd_resource type="Resource" script_class="SuffocationHazardBehavior" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="SuffocationHazardBehavior" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/suffocation_hazard_behavior.gd" id="1_8y9xo"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_suffocation.svg" id="2_suffocation_icon"]
 
 [resource]
 script = ExtResource("1_8y9xo")
+icon = ExtResource("2_suffocation_icon")
+bar_color = Color(0.34902, 0.721569, 0.909804, 1)
+fill_seconds = 3.0
+recovery_seconds = 3.0
+display_order = 10
+minimum_fill = 1

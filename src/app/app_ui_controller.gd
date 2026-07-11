@@ -28,6 +28,7 @@ signal restart_requested
 @onready var help_back_button: Button = %HelpBackButton
 @onready var overlay_root: MarginContainer = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
+@onready var hazard_meter_stack = %HazardMeterStack
 @onready var play_status_label: Label = %PlayStatus
 @onready var run_state_label: Label = %RunStateLabel
 @onready var pause_button: Button = %PauseButton
@@ -97,6 +98,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 		RunPhase.RESULT,
 	]
 	playing_panel.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	hazard_meter_stack.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	pause_button.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	item_toolbar.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	if state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
@@ -107,6 +109,8 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 	pause_panel.visible = state == RunPhase.PAUSED
 	leaderboard_panel.visible = state == RunPhase.LEADERBOARD
 	warning_label.text = storage_warning
+	if state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]:
+		hazard_meter_stack.clear_hazards()
 
 	match state:
 		RunPhase.MAIN_MENU:
@@ -164,6 +168,11 @@ func show_generation_progress(progress: float, label: String) -> void:
 func show_play_status(status_text: String, hint_text: String) -> void:
 	play_status_label.text = status_text
 	run_state_label.text = hint_text
+
+
+## Updates the generic top-center icon meters from gameplay-owned hazard snapshots.
+func show_hazard_statuses(statuses: Array) -> void:
+	hazard_meter_stack.update_hazards(statuses)
 
 
 func show_run_status(depth: int, personal_best: int, hooked: bool, item_status: Dictionary) -> void:

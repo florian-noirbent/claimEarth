@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://d1m8v0y3f0n7q" path="res://assets/ui/help_icon.svg" id="18_help"]
 [ext_resource type="Texture2D" uid="uid://deiswgycc57at" path="res://assets/ui/pause_icon.svg" id="19_pause"]
 [ext_resource type="Texture2D" uid="uid://d38vd08dpjt1y" path="res://assets/ui/play_icon.svg" id="20_play"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hazard_meter_stack.tscn" id="21_hazard_meter_stack"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
 content_margin_left = 18.0
@@ -432,6 +433,19 @@ offset_right = 360.0
 offset_bottom = 64.0
 mouse_filter = 2
 theme_override_constants/separation = 6
+
+[node name="HazardMeterStack" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2071889634 instance=ExtResource("21_hazard_meter_stack")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -143.0
+offset_top = 6.0
+offset_right = 143.0
+offset_bottom = 6.0
+grow_horizontal = 2
+mouse_filter = 2
 
 [node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=163240117]
 unique_name_in_owner = true

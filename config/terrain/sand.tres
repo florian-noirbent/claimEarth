@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_4t44v"]
 [ext_resource type="Resource" path="res://config/terrain/motion/falling_motion.tres" id="2_xg05d"]
-[ext_resource type="Resource" path="res://config/terrain/hazard/burial_hazard.tres" id="3_ch8dv"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_ch8dv"]
 [ext_resource type="Resource" path="res://config/terrain/blast/sand_to_air.tres" id="4_gn7rd"]
 [ext_resource type="Resource" path="res://config/visual/sand_style.tres" id="5_o5dc7"]
 

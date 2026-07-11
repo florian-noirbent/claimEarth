@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_14pcm"]
 [ext_resource type="Resource" path="res://config/terrain/motion/liquid_motion.tres" id="2_hkqhy"]
-[ext_resource type="Resource" path="res://config/terrain/hazard/suffocation_hazard.tres" id="3_3p1bi"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_3p1bi"]
 [ext_resource type="Resource" path="res://config/terrain/blast/water_diffuse.tres" id="4_qkli1"]
 [ext_resource type="Resource" path="res://config/visual/water_style.tres" id="5_5svoe"]
 

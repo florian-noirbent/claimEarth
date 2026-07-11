@@ -78,6 +78,7 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.generation_progressed.connect(ui.show_generation_progress)
 	session.run_ready.connect(_on_run_ready)
 	session.player_died.connect(_on_player_death_requested)
+	session.player_hazard_status_changed.connect(ui.show_hazard_statuses)
 	session.player_killed.connect(_on_player_death_requested)
 	session.bomb_exploded.connect(_on_bomb_exploded)
 	session.flag_planted.connect(_on_flag_planted)

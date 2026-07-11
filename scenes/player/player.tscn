@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
 [ext_resource type="Resource" path="res://config/player/default_grapple.tres" id="3_grapple"]
 [ext_resource type="Texture2D" path="res://assets/objects/player_body.svg" id="4_body"]
 [ext_resource type="Resource" path="res://config/player/default_movement.tres" id="5_movement"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/suffocation_hazard.tres" id="6_suffocation"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
 radius = 14.0
@@ -15,6 +16,7 @@ collision_layer = 1
 collision_mask = 1
 movement_config = ExtResource("5_movement")
 grapple_config = ExtResource("3_grapple")
+suffocation_hazard_behavior = ExtResource("6_suffocation")
 
 [node name="BodyVisual" type="Node2D" parent="."]
 unique_name_in_owner = true

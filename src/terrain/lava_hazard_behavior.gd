@@ -1,4 +1,4 @@
-## Terrain hazard behavior for lava lethal contact.
+## Terrain hazard behavior for lava exposure.
 class_name LavaHazardBehavior
 extends TerrainHazardBehavior
 
@@ -11,6 +11,5 @@ func _init() -> void:
 func resolve():
 	var effect = HazardEffectScript.new()
 	effect.cause = DeathCauseScript.LAVA
-	effect.lethal_on_touch = true
-	effect.minimum_fill = 26
+	configure_meter(effect)
 	return effect

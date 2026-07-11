@@ -139,6 +139,15 @@ Call sites must not branch on terrain ID, display name, script class, or resourc
 path. Add behavior through the existing strategy/resource boundary. The simulation
 backend may compile registry data into IDs for its hot loop.
 
+`EnvironmentStatus` owns generic player hazard meters. Terrain hazard behaviors
+resolve fill-aware meter definitions, including their icon, color, fill/recovery
+durations, terrain-fill rate curve, and display order; the player samples those definitions at occupied body
+hexes and forwards meter snapshots through the run controllers to `AppUiController`.
+Suffocation is the one environment-wide rule: the head must resolve to empty Air,
+walking upward through partial cells before evaluating the next full cell. The HUD is
+generic and never branches on a hazard cause. New terrain hazards therefore add a
+behavior resource and authored icon rather than UI logic.
+
 `TerrainSimulationBackend` defines initialization, advancement, commit, region
 read, render attachment, active texture access, mutation notification, and shutdown.
 `RenderTextureSimulationBackend` is the implemented backend. `RunWorldController`
