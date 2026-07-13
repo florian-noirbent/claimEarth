@@ -8,6 +8,12 @@
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\tools\\run_web_debug.ps1\""
         },
         {
+            "name": "Launch Phone Web Test (HTTPS + QR)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\tools\\run_phone_web.ps1\""
+        },
+        {
             "name": "Run Godot Editor",
             "type": "node-terminal",
             "request": "launch",

@@ -14,11 +14,15 @@ Use Godot 4.6.3 with the Compatibility renderer. From the repository root:
 
 The primary release target is itch.io Web on desktop Chromium and Firefox. Use `.\tools\export_web.ps1` and `.\tools\serve_web.ps1` for local Web builds; opening `build/web/index.html` directly is not a valid Web test.
 
+For HTTPS testing on a phone, use the VS Code **Test Web on Phone (HTTPS + QR)**
+task or follow [`docs/WEB_PHONE_TESTING.md`](docs/WEB_PHONE_TESTING.md).
+
 ## Documentation
 
 - `docs/GAME_DESIGN.md` describes player-facing rules and invariants.
 - `docs/ARCHITECTURE.md` describes ownership boundaries and extension paths.
 - `docs/ASSET_NOTES.md` records visual asset constraints and notes.
 - `docs/RELEASE_CHECKLIST.md` lists release/export gates.
+- `docs/WEB_PHONE_TESTING.md` documents trusted local HTTPS phone testing.
 - `tools/README.md` documents development commands.
 - `AGENTS.md` contains operating instructions for coding agents.

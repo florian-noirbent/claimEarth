@@ -16,6 +16,11 @@ if ($null -eq $jsAsset -or $null -eq $wasmAsset) {
 	throw "Web smoke failed: exported JavaScript or WebAssembly payload is missing."
 }
 
+& "$PSScriptRoot\smoke_exported_game.ps1"
+if ($LASTEXITCODE -ne 0) {
+	exit $LASTEXITCODE
+}
+
 $serverId = & "$PSScriptRoot\serve_web.ps1"
 try {
 	Start-Sleep -Seconds 2

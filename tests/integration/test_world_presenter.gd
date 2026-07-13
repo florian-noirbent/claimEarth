@@ -1,6 +1,7 @@
 extends GutTest
 
 const WorldPresenterShader = preload("res://src/presentation/world_presenter.gdshader")
+const TerrainSimulationShader = preload("res://src/simulation/render_texture_simulation.gdshader")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
 
 
@@ -165,6 +166,7 @@ func test_world_presenter_can_bind_backend_phase_textures() -> void:
 	world.set_committed_by_offset(2, 0, FixtureLoader.terrain_id("Sand"))
 	presenter.configure(world, FixtureLoader.terrain_registry())
 	var backend = RenderTextureSimulationBackendScript.new()
+	backend.set_simulation_shader(TerrainSimulationShader)
 	backend.initialize(world, FixtureLoader.terrain_registry(), 123)
 	add_child_autofree(backend.render_root())
 

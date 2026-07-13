@@ -7,6 +7,7 @@ Current art is original repository content stored by runtime use:
 - `assets/objects/large_bomb.svg`
 - `assets/objects/flag.svg`
 - `assets/ui/help_icon.svg`
+- `assets/ui/fullscreen_icon.svg`
 - `assets/ui/pause_icon.svg`
 - `assets/ui/play_icon.svg`
 - `assets/ui/hazard_suffocation.svg` — original dark-outlined blue bubble icon for the generic suffocation meter.

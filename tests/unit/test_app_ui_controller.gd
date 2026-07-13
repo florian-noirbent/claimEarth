@@ -40,6 +40,49 @@ func test_ui_controller_emits_intents_and_applies_phase_visibility() -> void:
 	assert_string_contains(ui.status_label.text, "42")
 
 
+func test_settings_toggle_and_touch_controls_follow_play_state() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	watch_signals(ui)
+	ui.menu_settings_button.pressed.emit()
+	assert_true(ui.settings_panel.visible)
+	assert_false(ui.menu_panel.visible)
+	assert_signal_emitted(ui, "settings_requested")
+	ui.phone_controls_toggle.toggled.emit(true)
+	assert_signal_emitted_with_parameters(ui, "phone_controls_changed", [true])
+
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	await wait_process_frames(1)
+	assert_true(ui.left_touch_pad.visible)
+	assert_true(ui.right_touch_pad.visible)
+	var viewport_rect := get_viewport().get_visible_rect()
+	var expected_left_rect := Rect2(32.0, 444.0, 244.0, 244.0)
+	var expected_right_rect := Rect2(1004.0, 444.0, 244.0, 244.0)
+	assert_eq(ui.left_touch_pad.get_global_rect(), expected_left_rect)
+	assert_eq(ui.right_touch_pad.get_global_rect(), expected_right_rect)
+	assert_true(viewport_rect.encloses(_touch_ring_rect(expected_left_rect)))
+	assert_true(viewport_rect.encloses(_touch_ring_rect(expected_right_rect)))
+	assert_false(expected_left_rect.intersects(ui.item_toolbar.get_global_rect()))
+	assert_false(expected_right_rect.intersects(ui.item_toolbar.get_global_rect()))
+	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
+	assert_false(ui.left_touch_pad.visible)
+	assert_false(ui.right_touch_pad.visible)
+
+	ui.settings_back_button.pressed.emit()
+	assert_false(ui.settings_panel.visible)
+
+
+func _touch_ring_rect(pad_rect: Rect2) -> Rect2:
+	const OUTER_RING_RADIUS := 112.0
+	var center := pad_rect.get_center()
+	return Rect2(center - Vector2.ONE * OUTER_RING_RADIUS, Vector2.ONE * OUTER_RING_RADIUS * 2.0)
+
+
 func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
@@ -108,6 +151,107 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	assert_eq(ui.result_panel.get_theme_stylebox("panel"), ui.help_panel.get_theme_stylebox("panel"))
 	assert_eq(ui.restart_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 	assert_eq(ui.result_menu_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+
+
+func test_fps_display_formats_and_samples_only_during_active_play() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	assert_eq(ui.fps_timer.wait_time, 0.5)
+	assert_true(ui.fps_timer.is_stopped())
+	assert_false(ui.fps_label.is_visible_in_tree())
+
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.show_fps(73)
+	await wait_process_frames(1)
+	assert_eq(ui.fps_label.text, "FPS: 73")
+	assert_true(ui.fps_label.is_visible_in_tree())
+	assert_false(ui.fps_timer.is_stopped())
+	assert_gt(ui.fps_label.get_global_rect().position.y, ui.run_state_label.get_global_rect().position.y)
+
+	ui.apply_state(RunPhase.FLAG_IN_FLIGHT, 42, "", -1, "")
+	assert_true(ui.fps_label.is_visible_in_tree())
+	assert_false(ui.fps_timer.is_stopped())
+
+	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
+	assert_false(ui.fps_label.is_visible_in_tree())
+	assert_true(ui.fps_timer.is_stopped())
+
+
+func test_web_fullscreen_control_is_persistent_and_keeps_pause_in_the_top_right_row() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	ui.set_web_fullscreen_available(true)
+	for state in [
+		RunPhase.MAIN_MENU,
+		RunPhase.GENERATING,
+		RunPhase.PLAYING,
+		RunPhase.FLAG_IN_FLIGHT,
+		RunPhase.NAME_ENTRY,
+		RunPhase.PAUSED,
+		RunPhase.SUBMITTING,
+		RunPhase.DEATH,
+		RunPhase.RESULT,
+		RunPhase.LEADERBOARD,
+	]:
+		ui.apply_state(state, 42, "", -1, "")
+		await wait_process_frames(1)
+		assert_true(ui.fullscreen_button.visible, "Fullscreen should remain visible in %s" % state)
+		assert_eq(ui.fullscreen_button.get_global_rect(), Rect2(1202.0, 24.0, 54.0, 54.0))
+
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.set_phone_controls_enabled(true)
+	await wait_process_frames(1)
+	var fullscreen_rect := ui.fullscreen_button.get_global_rect()
+	assert_eq(ui.pause_button.get_global_rect(), Rect2(1140.0, 24.0, 54.0, 54.0))
+	assert_false(ui.pause_button.get_global_rect().intersects(fullscreen_rect))
+	assert_false(ui.playing_panel.get_global_rect().intersects(fullscreen_rect))
+	assert_false(ui.hazard_meter_stack.get_global_rect().intersects(fullscreen_rect))
+	assert_false(ui.item_toolbar.get_global_rect().intersects(fullscreen_rect))
+	assert_false(ui.left_touch_pad.get_global_rect().intersects(fullscreen_rect))
+	assert_false(ui.right_touch_pad.get_global_rect().intersects(fullscreen_rect))
+	assert_eq(ui.fullscreen_button.mouse_filter, Control.MOUSE_FILTER_STOP)
+	assert_not_null(ui.fullscreen_button.icon)
+	assert_eq(ui.fullscreen_button.get_theme_stylebox("normal"), ui.pause_button.get_theme_stylebox("normal"))
+
+	watch_signals(ui)
+	ui.fullscreen_button.pressed.emit()
+	assert_signal_emitted(ui, "fullscreen_requested")
+	ui.set_fullscreen_active(true)
+	assert_eq(ui.fullscreen_button.tooltip_text, "Exit fullscreen")
+	ui.set_fullscreen_active(false)
+	assert_eq(ui.fullscreen_button.tooltip_text, "Enter fullscreen")
+
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+	await wait_process_frames(1)
+	assert_false(ui.owner_label.get_global_rect().intersects(ui.fullscreen_button.get_global_rect()))
+
+
+func test_native_layout_hides_fullscreen_and_right_aligns_pause() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	ui.set_web_fullscreen_available(false)
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+	await wait_process_frames(1)
+	assert_eq(ui.owner_label.get_global_rect().position.y, 31.0)
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	await wait_process_frames(1)
+	assert_false(ui.fullscreen_button.visible)
+	assert_eq(ui.pause_button.get_global_rect(), Rect2(1202.0, 24.0, 54.0, 54.0))
 
 
 func test_confirm_button_emits_current_editable_name() -> void:

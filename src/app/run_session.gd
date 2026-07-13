@@ -61,10 +61,6 @@ func advance(delta: float) -> void:
 	world_controller.advance(delta)
 
 
-func handle_unhandled_input(event: InputEvent, aim_position: Vector2) -> void:
-	item_controller.handle_unhandled_input(event, aim_position)
-
-
 func shutdown() -> void:
 	world_controller.cancel_generation()
 	item_controller.clear_run()

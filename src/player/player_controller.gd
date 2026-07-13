@@ -13,6 +13,7 @@ const EnvironmentStatusScript = preload("res://src/player/environment_status.gd"
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
 const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
+const GameplayInputControllerScript = preload("res://src/input/gameplay_input_controller.gd")
 
 @export var movement_config: PlayerMovementConfig
 @export var grapple_config: GrappleConfig
@@ -48,6 +49,8 @@ var _grounded := false
 var _hook_launch_elapsed := 0.0
 var _hook_launch_duration := 0.0
 var _hook_launch_target := Vector2.ZERO
+var _input_controller: GameplayInputController
+var _owns_input_controller := false
 
 
 func _ready() -> void:
@@ -58,6 +61,16 @@ func _ready() -> void:
 		_grapple_model.set_anchor_query(_pending_anchor_query)
 	if camera != null:
 		camera.target = self
+	if _input_controller == null:
+		# Standalone player scenes use the same adapter as the composed application.
+		_input_controller = GameplayInputControllerScript.new()
+		_owns_input_controller = true
+
+
+func _exit_tree() -> void:
+	if _owns_input_controller and is_instance_valid(_input_controller):
+		_input_controller.free()
+		_input_controller = null
 
 
 func _physics_process(delta: float) -> void:
@@ -116,6 +129,13 @@ func configure_grapple_anchor_query(anchor_query) -> void:
 	_grapple_model.set_anchor_query(anchor_query)
 
 
+func configure_input_controller(input_controller: GameplayInputController) -> void:
+	if _owns_input_controller and is_instance_valid(_input_controller):
+		_input_controller.free()
+	_owns_input_controller = false
+	_input_controller = input_controller
+
+
 func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, hex_radius: float) -> void:
 	_world = world
 	_terrain_registry = terrain_registry
@@ -151,17 +171,7 @@ func current_rope_length() -> float:
 
 
 func _create_input_frame():
-	var frame = GrappleInputFrameScript.new()
-	frame.move_axis = Input.get_axis(InputActions.MOVE_LEFT, InputActions.MOVE_RIGHT)
-	frame.jump_pressed = Input.is_action_just_pressed(InputActions.JUMP)
-	frame.jump_held = Input.is_action_pressed(InputActions.JUMP)
-	frame.jump_released = Input.is_action_just_released(InputActions.JUMP)
-	frame.hook_pressed = Input.is_action_just_pressed(InputActions.HOOK)
-	frame.hook_held = Input.is_action_pressed(InputActions.HOOK)
-	frame.hook_released = Input.is_action_just_released(InputActions.HOOK)
-	frame.rope_axis = Input.get_axis(InputActions.ROPE_UP, InputActions.ROPE_DOWN)
-	frame.aim_position = get_global_mouse_position()
-	return frame
+	return _input_controller.sample_player_input(global_position, _grapple_model.state.is_attached)
 
 
 func _is_grounded_for_movement() -> bool:

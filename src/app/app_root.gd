@@ -44,15 +44,30 @@ var _previous_play_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := false
 var _test_mode := false
 var _configured_save_path := ""
+var _configured_settings_path := ""
 var _injected_leaderboard_service: LeaderboardService
+var _input_controller: GameplayInputController
+var _settings_controller: AppSettingsController
 
 
 func _ready() -> void:
 	_current_seed = _initial_run_seed()
+	_input_controller = GameplayInputController.new()
+	add_child(_input_controller)
+	_settings_controller = AppSettingsController.new()
+	add_child(_settings_controller)
+	if not _configured_settings_path.is_empty():
+		_settings_controller.configure(_configured_settings_path)
+	else:
+		_settings_controller.configure()
 	if not _configured_save_path.is_empty():
 		score_controller.configure_save_path(_configured_save_path)
 	score_controller.configure(leaderboard_config, _test_mode, _injected_leaderboard_service)
 	_connect_persistent_signals()
+	ui.set_web_fullscreen_available(OS.has_feature("web"))
+	_refresh_fullscreen_state()
+	get_viewport().size_changed.connect(_refresh_fullscreen_state)
+	_apply_phone_controls_enabled(false if _test_mode else _settings_controller.phone_controls_enabled())
 	_apply_state(_run_coordinator.current_state)
 	if score_controller.has_service():
 		_refresh_leaderboard()
@@ -65,9 +80,21 @@ func _connect_persistent_signals() -> void:
 	ui.leaderboard_requested.connect(_on_leaderboard_requested)
 	ui.menu_requested.connect(_on_menu_requested)
 	ui.pause_requested.connect(_toggle_pause)
+	ui.fullscreen_requested.connect(_toggle_fullscreen)
 	ui.item_selected.connect(_on_item_selected)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_requested)
+	ui.phone_controls_changed.connect(_settings_controller.set_phone_controls_enabled)
+	ui.touch_move_changed.connect(_input_controller.set_touch_move)
+	ui.touch_aim_changed.connect(_input_controller.set_touch_aim)
+	ui.touch_aim_released.connect(_input_controller.release_touch_aim)
+	ui.touch_hook_pressed.connect(_input_controller.press_touch_hook)
+	ui.touch_hook_released.connect(_input_controller.release_touch_hook)
+	_input_controller.throw_requested.connect(_on_throw_requested)
+	_input_controller.item_cycle_requested.connect(_on_item_cycle_requested)
+	_input_controller.item_selected_requested.connect(_on_item_selected)
+	_input_controller.pause_requested.connect(_toggle_pause)
+	_settings_controller.phone_controls_changed.connect(_apply_phone_controls_enabled)
 	score_controller.profile_changed.connect(_update_depth_markers)
 	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
 	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
@@ -105,6 +132,10 @@ func transition_to(next_state: StringName) -> void:
 
 func configure_save_path_for_test(save_path: String) -> void:
 	_configured_save_path = save_path
+
+
+func configure_settings_path_for_test(settings_path: String) -> void:
+	_configured_settings_path = settings_path
 
 
 func set_test_mode(enabled: bool) -> void:
@@ -198,15 +229,24 @@ func _on_item_selected(index: int) -> void:
 	item_controller.select_index(index)
 
 
+func _on_item_cycle_requested(direction: int) -> void:
+	if _run_coordinator.current_state != RunPhase.PLAYING or item_controller == null:
+		return
+	item_controller.cycle_selection(direction)
+
+
+func _on_throw_requested(aim_position: Vector2) -> void:
+	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT] or item_controller == null:
+		return
+	if item_controller.is_flag_in_flight():
+		return
+	item_controller.throw_selected(aim_position)
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(InputActions.PAUSE):
-		_toggle_pause()
+	if _input_controller != null and _input_controller.handle_unhandled_input(event, get_global_mouse_position()):
 		get_viewport().set_input_as_handled()
 		return
-	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
-		return
-	if is_instance_valid(_session):
-		_session.handle_unhandled_input(event, get_global_mouse_position())
 
 
 func _toggle_pause() -> void:
@@ -222,12 +262,29 @@ func _toggle_pause() -> void:
 			transition_to(RunPhase.RESULT)
 
 
+func _toggle_fullscreen() -> void:
+	var current_mode := DisplayServer.window_get_mode()
+	var next_mode := DisplayServer.WINDOW_MODE_WINDOWED if _is_fullscreen_mode(current_mode) else DisplayServer.WINDOW_MODE_FULLSCREEN
+	DisplayServer.window_set_mode(next_mode)
+	_refresh_fullscreen_state()
+
+
+func _refresh_fullscreen_state() -> void:
+	ui.set_fullscreen_active(_is_fullscreen_mode(DisplayServer.window_get_mode()))
+
+
+func _is_fullscreen_mode(mode: DisplayServer.WindowMode) -> bool:
+	return mode in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
+
+
 func _on_state_changed(_previous_state: StringName, next_state: StringName) -> void:
 	_apply_state(next_state)
 
 
 func _apply_state(next_state: StringName) -> void:
 	ui.apply_state(next_state, _current_seed, score_controller.storage_warning, _pending_score_depth, score_controller.last_player_name)
+	if next_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
+		_input_controller.clear_virtual_input()
 	match next_state:
 		RunPhase.MAIN_MENU:
 			_set_session_active(false)
@@ -248,8 +305,6 @@ func _apply_state(next_state: StringName) -> void:
 			push_error("Unknown run state: %s" % [next_state])
 	if next_state == RunPhase.LEADERBOARD:
 		_refresh_leaderboard()
-
-
 func _start_new_run() -> void:
 	var serial := _begin_session_change()
 	var session := await _replace_session(serial)
@@ -306,8 +361,15 @@ func _set_session_active(is_active: bool) -> void:
 
 func _on_run_ready(next_seed: int) -> void:
 	_current_seed = next_seed
+	if get_player() != null:
+		get_player().configure_input_controller(_input_controller)
 	if _run_coordinator.current_state == RunPhase.GENERATING:
 		transition_to(RunPhase.PLAYING)
+
+
+func _apply_phone_controls_enabled(enabled: bool) -> void:
+	ui.set_phone_controls_enabled(enabled)
+	_input_controller.set_phone_controls_enabled(enabled)
 
 
 func _process(delta: float) -> void:

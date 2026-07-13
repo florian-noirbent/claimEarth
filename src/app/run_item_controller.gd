@@ -59,21 +59,17 @@ func advance(delta: float) -> void:
 	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
 
 
-func handle_unhandled_input(event: InputEvent, aim_position: Vector2) -> void:
-	if is_flag_in_flight():
-		return
-	if event.is_action_pressed(InputActions.SELECT_SMALL_BOMB):
-		select_index(0)
-	elif event.is_action_pressed(InputActions.SELECT_LARGE_BOMB):
-		select_index(1)
-	elif event.is_action_pressed(InputActions.SELECT_FLAG):
-		select_index(2)
-	elif event.is_action_pressed(InputActions.THROW_SELECTED):
-		throw_selected(aim_position)
-
-
 func select_index(index: int) -> void:
 	_inventory.select_index(index)
+
+
+func cycle_selection(direction: int) -> void:
+	var definitions := _inventory.definitions()
+	if definitions.is_empty() or direction == 0:
+		return
+	var selected_definition := _inventory.selected_definition()
+	var selected_index := definitions.find(selected_definition)
+	_inventory.select_index(posmod(selected_index + signi(direction), definitions.size()))
 
 
 func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> bool:

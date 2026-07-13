@@ -13,8 +13,8 @@ the flag loses it.
 ## Core Loop
 
 1. The menu shows illustrated cave background art, a top-centered title, stylized
-   action buttons, a corner leaderboard owner, and a Help page for theme, rules,
-   and controls.
+   action buttons, a corner leaderboard owner, and Help and Settings pages for
+   rules, controls, and device preferences.
 2. Starting creates a randomized deterministic map and a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
 4. The player throws the flag when ready to claim a depth.
@@ -23,6 +23,8 @@ the flag loses it.
 7. The player restarts with a new seed or returns to the menu.
 
 ## Controls
+
+Keyboard and mouse remain fully supported on desktop.
 
 | Input | Action |
 | --- | --- |
@@ -35,9 +37,46 @@ the flag loses it.
 | `1`, `2`, `3` | Select small bomb, large bomb, or flag |
 | `Escape` | Pause or leave the current modal |
 
+### Phone Controls
+
+Phone controls are shown during a playable run when enabled. They default on when
+the build reports Godot's `mobile`, `web_android`, or `web_ios` feature; this covers
+native mobile exports as well as mobile Web builds. The main-menu Settings screen
+contains a Phone Controls toggle. A user change is saved as an explicit preference
+and takes precedence over automatic detection, so the controls can also be enabled
+for desktop testing.
+
+The touch overlay is designed for landscape fullscreen play:
+
+| Control | Action |
+| --- | --- |
+| Left stick | Move horizontally; when free, push up to jump; while hooked, push up/down to shorten/lengthen the rope |
+| Right stick | Drag to aim; release outside its activation threshold to throw or use the selected item |
+| Right ring | Press in a direction to launch the hook, hold to remain attached, and release to detach |
+
+The inventory toolbar remains touchable for item selection. Touch controls are hidden
+outside an active run and do not duplicate their gestures as mouse item throws.
+Web builds provide a persistent top-right fullscreen toggle. Browsers still require
+the player to press the button before fullscreen can be entered.
+
+### Standard Gamepad
+
+| Input | Action |
+| --- | --- |
+| Left stick or D-pad | Move horizontally; while hooked, adjust rope length |
+| A / Cross | Jump |
+| Right stick | Aim, retaining the last non-zero direction while centered |
+| RT / R2 | Throw or use the selected item |
+| LT / L2 | Press, hold, and release the hook |
+| LB / RB | Cycle inventory backward/forward |
+| Start / Menu | Pause |
+| B / Circle | Back or cancel |
+
 The in-game HUD presents inventory as a compact bottom icon toolbar with the selected
 item highlighted. Toolbar items can be clicked to select them. Changing selection
 briefly shows the item name above the toolbar.
+A live integer FPS reading appears with the top-left run status during active play in
+all release and debug builds so device performance can be compared directly.
 A compact pause button opens the pause menu, which contains Resume and Back to Menu
 actions.
 
@@ -160,8 +199,9 @@ under `config/items/`.
   six-pass terrain tick. World rendering is black through light level 30, grades to
   full brightness by 160, and keeps fully dark air opaque so the cave backdrop does
   not leak through unexplored space.
-- Desktop keyboard and mouse are the supported input scheme. Mobile and touch are not
-  current targets.
+- Keyboard/mouse, touch, and standard gamepad controls are supported. Phone controls
+  target fullscreen landscape Web play now; future native Android and iOS builds use
+  the same control behavior.
 
 ## Feature Invariants
 

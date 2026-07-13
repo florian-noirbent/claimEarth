@@ -125,3 +125,14 @@ radiation level rendered in the 4th texture slot. add a green shade to the block
 
 
 note: all values should be configurable in editor
+
+## Sound design
+
+music
+
+## Juice
+
+screenshake on bomb
+rework bomb vfx
+hook rope texture  + hook end
+

@@ -69,6 +69,39 @@
             "problemMatcher": []
         },
         {
+            "label": "Test Web on Phone (HTTPS + QR)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/run_phone_web.ps1"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Phone Web Server",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/stop_phone_web.ps1"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Run Smoke Test",
             "type": "shell",
             "command": "powershell",

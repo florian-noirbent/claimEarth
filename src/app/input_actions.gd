@@ -14,6 +14,13 @@ const SELECT_FLAG := "select_flag"
 const THROW_SELECTED := "throw_selected"
 const HOOK := "hook"
 const PAUSE := "pause"
+const CYCLE_ITEM_PREVIOUS := "cycle_item_previous"
+const CYCLE_ITEM_NEXT := "cycle_item_next"
+const AIM_LEFT := "aim_left"
+const AIM_RIGHT := "aim_right"
+const AIM_UP := "aim_up"
+const AIM_DOWN := "aim_down"
+const MENU_BACK := "menu_back"
 
 const ALL: PackedStringArray = [
 	MOVE_LEFT,
@@ -27,4 +34,11 @@ const ALL: PackedStringArray = [
 	THROW_SELECTED,
 	HOOK,
 	PAUSE,
+	CYCLE_ITEM_PREVIOUS,
+	CYCLE_ITEM_NEXT,
+	AIM_LEFT,
+	AIM_RIGHT,
+	AIM_UP,
+	AIM_DOWN,
+	MENU_BACK,
 ]

@@ -15,8 +15,11 @@
 [ext_resource type="Texture2D" uid="uid://bgidyprkyaao2" path="res://assets/objects/flag.svg" id="17_flag"]
 [ext_resource type="Texture2D" uid="uid://d1m8v0y3f0n7q" path="res://assets/ui/help_icon.svg" id="18_help"]
 [ext_resource type="Texture2D" uid="uid://deiswgycc57at" path="res://assets/ui/pause_icon.svg" id="19_pause"]
+[ext_resource type="Texture2D" path="res://assets/ui/settings_cog.svg" id="23_settings_cog"]
 [ext_resource type="Texture2D" uid="uid://d38vd08dpjt1y" path="res://assets/ui/play_icon.svg" id="20_play"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hazard_meter_stack.tscn" id="21_hazard_meter_stack"]
+[ext_resource type="Script" path="res://src/ui/virtual_touch_pad.gd" id="22_touch_pad"]
+[ext_resource type="Texture2D" path="res://assets/ui/fullscreen_icon.svg" id="24_fullscreen"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
 content_margin_left = 18.0
@@ -193,11 +196,11 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -328.0
-offset_bottom = 70.0
+offset_bottom = 140.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 18
+theme_override_constants/margin_top = 86
+theme_override_constants/margin_right = 24
 
 [node name="OwnerLabel" type="Label" parent="UiLayer/ScoreCorner" unique_id=1693222855]
 unique_name_in_owner = true
@@ -281,6 +284,20 @@ text = "Help"
 icon = ExtResource("18_help")
 expand_icon = true
 
+[node name="SettingsButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Settings"
+icon = ExtResource("23_settings_cog")
+expand_icon = true
+
 [node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=831887216]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 58)
@@ -355,6 +372,62 @@ text = "Back"
 icon = ExtResource("17_flag")
 expand_icon = true
 
+[node name="SettingsPanel" type="PanelContainer" parent="UiLayer/Center/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
+
+[node name="SettingsMargin" type="MarginContainer" parent="UiLayer/Center/Content/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="SettingsContent" type="VBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 30
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="PhoneControlsToggle" type="CheckButton" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(330, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 20
+text = "Phone Controls"
+
+[node name="SettingsHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
+theme_override_font_sizes/font_size = 15
+text = "Show virtual sticks while playing."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SettingsBackButton" type="Button" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 58)
+layout_mode = 2
+focus_mode = 0
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Back"
+icon = ExtResource("17_flag")
+expand_icon = true
+
 [node name="LeaderboardPanel" type="PanelContainer" parent="UiLayer/Center/Content" unique_id=1903913946]
 unique_name_in_owner = true
 visible = false
@@ -408,7 +481,7 @@ text = "Back"
 icon = ExtResource("17_flag")
 expand_icon = true
 
-[node name="OverlayRoot" type="MarginContainer" parent="UiLayer" unique_id=202866097]
+[node name="OverlayRoot" type="Control" parent="UiLayer" unique_id=202866097]
 unique_name_in_owner = true
 visible = false
 anchors_preset = 15
@@ -417,13 +490,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
 
 [node name="OverlayContent" type="Control" parent="UiLayer/OverlayRoot" unique_id=660231969]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="PlayingPanel" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=708717385]
@@ -460,24 +538,11 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
 text = "Free"
 
-[node name="PauseButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1227630892]
+[node name="FpsLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -58.0
-offset_bottom = 54.0
-grow_horizontal = 0
-tooltip_text = "Pause"
-theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
-theme_override_styles/normal = SubResource("StyleBox_menu_button")
-theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
-theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
-icon = ExtResource("19_pause")
-expand_icon = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
+text = "FPS: 0"
 
 [node name="ItemToolbar" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2011239212]
 unique_name_in_owner = true
@@ -509,6 +574,43 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
+
+[node name="LeftTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(244, 244)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -252.0
+offset_right = 252.0
+offset_bottom = -8.0
+grow_vertical = 0
+script = ExtResource("22_touch_pad")
+kind = 0
+
+[node name="RightTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(244, 244)
+layout_mode = 1
+anchors_preset = 9
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -252.0
+offset_top = -252.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("22_touch_pad")
+kind = 1
 
 [node name="SelectionNameLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1201117353]
 unique_name_in_owner = true
@@ -720,6 +822,52 @@ text = "Exit to Menu"
 icon = ExtResource("17_flag")
 expand_icon = true
 
+[node name="TopRightControls" type="HBoxContainer" parent="UiLayer"]
+unique_name_in_owner = true
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 78.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="PauseButton" type="Button" parent="UiLayer/TopRightControls" unique_id=1227630892]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+tooltip_text = "Pause"
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+icon = ExtResource("19_pause")
+expand_icon = true
+
+[node name="FullscreenButton" type="Button" parent="UiLayer/TopRightControls"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+tooltip_text = "Enter fullscreen"
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+icon = ExtResource("24_fullscreen")
+expand_icon = true
+
 [node name="SelectionNameTimer" type="Timer" parent="UiLayer" unique_id=2125176947]
 unique_name_in_owner = true
 one_shot = true
+
+[node name="FpsTimer" type="Timer" parent="UiLayer"]
+unique_name_in_owner = true
+wait_time = 0.5

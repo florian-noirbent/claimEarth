@@ -12,7 +12,6 @@ const PASS_LEFT_DOWN_ODD := 5
 const PASS_COUNT := 6
 const EVEN_PHASE_PASS_COUNT := 3
 const RENDER_TARGET_COUNT := 5
-const SIMULATION_SHADER_PATH := "res://src/simulation/render_texture_simulation.gdshader"
 
 var _world: WorldGrid
 var _metadata: CompiledTerrainData
@@ -194,8 +193,6 @@ func _ensure_render_targets() -> void:
 	if _world == null:
 		return
 	_ensure_render_root()
-	if _simulation_shader == null:
-		_simulation_shader = ResourceLoader.load(SIMULATION_SHADER_PATH) as Shader
 	if _simulation_shader == null:
 		push_error("RenderTextureSimulationBackend requires a simulation shader.")
 		return

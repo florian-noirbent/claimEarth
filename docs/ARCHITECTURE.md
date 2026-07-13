@@ -19,7 +19,7 @@ scenes/app/main.tscn    Persistent application shell
 scenes/app/run_session.tscn Disposable gameplay/preview composition
 scenes/player/          Player scene
 scenes/ui/              Reusable editor-authored UI components
-src/app/                Run state and four top-level controllers
+src/app/                Run state, preferences, input, and top-level controllers
 src/generation/         Deterministic generation passes
 src/items/              Definitions, actions, projectiles, explosions
 src/leaderboard/        Service contract, fake, SimpleBoards adapter
@@ -55,9 +55,19 @@ Controllers receive dependencies through typed `configure(...)` methods. They do
 reach into one another. UI emits intent; gameplay controllers emit outcomes;
 `AppRoot` maps both to `RunPhase` transitions.
 
-Discrete item selection and throwing use unhandled input events routed by `AppRoot`
-to the active session. GUI-consumed mouse clicks therefore cannot trigger gameplay.
-Continuous movement and grapple state remain polled by the active player.
+`GameplayInputController` owns device integration and produces device-neutral
+continuous input frames plus typed discrete intents for the active run. It merges
+keyboard/mouse, virtual touch controls, and standard gamepads; player, item, and
+grapple code consume those frames/intents and must not read device APIs directly.
+`AppUiController` owns touch-overlay and settings presentation and emits touch state
+and user preferences only. `AppRoot` composes the input and settings controllers,
+routes normalized intents to the active session, and resets held input when a run
+ends, pauses, loses focus, or the overlay is hidden.
+
+Mouse item selection and throwing remain unhandled-input workflows routed through
+`AppRoot`, so GUI-consumed clicks cannot trigger gameplay. Touch gesture ownership
+and emulated-mouse suppression are contained in the input/UI boundary, preventing a
+single phone gesture from producing duplicate gameplay actions.
 
 ## Run State
 
@@ -227,6 +237,13 @@ always vaporizes terrain and is also checked against the player.
 `SaveRepository` stores JSON under `user://` with last player name, personal best,
 and pending submissions. Missing or corrupt data falls back to defaults.
 
+`AppSettingsController` persists user preferences independently of scores and
+leaderboard data. Phone controls default from the `mobile`, `web_android`, and
+`web_ios` feature tags; only an explicit Settings-screen choice is persisted and it
+overrides automatic detection. Missing or corrupt settings fall back to that automatic
+default. This keeps the input policy ready for future native Android/iOS exports
+without changing gameplay ownership.
+
 `LeaderboardService` is the dependency boundary. Production uses
 `SimpleBoardsLeaderboardService`; tests and offline scenarios use
 `FakeLeaderboardService`. Response parsing is isolated in
@@ -259,6 +276,17 @@ model it as a server secret. Never use the live service from automated tests.
 3. Route it in `AppRoot`; add a `RunPhase` only when behavior truly needs a state.
 4. Cover visibility, transition, repeated-entry, and cleanup behavior.
 
+### Add Or Change Input
+
+1. Extend `GameplayInputController` frames/intents rather than reading `Input` from
+   gameplay controllers.
+2. Keep platform-specific detection, touch gestures, gamepad mapping, and input
+   arbitration at the input/UI boundary.
+3. Keep persistent preferences in `AppSettingsController`; UI emits the requested
+   value and `AppRoot` applies it.
+4. Test device-source merging and edge transitions independently from player/item
+   behavior, then cover a complete input workflow in integration tests.
+
 ### Change Simulation Or Rendering
 
 1. Add deterministic counters/fixtures before optimizing.
@@ -276,6 +304,7 @@ model it as a server secret. Never use the live service from automated tests.
 | Generation | Fixed-seed generation tests plus fast suite |
 | Simulation/rendering/collision | Fast suite and performance suite |
 | Save/leaderboard | Offline fake-service tests plus fast suite |
+| Input/touch/gamepad/settings | Input unit/contract tests, run/UI integration tests, plus fast suite |
 | Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 
 Commands and environment setup are documented in `tools/README.md`. Current suites:
@@ -285,8 +314,13 @@ Commands and environment setup are documented in `tools/README.md`. Current suit
 - `tests/integration`: scene and complete workflow behavior.
 - `tests/performance`: structural frame-loop and bounded-node contracts.
 
-Manual testing evaluates feel, readability, balance, and browser presentation. Add a
-regression test for reproducible logic defects.
+Manual testing evaluates feel, readability, balance, and browser presentation. For
+phone input, verify a fullscreen landscape Web export on Android Chromium and iOS
+Safari (or another available iOS browser): simultaneous sticks/ring use, gesture
+cancellation, safe spacing around the HUD, and phone-control auto-detection and
+override. For gamepads, verify activation after the browser's first controller button
+press and the documented standard mapping. Add a regression test for reproducible
+logic defects.
 
 ## Definition Of Done
 
