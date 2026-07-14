@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="WorldLightSourceDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/simulation/world_light_source_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+update_mode = 0
+light_level = 90
+update_radius = 0

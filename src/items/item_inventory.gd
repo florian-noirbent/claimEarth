@@ -55,6 +55,11 @@ func consume(definition: ItemDefinition) -> bool:
 
 
 func restore(definition: ItemDefinition, amount: int = 1) -> void:
-	if definition == null:
-		return
+	add(definition, amount)
+
+
+func add(definition: ItemDefinition, amount: int) -> bool:
+	if definition == null or amount <= 0 or not _counts.has(definition.stable_id):
+		return false
 	_counts[definition.stable_id] = count_for(definition) + amount
+	return true

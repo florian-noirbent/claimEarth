@@ -41,6 +41,7 @@ var _current_seed := 0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
 var _previous_play_state: StringName = RunPhase.PLAYING
+var _reward_return_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := false
 var _test_mode := false
 var _configured_save_path := ""
@@ -88,6 +89,7 @@ func _connect_persistent_signals() -> void:
 	ui.pause_requested.connect(_toggle_pause)
 	ui.fullscreen_requested.connect(_toggle_fullscreen)
 	ui.item_selected.connect(_on_item_selected)
+	ui.reward_selected.connect(_on_reward_selected)
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_requested)
 	ui.phone_controls_changed.connect(_settings_controller.set_phone_controls_enabled)
@@ -115,11 +117,13 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.player_died.connect(_on_player_death_requested)
 	session.player_hazard_status_changed.connect(ui.show_hazard_statuses)
 	session.player_killed.connect(_on_player_death_requested)
-	session.bomb_exploded.connect(_on_bomb_exploded)
+	session.explosion_resolved.connect(_on_explosion_resolved)
 	session.flag_planted.connect(_on_flag_planted)
 	session.flag_destroyed.connect(_on_flag_destroyed)
 	session.flag_flight_changed.connect(_on_flag_flight_changed)
 	session.item_thrown.connect(audio_director.play_throw)
+	session.reward_choices_requested.connect(_on_reward_choices_requested)
+	session.pending_reward_invalidated.connect(_on_pending_reward_invalidated)
 
 
 func _initial_run_seed() -> int:
@@ -195,6 +199,10 @@ func inventory_status_for_test() -> Dictionary:
 	return item_controller.inventory_status() if item_controller != null else {}
 
 
+func item_chest_count_for_test() -> int:
+	return item_controller.item_chest_count() if item_controller != null else 0
+
+
 func last_generation_result_for_test() -> WorldGenerationResult:
 	return world_controller.generation_result() if world_controller != null else null
 
@@ -252,6 +260,9 @@ func _on_throw_requested(aim_position: Vector2) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if ui.handle_reward_picker_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if _input_controller != null and _input_controller.handle_unhandled_input(event, get_global_mouse_position()):
 		get_viewport().set_input_as_handled()
 		return
@@ -297,7 +308,7 @@ func _apply_state(next_state: StringName) -> void:
 		RunPhase.MAIN_MENU:
 			_set_session_active(false)
 			_enter_menu_session()
-		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
+		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.REWARD_PICKER, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
 			_set_session_active(false)
 		RunPhase.GENERATING:
 			_terminal_outcome_locked = false
@@ -403,7 +414,7 @@ func _refresh_play_status() -> void:
 	ui.show_run_status(player_depth, score_controller.personal_best_depth, get_player().is_grapple_attached(), item_status)
 
 
-func _on_bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
+func _on_explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
 	audio_director.play_explosion(is_large)
 	if gameplay_feedback != null and world_presenter != null:
 		gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
@@ -415,6 +426,7 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
 	_pending_score_depth = depth
+	_cancel_pending_reward()
 	audio_director.play_flag_plant()
 	if gameplay_feedback != null:
 		gameplay_feedback.spawn_ring(landing_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
@@ -445,6 +457,7 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 	if _terminal_outcome_locked:
 		return
 	_terminal_outcome_locked = true
+	_cancel_pending_reward()
 	ui.show_result(message)
 	transition_to(next_state)
 
@@ -498,3 +511,32 @@ func _on_pending_retry_finished(successful_count: int, message: String) -> void:
 		_refresh_leaderboard()
 	elif _run_coordinator.current_state == RunPhase.LEADERBOARD and not message.is_empty():
 		ui.leaderboard_status.text = message
+
+
+func _on_reward_choices_requested(choices: Array) -> void:
+	if _terminal_outcome_locked or _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
+		_cancel_pending_reward()
+		return
+	_reward_return_state = _run_coordinator.current_state
+	transition_to(RunPhase.REWARD_PICKER)
+	ui.show_reward_choices("Choose an item", choices)
+
+
+func _on_reward_selected(index: int) -> void:
+	if _run_coordinator.current_state != RunPhase.REWARD_PICKER or not is_instance_valid(_session):
+		return
+	ui.set_reward_picker_enabled(false)
+	if not _session.apply_pending_reward(index):
+		ui.set_reward_picker_enabled(true)
+		return
+	transition_to(_reward_return_state)
+
+
+func _cancel_pending_reward() -> void:
+	if is_instance_valid(_session):
+		_session.cancel_pending_reward()
+
+
+func _on_pending_reward_invalidated() -> void:
+	if _run_coordinator.current_state == RunPhase.REWARD_PICKER:
+		transition_to(_reward_return_state)

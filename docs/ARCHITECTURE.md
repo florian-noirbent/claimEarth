@@ -49,7 +49,7 @@ disposable session:
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
 | `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
-| `RunSession` | `RunItemController` | Inventory, selection, projectiles, explosions, flag flight |
+| `RunSession` | `RunItemController` | Inventory, selection, item chests, projectiles, explosions, flag flight |
 
 Controllers receive dependencies through typed `configure(...)` methods. They do not
 reach into one another. UI emits intent; gameplay controllers emit outcomes;
@@ -85,6 +85,11 @@ path remains opt-in for tests and development, and previews use their own fresh
 session when enabled. Generation tasks must tolerate their host session being
 cancelled and freed.
 
+`REWARD_PICKER` is a mandatory modal entered from `PLAYING` or `FLAG_IN_FLIGHT`.
+`AppRoot` remembers the originating phase, suspends the complete run session, routes
+one UI choice back to `RunItemController`, and restores that phase after the reward
+is applied. Terminal outcomes clear and supersede a pending reward.
+
 ## World Data And Presentation
 
 `WorldGrid` owns the packed terrain state as one RGBA8 cell buffer plus an
@@ -97,9 +102,18 @@ cancelled and freed.
 
 New grids initialize the `B` byte to darkness. The simulation backend lights only
 the surface row during initialization, then owns lighting updates in that byte. It preserves light by
-map location as terrain moves, injects terrain-defined emitters and the current
-player source, and evaluates the player-local radius on every CA pass; other cells
-update only on the sixth pass. Values at the presentation-config exploration
+map location as terrain moves, injects terrain-defined emitters, a shared R8 texture
+of non-terrain emitters, and the current player source. Reusable
+`WorldLightSource2D` children translate their global position to a hex, register or
+move one emitter, and unregister when disabled or removed. Standard mode updates
+chests and ordinary objects on the normal terrain-light tick. High-frequency mode owns the single
+local source evaluated on every CA pass within its configured radius. Item chests
+own a standard component that follows their falling body and disable it when removed;
+the player owns the high-frequency component. Other cells update only on the sixth
+pass. Moving a standard emitter updates its source-texture cells without cancelling
+an in-flight simulation pass. The render backend also retries a request when repeated
+simulation advances observe that its frame-drawn callback never completed, preventing
+a lost callback from permanently freezing the run. Values at the presentation-config exploration
 threshold are retained as fog-of-war state. The terrain shader converts the byte to
 black, graded, and full-brightness output.
 
@@ -217,10 +231,24 @@ invariants such as spawn air, bottom sealing, air ratio, and valid registered ID
 are enforced by deterministic tests rather than a runtime validation pass. The
 active defaults live in `config/generation/default_profile.tres`.
 
+Generation context/results also carry typed `GeneratedItemChestSpawn` records. The
+generic generated-item pass partitions its configured depth band into deterministic
+jittered areas, asks one `GeneratedItemPlacementDefinition` to prepare terrain and
+record a typed spawn, and never scans or shuffles the full map. Columns, area height,
+column stagger, and per-area chance are resource-driven. Exact anchors are reserved
+across item passes, but no minimum separation is imposed. `ItemChestDefinition` is
+the first placement definition: it carves Air at and above the anchor while preserving
+the previously generated terrain below and records the per-chest reward seed. Playable
+sessions hand those records to `RunItemController`; the World Gen preview instantiates
+the same chest scene with interaction disabled. Add another generated-item kind by
+implementing the placement-definition hooks and configuring another pass instance;
+the grid sampler must remain type-agnostic.
+
 The editor-side tuning surface lives in
 `addons/claim_earth_generation_tools/`. It previews static generated terrain through
-the same `WorldGenerator` and `WorldPresenter` path used at runtime, but does not
-spawn the player, items, or terrain simulation.
+the same `WorldGenerator` and `WorldPresenter` path used at runtime. It also displays
+generated chest visuals without interaction, but does not spawn the player,
+projectiles, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
 spawn air, the bottom two stone rows, and distribution tests. Horizontal player
@@ -235,6 +263,11 @@ clamping. It does not use Godot terrain colliders for movement; terrain collisio
 is delegated to the world-level query and motion solver. Movement and grapple
 tuning are resources under `config/player/`.
 
+`TerrainBodyUnstuckSolver` owns the shape-independent nearest-Air escape rule used
+by the player's circle and the chest's rectangular footprint. `ItemChest` uses a
+separate swept-rectangle fall path: it changes only vertical velocity, stops without
+restitution, and derives a snapped visual tilt from left/right terrain support.
+
 `DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
 to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
 
@@ -243,9 +276,21 @@ an `ItemActionFactory`; factories create polymorphic `ItemAction` implementation
 `RunItemController` treats all selected items through that contract. `ItemProjectile`
 owns flight, terrain sampling, bounce, fuse, and resolution signals.
 
+Item chest rewards use `ItemChestDefinition` and weighted `ItemChestOption` resources.
+Selection is deterministic and without replacement. `RunItemController` owns active
+chest nodes, pending item choices, and inventory application, while
+`AppUiController` receives generic `RewardChoiceViewData` cards so a future perk
+owner can reuse the picker without item-specific UI branches. Session activation is
+also propagated to projectiles, chest physics and monitoring, and explosive chain
+timers so pause and modal phases freeze all active item workflows.
+
 `ExplosionService` traverses hexes, asks each terrain blast strategy for its effect,
-updates committed cells, and marks the resulting dirty rectangle. The lethal radius
-always vaporizes terrain and is also checked against the player.
+updates committed cells, and returns an `ExplosionResult` containing the terrain
+change set plus the inclusive lethal-core cells. The lethal radius always vaporizes
+terrain and is also checked against the player. Bombs and chests compose
+`WorldExplosive2D` with separate validated `ExplosionDefinition` resources.
+`RunItemController` registers those components generically; lethal-cell footprint
+overlap arms a one-shot delayed chain without branches on the host item type.
 
 ## Persistence And Leaderboard
 
@@ -286,6 +331,10 @@ model it as a server secret. Never use the live service from automated tests.
 2. Add definition/factory `.tres` files and register the definition in the catalog.
 3. Keep selection, HUD inventory, and spawning generic.
 4. Test inventory, projectile lifecycle, resolution, and full run-state effects.
+
+To add an item to chest rewards, add an `ItemChestOption` to the chest definition
+resource with its quantity and relative selection weight. No picker or controller
+branch is required.
 
 ### Add A Run Workflow Or Screen
 

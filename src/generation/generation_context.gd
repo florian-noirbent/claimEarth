@@ -8,6 +8,8 @@ var run_seed: int
 var terrain_registry: TerrainRegistry
 var world: WorldGrid
 var spawn_rect := Rect2i()
+var item_chest_spawns: Array[GeneratedItemChestSpawn] = []
+var _generated_item_anchor_indices := {}
 
 
 func _init(
@@ -24,6 +26,22 @@ func _init(
 
 func depth_ratio_for_row(row: int) -> float:
 	return float(row) / float(max(1, profile.depth - 1))
+
+
+func try_reserve_generated_item_anchor(anchor: Vector2i) -> bool:
+	if not world.dimensions.is_in_bounds_offset(anchor.x, anchor.y):
+		return false
+	var index := world.dimensions.offset_to_index(anchor.x, anchor.y)
+	if _generated_item_anchor_indices.has(index):
+		return false
+	_generated_item_anchor_indices[index] = true
+	return true
+
+
+func release_generated_item_anchor(anchor: Vector2i) -> void:
+	if not world.dimensions.is_in_bounds_offset(anchor.x, anchor.y):
+		return
+	_generated_item_anchor_indices.erase(world.dimensions.offset_to_index(anchor.x, anchor.y))
 
 
 func depth_blend_weight(pass_resource, row: int) -> float:

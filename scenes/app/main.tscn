@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hazard_meter_stack.tscn" id="21_hazard_meter_stack"]
 [ext_resource type="Script" path="res://src/ui/virtual_touch_pad.gd" id="22_touch_pad"]
 [ext_resource type="Texture2D" path="res://assets/ui/fullscreen_icon.svg" id="24_fullscreen"]
+[ext_resource type="PackedScene" path="res://scenes/ui/reward_picker_card.tscn" id="25_reward_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
 content_margin_left = 18.0
@@ -149,6 +150,7 @@ script = ExtResource("5_audio")
 unique_name_in_owner = true
 script = ExtResource("8_ui")
 item_toolbar_slot_scene = ExtResource("7_toolbar_slot")
+reward_picker_card_scene = ExtResource("25_reward_card")
 
 [node name="MenuBackground" type="TextureRect" parent="UiLayer" unique_id=1887254834]
 anchors_preset = 15
@@ -899,6 +901,68 @@ theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Exit to Menu"
 icon = ExtResource("17_flag")
 expand_icon = true
+
+[node name="RewardPickerLayer" type="Control" parent="UiLayer/OverlayRoot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Backdrop" type="ColorRect" parent="UiLayer/OverlayRoot/RewardPickerLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.012, 0.02, 0.78)
+
+[node name="Center" type="CenterContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center"]
+custom_minimum_size = Vector2(900, 470)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_menu_panel")
+
+[node name="Margin" type="MarginContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="Content" type="VBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="RewardPickerTitle" type="Label" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 32
+text = "Choose an item"
+horizontal_alignment = 1
+
+[node name="RewardPickerCards" type="HBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 22
+alignment = 1
 
 [node name="TopRightControls" type="HBoxContainer" parent="UiLayer"]
 unique_name_in_owner = true

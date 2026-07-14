@@ -65,6 +65,22 @@ func test_same_seed_and_profile_produce_same_world_hash() -> void:
 	assert_eq(first.spawn_rect, second.spawn_rect)
 
 
+func test_default_profile_persists_stable_pass_seed_keys() -> void:
+	var profile := _default_profile()
+	var keys := PackedStringArray()
+	for generation_pass in profile.passes:
+		keys.append(generation_pass.pass_seed_key)
+	assert_eq(keys, PackedStringArray([
+		"base_terrain_0",
+		"sand_hazard_1",
+		"water_hazard_2",
+		"lava_hazard_3",
+		"spawn_shaft_4",
+		"item_chests_5",
+		"bottom_seal_6",
+	]))
+
+
 func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 	var generator := WorldGenerator.new()
 	var profile := _default_profile()

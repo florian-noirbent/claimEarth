@@ -14,6 +14,15 @@ terrain texture to the presenter. The presenter also receives the retained even
 simulation phase only to draw a proven vertical liquid trail through final-air
 cells. Gameplay and collision continue to read committed `WorldGrid` data.
 
+Non-terrain light sources do not replace or duplicate the resulting light field.
+Standard `WorldLightSource2D` components write source strengths into a separate,
+world-sized R8 texture; the simulation resolves that input into the existing
+world-data `B` channel. The single high-frequency component uses uniforms for its
+position, strength, and local update radius so a moving player does not rewrite
+the source texture every frame. Moving standard sources update that texture without
+invalidating an in-flight terrain pass; render requests that fail to deliver their
+frame callback are bounded and retried instead of blocking later simulation work.
+
 Terrain definitions are compiled into ID-indexed lookup textures. Presentation
 properties contain terrain colour, atlas material selection and scale, density,
 motion and edge-style inputs; their exact channel assignment is defined beside

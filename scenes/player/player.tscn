@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://src/player/descending_camera_controller.gd" id="2_camera"]
@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" path="res://assets/objects/player_body.svg" id="4_body"]
 [ext_resource type="Resource" path="res://config/player/default_movement.tres" id="5_movement"]
 [ext_resource type="Resource" path="res://config/terrain/hazard/suffocation_hazard.tres" id="6_suffocation"]
+[ext_resource type="Script" path="res://src/simulation/world_light_source_2d.gd" id="7_light_source"]
+[ext_resource type="Resource" path="res://config/lighting/player_light.tres" id="8_light_definition"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f8kcc"]
 radius = 14.0
@@ -52,3 +54,9 @@ unique_name_in_owner = true
 visible = false
 color = Color(0.96, 0.75, 0.19, 1)
 polygon = PackedVector2Array(0, -6, 6, 0, 0, 6, -6, 0)
+
+[node name="WorldLightSource" type="Node2D" parent="."]
+unique_name_in_owner = true
+process_priority = -100
+script = ExtResource("7_light_source")
+definition = ExtResource("8_light_definition")

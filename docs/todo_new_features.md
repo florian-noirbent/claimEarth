@@ -1,5 +1,10 @@
 # New features
 
+## physics
+
+- bombs add a blast impulse to other rigidbodies (flag, bombs, bottle, player with jelly perk )
+- player collision, medium impact ragdol 1s, high impact dead
+
 ## perks
 breath underwater:
 + +10s breath time
@@ -16,14 +21,14 @@ hard skin:
 + increase impact velocity thresholds, so high impact knock out instead of killing and medium impact are ignored,
 + reduce explosion killing blast radius by 1
 - player slide
-- remove jelly perk
+- remove jelly perk from pool
 
 jelly:
 + remove all fall damage and knock out effects
 + player float in liquids
 - player bounce
 - player is thrown away by explosions (kill radius unchanged)
-- remove hard skin perk
+- remove hard skin perk from pool
 
 looter:
 + future item/perks picks offer 3 choices instead of 2
@@ -57,11 +62,10 @@ large boom:
 
 relentless:
 + the flag ignore lava and acid
-+ the flag is dropped on death, ensure a scored run
++ the flag is dropped on death: ensure a scored run
 
 sand worm:
 + sand colision behave like fluid to the player
-+ immune to suffocation (burried in sand)
 + breath in sand
 
 ## new items
@@ -70,20 +74,11 @@ sand worm:
 * flare: throw a flare like a bomb, illuminating, 10s lifespan
 * fluid bottle: throw a bottle, on impact, turn the closest 3 air hexagons into the bottle fluid type, break on lava
 
-## Mobile game export
-### controls
-- left stick: move
-- right stick : throw/use item
-- right "ring button": hook, throw on press, hold, release.
-
 ## map
 ### chests
-- fall vertically to the ground, no rotation, no sliding
-- explode like a small_bombs (separate config) if in the killing blast radius of an explosion
-- can't be destroyed by water or lava
-- new generation chest pass:
-
 * item chest: choose 2 options: 5 small_bombs, 2 large_bombs, 100 shovel, 20 pickaxe, 10 flare, 3 water bottle, 3 acid bottle
+
+### perk geode
 * perks chest: choose 2 options between any remaining perks
 
 ### explosive barrel
@@ -126,13 +121,13 @@ radiation level rendered in the 4th texture slot. add a green shade to the block
 
 note: all values should be configurable in editor
 
-## Sound design
-
-music
 
 ## Juice
 
-screenshake on bomb
-rework bomb vfx
-hook rope texture  + hook end
+- player spritesheets
+- music
+- screenshake on bomb
+- rework bomb vfx and audio
+- replace svg placeholders
+- hook rope texture + hook end
 

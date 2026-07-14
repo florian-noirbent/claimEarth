@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://hw8ljernfq4o" path="res://src/generation/pocket_noise_pass.gd" id="4_pocket"]
 [ext_resource type="Script" uid="uid://c6xc08gl400h1" path="res://src/generation/spawn_shaft_pass.gd" id="5_spawn"]
 [ext_resource type="Script" uid="uid://cl6lpqt7i7yhr" path="res://src/generation/boundary_seal_pass.gd" id="6_boundary"]
+[ext_resource type="Script" uid="uid://dem5l8k4hfuqc" path="res://src/generation/generated_item_pass.gd" id="7_item"]
 
 [sub_resource type="Resource" id="Resource_base"]
 script = ExtResource("2_entry")
@@ -22,6 +23,11 @@ script = ExtResource("2_entry")
 label = "Spawn Shaft"
 pass_script = ExtResource("5_spawn")
 
+[sub_resource type="Resource" id="Resource_item"]
+script = ExtResource("2_entry")
+label = "Generated Item"
+pass_script = ExtResource("7_item")
+
 [sub_resource type="Resource" id="Resource_boundary"]
 script = ExtResource("2_entry")
 label = "Boundary Seal"
@@ -29,4 +35,4 @@ pass_script = ExtResource("6_boundary")
 
 [resource]
 script = ExtResource("1_catalog")
-entries = [SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_boundary")]
+entries = [SubResource("Resource_base"), SubResource("Resource_pocket"), SubResource("Resource_spawn"), SubResource("Resource_item"), SubResource("Resource_boundary")]

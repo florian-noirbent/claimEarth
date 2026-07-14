@@ -17,10 +17,11 @@ the flag loses it.
    rules, controls, and device preferences.
 2. Starting creates a randomized deterministic map and a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
-4. The player throws the flag when ready to claim a depth.
-5. A valid landing opens editable name entry and saves/submits the score.
-6. Death or a flag destroyed by lava ends the run without saving its depth.
-7. The player restarts with a new seed or returns to the menu.
+4. Touching generated item chests pauses the run and offers a mandatory choice of supplies.
+5. The player throws the flag when ready to claim a depth.
+6. A valid landing opens editable name entry and saves/submits the score.
+7. Death or a flag destroyed by lava ends the run without saving its depth.
+8. The player restarts with a new seed or returns to the menu.
 
 ## Controls
 
@@ -102,7 +103,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 - Initial terrain is deterministic for a given seed.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
   layers base cave noise, typed hazard pocket instances for sand/water/lava, a
-  noisy surface spawn shaft, and bottom sealing.
+  noisy surface spawn shaft, item chest chambers, and bottom sealing.
 - The player starts at surface depth 0 in a roughly six-cell-wide zig-zag shaft
   with noisy edges and occasional broken segments that winds down to the configured
   shaft target depth.
@@ -158,6 +159,33 @@ Death never records current depth.
 Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Item tuning lives
 under `config/items/`.
 
+### Item Chests
+
+- Item chests are distributed deterministically from 5% through 90% of map depth by
+  jittered grid areas. The default uses two columns, 50-row areas, a 25-row stagger,
+  and a 100% per-area chance, producing 19 opportunities on the default map.
+- Each area chooses its anchor independently, so neighboring chests may appear close
+  together while exact duplicate anchors are prevented.
+- Each chest occupies a radius-three chamber carved to Air at and above its anchor;
+  the generated terrain below is preserved as its natural landing surface.
+- Chests fall straight down without bouncing or sliding. They remain upright in the
+  air and snap to a 45-degree lean when only one side has level support.
+- Chests remain non-solid touch triggers. Like the player, a chest embedded by moving
+  terrain escapes toward the nearest Air cell instead of remaining buried.
+- Item chests emit the same light level as Lava (90). Their light uses normal
+  terrain diffusion and fades after collection because it is below the permanent
+  exploration threshold.
+- Touching a chest pauses player, projectile, hazard, and terrain activity until a
+  reward is chosen. The picker cannot be dismissed without choosing.
+- Chests currently offer 5 small bombs or 2 large bombs. Both choices appear because
+  the initial table contains two weighted options; future tables may select two or
+  three unique choices from larger pools.
+- Claiming a choice adds its quantity without changing the selected inventory item,
+  then removes that chest for the rest of the run.
+- A bomb's lethal core arms a chest for a 0.30-second delayed detonation. An armed
+  chest cannot be claimed, continues moving and emitting light, then explodes with
+  its independently tunable Small Bomb-sized effect and grants no reward.
+
 ### Bombs
 
 - Bombs follow projectile gravity and bounce until their fuse expires.
@@ -165,6 +193,9 @@ under `config/items/`.
 - Terrain inside the lethal radius is vaporized to air regardless of type.
 - Outside the lethal radius, terrain uses its configured blast reaction.
 - Lava detonates a bomb immediately; water reduces blast propagation.
+- Bombs and chests share the same explosive behavior. A lethal-core overlap arms
+  another explosive for a 0.30-second chain fuse; the wider blast alone cannot start
+  a chain. Armed bombs keep moving, and their natural fuse still wins if it expires first.
 - The player dies when inside the lethal radius.
 
 ### Flag
@@ -211,6 +242,8 @@ under `config/items/`.
 - Keyboard/mouse, touch, and standard gamepad controls are supported. Phone controls
   target fullscreen landscape Web play now; future native Android and iOS builds use
   the same control behavior.
+- Reward cards support mouse/touch, keyboard number keys, and standard gamepad UI
+  focus and confirmation.
 
 ## Feature Invariants
 

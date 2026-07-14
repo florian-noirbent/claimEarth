@@ -16,6 +16,7 @@ var bounce_on_impact := false
 var bounce_damping := 0.55
 var horizontal_bounce_damping := 0.72
 var action: ItemAction
+var explosive: WorldExplosive2D
 var world: WorldGrid
 var terrain_registry: TerrainRegistry
 var hex_radius := 16.0
@@ -45,6 +46,13 @@ func configure(config: Dictionary) -> void:
 	_pending_polygon = config.get("polygon", _pending_polygon) as PackedVector2Array
 	_pending_color = config.get("color", Color.WHITE) as Color
 	_pending_outline_color = config.get("outline_color", Color(0.1, 0.05, 0.02, 1)) as Color
+	var explosion_definition := config.get("explosion_definition") as ExplosionDefinition
+	if explosion_definition != null:
+		if explosive == null:
+			explosive = WorldExplosive2D.new()
+			explosive.name = "WorldExplosive"
+			add_child(explosive)
+		explosive.configure(explosion_definition, _pending_polygon)
 	_ensure_visuals()
 
 
@@ -88,7 +96,7 @@ func _physics_process(delta: float) -> void:
 	var definition := _sample_terrain(global_position)
 	if definition != null:
 		if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately and definition.hazard_behavior.resolve_for_fill(_sample_fill(global_position)) != null:
-			resolved.emit(self, global_position, &"lava")
+			_resolve_at(global_position, &"lava")
 			queue_free()
 			return
 		if not definition.is_passable:
@@ -100,8 +108,15 @@ func _physics_process(delta: float) -> void:
 				return
 
 	if remaining_fuse <= 0.0:
-		resolved.emit(self, global_position, &"fuse")
+		_resolve_at(global_position, &"fuse")
 		queue_free()
+
+
+func _resolve_at(impact_position: Vector2, resolution_kind: StringName) -> void:
+	if explosive != null:
+		explosive.request_immediate_detonation()
+		return
+	resolved.emit(self, impact_position, resolution_kind)
 
 
 func _sample_terrain(world_position: Vector2) -> TerrainDefinition:

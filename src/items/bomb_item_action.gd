@@ -14,8 +14,6 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"gravity": factory.gravity,
 		"fuse_seconds": factory.fuse_seconds,
 		"velocity": launch_velocity + thrower_velocity * factory.thrower_velocity_influence,
-		"radius": factory.blast_radius,
-		"lethal_radius": factory.lethal_radius,
 		"color": factory.projectile_color,
 		"outline_color": factory.projectile_outline_color,
 		"polygon": factory.projectile_points,
@@ -23,8 +21,12 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"bounce_on_impact": true,
 		"bounce_damping": factory.bounce_damping,
 		"horizontal_bounce_damping": factory.horizontal_bounce_damping,
+		"explosion_definition": factory.explosion_definition,
 	}
 
 
 func resolve(item_controller: RunItemController, impact_position: Vector2, projectile: ItemProjectile, _resolution_kind: StringName = &"impact") -> void:
-	item_controller.resolve_bomb_explosion(self, impact_position, projectile)
+	if projectile != null and projectile.explosive != null:
+		projectile.explosive.request_immediate_detonation()
+	else:
+		item_controller.resolve_explosion(factory.explosion_definition, impact_position)

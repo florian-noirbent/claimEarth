@@ -441,3 +441,72 @@ func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() 
 	assert_eq(ui.hazard_meter_stack.meter_count(), 2)
 	ui.apply_state(RunPhase.GENERATING, 42, "", -1, "")
 	assert_eq(ui.hazard_meter_stack.meter_count(), 0)
+
+
+func test_reward_picker_renders_two_or_three_generic_cards_and_emits_selection() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+	var choices: Array[RewardChoiceViewData] = [
+		RewardChoiceViewData.new("One", "First description", load("res://assets/objects/small_bomb.svg"), "+5"),
+		RewardChoiceViewData.new("Two", "Second description", load("res://assets/objects/large_bomb.svg"), "+2"),
+		RewardChoiceViewData.new("Three", "Third description", load("res://assets/objects/flag.svg"), "+1"),
+	]
+	ui.apply_state(RunPhase.REWARD_PICKER, 42, "", -1, "")
+	ui.show_reward_choices("Choose a reward", choices)
+	await wait_process_frames(1)
+
+	assert_true(ui.overlay_root.visible)
+	assert_true(ui.reward_picker_layer.visible)
+	assert_false(ui.item_toolbar.visible)
+	assert_false(ui.pause_button.visible)
+	assert_false(ui.left_touch_pad.visible)
+	assert_eq(ui.reward_picker_title.text, "Choose a reward")
+	assert_eq(ui.reward_picker_cards.get_child_count(), 3)
+	var first := ui.reward_picker_cards.get_child(0) as RewardPickerCard
+	assert_eq(first.title_label.text, "One")
+	assert_eq(first.description_label.text, "First description")
+	assert_eq(first.quantity_label.text, "+5")
+	assert_not_null(first.icon_rect.texture)
+	assert_true(ui.reward_picker_cards.get_global_rect().encloses(first.get_global_rect()))
+	assert_true(first.has_focus())
+
+	watch_signals(ui)
+	(ui.reward_picker_cards.get_child(1) as RewardPickerCard).pressed.emit()
+	assert_signal_emitted_with_parameters(ui, "reward_selected", [1])
+	var key_three := InputEventAction.new()
+	key_three.action = &"select_flag"
+	key_three.pressed = true
+	ui._unhandled_input(key_three)
+	assert_signal_emitted_with_parameters(ui, "reward_selected", [2])
+
+	ui.show_reward_choices("Choose an item", choices.slice(0, 2))
+	assert_eq(ui.reward_picker_cards.get_child_count(), 2)
+	ui.set_reward_picker_enabled(false)
+	assert_true((ui.reward_picker_cards.get_child(0) as RewardPickerCard).disabled)
+
+
+func test_reward_picker_ignores_pause_and_back_without_dismissing() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+	ui.apply_state(RunPhase.REWARD_PICKER, 42, "", -1, "")
+	ui.show_reward_choices("Choose", [RewardChoiceViewData.new("One", "Description", null, "+1")])
+	watch_signals(ui)
+	var pause_event := InputEventAction.new()
+	pause_event.action = InputActions.PAUSE
+	pause_event.pressed = true
+	ui._unhandled_input(pause_event)
+	var back_event := InputEventAction.new()
+	back_event.action = InputActions.MENU_BACK
+	back_event.pressed = true
+	ui._unhandled_input(back_event)
+
+	assert_true(ui.reward_picker_layer.visible)
+	assert_signal_not_emitted(ui, "pause_requested")

@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="BombItemActionFactory" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="BombItemActionFactory" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/items/bomb_item_action_factory.gd" id="1_ikmwl"]
+[ext_resource type="Resource" path="res://config/items/explosions/small_bomb_explosion.tres" id="2_explosion"]
 
 [resource]
 script = ExtResource("1_ikmwl")
-blast_radius = 5
-lethal_radius = 3
+explosion_definition = ExtResource("2_explosion")
 throw_distance_hint = 100.0
 fuse_seconds = 2.5
 gravity = 880.0

@@ -11,7 +11,7 @@ func explode(
 	blast_radius: int,
 	lethal_radius: int = 0
 ) -> Rect2i:
-	return explode_with_changes(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).dirty_rect
+	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).terrain_changes.dirty_rect
 
 
 func explode_with_changes(
@@ -22,6 +22,17 @@ func explode_with_changes(
 	blast_radius: int,
 	lethal_radius: int = 0
 ) -> TerrainChangeSet:
+	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).terrain_changes
+
+
+func resolve(
+	world: WorldGrid,
+	terrain_registry: TerrainRegistry,
+	impact_position: Vector2,
+	hex_radius: float,
+	blast_radius: int,
+	lethal_radius: int = 0
+) -> ExplosionResult:
 	var origin := HexMetrics.offset_for_world(impact_position, hex_radius)
 	var air_id := _terrain_id(terrain_registry, "Air")
 	var metadata := CompiledTerrainData.compile(terrain_registry)
@@ -67,9 +78,9 @@ func explode_with_changes(
 
 	if changed_cells.is_empty():
 		change_set.dirty_rect = Rect2i(origin, Vector2i.ONE)
-		return change_set
+		return ExplosionResult.new(change_set, _cells_within_radius(origin, lethal_radius))
 
-	return change_set
+	return ExplosionResult.new(change_set, _cells_within_radius(origin, lethal_radius))
 
 
 func _enqueue_neighbors(queue: Array[Dictionary], cell: Vector2i, strength: float) -> void:
@@ -99,6 +110,19 @@ func _is_within_radius(origin: Vector2i, cell: Vector2i, radius: int) -> bool:
 	if radius <= 0:
 		return false
 	return HexCoord.from_offset_odd_q(origin.x, origin.y).distance_to(HexCoord.from_offset_odd_q(cell.x, cell.y)) <= radius
+
+
+func _cells_within_radius(origin: Vector2i, radius: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	if radius <= 0:
+		return result
+	var center := HexCoord.from_offset_odd_q(origin.x, origin.y)
+	for delta_q in range(-radius, radius + 1):
+		var min_delta_r := maxi(-radius, -delta_q - radius)
+		var max_delta_r := mini(radius, -delta_q + radius)
+		for delta_r in range(min_delta_r, max_delta_r + 1):
+			result.append(center.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q())
+	return result
 
 
 func _terrain_id(registry: TerrainRegistry, name: String) -> int:

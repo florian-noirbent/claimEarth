@@ -6,6 +6,8 @@ Current art is original repository content stored by runtime use:
 - `assets/objects/small_bomb.svg`
 - `assets/objects/large_bomb.svg`
 - `assets/objects/flag.svg`
+- `assets/objects/chest.png` — item-chest world sprite, centered in a rotatable visual root and rendered as one scaled image across a 2x2 staggered hex footprint.
+- `assets/objects/perk.png` — authored perk-relic art reserved for the future perk reward workflow.
 - `assets/ui/help_icon.svg`
 - `assets/ui/fullscreen_icon.svg`
 - `assets/ui/pause_icon.svg`

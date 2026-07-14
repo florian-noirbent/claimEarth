@@ -11,8 +11,6 @@ signal player_hazard_status_changed(statuses: Array)
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
 const FixedSimulationPassClockScript = preload("res://src/simulation/fixed_simulation_pass_clock.gd")
-const PLAYER_LIGHT_LEVEL := 190
-const PLAYER_LIGHT_UPDATE_RADIUS := 18
 const MAX_SIMULATION_PASSES_PER_RENDER := 6
 
 @export var terrain_catalog: TerrainCatalog
@@ -89,11 +87,8 @@ func set_active(is_active: bool) -> void:
 func advance(delta: float) -> void:
 	if _player == null or _generation_result == null:
 		return
-	_simulation_backend.set_player_light_source(
-		HexMetrics.offset_for_world(_player.global_position, _world_presenter.hex_radius),
-		PLAYER_LIGHT_LEVEL,
-		PLAYER_LIGHT_UPDATE_RADIUS
-	)
+	if _player.world_light_source != null:
+		_player.world_light_source.sync_now()
 	var commit: SimulationCommit = _simulation_backend.commit_if_ready()
 	if commit.did_commit:
 		_world_presenter.use_simulation_textures(
@@ -175,6 +170,11 @@ func _ensure_player() -> void:
 		_simulation_backend.set_simulation_shader(simulation_shader)
 	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
 	_simulation_backend.attach_to(self)
+	_player.world_light_source.configure(
+		_simulation_backend,
+		_world_presenter.hex_radius,
+		&"player"
+	)
 	reset_simulation_clock()
 	_configure_world_bounds()
 	set_active(false)

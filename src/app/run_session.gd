@@ -8,11 +8,13 @@ signal run_ready(next_seed: int)
 signal player_died(cause: StringName)
 signal player_hazard_status_changed(statuses: Array)
 signal player_killed(cause: StringName)
-signal bomb_exploded(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
+signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
+signal reward_choices_requested(choices: Array)
+signal pending_reward_invalidated
 
 @onready var item_controller: RunItemController = %RunItemController
 @onready var world_controller: RunWorldController = %RunWorldController
@@ -36,11 +38,13 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	world_controller.player_died.connect(player_died.emit)
 	world_controller.player_hazard_status_changed.connect(player_hazard_status_changed.emit)
 	item_controller.player_killed.connect(player_killed.emit)
-	item_controller.bomb_exploded.connect(bomb_exploded.emit)
+	item_controller.explosion_resolved.connect(explosion_resolved.emit)
 	item_controller.flag_planted.connect(flag_planted.emit)
 	item_controller.flag_destroyed.connect(flag_destroyed.emit)
 	item_controller.flag_flight_changed.connect(flag_flight_changed.emit)
 	item_controller.item_thrown.connect(item_thrown.emit)
+	item_controller.reward_choices_requested.connect(reward_choices_requested.emit)
+	item_controller.pending_reward_invalidated.connect(pending_reward_invalidated.emit)
 	item_controller.terrain_changed.connect(world_controller.refresh_terrain_presentation)
 
 
@@ -54,6 +58,15 @@ func start_preview(run_seed: int) -> void:
 
 func set_active(is_active: bool) -> void:
 	world_controller.set_active(is_active)
+	item_controller.set_active(is_active)
+
+
+func apply_pending_reward(choice_index: int) -> bool:
+	return item_controller.apply_pending_reward(choice_index)
+
+
+func cancel_pending_reward() -> void:
+	item_controller.cancel_pending_reward()
 
 
 func reset_simulation_clock() -> void:
@@ -81,6 +94,7 @@ func _on_run_ready(next_seed: int) -> void:
 		world,
 		world_controller.terrain_registry(),
 		world_presenter.hex_radius,
-		world_controller.simulation_backend()
+		world_controller.simulation_backend(),
+		world_controller.generation_result().item_chest_spawns
 	)
 	run_ready.emit(next_seed)

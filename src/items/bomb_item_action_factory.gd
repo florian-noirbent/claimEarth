@@ -4,8 +4,7 @@ extends ItemActionFactory
 
 const BombItemActionScript = preload("res://src/items/bomb_item_action.gd")
 
-@export var blast_radius := 0
-@export var lethal_radius := 0
+@export var explosion_definition: ExplosionDefinition
 @export var throw_distance_hint := 0.0
 @export var fuse_seconds := 0.8
 @export var gravity := 850.0
@@ -23,3 +22,9 @@ func _init() -> void:
 
 func create_action(definition: ItemDefinition):
 	return BombItemActionScript.new(definition, self)
+
+
+func validate() -> PackedStringArray:
+	if explosion_definition == null:
+		return PackedStringArray(["bomb action factory requires an explosion definition"])
+	return explosion_definition.validate()

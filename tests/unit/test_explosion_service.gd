@@ -75,3 +75,24 @@ func test_explosion_above_top_row_propagates_into_world() -> void:
 
 	assert_eq(world.get_committed_by_offset(3, 0), air_id)
 	assert_gt(change_set.changed_cell_count(), 0)
+
+
+func test_explosion_result_reports_inclusive_lethal_core_cells() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(12, 12), FixtureLoader.terrain_id("Air"))
+	var service := ExplosionService.new()
+	var origin := Vector2i(5, 5)
+
+	var result := service.resolve(
+		world,
+		registry,
+		HexMetrics.center_for_offset(origin.x, origin.y, 16.0),
+		16.0,
+		5,
+		3
+	)
+
+	assert_eq(result.lethal_cells.size(), 37)
+	assert_true(result.lethal_cells.has(origin))
+	assert_true(result.lethal_cells.has(HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(3, 0)).to_offset_odd_q()))
+	assert_false(result.lethal_cells.has(HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(4, 0)).to_offset_odd_q()))

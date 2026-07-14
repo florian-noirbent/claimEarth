@@ -13,6 +13,7 @@ const EnvironmentStatusScript = preload("res://src/player/environment_status.gd"
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
 const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
+const TerrainBodyUnstuckSolverScript = preload("res://src/world/terrain_body_unstuck_solver.gd")
 const GameplayInputControllerScript = preload("res://src/input/gameplay_input_controller.gd")
 
 @export var movement_config: PlayerMovementConfig
@@ -31,6 +32,7 @@ const GameplayInputControllerScript = preload("res://src/input/gameplay_input_co
 @onready var camera: DescendingCameraController = %FollowCamera
 @onready var rope_line: Line2D = %RopeLine
 @onready var hook_indicator: Polygon2D = %HookIndicator
+@onready var world_light_source: WorldLightSource2D = %WorldLightSource
 
 var _movement_model: PlayerMovementModel
 var _grapple_model
@@ -39,6 +41,7 @@ var _terrain_registry: TerrainRegistry
 var _world: WorldGrid
 var _terrain_query = TerrainCollisionQueryScript.new()
 var _terrain_motion_solver = TerrainBodyMotionSolverScript.new()
+var _terrain_unstuck_solver = TerrainBodyUnstuckSolverScript.new()
 var _hex_radius := 16.0
 var _physics_frame_count := 0
 var _pending_anchor_query: GrappleAnchorQuery
@@ -277,24 +280,17 @@ func _enforce_horizontal_bounds() -> void:
 
 
 func _apply_terrain_unstuck(delta: float) -> void:
-	if delta <= 0.0 or not _terrain_query.is_configured():
-		return
-	if not _terrain_query.circle_overlaps_solid(global_position, horizontal_collision_radius):
-		return
-	var air_center_variant = _terrain_query.nearest_air_cell_center(global_position, terrain_unstuck_search_ring)
-	if air_center_variant == null:
-		return
-	var air_center := air_center_variant as Vector2
-	var escape_vector := air_center - global_position
-	var distance := escape_vector.length()
-	if distance <= 0.001:
-		return
-	var escape_direction := escape_vector / distance
-	var push_distance := minf(distance, terrain_unstuck_push_speed * delta)
-	global_position += escape_direction * push_distance
-	var escape_speed := velocity.dot(escape_direction)
-	if escape_speed < 0.0:
-		velocity -= escape_direction * escape_speed
+	var result := _terrain_unstuck_solver.resolve_circle(
+		global_position,
+		velocity,
+		delta,
+		_terrain_query,
+		horizontal_collision_radius,
+		terrain_unstuck_search_ring,
+		terrain_unstuck_push_speed
+	)
+	global_position = result.position
+	velocity = result.velocity
 
 
 func _snap_min_bound(value: float) -> float:

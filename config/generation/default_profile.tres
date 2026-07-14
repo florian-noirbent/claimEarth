@@ -5,8 +5,10 @@
 [ext_resource type="Script" uid="uid://hw8ljernfq4o" path="res://src/generation/pocket_noise_pass.gd" id="3_pocket"]
 [ext_resource type="Script" uid="uid://c6xc08gl400h1" path="res://src/generation/spawn_shaft_pass.gd" id="4_spawn"]
 [ext_resource type="Script" uid="uid://cl6lpqt7i7yhr" path="res://src/generation/boundary_seal_pass.gd" id="5_boundary"]
+[ext_resource type="Script" uid="uid://dem5l8k4hfuqc" path="res://src/generation/generated_item_pass.gd" id="6_item_pass"]
+[ext_resource type="Resource" uid="uid://bxwt8166bt34x" path="res://config/items/item_chest.tres" id="7_chest_definition"]
 
-[sub_resource type="Resource" id="Resource_i4eqn"]
+[sub_resource type="Resource" id="Resource_7rhj7"]
 script = ExtResource("2_base")
 octaves = 5
 frequency_x = 0.01
@@ -18,17 +20,17 @@ label = "Base Terrain"
 pass_seed_key = "base_terrain_0"
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_rdg67"]
+[sub_resource type="Resource" id="Resource_26qyd"]
 script = ExtResource("3_pocket")
 octaves = 4
 frequency_x = 0.026
 frequency_y = 0.021
-placement_threshold = 0.58
+placement_threshold = 0.62
 label = "Sand Hazard"
 pass_seed_key = "sand_hazard_1"
 allowed_target_ids = PackedInt32Array(2)
 
-[sub_resource type="Resource" id="Resource_7rhj7"]
+[sub_resource type="Resource" id="Resource_fr6de"]
 script = ExtResource("3_pocket")
 octaves = 4
 frequency_x = 0.026
@@ -40,7 +42,7 @@ pass_seed_key = "water_hazard_2"
 min_depth_ratio = 0.02
 allowed_target_ids = PackedInt32Array(0)
 
-[sub_resource type="Resource" id="Resource_26qyd"]
+[sub_resource type="Resource" id="Resource_22l3w"]
 script = ExtResource("3_pocket")
 frequency_x = 0.097
 frequency_y = 0.029
@@ -51,7 +53,7 @@ pass_seed_key = "lava_hazard_3"
 min_depth_ratio = 0.06
 allowed_target_ids = PackedInt32Array(1)
 
-[sub_resource type="Resource" id="Resource_fr6de"]
+[sub_resource type="Resource" id="Resource_6usxm"]
 script = ExtResource("4_spawn")
 shaft_target_depth = 256
 shaft_width = 6.0
@@ -68,12 +70,25 @@ label = "Spawn Shaft"
 pass_seed_key = "spawn_shaft_4"
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_22l3w"]
+[sub_resource type="Resource" id="Resource_7afvr"]
+script = ExtResource("6_item_pass")
+item_definition = ExtResource("7_chest_definition")
+area_columns = 2
+area_height_rows = 50
+column_vertical_offset_rows = 25
+area_spawn_chance = 1.0
+label = "Item Chests"
+pass_seed_key = "item_chests_5"
+min_depth_ratio = 0.05
+max_depth_ratio = 0.9
+allowed_target_ids = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_yasd3"]
 script = ExtResource("5_boundary")
 label = "Bottom Seal"
-pass_seed_key = "bottom_seal_5"
+pass_seed_key = "bottom_seal_6"
 allowed_target_ids = PackedInt32Array()
 
 [resource]
 script = ExtResource("1_profile")
-passes = [SubResource("Resource_i4eqn"), SubResource("Resource_rdg67"), SubResource("Resource_7rhj7"), SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w")]
+passes = [SubResource("Resource_7rhj7"), SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3")]

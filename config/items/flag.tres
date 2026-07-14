@@ -8,6 +8,7 @@
 script = ExtResource("1_iwl6w")
 stable_id = 3
 display_name = "Flag"
+description = "Plant it to claim the landing depth and finish the run."
 icon = ExtResource("3_icon")
 starting_inventory = 1
 action_factory = ExtResource("2_1bpvf")

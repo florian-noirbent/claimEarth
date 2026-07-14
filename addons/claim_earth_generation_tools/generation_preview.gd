@@ -11,6 +11,7 @@ var _subviewport_container: SubViewportContainer
 var _root: Node2D
 var _camera: Camera2D
 var _presenter
+var _item_chest_root: Node2D
 var _background: WorldBackground
 var _status_label := Label.new()
 var _terrain_registry := TerrainRegistry.new()
@@ -160,6 +161,9 @@ func _ensure_runtime() -> void:
 	_presenter.name = "WorldPresenter"
 	_presenter.presentation_config = WorldPresentationConfigResource
 	_root.add_child(_presenter)
+	_item_chest_root = Node2D.new()
+	_item_chest_root.name = "ItemChestPreviewRoot"
+	_root.add_child(_item_chest_root)
 	_camera = Camera2D.new()
 	_camera.name = "PreviewCamera"
 	_camera.enabled = true
@@ -176,6 +180,7 @@ func _free_runtime() -> void:
 	_root = null
 	_camera = null
 	_presenter = null
+	_item_chest_root = null
 	_background = null
 
 
@@ -203,6 +208,7 @@ func _attempt_preview() -> void:
 	_presenter.visible_row_count = result.world.dimensions.depth
 	_configure_background_bounds(result.world)
 	_presenter.configure(result.world, _terrain_registry)
+	_show_item_chest_previews(result.item_chest_spawns, _presenter.hex_radius)
 	_has_rendered_once = true
 	_attempt_camera_fit()
 	_set_status("")
@@ -263,3 +269,18 @@ func _refresh_camera_fit() -> void:
 func _set_status(text: String) -> void:
 	_status_label.text = text
 	_status_label.visible = not text.is_empty()
+
+
+func _show_item_chest_previews(spawns: Array[GeneratedItemChestSpawn], hex_radius: float) -> void:
+	if _item_chest_root == null:
+		return
+	for child in _item_chest_root.get_children():
+		child.free()
+	for spawn_data in spawns:
+		if spawn_data == null or spawn_data.definition == null or spawn_data.definition.chest_scene == null:
+			continue
+		var chest := spawn_data.definition.chest_scene.instantiate() as ItemChest
+		if chest == null:
+			continue
+		_item_chest_root.add_child(chest)
+		chest.configure(spawn_data, hex_radius, false)

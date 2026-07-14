@@ -14,6 +14,7 @@ const EVEN_PHASE_PASS_COUNT := 3
 const RENDER_BANK_COUNT := 2
 const RENDER_TARGETS_PER_BANK := PASS_COUNT
 const RENDER_TARGET_COUNT := RENDER_BANK_COUNT * RENDER_TARGETS_PER_BANK
+const MAX_RENDER_REQUEST_WAIT_ADVANCES := 8
 
 var _world: WorldGrid
 var _metadata: CompiledTerrainData
@@ -27,6 +28,7 @@ var _passes_performed := 0
 var _ticks_completed := 0
 var _render_request_in_flight := false
 var _render_request_serial := 0
+var _render_request_wait_advances := 0
 var _completed_step_pending := false
 var _render_root: Node
 var _viewports: Array[SubViewport] = []
@@ -36,9 +38,13 @@ var _active_texture: Texture2D
 var _presentation_texture: Texture2D
 var _even_phase_texture: Texture2D
 var _simulation_shader: Shader
-var _player_light_offset := Vector2i(-1, -1)
-var _player_light_level := 190
-var _player_light_update_radius := 18
+var _high_frequency_light_source_id := StringName()
+var _high_frequency_light_offset := Vector2i(-1, -1)
+var _high_frequency_light_level := 0
+var _high_frequency_light_update_radius := 0
+var _standard_light_sources: Dictionary = {}
+var _standard_light_image: Image
+var _standard_light_texture: ImageTexture
 
 
 func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void:
@@ -54,11 +60,16 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_passes_performed = 0
 	_ticks_completed = 0
 	_completed_step_pending = false
+	_high_frequency_light_source_id = StringName()
+	_high_frequency_light_offset = Vector2i(-1, -1)
+	_high_frequency_light_level = 0
+	_high_frequency_light_update_radius = 0
 	if _world == null:
 		return
 	_initialize_surface_lighting()
 	_world.upload_cpu_snapshot_to_texture()
 	_rule_texture = _create_rule_texture(_metadata)
+	_initialize_standard_light_texture()
 	_ensure_render_targets()
 	_reset_gpu_source_from_world()
 
@@ -76,10 +87,81 @@ func notify_external_changes(change_set: TerrainChangeSet) -> void:
 	queue_change(null)
 
 
-func set_player_light_source(offset: Vector2i, light_level: int, update_radius: int) -> void:
-	_player_light_offset = offset
-	_player_light_level = clampi(light_level, 0, 255)
-	_player_light_update_radius = maxi(0, update_radius)
+func set_high_frequency_light_source(
+	source_id: StringName,
+	offset: Vector2i,
+	light_level: int,
+	update_radius: int
+) -> bool:
+	if _world == null or source_id == StringName() or light_level <= 0 or light_level > 255 or update_radius <= 0:
+		return false
+	if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return false
+	if _high_frequency_light_source_id != StringName() and _high_frequency_light_source_id != source_id:
+		return false
+	_high_frequency_light_source_id = source_id
+	_high_frequency_light_offset = offset
+	_high_frequency_light_level = light_level
+	_high_frequency_light_update_radius = update_radius
+	return true
+
+
+func remove_high_frequency_light_source(source_id: StringName) -> bool:
+	if source_id == StringName() or source_id != _high_frequency_light_source_id:
+		return false
+	_high_frequency_light_source_id = StringName()
+	_high_frequency_light_offset = Vector2i(-1, -1)
+	_high_frequency_light_level = 0
+	_high_frequency_light_update_radius = 0
+	return true
+
+
+func set_standard_light_source(source_id: StringName, offset: Vector2i, light_level: int) -> bool:
+	if _world == null or source_id == StringName() or light_level <= 0 or light_level > 255:
+		return false
+	if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return false
+	var previous_offset := offset
+	if _standard_light_sources.has(source_id):
+		previous_offset = _standard_light_sources[source_id].offset
+	_standard_light_sources[source_id] = {
+		"offset": offset,
+		"light_level": light_level,
+	}
+	_write_standard_light_cell(previous_offset)
+	if offset != previous_offset:
+		_write_standard_light_cell(offset)
+	_upload_standard_light_texture()
+	return true
+
+
+func remove_standard_light_source(source_id: StringName) -> bool:
+	if not _standard_light_sources.has(source_id):
+		return false
+	var offset: Vector2i = _standard_light_sources[source_id].offset
+	_standard_light_sources.erase(source_id)
+	_write_standard_light_cell(offset)
+	_upload_standard_light_texture()
+	return true
+
+
+func clear_standard_light_sources() -> void:
+	if _standard_light_sources.is_empty():
+		return
+	_standard_light_sources.clear()
+	if _standard_light_image != null:
+		_standard_light_image.fill(Color.BLACK)
+	_upload_standard_light_texture()
+
+
+func standard_light_source_count() -> int:
+	return _standard_light_sources.size()
+
+
+func standard_light_level_at(offset: Vector2i) -> int:
+	if _standard_light_image == null or _world == null or not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return 0
+	return roundi(_standard_light_image.get_pixel(offset.x, offset.y).r * 255.0)
 
 
 func advance(max_passes: int) -> SimulationProgress:
@@ -87,8 +169,14 @@ func advance(max_passes: int) -> SimulationProgress:
 	progress.step_completed = _completed_step_pending
 	_completed_step_pending = false
 	# Headless Godot has no raster backend. The GPU pipeline is intentionally not emulated.
-	if max_passes <= 0 or _world == null or _metadata == null or _pending_commit or _render_request_in_flight or DisplayServer.get_name() == "headless":
+	if max_passes <= 0 or _world == null or _metadata == null or _pending_commit or DisplayServer.get_name() == "headless":
 		return progress
+	if _render_request_in_flight:
+		_render_request_wait_advances += 1
+		if _render_request_wait_advances < MAX_RENDER_REQUEST_WAIT_ADVANCES:
+			return progress
+		_cancel_in_progress_tick()
+		_reset_gpu_source_from_world()
 	var started := Time.get_ticks_usec()
 	if not _tick_in_progress:
 		_tick_in_progress = true
@@ -126,6 +214,13 @@ func shutdown() -> void:
 	_render_root = null
 	_world = null
 	_metadata = null
+	_standard_light_sources.clear()
+	_standard_light_image = null
+	_standard_light_texture = null
+	_high_frequency_light_source_id = StringName()
+	_high_frequency_light_offset = Vector2i(-1, -1)
+	_high_frequency_light_level = 0
+	_high_frequency_light_update_radius = 0
 
 
 func set_simulation_shader(shader: Shader) -> void:
@@ -246,7 +341,39 @@ func _configure_materials() -> void:
 		return
 	for material in _materials:
 		material.set_shader_parameter("rule_texture", _rule_texture)
+		material.set_shader_parameter("standard_light_sources", _standard_light_texture)
 		material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
+
+
+func _initialize_standard_light_texture() -> void:
+	_standard_light_sources.clear()
+	if _world == null:
+		_standard_light_image = null
+		_standard_light_texture = null
+		return
+	_standard_light_image = Image.create(
+		_world.dimensions.width,
+		_world.dimensions.depth,
+		false,
+		Image.FORMAT_R8
+	)
+	_standard_light_image.fill(Color.BLACK)
+	_standard_light_texture = ImageTexture.create_from_image(_standard_light_image)
+
+
+func _write_standard_light_cell(offset: Vector2i) -> void:
+	if _standard_light_image == null:
+		return
+	var resolved_level := 0
+	for source_data: Dictionary in _standard_light_sources.values():
+		if source_data.offset == offset:
+			resolved_level = maxi(resolved_level, int(source_data.light_level))
+	_standard_light_image.set_pixel(offset.x, offset.y, Color8(resolved_level, 0, 0, 255))
+
+
+func _upload_standard_light_texture() -> void:
+	if _standard_light_texture != null and _standard_light_image != null:
+		_standard_light_texture.update(_standard_light_image)
 
 
 func _reset_gpu_source_from_world() -> void:
@@ -271,15 +398,16 @@ func _schedule_render_pass_batch(first_pass: int, pass_count: int) -> bool:
 		var material := _materials[target_index]
 		material.set_shader_parameter("source_world", source_texture)
 		material.set_shader_parameter("pass_kind", pass_kind)
-		material.set_shader_parameter("player_light_offset", _player_light_offset)
-		material.set_shader_parameter("player_light_level", _player_light_level)
-		material.set_shader_parameter("player_light_update_radius", _player_light_update_radius)
+		material.set_shader_parameter("high_frequency_light_offset", _high_frequency_light_offset)
+		material.set_shader_parameter("high_frequency_light_level", _high_frequency_light_level)
+		material.set_shader_parameter("high_frequency_light_update_radius", _high_frequency_light_update_radius)
 		var viewport := _viewports[target_index]
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		source_texture = viewport.get_texture()
 	_render_request_serial += 1
 	var request_serial := _render_request_serial
 	_render_request_in_flight = true
+	_render_request_wait_advances = 0
 	RenderingServer.request_frame_drawn_callback(
 		_on_render_batch_drawn.bind(request_serial, first_pass, pass_count, bank_index)
 	)
@@ -290,6 +418,7 @@ func _on_render_batch_drawn(request_serial: int, first_pass: int, pass_count: in
 	if request_serial != _render_request_serial or not _render_request_in_flight:
 		return
 	_render_request_in_flight = false
+	_render_request_wait_advances = 0
 	if first_pass != _pass_index or pass_count <= 0 or first_pass + pass_count > PASS_COUNT or bank_index < 0 or bank_index >= RENDER_BANK_COUNT:
 		_cancel_in_progress_tick()
 		_reset_gpu_source_from_world()
@@ -368,6 +497,7 @@ func _cancel_in_progress_tick() -> void:
 func _invalidate_render_request() -> void:
 	_render_request_serial += 1
 	_render_request_in_flight = false
+	_render_request_wait_advances = 0
 	for viewport in _viewports:
 		if is_instance_valid(viewport):
 			viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED

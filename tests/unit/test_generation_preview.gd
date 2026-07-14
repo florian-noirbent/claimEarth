@@ -265,3 +265,28 @@ func test_preview_drag_scales_with_zoom_level() -> void:
 	var zoomed_in_delta := absf(_camera(preview).position.x - initial_position.x)
 
 	assert_gt(zoomed_out_delta, zoomed_in_delta)
+
+
+func test_preview_rebuilds_non_interactive_item_chests() -> void:
+	var host := Control.new()
+	host.custom_minimum_size = Vector2(1200, 800)
+	host.size = Vector2(1200, 800)
+	add_child_autofree(host)
+	var preview = GenerationPreviewScript.new()
+	preview.size = Vector2(900, 700)
+	host.add_child(preview)
+	await wait_process_frames(1)
+
+	preview.request_preview(_default_profile(), 24680)
+	preview.activate()
+	await wait_process_frames(3)
+	assert_not_null(preview._item_chest_root)
+	assert_eq(preview._item_chest_root.get_child_count(), 19)
+	for child in preview._item_chest_root.get_children():
+		assert_true(child is ItemChest)
+		assert_false((child as ItemChest).touch_area.monitoring)
+		assert_false((child as ItemChest).is_physics_processing())
+
+	preview.request_preview(_default_profile(), 24680)
+	await wait_process_frames(3)
+	assert_eq(preview._item_chest_root.get_child_count(), 19)

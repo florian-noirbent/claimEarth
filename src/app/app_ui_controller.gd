@@ -7,6 +7,7 @@ signal leaderboard_requested
 signal menu_requested
 signal pause_requested
 signal item_selected(index: int)
+signal reward_selected(index: int)
 signal score_confirmed(player_name: String)
 signal restart_requested
 signal settings_requested
@@ -20,6 +21,7 @@ signal touch_hook_pressed(aim: Vector2)
 signal touch_hook_released
 
 @export var item_toolbar_slot_scene: PackedScene
+@export var reward_picker_card_scene: PackedScene
 
 @onready var title_image: TextureRect = %Title
 @onready var score_corner: MarginContainer = $ScoreCorner
@@ -56,6 +58,9 @@ signal touch_hook_released
 @onready var item_toolbar_content: HBoxContainer = %ItemToolbarContent
 @onready var selection_name_label: Label = %SelectionNameLabel
 @onready var selection_name_timer: Timer = %SelectionNameTimer
+@onready var reward_picker_layer: Control = %RewardPickerLayer
+@onready var reward_picker_title: Label = %RewardPickerTitle
+@onready var reward_picker_cards: HBoxContainer = %RewardPickerCards
 @onready var name_entry_panel: PanelContainer = %NameEntryPanel
 @onready var name_entry_status: Label = %NameEntryStatus
 @onready var player_name_input: LineEdit = %PlayerNameInput
@@ -143,6 +148,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 		RunPhase.SUBMITTING,
 		RunPhase.DEATH,
 		RunPhase.RESULT,
+		RunPhase.REWARD_PICKER,
 	]
 	var is_active_play := state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	playing_panel.visible = is_active_play
@@ -164,6 +170,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 	name_entry_panel.visible = state == RunPhase.NAME_ENTRY
 	result_panel.visible = state in [RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT]
 	pause_panel.visible = state == RunPhase.PAUSED
+	reward_picker_layer.visible = state == RunPhase.REWARD_PICKER
 	leaderboard_panel.visible = state == RunPhase.LEADERBOARD
 	warning_label.text = storage_warning
 	if state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]:
@@ -198,6 +205,9 @@ func dismiss_menu_shell() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if handle_reward_picker_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if (help_panel.visible or settings_panel.visible) and (event.is_action_pressed(InputActions.PAUSE) or event.is_action_pressed(InputActions.MENU_BACK)):
 		if help_panel.visible:
 			_hide_help_page()
@@ -394,6 +404,48 @@ func _show_selection_name_if_changed(item_name: String) -> void:
 
 func _on_selection_name_timeout() -> void:
 	selection_name_label.visible = false
+
+
+func show_reward_choices(title: String, choices: Array) -> void:
+	reward_picker_title.text = title
+	for child in reward_picker_cards.get_children():
+		child.free()
+	for index in choices.size():
+		var choice := choices[index] as RewardChoiceViewData
+		if choice == null:
+			continue
+		var card := reward_picker_card_scene.instantiate() as RewardPickerCard
+		reward_picker_cards.add_child(card)
+		card.configure(choice, str(index + 1))
+		card.pressed.connect(_on_reward_card_pressed.bind(index))
+	if reward_picker_cards.get_child_count() > 0:
+		(reward_picker_cards.get_child(0) as Control).call_deferred("grab_focus")
+
+
+func set_reward_picker_enabled(enabled: bool) -> void:
+	for child in reward_picker_cards.get_children():
+		var card := child as RewardPickerCard
+		if card != null:
+			card.set_choice_enabled(enabled)
+
+
+func handle_reward_picker_input(event: InputEvent) -> bool:
+	if _current_state != RunPhase.REWARD_PICKER:
+		return false
+	var choice_actions := [
+		InputActions.SELECT_SMALL_BOMB,
+		InputActions.SELECT_LARGE_BOMB,
+		InputActions.SELECT_FLAG,
+	]
+	for index in mini(choice_actions.size(), reward_picker_cards.get_child_count()):
+		if event.is_action_pressed(choice_actions[index]):
+			reward_selected.emit(index)
+			return true
+	return event.is_action_pressed(InputActions.PAUSE) or event.is_action_pressed(InputActions.MENU_BACK)
+
+
+func _on_reward_card_pressed(index: int) -> void:
+	reward_selected.emit(index)
 
 
 func show_name_error(message: String) -> void:

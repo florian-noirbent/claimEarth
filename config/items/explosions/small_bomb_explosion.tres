@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ExplosionDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/items/explosion_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+blast_radius = 5
+lethal_radius = 3
+effect_color = Color(0.95, 0.56, 0.22, 1)
+chain_fuse_seconds = 0.3

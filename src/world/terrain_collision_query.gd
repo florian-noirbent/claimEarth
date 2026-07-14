@@ -33,6 +33,44 @@ func circle_overlaps_solid(position: Vector2, radius: float) -> bool:
 	return not circle_contacts(position, radius).is_empty()
 
 
+func is_solid_at_world(position: Vector2) -> bool:
+	var offset := HexMetrics.offset_for_world(position, hex_radius)
+	return is_solid_cell(offset.x, offset.y)
+
+
+func convex_polygon_overlaps_solid(polygon: PackedVector2Array) -> bool:
+	if not is_configured() or polygon.size() < 3:
+		return false
+	var bounds := _polygon_bounds(polygon)
+	for cell in _candidate_cells_for_bounds(bounds):
+		if not is_solid_cell(cell.x, cell.y):
+			continue
+		var hex_polygon := PackedVector2Array()
+		var cell_center := HexMetrics.center_for_offset(cell.x, cell.y, hex_radius)
+		for corner in _corners:
+			hex_polygon.append(cell_center + corner)
+		if _convex_polygons_overlap(polygon, hex_polygon):
+			return true
+	return false
+
+
+func _candidate_cells_for_bounds(bounds: Rect2) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if world == null:
+		return cells
+	var center := HexMetrics.offset_for_world(bounds.get_center(), hex_radius)
+	var half_cols := ceili(bounds.size.x * 0.5 / maxf(hex_radius * 1.5, 1.0)) + 2
+	var half_rows := ceili(bounds.size.y * 0.5 / maxf(hex_radius * sqrt(3.0), 1.0)) + 2
+	var min_col := maxi(0, center.x - half_cols)
+	var max_col := mini(world.dimensions.width - 1, center.x + half_cols)
+	var min_row := maxi(0, center.y - half_rows)
+	var max_row := mini(world.dimensions.depth - 1, center.y + half_rows)
+	for row in range(min_row, max_row + 1):
+		for col in range(min_col, max_col + 1):
+			cells.append(Vector2i(col, row))
+	return cells
+
+
 func circle_contacts(position: Vector2, radius: float) -> Array[Dictionary]:
 	var contacts: Array[Dictionary] = []
 	if not is_configured():
@@ -165,3 +203,41 @@ func _point_in_polygon(point: Vector2, polygon_center: Vector2, polygon: PackedV
 				inside = not inside
 		previous = current
 	return inside
+
+
+func _polygon_bounds(polygon: PackedVector2Array) -> Rect2:
+	var minimum := polygon[0]
+	var maximum := polygon[0]
+	for point in polygon:
+		minimum.x = minf(minimum.x, point.x)
+		minimum.y = minf(minimum.y, point.y)
+		maximum.x = maxf(maximum.x, point.x)
+		maximum.y = maxf(maximum.y, point.y)
+	return Rect2(minimum, maximum - minimum)
+
+
+func _convex_polygons_overlap(left: PackedVector2Array, right: PackedVector2Array) -> bool:
+	return not _has_separating_axis(left, right) and not _has_separating_axis(right, left)
+
+
+func _has_separating_axis(source: PackedVector2Array, other: PackedVector2Array) -> bool:
+	for index in source.size():
+		var edge := source[(index + 1) % source.size()] - source[index]
+		if edge.length_squared() <= 0.000001:
+			continue
+		var axis := Vector2(-edge.y, edge.x).normalized()
+		var source_range := _projection_range(source, axis)
+		var other_range := _projection_range(other, axis)
+		if source_range.y < other_range.x or other_range.y < source_range.x:
+			return true
+	return false
+
+
+func _projection_range(polygon: PackedVector2Array, axis: Vector2) -> Vector2:
+	var minimum := polygon[0].dot(axis)
+	var maximum := minimum
+	for index in range(1, polygon.size()):
+		var projection := polygon[index].dot(axis)
+		minimum = minf(minimum, projection)
+		maximum = maxf(maximum, projection)
+	return Vector2(minimum, maximum)

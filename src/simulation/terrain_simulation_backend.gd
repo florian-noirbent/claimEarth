@@ -47,8 +47,37 @@ func notify_external_changes(_change_set: TerrainChangeSet) -> void:
 	pass
 
 
-func set_player_light_source(_offset: Vector2i, _light_level: int, _update_radius: int) -> void:
+func set_high_frequency_light_source(
+	_source_id: StringName,
+	_offset: Vector2i,
+	_light_level: int,
+	_update_radius: int
+) -> bool:
+	return false
+
+
+func remove_high_frequency_light_source(_source_id: StringName) -> bool:
+	return false
+
+
+func set_standard_light_source(_source_id: StringName, _offset: Vector2i, _light_level: int) -> bool:
+	return false
+
+
+func remove_standard_light_source(_source_id: StringName) -> bool:
+	return false
+
+
+func clear_standard_light_sources() -> void:
 	pass
+
+
+func standard_light_source_count() -> int:
+	return 0
+
+
+func standard_light_level_at(_offset: Vector2i) -> int:
+	return 0
 
 
 func is_tick_in_progress() -> bool:

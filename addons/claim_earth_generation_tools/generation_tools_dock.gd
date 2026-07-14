@@ -950,6 +950,16 @@ func _property_tooltip(property_name: String) -> String:
 			return "Choose which terrain type this hazard pocket pass places."
 		"sealed_row_count":
 			return "Number of bottom rows that will be forced to the sealing terrain."
+		"item_definition":
+			return "Generated world-item definition placed by this pass. Add another pass instance for another item kind."
+		"area_columns":
+			return "Number of vertical map slices used for independent item spawn areas."
+		"area_height_rows":
+			return "Height in hex rows of each independent item spawn area."
+		"column_vertical_offset_rows":
+			return "Cumulative row offset that staggers adjacent columns diagonally."
+		"area_spawn_chance":
+			return "Independent deterministic chance for each grid area to spawn its configured item."
 	return "Edit this generation setting for the selected pass."
 
 

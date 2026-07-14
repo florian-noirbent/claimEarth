@@ -3,11 +3,12 @@ render_mode unshaded;
 
 uniform sampler2D source_world : filter_nearest, repeat_disable;
 uniform sampler2D rule_texture : filter_nearest, repeat_disable;
+uniform sampler2D standard_light_sources : filter_nearest, repeat_disable;
 uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
-uniform ivec2 player_light_offset = ivec2(-1, -1);
-uniform int player_light_level = 190;
-uniform int player_light_update_radius = 18;
+uniform ivec2 high_frequency_light_offset = ivec2(-1, -1);
+uniform int high_frequency_light_level = 0;
+uniform int high_frequency_light_update_radius = 0;
 
 #include "../shader/hex_grid.gdshaderinc"
 
@@ -126,6 +127,10 @@ int emitted_light(int id) {
 	return rule_byte(id, 3, 3);
 }
 
+int standard_light(ivec2 coord) {
+	return byte_from_float(texture(standard_light_sources, (vec2(coord) + vec2(0.5)) / world_size).r);
+}
+
 vec4 make_cell(int cell_id, int fill) {
 	int resolved_fill = cell_id == air_id() ? 0 : clamp(fill, 0, 255);
 	return color_from_bytes(cell_id, resolved_fill, 0, 255);
@@ -185,19 +190,22 @@ bool in_bounds(ivec2 coord) {
 	return coord.x >= 0 && coord.y >= 0 && coord.x < int(world_size.x) && coord.y < int(world_size.y);
 }
 
-bool updates_player_light(ivec2 coord) {
-	return player_light_offset.x >= 0 && player_light_offset.y >= 0
-		&& hex_distance(coord, player_light_offset) <= player_light_update_radius;
+bool updates_high_frequency_light(ivec2 coord) {
+	return high_frequency_light_offset.x >= 0 && high_frequency_light_offset.y >= 0
+		&& hex_distance(coord, high_frequency_light_offset) <= high_frequency_light_update_radius;
 }
 
 int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
-	if (pass_kind != PASS_LEFT_DOWN_ODD && !updates_player_light(coord)) {
+	if (pass_kind != PASS_LEFT_DOWN_ODD && !updates_high_frequency_light(coord)) {
 		return byte_from_float(current.b);
 	}
 	int cell_id = terrain_id(terrain_result);
-	int source_light = emitted_light(cell_id) * fill_amount(terrain_result) / 255;
-	if (coord == player_light_offset) {
-		source_light = max(source_light, player_light_level);
+	int source_light = max(
+		emitted_light(cell_id) * fill_amount(terrain_result) / 255,
+		standard_light(coord)
+	);
+	if (coord == high_frequency_light_offset) {
+		source_light = max(source_light, high_frequency_light_level);
 	}
 	int persistent_light = byte_from_float(current.b) >= 130 ? byte_from_float(current.b) : 0;
 	int propagated_light = 0;

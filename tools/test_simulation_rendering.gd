@@ -4,6 +4,7 @@ extends SceneTree
 
 const PASS_COUNT := 6
 const MAX_WAIT_FRAMES := 4
+const FakeLeaderboardServiceScript = preload("res://src/leaderboard/fake_leaderboard_service.gd")
 
 
 func _initialize() -> void:
@@ -14,6 +15,16 @@ func _run() -> void:
 	var registry := TerrainRegistry.new()
 	if not registry.try_configure(load("res://config/terrain/catalog.tres") as TerrainCatalog):
 		_fail("Could not configure the terrain registry.")
+		return
+	if not await _verify_live_run_player_light():
+		return
+	if not await _verify_player_light_source(registry):
+		return
+	if not await _verify_moving_standard_light_does_not_starve_simulation(registry):
+		return
+	if not await _verify_stalled_render_request_recovers(registry):
+		return
+	if not await _verify_standard_light_source(registry):
 		return
 	var single_world := _world_fixture(registry)
 	var single_backend := _backend(single_world, registry)
@@ -91,6 +102,185 @@ func _run() -> void:
 			return
 	print("SIMULATION_RENDERING_TEST_PASSED")
 	quit()
+
+
+func _verify_live_run_player_light() -> bool:
+	var app := (load("res://scenes/app/main.tscn") as PackedScene).instantiate() as AppRoot
+	app.set_menu_preview_enabled(false)
+	app.configure_save_path_for_test("user://simulation_rendering_player_light.json")
+	app.configure_settings_path_for_test("user://simulation_rendering_player_light_settings.json")
+	app.configure_leaderboard_service_for_test(FakeLeaderboardServiceScript.new())
+	root.add_child(app)
+	await process_frame
+	app.ui.menu_start_button.pressed.emit()
+	var ready_frames := 0
+	while (app.get_run_state() != RunPhase.PLAYING or app.get_player() == null) and ready_frames < 240:
+		await process_frame
+		ready_frames += 1
+	if not _expect(app.get_run_state() == RunPhase.PLAYING and app.get_player() != null, "The live run must reach PLAYING with a real player."):
+		app.free()
+		return false
+	var player := app.get_player()
+	var world := app.world_controller.current_world()
+	var backend := app.simulation_backend() as RenderTextureSimulationBackend
+	var player_cell := Vector2i(world.dimensions.width / 2, mini(40, world.dimensions.depth - 3))
+	player.set_physics_process(false)
+	player.velocity = Vector2.ZERO
+	player.global_position = HexMetrics.center_for_offset(
+		player_cell.x,
+		player_cell.y,
+		app.world_presenter.hex_radius
+	)
+	var initial_ticks: int = backend.ticks_completed()
+	var light_frames := 0
+	while backend.ticks_completed() < initial_ticks + 2 and light_frames < 120:
+		await process_frame
+		light_frames += 1
+	await process_frame
+	var expected_level := player.world_light_source.definition.light_level
+	var committed_level := world.get_committed_light_by_offset(player_cell.x, player_cell.y)
+	if not _expect(committed_level >= expected_level, "The live player must produce committed light at its current map cell (expected at least %d, got %d)." % [expected_level, committed_level]):
+		app.free()
+		return false
+	app.free()
+	await process_frame
+	return true
+
+
+func _verify_player_light_source(registry: TerrainRegistry) -> bool:
+	var world := _world_fixture(registry)
+	var backend := _backend(world, registry)
+	var player_cell := Vector2i(4, 8)
+	var player := (load("res://scenes/player/player.tscn") as PackedScene).instantiate() as PlayerController
+	root.add_child(player)
+	player.set_physics_process(false)
+	player.global_position = HexMetrics.center_for_offset(player_cell.x, player_cell.y, 16.0)
+	backend.attach_to(root)
+	player.world_light_source.configure(backend, 16.0, &"render_test_player")
+	await process_frame
+	if not _expect(player.world_light_source.registered_offset() == player_cell, "The real player scene must register its light at the player's map cell."):
+		player.free()
+		backend.shutdown()
+		return false
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		player.free()
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var expected_level := player.world_light_source.definition.light_level
+	if not _expect(world.get_committed_light_by_offset(player_cell.x, player_cell.y) == expected_level, "The real player scene must produce committed world light at its map cell."):
+		player.free()
+		backend.shutdown()
+		return false
+	var brightest_neighbor := 0
+	var player_coord := HexCoord.from_offset_odd_q(player_cell.x, player_cell.y)
+	for direction in range(6):
+		var neighbor := player_coord.neighbor(direction).to_offset_odd_q()
+		brightest_neighbor = maxi(brightest_neighbor, world.get_committed_light_by_offset(neighbor.x, neighbor.y))
+	if not _expect(brightest_neighbor > 30, "The real player light must visibly propagate beyond the cell hidden under the player."):
+		player.free()
+		backend.shutdown()
+		return false
+	player.free()
+	backend.shutdown()
+	await process_frame
+	return true
+
+
+func _verify_standard_light_source(registry: TerrainRegistry) -> bool:
+	var world := _world_fixture(registry)
+	var backend := _backend(world, registry)
+	var source_offset := Vector2i(4, 8)
+	backend.attach_to(root)
+	await process_frame
+	if not _expect(backend.set_standard_light_source(&"test_chest", source_offset, 90), "A valid standard light source must be accepted."):
+		backend.shutdown()
+		return false
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	if not _expect(world.get_committed_light_by_offset(source_offset.x, source_offset.y) == 90, "A standard source must inject its configured light into the terrain simulation."):
+		backend.shutdown()
+		return false
+	if not _expect(backend.remove_standard_light_source(&"test_chest"), "The standard source must be removable."):
+		backend.shutdown()
+		return false
+	if not await _complete_tick(backend, 2, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	if not _expect(world.get_committed_light_by_offset(source_offset.x, source_offset.y) < 90, "Sub-threshold standard light must fade after its source is removed."):
+		backend.shutdown()
+		return false
+	if not _expect(backend.set_high_frequency_light_source(&"test_player", source_offset, 190, 18), "A valid high-frequency light source must be accepted."):
+		backend.shutdown()
+		return false
+	if not await _complete_tick(backend, 3, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	if not _expect(world.get_committed_light_by_offset(source_offset.x, source_offset.y) == 190, "A high-frequency source must inject its configured light into the terrain simulation."):
+		backend.shutdown()
+		return false
+	if not _expect(backend.remove_high_frequency_light_source(&"test_player"), "The high-frequency source must be removable."):
+		backend.shutdown()
+		return false
+	backend.shutdown()
+	await process_frame
+	return true
+
+
+func _verify_moving_standard_light_does_not_starve_simulation(registry: TerrainRegistry) -> bool:
+	var world := _world_fixture(registry)
+	var backend := _backend(world, registry)
+	var host := Node2D.new()
+	var source := WorldLightSource2D.new()
+	source.definition = load("res://config/lighting/chest_light.tres") as WorldLightSourceDefinition
+	host.add_child(source)
+	root.add_child(host)
+	host.global_position = HexMetrics.center_for_offset(3, 8, 16.0)
+	backend.attach_to(root)
+	source.configure(backend, 16.0, &"moving_standard_light")
+	await process_frame
+	for frame in range(12):
+		backend.commit_if_ready()
+		backend.advance(PASS_COUNT)
+		var next_col := 3 + (frame + 1) % 2
+		host.global_position = HexMetrics.center_for_offset(next_col, 8, 16.0)
+		source.sync_now()
+		await process_frame
+	var completed_ticks := backend.ticks_completed()
+	var completed_passes := backend.passes_performed()
+	host.free()
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		completed_ticks > 0 and completed_passes >= PASS_COUNT,
+		"Moving standard lights must not cancel every in-flight simulation pass."
+	)
+
+
+func _verify_stalled_render_request_recovers(registry: TerrainRegistry) -> bool:
+	var world := _world_fixture(registry)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	backend._render_request_in_flight = true
+	backend._render_request_wait_advances = RenderTextureSimulationBackend.MAX_RENDER_REQUEST_WAIT_ADVANCES - 1
+	var retry_progress := backend.advance(PASS_COUNT)
+	if not _expect(retry_progress.passes_scheduled == PASS_COUNT, "A stalled render request must be invalidated and retried automatically."):
+		backend.shutdown()
+		return false
+	var completed_before := backend.passes_performed()
+	var waited := 0
+	while backend.passes_performed() == completed_before and waited < MAX_WAIT_FRAMES:
+		await process_frame
+		waited += 1
+	var recovered := backend.passes_performed() == completed_before + PASS_COUNT and backend.ticks_completed() == 1
+	backend.shutdown()
+	await process_frame
+	return _expect(recovered, "The retried render request must complete a simulation tick without restarting the game.")
 
 
 func _complete_tick(backend: RenderTextureSimulationBackend, expected_revision: int, max_passes: int) -> bool:

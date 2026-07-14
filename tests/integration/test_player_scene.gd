@@ -27,6 +27,10 @@ func test_player_scene_loads_with_camera_and_visual() -> void:
 	await wait_process_frames(1)
 
 	assert_not_null(player.camera)
+	assert_not_null(player.world_light_source)
+	assert_eq(player.world_light_source.definition.update_mode, WorldLightSourceDefinition.UpdateMode.HIGH_FREQUENCY)
+	assert_eq(player.world_light_source.definition.light_level, 190)
+	assert_eq(player.world_light_source.definition.update_radius, 18)
 	assert_not_null(player.body_polygon)
 
 

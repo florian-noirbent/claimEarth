@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ItemChestDefinition" format=3 uid="uid://bxwt8166bt34x"]
+
+[ext_resource type="Script" uid="uid://c7gj2uavlcjvu" path="res://src/items/item_chest_definition.gd" id="1_definition"]
+[ext_resource type="Script" uid="uid://clq6umjaketl7" path="res://src/items/item_chest_option.gd" id="2_option"]
+[ext_resource type="PackedScene" path="res://scenes/objects/item_chest.tscn" id="3_scene"]
+[ext_resource type="Resource" path="res://config/items/small_bomb.tres" id="4_small"]
+[ext_resource type="Resource" path="res://config/items/large_bomb.tres" id="5_large"]
+[ext_resource type="Resource" path="res://config/items/explosions/chest_explosion.tres" id="6_explosion"]
+
+[sub_resource type="Resource" id="Resource_small"]
+script = ExtResource("2_option")
+item = ExtResource("4_small")
+quantity = 5
+
+[sub_resource type="Resource" id="Resource_large"]
+script = ExtResource("2_option")
+item = ExtResource("5_large")
+quantity = 2
+
+[resource]
+script = ExtResource("1_definition")
+chest_scene = ExtResource("3_scene")
+explosion_definition = ExtResource("6_explosion")
+options = Array[ExtResource("2_option")]([SubResource("Resource_small"), SubResource("Resource_large")])

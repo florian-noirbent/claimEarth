@@ -8,3 +8,7 @@ extends Resource
 
 func create_action(_definition: ItemDefinition):
 	return null
+
+
+func validate() -> PackedStringArray:
+	return PackedStringArray()
