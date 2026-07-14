@@ -29,7 +29,9 @@ func update_hazards(snapshots: Array) -> void:
 			_value(snapshot, &"icon", null) as Texture2D,
 			_value(snapshot, &"bar_color", Color.WHITE) as Color,
 			level,
-			bool(_value(snapshot, &"is_active", _value(snapshot, &"active", false)))
+			bool(_value(snapshot, &"is_active", _value(snapshot, &"active", false))),
+			float(_value(snapshot, &"secondary_threshold", -1.0)),
+			bool(_value(snapshot, &"lethal_end", false))
 		)
 	for key in _rows_by_key.keys():
 		if retained.has(key):

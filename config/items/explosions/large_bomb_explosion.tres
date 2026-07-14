@@ -9,3 +9,4 @@ lethal_radius = 6
 effect_color = Color(0.72, 0.31, 0.18, 1)
 large_feedback = true
 chain_fuse_seconds = 0.3
+blast_impulse = 1280.0

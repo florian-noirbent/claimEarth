@@ -92,15 +92,23 @@ func test_chest_tilts_toward_the_unsupported_side_without_sliding() -> void:
 
 func test_chest_uses_shared_nearest_air_unstuck_behavior() -> void:
 	var registry := FixtureLoader.terrain_registry()
-	var world := WorldGrid.new(WorldDimensions.new(12, 16), FixtureLoader.terrain_id("Stone"))
-	var air_cell := Vector2i(6, 5)
-	world.set_committed_by_offset(air_cell.x, air_cell.y, FixtureLoader.terrain_id("Air"))
-	var chest := await _configured_chest(world, registry, Vector2i(5, 5))
-	var air_center := HexMetrics.center_for_offset(air_cell.x, air_cell.y, 16.0)
-	var before := chest.global_position.distance_to(air_center)
+	var world := WorldGrid.new(WorldDimensions.new(20, 16), FixtureLoader.terrain_id("Stone"))
+	var chamber_hex := HexCoord.from_offset_odd_q(10, 5)
+	_set_air_hex_radius(world, chamber_hex, 3)
+	var chest := await _configured_chest(world, registry, Vector2i(3, 5))
+	var target_variant = chest._terrain_query.nearest_clear_polygon_air_center(
+		chest.global_position,
+		chest._body_polygon,
+		chest.visual_root.rotation,
+		chest.spawn_data.definition.terrain_unstuck_search_ring
+	)
+	assert_not_null(target_variant)
+	var target := target_variant as Vector2
+	assert_false(chest._polygon_overlaps_at(target, chest.visual_root.rotation))
+	var before := chest.global_position.distance_to(target)
 	chest._apply_terrain_unstuck(0.05)
 
-	assert_lt(chest.global_position.distance_to(air_center), before)
+	assert_lt(chest.global_position.distance_to(target), before)
 
 
 func _configured_chest(world: WorldGrid, registry: TerrainRegistry, anchor: Vector2i) -> ItemChest:
@@ -110,3 +118,13 @@ func _configured_chest(world: WorldGrid, registry: TerrainRegistry, anchor: Vect
 	var definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
 	chest.configure(GeneratedItemChestSpawn.new(anchor, definition, 1), 16.0, true, null, world, registry)
 	return chest
+
+
+func _set_air_hex_radius(world: WorldGrid, center: HexCoord, radius: int) -> void:
+	for delta_q in range(-radius, radius + 1):
+		var min_delta_r := maxi(-radius, -delta_q - radius)
+		var max_delta_r := mini(radius, -delta_q + radius)
+		for delta_r in range(min_delta_r, max_delta_r + 1):
+			var cell := center.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q()
+			if world.dimensions.is_in_bounds_offset(cell.x, cell.y):
+				world.set_committed_by_offset(cell.x, cell.y, FixtureLoader.terrain_id("Air"))

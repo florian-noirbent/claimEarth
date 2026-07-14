@@ -121,6 +121,21 @@ func test_wider_nonlethal_blast_does_not_arm_bomb() -> void:
 	assert_false(bomb.explosive.is_chain_armed())
 
 
+func test_explosion_pushes_active_projectile_bodies_including_future_item_actions() -> void:
+	var controller := _configured_explosion_controller()
+	var origin := Vector2(100.0, 100.0)
+	var projectile := ItemProjectile.new()
+	projectile.global_position = origin + Vector2(40.0, 0.0)
+	controller.add_child(projectile)
+	var definition := (load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition).duplicate(true) as ExplosionDefinition
+	definition.blast_impulse = 800.0
+
+	controller.resolve_explosion(definition, origin)
+
+	assert_almost_eq(projectile.velocity.x, 400.0, 0.001)
+	assert_almost_eq(projectile.velocity.y, 0.0, 0.001)
+
+
 func test_bomb_arms_chest_and_chest_detonation_can_arm_bomb() -> void:
 	var controller := RunItemController.new()
 	add_child_autofree(controller)

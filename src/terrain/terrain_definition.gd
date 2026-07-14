@@ -29,6 +29,8 @@ func validate() -> PackedStringArray:
 		errors.append("display_name is required")
 	if motion_behavior == null:
 		errors.append("%s is missing motion_behavior" % _identity())
+	elif not is_finite(motion_behavior.viscosity) or motion_behavior.viscosity < 0.0:
+		errors.append("%s motion viscosity must be finite and non-negative" % _identity())
 	if hazard_behavior == null:
 		errors.append("%s is missing hazard_behavior" % _identity())
 	if blast_reaction == null:

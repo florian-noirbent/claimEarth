@@ -16,6 +16,7 @@ var can_fall_by_id := PackedByteArray()
 var can_side_down_by_id := PackedByteArray()
 var can_side_up_by_id := PackedByteArray()
 var displaces_passable_moving_on_fall_by_id := PackedByteArray()
+var viscosity_by_id := PackedFloat32Array()
 var fall_rate_by_id := PackedByteArray()
 var side_down_rate_by_id := PackedByteArray()
 var side_up_rate_by_id := PackedByteArray()
@@ -58,6 +59,7 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.can_side_down_by_id[stable_id] = 1 if motion.can_side_down else 0
 		result.can_side_up_by_id[stable_id] = 1 if motion.can_side_up else 0
 		result.displaces_passable_moving_on_fall_by_id[stable_id] = 1 if motion.displaces_passable_moving_on_fall else 0
+		result.viscosity_by_id[stable_id] = motion.viscosity
 		result.fall_rate_by_id[stable_id] = motion.fall_rate
 		result.side_down_rate_by_id[stable_id] = motion.side_down_rate
 		result.side_up_rate_by_id[stable_id] = motion.side_up_rate
@@ -135,6 +137,10 @@ func displaces_passable_moving_on_fall(cell_id: int) -> bool:
 	return cell_id >= 0 and cell_id < displaces_passable_moving_on_fall_by_id.size() and displaces_passable_moving_on_fall_by_id[cell_id] != 0
 
 
+func viscosity(cell_id: int) -> float:
+	return float(viscosity_by_id[cell_id]) if cell_id >= 0 and cell_id < viscosity_by_id.size() else 0.0
+
+
 func transfer_rate(cell_id: int, direction_kind: int) -> int:
 	match direction_kind:
 		0:
@@ -180,6 +186,7 @@ func _resize_tables(size: int) -> void:
 	can_side_down_by_id.resize(size)
 	can_side_up_by_id.resize(size)
 	displaces_passable_moving_on_fall_by_id.resize(size)
+	viscosity_by_id.resize(size)
 	fall_rate_by_id.resize(size)
 	side_down_rate_by_id.resize(size)
 	side_up_rate_by_id.resize(size)

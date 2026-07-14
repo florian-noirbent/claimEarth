@@ -117,9 +117,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Air | Passable | Stable | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
-| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; pushes the player out rather than burying them | Becomes air |
-| Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; contributes no terrain-specific player hazard | Diffuses propagation |
-| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
+| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
+| Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
+| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
 
 Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
 partial fill controls movement and rendering. Terrain simulation advances at a
@@ -140,19 +140,37 @@ physics, projectiles, and input remain frame-responsive.
 - The player is about two hexes tall and can step up low hex slopes.
 - Movement includes ground acceleration, air control, coyote time, jump buffering,
   and floor support probing.
+- Fluid viscosity damps the player's complete velocity, including walking, jumping,
+  falling, swinging, ragdoll motion, and carried impulses. Drag scales with committed
+  cell fill and the fraction of the three-point body sample immersed; Water has mild
+  resistance and Lava has strong resistance. Fluid drag is not itself an impact.
+- Terrain impacts use the magnitude of velocity removed or redirected by collision,
+  grapple correction, or escape from newly solid terrain. The greatest change in a
+  physics frame contributes its amount above the configured safe-impact speed to a
+  visible meter. The meter recovers to empty over three seconds from full, marks the
+  knockout threshold within the bar, and marks death at its end. Repeated nearby
+  impacts accumulate; reaching the medium threshold knocks the player into a
+  one-second uncontrolled tumble and detaches the hook, while reaching the end kills
+  the player. A single impact at either threshold retains the same outcome.
+- When solid terrain overlaps the player, escape targets only an Air position where
+  the complete player body fits. Cramped one-row gaps are skipped, and the push is
+  applied over consecutive physics frames until the overlap is cleared. If no such
+  Air position is in the configured search range, the player is not pushed through
+  terrain.
 - The hook attaches only to hookable terrain within its configured range.
 - `A/D` adds tangential momentum while hooked without forcing same-direction
   overspeed back to walk or air speed caps; `W/S` adjusts rope length.
 - The camera remains horizontally fixed and zooms so the map width fills the
   viewport. It never scrolls upward during a run.
 
-The player dies when a hazard meter fills, from a bomb's lethal radius, or by falling
-below the world. A full lava hex fills in 0.2 seconds; lava from its 10% activation
-threshold ramps linearly from 10% to full meter-fill speed as terrain fill rises. Suffocation
-fills while the head has no breathable Air: a partially filled head hex samples the
-hex above it, while a full non-Air hex blocks breathing. Hazard meters recover over
-time after escape, with lava recovering in one second and suffocation in three.
-Death never records current depth.
+The player dies when a hazard meter fills, from a high-speed terrain impact, from a
+bomb's lethal radius, or by falling below the world. A full lava hex fills in 0.2
+seconds; lava from its 10% activation threshold ramps linearly from 10% to full
+meter-fill speed as terrain fill rises. Suffocation fills while the head has no
+breathable Air: a partially filled head hex samples the hex above it, while a full
+non-Air hex blocks breathing. Hazard meters recover over time after escape, with
+lava recovering in one second and both impact and suffocation recovering from full
+in three. Death never records current depth.
 
 ## Items
 
@@ -171,7 +189,8 @@ under `config/items/`.
 - Chests fall straight down without bouncing or sliding. They remain upright in the
   air and snap to a 45-degree lean when only one side has level support.
 - Chests remain non-solid touch triggers. Like the player, a chest embedded by moving
-  terrain escapes toward the nearest Air cell instead of remaining buried.
+  terrain escapes toward the nearest Air position where its complete rectangular
+  body fits instead of remaining buried.
 - Item chests emit the same light level as Lava (90). Their light uses normal
   terrain diffusion and fades after collection because it is below the permanent
   exploration threshold.
@@ -196,6 +215,8 @@ under `config/items/`.
 - Bombs and chests share the same explosive behavior. A lethal-core overlap arms
   another explosive for a 0.30-second chain fuse; the wider blast alone cannot start
   a chain. Armed bombs keep moving, and their natural fuse still wins if it expires first.
+- Explosions apply a distance-falloff impulse across their blast radius to airborne
+  projectile bodies, including bombs and the flag.
 - The player dies when inside the lethal radius.
 
 ### Flag

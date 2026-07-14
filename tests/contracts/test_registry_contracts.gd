@@ -15,6 +15,12 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 		assert_not_null(definition.hazard_behavior)
 		assert_not_null(definition.blast_reaction)
 
+	var metadata := CompiledTerrainData.compile(registry)
+	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Water")), 0.8, 0.001)
+	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Lava")), 4.0, 0.001)
+	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Air")), 0.0, 0.001)
+	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Stone")), 0.0, 0.001)
+
 
 func test_item_catalog_loads_all_required_definitions() -> void:
 	var catalog := FixtureLoader.item_catalog()
@@ -57,3 +63,16 @@ func test_duplicate_stable_ids_fail_validation() -> void:
 	var registry := TerrainRegistry.new()
 	assert_false(registry.try_configure(catalog))
 	assert_true("\n".join(registry.validation_errors).contains("duplicate terrain stable_id 1"))
+
+
+func test_terrain_definition_rejects_invalid_viscosity() -> void:
+	var definition := TerrainDefinition.new()
+	definition.stable_id = 7
+	definition.display_name = "Invalid fluid"
+	definition.is_passable = true
+	definition.motion_behavior = LiquidMotionBehavior.new()
+	definition.motion_behavior.viscosity = -1.0
+	definition.hazard_behavior = NoHazardBehavior.new()
+	definition.blast_reaction = NoBlastReaction.new()
+
+	assert_true("\n".join(definition.validate()).contains("viscosity"))

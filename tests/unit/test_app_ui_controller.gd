@@ -411,6 +411,8 @@ func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() 
 			"level": 0.6,
 			"is_active": true,
 			"display_order": 20,
+			"secondary_threshold": 0.65,
+			"lethal_end": true,
 		},
 		{
 			"cause": &"suffocation",
@@ -431,6 +433,9 @@ func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() 
 	assert_false(suffocation_row.forward_sweep.visible)
 	assert_eq(lava_row.meter.value, 60.0)
 	assert_true(lava_row.is_building())
+	assert_true(lava_row.secondary_marker.visible)
+	assert_almost_eq(lava_row.secondary_marker.anchor_left, 0.65, 0.001)
+	assert_true(lava_row.lethal_end_marker.visible)
 	assert_eq(lava_row.state_indicator.text, ">")
 	assert_true(lava_row.forward_sweep.visible)
 	assert_eq(lava_row.mouse_filter, Control.MOUSE_FILTER_IGNORE)

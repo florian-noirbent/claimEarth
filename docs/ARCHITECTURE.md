@@ -146,9 +146,15 @@ direction order, and performance benchmark contract.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
-then tests circular bodies against nearby solid hex polygons from `HexMetrics`.
+then tests circular and convex-polygon bodies against nearby solid hex polygons from
+`HexMetrics`. Its shape-aware Air queries accept only destinations where the complete
+body is clear. They search by canonical hex distance, then break equal-ring ties by
+world distance, upward position, and left position.
 `TerrainBodyMotionSolver` resolves circular body movement, floor support, and
-step-up behavior without creating physics-server shapes or chunk collider nodes.
+step-up behavior without creating physics-server shapes or chunk collider nodes. Its
+motion result reports the complete collision-caused velocity change. Floor probing
+supplements an already grounded body crossing uneven terrain and never grounds a
+descending body before real contact.
 
 Gameplay mutations update `WorldGrid`'s packed CPU buffer directly through focused
 services such as `ExplosionService`, then publish a `TerrainChangeSet`. Change sets
@@ -161,6 +167,9 @@ passes cannot overwrite authoritative gameplay writes.
 `TerrainDefinition` resources contain identity, block density,
 collision/passability, visual style, hookability, and strategy resources for motion,
 hazards, and blast response. The catalog is `config/terrain/catalog.tres`.
+Motion resources also provide a non-negative per-second viscosity coefficient. This
+player-drag value is independent of the cellular-automata transfer rates that tune
+how the terrain itself flows.
 
 Call sites must not branch on terrain ID, display name, script class, or resource
 path. Add behavior through the existing strategy/resource boundary. The simulation
@@ -260,13 +269,36 @@ walls.
 `PlayerController` is a `CharacterBody2D` node coordinating `PlayerMovementModel`,
 `GrappleModel`, environment sampling, grid-backed terrain motion, and horizontal
 clamping. It does not use Godot terrain colliders for movement; terrain collision
-is delegated to the world-level query and motion solver. Movement and grapple
-tuning are resources under `config/player/`.
+is delegated to the world-level query and motion solver. It combines velocity changes
+reported by ordinary motion, post-grapple correction, and terrain unsticking once per
+physics frame. The greatest qualifying change adds its hazardous excess to a
+player-owned `EnvironmentStatus` meter; that generic status model also handles
+resource-tuned recovery and presentation snapshots. Accumulated level is classified
+against the movement-resource knockout and lethal thresholds, so one large impact
+retains its result while nearby smaller impacts compound. `PlayerController` owns the
+timed uncontrolled tumble and emits lethal impact outcomes. Movement, impact, and
+grapple tuning are resources under `config/player/`.
 
-`TerrainBodyUnstuckSolver` owns the shape-independent nearest-Air escape rule used
-by the player's circle and the chest's rectangular footprint. `ItemChest` uses a
-separate swept-rectangle fall path: it changes only vertical velocity, stops without
-restitution, and derives a snapped visual tilt from left/right terrain support.
+After movement and grapple acceleration, `PlayerController` averages fill-weighted
+viscosity across its three occupied-body samples and applies exponential damping to
+the complete velocity before terrain collision. `CompiledTerrainData` stores the
+coefficient in a packed float table, and `TerrainCollisionQuery` combines it with
+committed cell fill. The damping is frame-rate independent and is not reported as a
+collision velocity change, though its reduced incoming speed can lower a later impact.
+
+`HazardStatus` snapshots may expose a generic secondary threshold and lethal endpoint.
+The reusable hazard row renders those markers without knowing that the impact meter's
+secondary threshold represents knockout.
+
+`TerrainBodyUnstuckSolver` owns the shared full-body-clearance escape rule used by
+the player's circle and the chest's rectangular footprint. It re-queries the target
+on each physics frame and applies the configured push speed only while the body
+overlaps terrain; if no fitting Air destination is in range, it leaves the body
+unchanged. Its typed result reports position, velocity, and the velocity change caused
+by escape without knowing about player damage. `PlayerController` consumes that fact for impact rules;
+`ItemChest` ignores it and uses a separate swept-rectangle fall path that changes
+only vertical velocity, stops without restitution, and derives a snapped visual tilt
+from left/right terrain support.
 
 `DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
 to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
@@ -291,6 +323,10 @@ terrain and is also checked against the player. Bombs and chests compose
 `WorldExplosive2D` with separate validated `ExplosionDefinition` resources.
 `RunItemController` registers those components generically; lethal-cell footprint
 overlap arms a one-shot delayed chain without branches on the host item type.
+Explosion definitions also tune radial impulse strength. `RunItemController` applies
+that impulse through `ItemProjectile`, so bombs, flags, and future projectile-based
+items share the behavior without selection branches. A future jelly perk can expose
+the same receiver behavior from its player-owned perk boundary.
 
 ## Persistence And Leaderboard
 

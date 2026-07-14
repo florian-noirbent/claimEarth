@@ -34,6 +34,27 @@ func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> 
 	assert_eq(definition.display_name, "Stone")
 
 
+func test_blast_impulse_uses_direction_and_linear_distance_falloff() -> void:
+	var projectile := ItemProjectile.new()
+	add_child_autofree(projectile)
+	projectile.global_position = Vector2(50.0, 0.0)
+
+	projectile.apply_blast_impulse(Vector2.ZERO, 800.0, 100.0)
+
+	assert_eq(projectile.velocity, Vector2(400.0, 0.0))
+
+
+func test_blast_impulse_does_not_affect_projectile_outside_radius() -> void:
+	var projectile := ItemProjectile.new()
+	add_child_autofree(projectile)
+	projectile.global_position = Vector2(101.0, 0.0)
+	projectile.velocity = Vector2(12.0, -4.0)
+
+	projectile.apply_blast_impulse(Vector2.ZERO, 800.0, 100.0)
+
+	assert_eq(projectile.velocity, Vector2(12.0, -4.0))
+
+
 func test_bomb_projectile_bounces_on_solid_terrain_until_fuse_expires() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))

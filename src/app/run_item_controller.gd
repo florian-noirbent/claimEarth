@@ -175,6 +175,7 @@ func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2
 		return
 	if _player != null and _player.global_position.distance_to(impact_position) <= definition.lethal_radius * _hex_radius:
 		player_killed.emit(DeathCause.BOMB)
+	_apply_projectile_blast_impulses(definition, impact_position)
 	var result := _explosion_service.resolve(
 		_world,
 		_terrain_registry,
@@ -189,6 +190,13 @@ func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2
 	terrain_changed.emit(change_set)
 	explosion_resolved.emit(impact_position, definition.effect_color, definition.blast_radius, definition.large_feedback)
 	_arm_explosives_in(result.lethal_cells)
+
+
+func _apply_projectile_blast_impulses(definition: ExplosionDefinition, impact_position: Vector2) -> void:
+	var world_radius := definition.blast_radius * _hex_radius
+	for child in get_children():
+		if child is ItemProjectile and not child.is_queued_for_deletion():
+			(child as ItemProjectile).apply_blast_impulse(impact_position, definition.blast_impulse, world_radius)
 
 
 func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile, resolution_kind: StringName) -> void:

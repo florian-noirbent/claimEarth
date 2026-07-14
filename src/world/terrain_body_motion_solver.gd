@@ -44,11 +44,19 @@ func move_circle(
 		current_velocity = resolved["velocity"] as Vector2
 		_apply_contacts_to_result(result, resolved["contacts"] as Array[Dictionary])
 
-	var grounded := _has_floor_support(current_position, radius, support_probe_distance)
+	var contact_grounded := _contacts_include_floor(result.hit_normals)
+	var can_probe_support := absf(velocity.y) <= 0.001
+	var grounded := contact_grounded or (can_probe_support and _has_floor_support(
+		current_position,
+		radius,
+		support_probe_distance
+	))
 
 	result.position = current_position
 	result.velocity = current_velocity
-	result.grounded = grounded or _contacts_include_floor(result.hit_normals)
+	result.grounded = grounded
+	if result.collided:
+		result.velocity_change = current_velocity - velocity
 	if result.grounded and result.floor_normal == Vector2.UP:
 		result.floor_normal = _best_floor_normal(result.hit_normals)
 	return result
@@ -63,6 +71,8 @@ func resolve_circle(position: Vector2, velocity: Vector2, radius: float):
 		_contacts_include_floor(_contact_normals(contacts))
 	)
 	_apply_contacts_to_result(result, contacts)
+	if result.collided:
+		result.velocity_change = result.velocity - velocity
 	return result
 
 

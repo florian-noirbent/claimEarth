@@ -8,3 +8,4 @@ blast_radius = 5
 lethal_radius = 3
 effect_color = Color(0.95, 0.56, 0.22, 1)
 chain_fuse_seconds = 0.3
+blast_impulse = 760.0

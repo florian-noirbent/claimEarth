@@ -11,6 +11,8 @@ var recovery_seconds := 1.0
 var display_order := 0
 var minimum_fill := 1
 var fill_rate_multiplier := 1.0
+var secondary_threshold := -1.0
+var lethal_end := false
 
 
 func applies_at_fill(fill: int) -> bool:

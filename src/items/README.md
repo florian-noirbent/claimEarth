@@ -4,4 +4,4 @@
 
 `ItemDefinition` points to an `ItemActionFactory`; factories create polymorphic `ItemAction` instances used by `RunItemController`. Selection, HUD inventory, throws, and resolution should remain generic over item type.
 
-`ItemProjectile` owns flight, terrain sampling, fuse/bounce behavior, and resolution signals. `ExplosionService` mutates committed terrain through blast strategies and returns exact change sets so presentation and simulation can react.
+`ItemProjectile` owns flight, terrain sampling, fuse/bounce behavior, radial blast impulse reception, and resolution signals. `ExplosionService` mutates committed terrain through blast strategies and returns exact change sets so presentation and simulation can react.

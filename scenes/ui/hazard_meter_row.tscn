@@ -53,6 +53,33 @@ mouse_filter = 2
 max_value = 100.0
 show_percentage = false
 
+[node name="SecondaryMarker" type="ColorRect" parent="Meter"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchor_top = 0.0
+anchor_bottom = 1.0
+offset_left = -1.5
+offset_right = 1.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.86, 0.28, 1)
+
+[node name="LethalEndMarker" type="ColorRect" parent="Meter"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -4.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.18, 0.12, 1)
+
 [node name="StateIndicator" type="Label" parent="."]
 unique_name_in_owner = true
 layout_mode = 1

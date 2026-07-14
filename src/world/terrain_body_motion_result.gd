@@ -9,6 +9,7 @@ var grounded := false
 var collided := false
 var floor_normal := Vector2.UP
 var hit_normals: Array[Vector2] = []
+var velocity_change := Vector2.ZERO
 
 
 func _init(

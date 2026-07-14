@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_1n8gt")
+viscosity = 100
 fall_rate = 128
 side_down_rate = 32
 side_up_rate = 8

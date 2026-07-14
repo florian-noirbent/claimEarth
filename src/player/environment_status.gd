@@ -8,6 +8,18 @@ const HazardStatusScript = preload("res://src/player/hazard_status.gd")
 var _meters := {}
 
 
+func add_instant(effect, normalized_amount: float) -> StringName:
+	if effect == null or effect.cause == DeathCauseScript.NONE:
+		return DeathCauseScript.NONE
+	if effect.recovery_seconds <= 0.0 or normalized_amount <= 0.0:
+		return DeathCauseScript.NONE
+	var meter: _HazardMeter = _meter_for(effect)
+	meter.level = minf(1.0, meter.level + normalized_amount)
+	meter.is_active = true
+	meter.hold_recovery_once = true
+	return effect.cause if meter.level >= 1.0 else DeathCauseScript.NONE
+
+
 func evaluate(effects: Array, delta: float) -> StringName:
 	var active_effects := {}
 	for effect in effects:
@@ -25,6 +37,7 @@ func evaluate(effects: Array, delta: float) -> StringName:
 		var meter: _HazardMeter = _meter_for(effect)
 		meter.level = minf(1.0, meter.level + maxf(0.0, delta) * effect.fill_rate_multiplier / effect.fill_seconds)
 		meter.is_active = true
+		meter.hold_recovery_once = false
 		if meter.level >= 1.0 and death_cause == DeathCauseScript.NONE:
 			death_cause = cause
 
@@ -33,6 +46,10 @@ func evaluate(effects: Array, delta: float) -> StringName:
 		if active_effects.has(cause):
 			continue
 		var meter: _HazardMeter = _meters[cause]
+		if meter.hold_recovery_once:
+			meter.hold_recovery_once = false
+			meter.is_active = true
+			continue
 		meter.level = maxf(0.0, meter.level - maxf(0.0, delta) / meter.effect.recovery_seconds)
 		meter.is_active = false
 
@@ -56,6 +73,13 @@ func reset() -> void:
 	_meters.clear()
 
 
+func level_for(cause: StringName) -> float:
+	if not _meters.has(cause):
+		return 0.0
+	var meter: _HazardMeter = _meters[cause]
+	return meter.level
+
+
 func _meter_for(effect) -> _HazardMeter:
 	if _meters.has(effect.cause):
 		var existing: _HazardMeter = _meters[effect.cause]
@@ -71,3 +95,4 @@ class _HazardMeter:
 	var effect
 	var level := 0.0
 	var is_active := false
+	var hold_recovery_once := false

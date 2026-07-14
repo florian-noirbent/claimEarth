@@ -2,8 +2,7 @@
 
 ## physics
 
-- bombs add a blast impulse to other rigidbodies (flag, bombs, bottle, player with jelly perk )
-- player collision, medium impact ragdol 1s, high impact dead
+- extend the implemented projectile blast impulse to bottles and the player with the jelly perk when those features are added
 
 ## perks
 breath underwater:
@@ -130,4 +129,3 @@ note: all values should be configurable in editor
 - rework bomb vfx and audio
 - replace svg placeholders
 - hook rope texture + hook end
-

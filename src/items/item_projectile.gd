@@ -66,6 +66,18 @@ func outline_point_count() -> int:
 	return outline.points.size()
 
 
+func apply_blast_impulse(origin: Vector2, maximum_impulse: float, radius: float) -> void:
+	if maximum_impulse <= 0.0 or radius <= 0.0:
+		return
+	var displacement := global_position - origin
+	var distance := displacement.length()
+	if distance > radius:
+		return
+	var direction := Vector2.UP if distance <= 0.001 else displacement / distance
+	var falloff := 1.0 - distance / radius
+	velocity += direction * maximum_impulse * falloff
+
+
 func _ensure_visuals() -> void:
 	if body == null:
 		body = Polygon2D.new()

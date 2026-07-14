@@ -9,6 +9,7 @@ extends Resource
 @export var can_side_down := false
 @export var can_side_up := false
 @export var displaces_passable_moving_on_fall := false
+@export_range(0.0, 20.0, 0.05, "or_greater") var viscosity := 0.0
 @export_range(0, 255, 1) var fall_rate := 0
 @export_range(0, 255, 1) var side_down_rate := 0
 @export_range(0, 255, 1) var side_up_rate := 0

@@ -43,6 +43,29 @@ func test_missing_effect_recovers_timer_slowly() -> void:
 	assert_almost_eq(status.statuses()[0].level, 0.7, 0.001)
 
 
+func test_instant_hazard_accumulates_holds_for_its_impact_frame_and_recovers() -> void:
+	var status = EnvironmentStatusScript.new()
+	var effect = _effect(DeathCauseScript.IMPACT, 1.0, 3.0)
+	effect.secondary_threshold = 0.3
+	effect.lethal_end = true
+
+	assert_eq(status.add_instant(effect, 0.4), DeathCauseScript.NONE)
+	assert_eq(status.add_instant(effect, 0.6), DeathCauseScript.IMPACT)
+	assert_almost_eq(status.level_for(DeathCauseScript.IMPACT), 1.0, 0.001)
+	assert_true(status.statuses()[0].is_active)
+	assert_almost_eq(status.statuses()[0].secondary_threshold, 0.3, 0.001)
+	assert_true(status.statuses()[0].lethal_end)
+
+	status.evaluate([], 0.1)
+	assert_almost_eq(status.level_for(DeathCauseScript.IMPACT), 1.0, 0.001)
+	status.evaluate([], 1.5)
+	assert_almost_eq(status.level_for(DeathCauseScript.IMPACT), 0.5, 0.001)
+	assert_false(status.statuses()[0].is_active)
+	status.evaluate([], 1.5)
+	assert_almost_eq(status.level_for(DeathCauseScript.IMPACT), 0.0, 0.001)
+	assert_true(status.statuses().is_empty())
+
+
 func test_duplicate_body_samples_only_fill_one_meter_per_frame() -> void:
 	var status = EnvironmentStatusScript.new()
 	var effect = _effect(DeathCauseScript.LAVA)

@@ -8,17 +8,30 @@ extends Control
 @onready var meter: ProgressBar = %Meter
 @onready var state_indicator: Label = %StateIndicator
 @onready var forward_sweep: ColorRect = %ForwardSweep
+@onready var secondary_marker: ColorRect = %SecondaryMarker
+@onready var lethal_end_marker: ColorRect = %LethalEndMarker
 
 var _active := false
 var _bar_color := Color.WHITE
 var _pulse_time := 0.0
 
 
-func configure(icon: Texture2D, bar_color: Color, normalized_level: float, active: bool) -> void:
+func configure(
+	icon: Texture2D,
+	bar_color: Color,
+	normalized_level: float,
+	active: bool,
+	secondary_threshold: float = -1.0,
+	lethal_end: bool = false
+) -> void:
 	icon_rect.texture = icon
 	_bar_color = bar_color
 	_active = active
 	meter.value = clampf(normalized_level, 0.0, 1.0) * 100.0
+	secondary_marker.visible = secondary_threshold > 0.0 and secondary_threshold < 1.0
+	secondary_marker.anchor_left = clampf(secondary_threshold, 0.0, 1.0)
+	secondary_marker.anchor_right = secondary_marker.anchor_left
+	lethal_end_marker.visible = lethal_end
 	_apply_presentation()
 	set_process(_active)
 

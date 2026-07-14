@@ -1,6 +1,16 @@
-[gd_resource type="Resource" script_class="PlayerMovementConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlayerMovementConfig" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_movement_config.gd" id="1_0ikxp"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_impact.svg" id="2_impact_icon"]
 
 [resource]
 script = ExtResource("1_0ikxp")
+impact_hazard_minimum_speed = 500.0
+impact_hazard_recovery_seconds = 3.0
+impact_hazard_icon = ExtResource("2_impact_icon")
+impact_hazard_bar_color = Color(0.96, 0.72, 0.2, 1)
+impact_hazard_display_order = 5
+medium_impact_speed = 650.0
+lethal_impact_speed = 1000.0
+ragdoll_seconds = 1.0
+ragdoll_spin_speed = 8.0

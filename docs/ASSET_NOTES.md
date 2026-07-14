@@ -14,6 +14,7 @@ Current art is original repository content stored by runtime use:
 - `assets/ui/play_icon.svg`
 - `assets/ui/hazard_suffocation.svg` — original dark-outlined blue bubble icon for the generic suffocation meter.
 - `assets/ui/hazard_lava.svg` — original dark-outlined orange flame with a yellow core for the generic lava meter.
+- `assets/ui/hazard_impact.svg` — white radial collision burst for the accumulating impact meter.
 - `assets/ui/title.png`
 - `assets/ui/menu_background.jpg`
 - `assets/terrain/background.jpg`

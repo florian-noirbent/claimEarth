@@ -38,6 +38,17 @@ func is_solid_at_world(position: Vector2) -> bool:
 	return is_solid_cell(offset.x, offset.y)
 
 
+func fill_weighted_viscosity_at_world(position: Vector2) -> float:
+	if not is_configured():
+		return 0.0
+	var offset := HexMetrics.offset_for_world(position, hex_radius)
+	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return 0.0
+	var cell_id := world.get_committed_by_offset(offset.x, offset.y)
+	var fill_fraction := float(world.get_committed_fill_by_offset(offset.x, offset.y)) / 255.0
+	return metadata.viscosity(cell_id) * fill_fraction
+
+
 func convex_polygon_overlaps_solid(polygon: PackedVector2Array) -> bool:
 	if not is_configured() or polygon.size() < 3:
 		return false
@@ -96,29 +107,66 @@ func support_contact(position: Vector2, radius: float, probe_distance: float) ->
 	return best
 
 
-func nearest_air_cell_center(position: Vector2, max_ring: int):
-	if not is_configured() or max_ring < 0:
+func nearest_clear_circle_air_center(position: Vector2, radius: float, max_ring: int):
+	return _nearest_clear_air_center(position, max_ring, func(candidate: Vector2) -> bool:
+		return not circle_overlaps_solid(candidate, radius)
+	)
+
+
+func nearest_clear_polygon_air_center(
+	position: Vector2,
+	local_polygon: PackedVector2Array,
+	rotation_value: float,
+	max_ring: int
+):
+	return _nearest_clear_air_center(position, max_ring, func(candidate: Vector2) -> bool:
+		var transform := Transform2D(rotation_value, candidate)
+		var world_polygon := PackedVector2Array()
+		for point in local_polygon:
+			world_polygon.append(transform * point)
+		return not convex_polygon_overlaps_solid(world_polygon)
+	)
+
+
+func _nearest_clear_air_center(position: Vector2, max_ring: int, clearance_test: Callable):
+	if not is_configured() or max_ring < 0 or not clearance_test.is_valid():
 		return null
-	var origin := HexMetrics.offset_for_world(position, hex_radius)
-	var best_cell := Vector2i(-1, -1)
-	var best_distance_sq := INF
-	for ring in range(0, max_ring + 1):
-		for row in range(origin.y - ring, origin.y + ring + 1):
-			for col in range(origin.x - ring, origin.x + ring + 1):
-				if maxi(absi(col - origin.x), absi(row - origin.y)) != ring:
+	var origin_offset := HexMetrics.offset_for_world(position, hex_radius)
+	var origin_hex := HexCoord.from_offset_odd_q(origin_offset.x, origin_offset.y)
+	for ring in range(max_ring + 1):
+		var found := false
+		var best_center := Vector2.ZERO
+		for delta_q in range(-ring, ring + 1):
+			var min_delta_r := maxi(-ring, -delta_q - ring)
+			var max_delta_r := mini(ring, -delta_q + ring)
+			for delta_r in range(min_delta_r, max_delta_r + 1):
+				var candidate_hex := origin_hex.add(HexCoord.new(delta_q, delta_r))
+				if origin_hex.distance_to(candidate_hex) != ring:
 					continue
-				if not world.dimensions.is_in_bounds_offset(col, row):
+				var candidate_cell := candidate_hex.to_offset_odd_q()
+				if not world.dimensions.is_in_bounds_offset(candidate_cell.x, candidate_cell.y):
 					continue
-				if world.get_committed_by_offset(col, row) != metadata.air_id:
+				if world.get_committed_by_offset(candidate_cell.x, candidate_cell.y) != metadata.air_id:
 					continue
-				var center := HexMetrics.center_for_offset(col, row, hex_radius)
-				var distance_sq := position.distance_squared_to(center)
-				if distance_sq < best_distance_sq:
-					best_distance_sq = distance_sq
-					best_cell = Vector2i(col, row)
-		if best_cell != Vector2i(-1, -1):
-			return HexMetrics.center_for_offset(best_cell.x, best_cell.y, hex_radius)
+				var candidate_center := HexMetrics.center_for_offset(candidate_cell.x, candidate_cell.y, hex_radius)
+				if not bool(clearance_test.call(candidate_center)):
+					continue
+				if not found or _clearance_candidate_precedes(candidate_center, best_center, position):
+					found = true
+					best_center = candidate_center
+		if found:
+			return best_center
 	return null
+
+
+func _clearance_candidate_precedes(candidate: Vector2, current: Vector2, origin: Vector2) -> bool:
+	var candidate_distance := origin.distance_squared_to(candidate)
+	var current_distance := origin.distance_squared_to(current)
+	if not is_equal_approx(candidate_distance, current_distance):
+		return candidate_distance < current_distance
+	if not is_equal_approx(candidate.y, current.y):
+		return candidate.y < current.y
+	return candidate.x < current.x
 
 
 func _candidate_cells(position: Vector2, radius: float) -> Array[Vector2i]:
