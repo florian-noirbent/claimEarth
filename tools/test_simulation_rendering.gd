@@ -16,6 +16,10 @@ func _run() -> void:
 	if not registry.try_configure(load("res://config/terrain/catalog.tres") as TerrainCatalog):
 		_fail("Could not configure the terrain registry.")
 		return
+	if not await _verify_even_phase_sand_trail(registry):
+		return
+	if not await _verify_partial_brightness_preserves_stream_mask(registry):
+		return
 	if not await _verify_live_run_player_light():
 		return
 	if not await _verify_player_light_source(registry):
@@ -102,6 +106,92 @@ func _run() -> void:
 			return
 	print("SIMULATION_RENDERING_TEST_PASSED")
 	quit()
+
+
+func _verify_even_phase_sand_trail(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var sand := _terrain_id(registry, "Sand")
+	var dimensions := WorldDimensions.new(3, 4)
+	var final_world := WorldGrid.new(dimensions, air)
+	var even_world := WorldGrid.new(dimensions, air)
+	var trail_cell := Vector2i(1, 1)
+	var below_cell := Vector2i(1, 2)
+	final_world.set_committed_by_offset(below_cell.x, below_cell.y, sand, 255)
+	even_world.set_committed_by_offset(trail_cell.x, trail_cell.y, sand, 128)
+	final_world.upload_cpu_snapshot_to_texture()
+	even_world.upload_cpu_snapshot_to_texture()
+
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(128, 128)
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
+	var presenter := WorldPresenter.new()
+	presenter.position = Vector2(24.0, 24.0)
+	var presentation_config := load("res://config/presentation/default_world_presentation.tres") as WorldPresentationConfig
+	presenter.presentation_config = presentation_config.duplicate(true)
+	presenter.set_force_full_brightness(true)
+	viewport.add_child(presenter)
+	presenter.configure(final_world, registry)
+	presenter.use_simulation_textures(final_world.texture(), even_world.texture())
+	await process_frame
+	await process_frame
+	var sample_position := Vector2i(
+		presenter.position
+		+ HexMetrics.center_for_offset(trail_cell.x, trail_cell.y, presenter.hex_radius)
+	)
+	var rendered := viewport.get_texture().get_image().get_pixelv(sample_position)
+	viewport.free()
+	await process_frame
+	return _expect(rendered.a > 0.5, "A final-air cell must render retained even-phase sand as a continuous vertical trail.")
+
+
+func _verify_partial_brightness_preserves_stream_mask(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(3, 4), air)
+	var stream_cell := Vector2i(1, 1)
+	world.set_committed_by_offset(stream_cell.x, stream_cell.y - 1, water, 128)
+	world.set_committed_by_offset(stream_cell.x, stream_cell.y, water, 128)
+	for row in range(world.dimensions.depth):
+		for col in range(world.dimensions.width):
+			world.set_committed_light_by_offset(col, row, 95)
+	world.upload_cpu_snapshot_to_texture()
+
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(128, 128)
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
+	var presenter := WorldPresenter.new()
+	presenter.position = Vector2(24.0, 24.0)
+	var presentation_config := load("res://config/presentation/default_world_presentation.tres") as WorldPresentationConfig
+	presenter.presentation_config = presentation_config.duplicate(true)
+	presenter.presentation_config.exposed_edge_jitter_strength = 0.0
+	viewport.add_child(presenter)
+	presenter.configure(world, registry)
+	await process_frame
+	await process_frame
+	var rendered := viewport.get_texture().get_image()
+	var center := Vector2i(
+		presenter.position
+		+ HexMetrics.center_for_offset(stream_cell.x, stream_cell.y, presenter.hex_radius)
+	)
+	var inside_stream := rendered.get_pixelv(center)
+	var outside_stream := rendered.get_pixelv(center + Vector2i(12, 0))
+	viewport.free()
+	await process_frame
+	if not _expect(
+		maxf(inside_stream.r, maxf(inside_stream.g, inside_stream.b)) > 0.02,
+		"Partial brightness must retain visible liquid inside the stream mask."
+	):
+		return false
+	if not _expect(outside_stream.a > 0.1, "Partial brightness must retain opaque cave darkness outside the stream mask."):
+		return false
+	return _expect(
+		maxf(outside_stream.r, maxf(outside_stream.g, outside_stream.b)) < 0.01,
+		"Partial brightness must not leak terrain RGB outside the stream mask."
+	)
 
 
 func _verify_live_run_player_light() -> bool:

@@ -206,7 +206,8 @@ crossing a tick boundary. The backend retains the GPU result after the even phas
 alongside the final odd-phase texture, and alternating banks ensure the next tick
 cannot overwrite a displayed trail.
 `WorldPresenter` renders final terrain only, consulting the even texture solely to
-draw verified vertical liquid trails through final-air cells. Presenter and
+draw verified vertical moving-terrain trails through final-air cells. Liquids keep
+their fluid appearance while falling sand uses its solid material. Presenter and
 simulation shaders share only canonical hex topology helpers; pair ownership and
 cellular-automata resolution remain simulation-specific. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
 liquid contact or gameplay mutation. A completed six-pass tick publishes only a

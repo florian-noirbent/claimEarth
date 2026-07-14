@@ -11,8 +11,9 @@ turns world pixels into flat-top hex cells.
 `R` for stable terrain ID, `G` for fill, `B` for light, and `A` for reserved
 flags. During a run, `RenderTextureSimulationBackend` supplies the final GPU
 terrain texture to the presenter. The presenter also receives the retained even
-simulation phase only to draw a proven vertical liquid trail through final-air
-cells. Gameplay and collision continue to read committed `WorldGrid` data.
+simulation phase only to draw a proven vertical moving-terrain trail through
+final-air cells. Liquids retain their fluid styling, while sand retains its solid
+material. Gameplay and collision continue to read committed `WorldGrid` data.
 
 Non-terrain light sources do not replace or duplicate the resulting light field.
 Standard `WorldLightSource2D` components write source strengths into a separate,
@@ -29,6 +30,12 @@ motion and edge-style inputs; their exact channel assignment is defined beside
 the packing code in `WorldPresenter`. Material fill textures are packed into a
 single atlas. Keep changes to packing, uniforms, shader sampling, and presenter
 tests together.
+
+Cave darkness raises output alpha toward opaque black so the backdrop cannot leak
+through unexplored cells. The final lighting composition preserves the material's
+premultiplied contribution when converting back to straight alpha; masked terrain
+RGB must therefore remain black outside partial fills and stream silhouettes at
+every brightness level.
 
 ## Shader layout
 

@@ -130,7 +130,8 @@ from its two source cells so a cell is not written by multiple pairs in one pass
 Block density, configured on terrain definitions, resolves fall and displacement
 priority rather than terrain IDs. Water/lava contact creates stone whenever both
 have nonzero fill. The renderer uses the completed even phase only to bridge proven
-vertical liquid falls in the final state. High frame rates skip simulation work;
+vertical moving-terrain falls, including sand and liquids, in the final state. High
+frame rates skip simulation work;
 low frame rates may submit the remaining passes of one tick as an ordered batch.
 This keeps terrain speed independent from the presentation frame rate while player
 physics, projectiles, and input remain frame-responsive.

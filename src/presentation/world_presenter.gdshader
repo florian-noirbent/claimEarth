@@ -146,8 +146,9 @@ bool has_same_source(vec2 cell, float cell_kind, int side) {
 	return source.g > 0.0 && abs(terrain_kind(source) - cell_kind) < 0.5;
 }
 
-// The retained even phase lets the renderer bridge a liquid fall that completed
-// before the final odd phase. It is presentation-only; gameplay uses final data.
+// The retained even phase lets the renderer bridge a moving-terrain fall that
+// completed before the final odd phase. It is presentation-only; gameplay uses
+// final data.
 bool has_even_phase_vertical_source(vec2 cell, float cell_kind) {
 	vec2 above_cell = neighbor_for_edge(cell, EDGE_UP);
 	if (!in_world(above_cell)) {
@@ -270,10 +271,11 @@ float vertical_trail_mask(vec2 local, float fill_amount) {
 	return 1.0 - smoothstep(width, width + softness, abs(local.x));
 }
 
-vec4 render_even_phase_liquid_trail(vec2 cell, vec2 local) {
+vec4 render_even_phase_vertical_trail(vec2 cell, vec2 local) {
 	vec4 even_terrain = sample_even_cell(cell);
 	float cell_kind = terrain_kind(even_terrain);
-	if (cell_kind <= 0.5 || even_terrain.g <= 0.0 || terrain_motion(cell_kind) <= 1.5) {
+	float motion = terrain_motion(cell_kind);
+	if (cell_kind <= 0.5 || even_terrain.g <= 0.0 || motion <= 0.5) {
 		return vec4(0.0);
 	}
 	vec2 below_cell = neighbor_for_edge(cell, EDGE_DOWN);
@@ -287,8 +289,12 @@ vec4 render_even_phase_liquid_trail(vec2 cell, vec2 local) {
 	}
 	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
 	vec4 style = texture(style_data, style_uv);
+	vec4 properties = texture(terrain_properties, style_uv);
 	float mask = vertical_trail_mask(local, even_terrain.g);
-	return render_liquid(cell, cell_kind, style, local, even_terrain.g, true, mask);
+	if (motion > 1.5) {
+		return render_liquid(cell, cell_kind, style, local, even_terrain.g, true, mask);
+	}
+	return render_solid_material(style, properties, mask);
 }
 
 bool has_render_priority(float current_kind, float neighbor_kind) {
@@ -328,7 +334,7 @@ vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_loca
 		bool stream = is_streaming_falling_solid(source_cell, fill_amount);
 		float solid_mask = 1.0;
 		if (stream) {
-			bool above_source = has_same_source(source_cell, source_kind, EDGE_UP);
+			bool above_source = has_same_source(source_cell, source_kind, EDGE_UP) || has_even_phase_vertical_source(source_cell, source_kind);
 			bool left_source = has_same_source(source_cell, source_kind, EDGE_UP_LEFT);
 			bool right_source = has_same_source(source_cell, source_kind, EDGE_UP_RIGHT);
 			solid_mask = source_stream_mask(source_local, fill_amount, above_source, left_source, right_source);
@@ -499,9 +505,9 @@ void fragment() {
 		float cell_kind = terrain_kind(terrain);
 		vec2 local = world_pos - center_for_offset(cell);
 		if (inside_hex(local)) {
-			// 2. Render the cell's own fill. Air can show a retained liquid trail.
+			// 2. Render the cell's own fill. Air can show a retained moving-terrain trail.
 			if (cell_kind <= 0.5) {
-				out_color = render_even_phase_liquid_trail(cell, local);
+				out_color = render_even_phase_vertical_trail(cell, local);
 			} else {
 				out_color = render_terrain_cell(cell, terrain, local);
 			}
@@ -527,7 +533,17 @@ void fragment() {
 	float brightness = force_full_brightness
 		? 1.0
 		: light_brightness(hex_smoothed_light(cell, world_pos - center_for_offset(cell), cell_light));
+	bool is_empty_surface_air = cell.y < 0.5 && out_color.a <= 0.001;
+	float material_alpha = out_color.a;
 	out_color.rgb *= brightness;
-	out_color.a = mix(1.0, out_color.a, brightness);
+	if (!is_empty_surface_air) {
+		float final_alpha = mix(1.0, material_alpha, brightness);
+		if (final_alpha > 0.001) {
+			out_color.rgb *= material_alpha / final_alpha;
+		} else {
+			out_color.rgb = vec3(0.0);
+		}
+		out_color.a = final_alpha;
+	}
 	COLOR = out_color;
 }
