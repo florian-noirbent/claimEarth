@@ -37,3 +37,14 @@ func test_cancel_generation_is_safe_before_any_generation_starts() -> void:
 	add_child_autofree(controller)
 	controller.cancel_generation()
 	assert_null(controller.current_world())
+
+
+func test_leaving_active_gameplay_clears_accumulated_simulation_time() -> void:
+	var controller := RunWorldController.new()
+	add_child_autofree(controller)
+	controller._simulation_clock.add_time(0.25)
+	assert_gt(controller._simulation_clock.pending_passes(), 0.0)
+
+	controller.set_active(false)
+
+	assert_eq(controller._simulation_clock.pending_passes(), 0.0)

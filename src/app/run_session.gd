@@ -56,6 +56,10 @@ func set_active(is_active: bool) -> void:
 	world_controller.set_active(is_active)
 
 
+func reset_simulation_clock() -> void:
+	world_controller.reset_simulation_clock()
+
+
 func advance(delta: float) -> void:
 	item_controller.advance(delta)
 	world_controller.advance(delta)

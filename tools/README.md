@@ -19,6 +19,7 @@ From the repository root:
 .\tools\import.ps1
 .\tools\test.ps1
 .\tools\test_performance.ps1
+.\tools\test_simulation_rendering.ps1
 .\tools\validate_generation_plugin.ps1
 .\tools\benchmark_terrain.ps1
 .\tools\benchmark_world_presenter.ps1 -SaveBaseline
@@ -40,6 +41,9 @@ From the repository root:
 - `import.ps1` imports resources and verifies the project can open headlessly.
 - `test.ps1` runs the fast contract, unit, and integration suites.
 - `test_performance.ps1` runs deterministic performance contract tests.
+- `test_simulation_rendering.ps1` uses a real Compatibility renderer to verify
+  the fixed 60-pass clock, exact equivalence between sequential and six-pass batch
+  rendering, alternating-bank texture safety, and stale-callback cancellation.
 - `validate_generation_plugin.ps1` launches the editor with the `World Gen` main screen selected, waits for startup stability, and fails on a native editor crash.
 - `benchmark_terrain.ps1` reports current terrain simulation, chunk drawing, and
   collision-build timing distributions for sparse, dense, and settled fixtures.

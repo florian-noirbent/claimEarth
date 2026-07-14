@@ -28,6 +28,7 @@ var _edge_style_texture: ImageTexture
 var _material_atlas_texture: ImageTexture
 var _material_atlas_columns := 1
 var _material_atlas_size := Vector2.ONE
+var _force_full_brightness := false
 var _polygon := Polygon2D.new()
 var _material := ShaderMaterial.new()
 
@@ -51,6 +52,7 @@ func reset() -> void:
 	_material_atlas_texture = null
 	_material_atlas_columns = 1
 	_material_atlas_size = Vector2.ONE
+	_force_full_brightness = false
 	if is_instance_valid(_polygon):
 		_polygon.polygon = PackedVector2Array()
 		_polygon.material = null
@@ -83,6 +85,11 @@ func use_simulation_textures(final_texture: Texture2D, even_texture: Texture2D) 
 		return
 	_material.set_shader_parameter("world_data", final_texture)
 	_material.set_shader_parameter("even_world", even_texture)
+
+
+func set_force_full_brightness(enabled: bool) -> void:
+	_force_full_brightness = enabled
+	_material.set_shader_parameter("force_full_brightness", enabled)
 
 
 func total_renderer_nodes() -> int:
@@ -133,6 +140,7 @@ func _configure_shader() -> void:
 	_material.set_shader_parameter("material_atlas_tile_size", float(maxi(1, material_atlas_tile_size)))
 	_material.set_shader_parameter("material_atlas_gutter_size", float(MATERIAL_ATLAS_GUTTER_SIZE))
 	_material.set_shader_parameter("material_atlas_size", _material_atlas_size)
+	_material.set_shader_parameter("force_full_brightness", _force_full_brightness)
 	_sync_presentation_parameters()
 	_material.set_shader_parameter("hex_radius", hex_radius)
 	_material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))

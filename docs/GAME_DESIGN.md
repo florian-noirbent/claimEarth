@@ -59,6 +59,11 @@ outside an active run and do not duplicate their gestures as mouse item throws.
 Web builds provide a persistent top-right fullscreen toggle. Browsers still require
 the player to press the button before fullscreen can be entered.
 
+Settings also provides a five-position frame limiter: 30, 60, 90, 120, or
+Unlimited FPS. It defaults to 30 FPS on native mobile and mobile Web builds, and to
+Unlimited on desktop and in the editor. The choice affects presentation frame rate,
+not terrain speed, and is saved independently from the Phone Controls preference.
+
 ### Standard Gamepad
 
 | Input | Action |
@@ -77,8 +82,9 @@ item highlighted. Toolbar items can be clicked to select them. Changing selectio
 briefly shows the item name above the toolbar.
 A live integer FPS reading appears with the top-left run status during active play in
 all release and debug builds so device performance can be compared directly.
-A compact pause button opens the pause menu, which contains Resume and Back to Menu
-actions.
+A compact pause button opens the pause menu, which contains Resume, Restart, and
+Back to Menu actions together with in-run access to the same Help and Settings
+panels as the main menu. Closing either panel returns to the paused run.
 
 Active hazards appear as an icon-only stack of filling bars at the top center. Building
 bars pulse with a gold warning outline; recovering bars are dimmed with a downward
@@ -115,15 +121,18 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
 
 Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
-partial fill controls movement and rendering. Terrain simulation advances as a
-six-pass cellular automata tick spread across six frames: vertical even,
-down-right even, down-left even, then the same three odd connection pairs. Each pair resolves
+partial fill controls movement and rendering. Terrain simulation advances at a
+fixed 60 cellular-automata passes per real second, forming ten six-pass ticks per
+second: vertical even, down-right even, down-left even, then the same three odd
+connection pairs. Each pair resolves
 from its two source cells so a cell is not written by multiple pairs in one pass.
 Block density, configured on terrain definitions, resolves fall and displacement
 priority rather than terrain IDs. Water/lava contact creates stone whenever both
 have nonzero fill. The renderer uses the completed even phase only to bridge proven
-vertical liquid falls in the final state. Simulation and presentation work remain spread across frames so
-player physics, projectiles, and input stay responsive.
+vertical liquid falls in the final state. High frame rates skip simulation work;
+low frame rates may submit the remaining passes of one tick as an ordered batch.
+This keeps terrain speed independent from the presentation frame rate while player
+physics, projectiles, and input remain frame-responsive.
 
 ## Player And Camera
 

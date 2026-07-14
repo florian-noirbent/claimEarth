@@ -95,7 +95,8 @@ cancelled and freed.
 - `B`: lighting/reserved byte.
 - `A`: flags/reserved byte.
 
-The simulation backend owns lighting updates in the `B` byte. It preserves light by
+New grids initialize the `B` byte to darkness. The simulation backend lights only
+the surface row during initialization, then owns lighting updates in that byte. It preserves light by
 map location as terrain moves, injects terrain-defined emitters and the current
 player source, and evaluates the player-local radius on every CA pass; other cells
 update only on the sixth pass. Values at the presentation-config exploration
@@ -114,6 +115,8 @@ world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 World Gen preview: terrain/fluid shader controls plus the sky, grass, and cave
 backdrop. `WorldBackground` draws that backdrop behind terrain. Editing the shared
 resource refreshes active renderer parameters without regenerating the world.
+Static menu and editor previews force full brightness in `WorldPresenter` without
+rewriting the generated grid's lighting bytes.
 Terrain visual styles provide shader colors, and terrain materials with fill
 textures are packed into a material-index atlas for shader sampling. Edge resources
 are retained as assets/resources but are not part of the current terrain renderer.
@@ -161,20 +164,32 @@ behavior resource and authored icon rather than UI logic.
 `TerrainSimulationBackend` defines initialization, advancement, commit, region
 read, render attachment, active texture access, mutation notification, and shutdown.
 `RenderTextureSimulationBackend` is the implemented backend. `RunWorldController`
-advances at most one CA pass per gameplay frame while playing.
+owns a real-time accumulator that accrues 60 CA passes per active gameplay second.
+It schedules only whole due passes, deducts only work accepted by the backend, and
+retains fractional or excess debt. Frames above 60 FPS can skip simulation; slower
+frames can submit up to the six remaining passes of the current tick as one ordered
+batch. Pausing, leaving a run, or losing application focus resets the accumulator so
+background time is never replayed. Each render target uses `UPDATE_ONCE`, then the
+batch completes through one post-draw callback after Godot's normal viewport render
+phase; simulation never forces a global viewport redraw.
 
 The backend compiles resource definitions into packed ID-indexed motion,
 directional transfer, block density, fill-sensitive solidity, passability, and
 color tables. One logical simulation tick is six pairwise CA passes over the full
-world: the three even connection pairs, then the three odd pairs. The backend
-retains the GPU result after the even phase in alternating render targets alongside
-the final odd-phase texture, so the next tick cannot overwrite a displayed trail.
+world: the three even connection pairs, then the three odd pairs. Two alternating
+banks each contain one `SubViewport` per logical pass. A batch chains each slot from
+the previous slot, preserving the same dependency order as one-pass frames without
+crossing a tick boundary. The backend retains the GPU result after the even phase
+alongside the final odd-phase texture, and alternating banks ensure the next tick
+cannot overwrite a displayed trail.
 `WorldPresenter` renders final terrain only, consulting the even texture solely to
 draw verified vertical liquid trails through final-air cells. Presenter and
 simulation shaders share only canonical hex topology helpers; pair ownership and
 cellular-automata resolution remain simulation-specific. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
-liquid contact or gameplay mutation. Commits contain exact changed cells and fill
-changes for the completed six-pass tick.
+liquid contact or gameplay mutation. A completed six-pass tick publishes only a
+revisioned snapshot commit; the backend does not copy or diff every cell on the CPU.
+Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
+affected cells are already known.
 
 Gameplay writes are authoritative. External `TerrainChangeSet`s cancel any
 unfinished six-pass tick, upload the patched packed world texture, and restart
@@ -241,8 +256,11 @@ and pending submissions. Missing or corrupt data falls back to defaults.
 leaderboard data. Phone controls default from the `mobile`, `web_android`, and
 `web_ios` feature tags; only an explicit Settings-screen choice is persisted and it
 overrides automatic detection. Missing or corrupt settings fall back to that automatic
-default. This keeps the input policy ready for future native Android/iOS exports
-without changing gameplay ownership.
+default. The discrete frame-limit preference accepts only 30, 60, 90, 120, or zero
+for Unlimited, defaulting to 30 on the same mobile targets and Unlimited elsewhere.
+`AppRoot` applies it immediately through `Engine.max_fps`; it does not alter the
+fixed-rate terrain clock. These preferences remain independent and keep device
+policy out of gameplay ownership.
 
 `LeaderboardService` is the dependency boundary. Production uses
 `SimpleBoardsLeaderboardService`; tests and offline scenarios use

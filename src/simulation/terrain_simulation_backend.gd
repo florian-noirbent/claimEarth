@@ -11,7 +11,7 @@ func queue_change(_change: CellChange) -> void:
 	pass
 
 
-func advance(_time_budget_usec: int) -> SimulationProgress:
+func advance(_max_passes: int) -> SimulationProgress:
 	return SimulationProgress.new()
 
 

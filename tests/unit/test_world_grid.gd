@@ -6,6 +6,8 @@ func test_grid_initializes_packed_cell_buffer_and_texture() -> void:
 	assert_eq(grid.cell_bytes.size(), 6 * WorldGrid.BYTES_PER_CELL)
 	assert_eq(grid.get_committed_by_offset(2, 1), 9)
 	assert_eq(grid.get_committed_fill_by_offset(2, 1), 255)
+	assert_eq(grid.get_committed_light_by_offset(0, 0), 0)
+	assert_eq(grid.get_committed_light_by_offset(2, 1), 0)
 	assert_eq(grid.texture().get_width(), 3)
 	assert_eq(grid.texture().get_height(), 2)
 
@@ -27,7 +29,7 @@ func test_copy_committed_region_returns_row_major_bytes() -> void:
 	grid.set_committed_by_offset(1, 1, 3, 192)
 	assert_eq(grid.copy_committed_region(Rect2i(0, 0, 2, 2)), PackedByteArray([0, 1, 2, 3]))
 	assert_eq(grid.copy_committed_fill_region(Rect2i(0, 0, 2, 2)), PackedByteArray([0, 64, 128, 192]))
-	assert_eq(grid.copy_rgba_region(Rect2i(1, 0, 1, 1)), PackedByteArray([1, 64, 255, 255]))
+	assert_eq(grid.copy_rgba_region(Rect2i(1, 0, 1, 1)), PackedByteArray([1, 64, 0, 255]))
 
 
 func test_terrain_write_preserves_location_lighting() -> void:

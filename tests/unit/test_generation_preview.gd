@@ -161,6 +161,10 @@ func test_preview_successful_generation_configures_presenter_and_reactivation_re
 	assert_eq(_presenter(preview).total_renderer_nodes(), 1)
 	assert_not_null(_background(preview))
 	assert_same(_background(preview).presentation_config, _presenter(preview).presentation_config)
+	var material := (_presenter(preview).get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_true(bool(material.get_shader_parameter("force_full_brightness")))
+	var preview_image: Image = _presenter(preview).grid_texture().get_image()
+	assert_eq(roundi(preview_image.get_pixel(0, 1).b * 255.0), 0)
 	assert_gt(_background(preview).cave_rect().size.y, 0.0)
 	assert_lt(_camera(preview).zoom.x, 1.0)
 

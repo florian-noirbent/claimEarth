@@ -50,6 +50,11 @@ var _input_controller: GameplayInputController
 var _settings_controller: AppSettingsController
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(_session):
+		_session.reset_simulation_clock()
+
+
 func _ready() -> void:
 	_current_seed = _initial_run_seed()
 	_input_controller = GameplayInputController.new()
@@ -68,6 +73,7 @@ func _ready() -> void:
 	_refresh_fullscreen_state()
 	get_viewport().size_changed.connect(_refresh_fullscreen_state)
 	_apply_phone_controls_enabled(false if _test_mode else _settings_controller.phone_controls_enabled())
+	_apply_frame_limit(0 if _test_mode else _settings_controller.frame_limit_fps())
 	_apply_state(_run_coordinator.current_state)
 	if score_controller.has_service():
 		_refresh_leaderboard()
@@ -85,6 +91,7 @@ func _connect_persistent_signals() -> void:
 	ui.score_confirmed.connect(_on_confirm_score_requested)
 	ui.restart_requested.connect(_on_restart_requested)
 	ui.phone_controls_changed.connect(_settings_controller.set_phone_controls_enabled)
+	ui.frame_limit_changed.connect(_settings_controller.set_frame_limit_fps)
 	ui.touch_move_changed.connect(_input_controller.set_touch_move)
 	ui.touch_aim_changed.connect(_input_controller.set_touch_aim)
 	ui.touch_aim_released.connect(_input_controller.release_touch_aim)
@@ -95,6 +102,7 @@ func _connect_persistent_signals() -> void:
 	_input_controller.item_selected_requested.connect(_on_item_selected)
 	_input_controller.pause_requested.connect(_toggle_pause)
 	_settings_controller.phone_controls_changed.connect(_apply_phone_controls_enabled)
+	_settings_controller.frame_limit_changed.connect(_apply_frame_limit)
 	score_controller.profile_changed.connect(_update_depth_markers)
 	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
 	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
@@ -370,6 +378,11 @@ func _on_run_ready(next_seed: int) -> void:
 func _apply_phone_controls_enabled(enabled: bool) -> void:
 	ui.set_phone_controls_enabled(enabled)
 	_input_controller.set_phone_controls_enabled(enabled)
+
+
+func _apply_frame_limit(fps: int) -> void:
+	Engine.max_fps = fps
+	ui.set_frame_limit_fps(fps)
 
 
 func _process(delta: float) -> void:

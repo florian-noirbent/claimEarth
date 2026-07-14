@@ -5,3 +5,4 @@ extends RefCounted
 
 var step_completed := false
 var simulated_usec := 0
+var passes_scheduled := 0

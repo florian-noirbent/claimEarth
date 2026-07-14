@@ -37,6 +37,11 @@ does not become project input.
 - Firefox:
   - Repeat the same loop once Firefox is available on the release machine.
 - Android Chromium:
+  - Confirm a fresh install defaults the frame limiter to 30 FPS; desktop defaults
+    to Unlimited. Verify every selectable limit is saved and applied immediately.
+  - Compare terrain motion at 30, 60, 90, 120, and Unlimited FPS and confirm its
+    real-time speed remains unchanged while the FPS readout follows the cap as the
+    device allows.
   - In landscape fullscreen, verify partial and cardinal movement on both sticks.
   - Verify simultaneous movement plus item aim/release and hook press/hold/release.
   - Confirm releasing or canceling either touch immediately returns that control to

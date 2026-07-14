@@ -11,6 +11,7 @@ signal score_confirmed(player_name: String)
 signal restart_requested
 signal settings_requested
 signal phone_controls_changed(enabled: bool)
+signal frame_limit_changed(fps: int)
 signal fullscreen_requested
 signal touch_move_changed(vector: Vector2)
 signal touch_aim_changed(vector: Vector2)
@@ -38,6 +39,8 @@ signal touch_hook_released
 @onready var help_back_button: Button = %HelpBackButton
 @onready var settings_panel: PanelContainer = %SettingsPanel
 @onready var phone_controls_toggle: CheckButton = %PhoneControlsToggle
+@onready var frame_limit_slider: HSlider = %FrameLimitSlider
+@onready var frame_limit_value_label: Label = %FrameLimitValueLabel
 @onready var settings_back_button: Button = %SettingsBackButton
 @onready var overlay_root: Control = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
@@ -64,6 +67,8 @@ signal touch_hook_released
 @onready var result_menu_button: Button = %ResultMenuButton
 @onready var pause_panel: PanelContainer = %PausePanel
 @onready var resume_button: Button = %ResumeButton
+@onready var pause_help_button: Button = %PauseHelpButton
+@onready var pause_settings_button: Button = %PauseSettingsButton
 @onready var pause_restart_button: Button = %PauseRestartButton
 @onready var pause_menu_button: Button = %PauseMenuButton
 @onready var leaderboard_panel: PanelContainer = %LeaderboardPanel
@@ -80,6 +85,8 @@ var _web_fullscreen_available := false
 var _fullscreen_active := false
 var _current_state: StringName = RunPhase.MAIN_MENU
 
+const FRAME_LIMIT_OPTIONS := [30, 60, 90, 120, 0]
+
 
 func _ready() -> void:
 	menu_start_button.pressed.connect(start_requested.emit)
@@ -89,9 +96,12 @@ func _ready() -> void:
 	help_back_button.pressed.connect(_hide_help_page)
 	settings_back_button.pressed.connect(_hide_settings_page)
 	phone_controls_toggle.toggled.connect(_on_phone_controls_toggled)
+	frame_limit_slider.value_changed.connect(_on_frame_limit_slider_changed)
 	pause_button.pressed.connect(pause_requested.emit)
 	fullscreen_button.pressed.connect(fullscreen_requested.emit)
 	resume_button.pressed.connect(pause_requested.emit)
+	pause_help_button.pressed.connect(_show_help_page)
+	pause_settings_button.pressed.connect(_show_settings_page)
 	pause_restart_button.pressed.connect(restart_requested.emit)
 	pause_menu_button.pressed.connect(menu_requested.emit)
 	result_menu_button.pressed.connect(menu_requested.emit)
@@ -197,10 +207,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _show_help_page() -> void:
-	_hide_settings_page()
+	settings_panel.visible = false
 	menu_panel.visible = false
 	status_label.visible = false
 	warning_label.visible = false
+	_show_auxiliary_page_shell()
 	help_panel.visible = true
 
 
@@ -208,17 +219,15 @@ func _hide_help_page() -> void:
 	if not is_node_ready():
 		return
 	help_panel.visible = false
-	if _current_state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]:
-		menu_panel.visible = true
-		status_label.visible = true
-		warning_label.visible = not warning_label.text.is_empty()
+	_restore_auxiliary_page_parent()
 
 
 func _show_settings_page() -> void:
-	_hide_help_page()
+	help_panel.visible = false
 	menu_panel.visible = false
 	status_label.visible = false
 	warning_label.visible = false
+	_show_auxiliary_page_shell()
 	settings_panel.visible = true
 	settings_requested.emit()
 
@@ -227,16 +236,39 @@ func _hide_settings_page() -> void:
 	if not is_node_ready():
 		return
 	settings_panel.visible = false
+	_restore_auxiliary_page_parent()
+
+
+func _show_auxiliary_page_shell() -> void:
+	if _current_state == RunPhase.PAUSED:
+		pause_panel.visible = false
+		overlay_root.visible = false
+		menu_root.visible = true
+
+
+func _restore_auxiliary_page_parent() -> void:
 	if _current_state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]:
 		menu_panel.visible = true
 		status_label.visible = true
 		warning_label.visible = not warning_label.text.is_empty()
+	elif _current_state == RunPhase.PAUSED and not help_panel.visible and not settings_panel.visible:
+		menu_root.visible = false
+		overlay_root.visible = true
+		pause_panel.visible = true
 
 
 func set_phone_controls_enabled(enabled: bool) -> void:
 	_phone_controls_enabled = enabled
 	phone_controls_toggle.set_pressed_no_signal(enabled)
 	_update_touch_controls_visibility()
+
+
+func set_frame_limit_fps(fps: int) -> void:
+	var option_index := FRAME_LIMIT_OPTIONS.find(fps)
+	if option_index < 0:
+		option_index = FRAME_LIMIT_OPTIONS.size() - 1
+	frame_limit_slider.set_value_no_signal(option_index)
+	frame_limit_value_label.text = _frame_limit_text(FRAME_LIMIT_OPTIONS[option_index])
 
 
 func set_touch_controls_visible(visible: bool) -> void:
@@ -268,6 +300,17 @@ func _on_phone_controls_toggled(enabled: bool) -> void:
 	_phone_controls_enabled = enabled
 	_update_touch_controls_visibility()
 	phone_controls_changed.emit(enabled)
+
+
+func _on_frame_limit_slider_changed(value: float) -> void:
+	var option_index := clampi(roundi(value), 0, FRAME_LIMIT_OPTIONS.size() - 1)
+	var fps: int = FRAME_LIMIT_OPTIONS[option_index]
+	frame_limit_value_label.text = _frame_limit_text(fps)
+	frame_limit_changed.emit(fps)
+
+
+func _frame_limit_text(fps: int) -> String:
+	return "Unlimited" if fps == 0 else "%d FPS" % fps
 
 
 func _update_touch_controls_visibility() -> void:

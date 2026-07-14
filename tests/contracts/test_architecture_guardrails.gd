@@ -34,6 +34,31 @@ func test_non_script_preloads_do_not_exist_in_src() -> void:
 	assert_eq(violations.size(), 0, "Use exported scene/resource references instead of non-script preloads:\n%s" % "\n".join(violations))
 
 
+func test_render_texture_simulation_backend_never_scans_the_full_grid_on_cpu() -> void:
+	var backend_path := "res://src/simulation/render_texture_simulation_backend.gd"
+	var text := FileAccess.get_file_as_string(backend_path)
+
+	assert_false("_tick_start_bytes" in text, "Simulation ticks must not copy the full packed world for diffing.")
+	assert_false("dimensions.cell_count()" in text, "The render-texture backend must not iterate every map cell on the CPU.")
+	assert_false("force_draw(" in text, "Simulation passes must use Godot's normal viewport render phase, not force a global redraw.")
+	assert_true("request_frame_drawn_callback" in text, "Simulation passes must complete after Godot's normal viewport render phase.")
+	assert_true("const RENDER_BANK_COUNT := 2" in text, "Simulation rendering must alternate two texture banks.")
+	assert_true("const RENDER_TARGETS_PER_BANK := PASS_COUNT" in text, "Each bank must preserve one target per dependent pass.")
+
+
+func test_terrain_simulation_clock_is_fixed_rate_and_not_frame_count_driven() -> void:
+	var clock_text := FileAccess.get_file_as_string("res://src/simulation/fixed_simulation_pass_clock.gd")
+	var controller_text := FileAccess.get_file_as_string("res://src/app/run_world_controller.gd")
+	var app_root_text := FileAccess.get_file_as_string("res://src/app/app_root.gd")
+
+	assert_true("const PASSES_PER_SECOND := 60.0" in clock_text)
+	assert_true("_simulation_clock.add_time(delta)" in controller_text)
+	assert_true("progress.passes_scheduled" in controller_text, "Only backend-accepted work may reduce simulation debt.")
+	assert_false("advance(1)" in controller_text, "The controller must not tie one simulation pass to every rendered frame.")
+	assert_true("NOTIFICATION_APPLICATION_FOCUS_OUT" in app_root_text)
+	assert_true("_session.reset_simulation_clock()" in app_root_text, "Focus loss must discard background-tab simulation time.")
+
+
 func _files_matching(pattern: RegEx) -> PackedStringArray:
 	var violations := PackedStringArray()
 	for file_path in _gd_files_in("res://src"):

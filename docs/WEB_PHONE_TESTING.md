@@ -13,7 +13,11 @@ Choose either:
 
 The command rebuilds `build/web`, replaces the previously managed phone server,
 prints the HTTPS URL and an ASCII QR code, and then exits while the server keeps
-running. Scan the QR code with the phone. Generated responses use `no-store`
+running. When using **Run and Debug**, pressing Stop runs the configured cleanup
+task and stops the phone server. When using the terminal task or direct PowerShell
+command, run **Stop Phone Web Server** or `stop_phone_web.ps1` when finished.
+
+Scan the QR code with the phone. Generated responses use `no-store`
 headers, and every run uses a unique URL path. Relative JavaScript, WebAssembly,
 and PCK URLs therefore change with the build, so a phone cannot reuse payloads
 cached by an earlier test server.

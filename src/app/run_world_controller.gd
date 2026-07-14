@@ -10,8 +10,10 @@ signal player_hazard_status_changed(statuses: Array)
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
+const FixedSimulationPassClockScript = preload("res://src/simulation/fixed_simulation_pass_clock.gd")
 const PLAYER_LIGHT_LEVEL := 190
 const PLAYER_LIGHT_UPDATE_RADIUS := 18
+const MAX_SIMULATION_PASSES_PER_RENDER := 6
 
 @export var terrain_catalog: TerrainCatalog
 @export var item_catalog: ItemCatalog
@@ -30,6 +32,7 @@ var _generation_result: WorldGenerationResult
 var _player: PlayerController
 var _grapple_anchor_query: WorldGrappleAnchorQuery = WorldGrappleAnchorQueryScript.new()
 var _simulation_backend: TerrainSimulationBackend = RenderTextureSimulationBackendScript.new()
+var _simulation_clock: FixedSimulationPassClock = FixedSimulationPassClockScript.new()
 var _generation_serial := 0
 
 
@@ -67,6 +70,7 @@ func start_preview(run_seed: int) -> void:
 		return
 	_generation_result = generated_result
 	_clear_player()
+	_world_presenter.set_force_full_brightness(true)
 	_world_presenter.configure(generated_result.world, _terrain_registry)
 	_configure_marker_bounds()
 
@@ -78,6 +82,8 @@ func cancel_generation() -> void:
 func set_active(is_active: bool) -> void:
 	if _player != null:
 		_player.set_physics_process(is_active)
+	if not is_active:
+		reset_simulation_clock()
 
 
 func advance(delta: float) -> void:
@@ -88,13 +94,22 @@ func advance(delta: float) -> void:
 		PLAYER_LIGHT_LEVEL,
 		PLAYER_LIGHT_UPDATE_RADIUS
 	)
-	_simulation_backend.advance(0)
 	var commit: SimulationCommit = _simulation_backend.commit_if_ready()
 	if commit.did_commit:
 		_world_presenter.use_simulation_textures(
 			_simulation_backend.presentation_texture(),
 			_simulation_backend.presentation_even_texture()
 		)
+	_simulation_clock.add_time(delta)
+	var due_passes := _simulation_clock.available_passes(MAX_SIMULATION_PASSES_PER_RENDER)
+	if due_passes <= 0:
+		return
+	var progress := _simulation_backend.advance(due_passes)
+	_simulation_clock.consume(progress.passes_scheduled)
+
+
+func reset_simulation_clock() -> void:
+	_simulation_clock.reset()
 
 
 func player() -> PlayerController:
@@ -130,6 +145,7 @@ func spawn_rect() -> Rect2i:
 
 
 func _attach_run_world() -> void:
+	_world_presenter.set_force_full_brightness(false)
 	_world_presenter.configure(_generation_result.world, _terrain_registry)
 	_ensure_player()
 
@@ -159,6 +175,7 @@ func _ensure_player() -> void:
 		_simulation_backend.set_simulation_shader(simulation_shader)
 	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
 	_simulation_backend.attach_to(self)
+	reset_simulation_clock()
 	_configure_world_bounds()
 	set_active(false)
 

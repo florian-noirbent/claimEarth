@@ -115,6 +115,20 @@ func test_world_presenter_binds_presentation_config_uniforms() -> void:
 	assert_eq(material.get_shader_parameter("exposed_edge_corner_radius"), config.exposed_edge_corner_radius)
 	assert_eq(material.get_shader_parameter("exposed_edge_jitter_strength"), config.exposed_edge_jitter_strength)
 	assert_eq(material.get_shader_parameter("exposed_edge_jitter_scale"), config.exposed_edge_jitter_scale)
+	assert_false(bool(material.get_shader_parameter("force_full_brightness")))
+
+
+func test_world_presenter_can_force_preview_brightness_without_changing_world_light() -> void:
+	var presenter := _presenter()
+	add_child_autofree(presenter)
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Stone"))
+	presenter.set_force_full_brightness(true)
+
+	presenter.configure(world, FixtureLoader.terrain_registry())
+
+	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
+	assert_true(bool(material.get_shader_parameter("force_full_brightness")))
+	assert_eq(world.get_committed_light_by_offset(10, 16), 0)
 
 
 func test_world_presenter_refreshes_shader_parameters_when_presentation_config_changes() -> void:
@@ -143,7 +157,7 @@ func test_world_presenter_upload_world_reflects_committed_grid_changes() -> void
 	presenter.upload_world()
 
 	assert_eq(world.texture_revision, before_revision + 1)
-	assert_eq(_world_pixel_bytes(world, 5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 255, 255]))
+	assert_eq(_world_pixel_bytes(world, 5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 0, 255]))
 
 
 func test_world_presenter_keeps_single_renderer_after_repeated_uploads() -> void:
@@ -169,14 +183,45 @@ func test_world_presenter_can_bind_backend_phase_textures() -> void:
 	backend.set_simulation_shader(TerrainSimulationShader)
 	backend.initialize(world, FixtureLoader.terrain_registry(), 123)
 	add_child_autofree(backend.render_root())
+	for col in range(world.dimensions.width):
+		assert_eq(world.get_committed_light_by_offset(col, 0), 255)
+		assert_eq(world.get_committed_light_by_offset(col, 1), 0)
 
-	for _pass in range(RenderTextureSimulationBackendScript.PASS_COUNT):
-		backend.advance(0)
+	# Fast tests run headless, where raster simulation is intentionally disabled.
+	# Exercise the shared completed-tick transition directly.
+	backend._finish_tick()
+	assert_true(backend.has_commit_ready())
+	var first_commit := backend.commit_if_ready()
+	assert_true(first_commit.did_commit)
+	assert_eq(first_commit.revision, 1)
+	assert_false(backend.has_commit_ready())
+	backend._finish_tick()
+	var second_commit := backend.commit_if_ready()
+	assert_true(second_commit.did_commit)
+	assert_eq(second_commit.revision, 2)
 	presenter.use_simulation_textures(backend.presentation_texture(), backend.presentation_even_texture())
 
 	var material := (presenter.get_child(0) as Polygon2D).material as ShaderMaterial
 	assert_eq(material.get_shader_parameter("world_data"), backend.presentation_texture())
 	assert_eq(material.get_shader_parameter("even_world"), backend.presentation_even_texture())
+
+
+func test_backend_external_change_cancels_an_unfinished_tick_and_pending_commit() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var backend = RenderTextureSimulationBackendScript.new()
+	backend.set_simulation_shader(TerrainSimulationShader)
+	backend.initialize(world, FixtureLoader.terrain_registry(), 123)
+	add_child_autofree(backend.render_root())
+	backend._tick_in_progress = true
+	backend._finish_tick()
+	backend._tick_in_progress = true
+	assert_true(backend.is_tick_in_progress())
+
+	backend.queue_change(null)
+
+	assert_false(backend.is_tick_in_progress())
+	assert_false(backend.has_commit_ready())
+	assert_false(backend.commit_if_ready().did_commit)
 
 
 func _presenter() -> WorldPresenter:

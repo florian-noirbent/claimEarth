@@ -321,18 +321,18 @@ theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 [node name="HelpMargin" type="MarginContainer" parent="UiLayer/Center/Content/HelpPanel" unique_id=367928415]
 layout_mode = 2
 theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_bottom = 12
 
 [node name="HelpContent" type="VBoxContainer" parent="UiLayer/Center/Content/HelpPanel/HelpMargin" unique_id=1591884097]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="HelpTitle" type="Label" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=1200302288]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 text = "Help"
 horizontal_alignment = 1
 
@@ -341,19 +341,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
-theme_override_font_sizes/font_size = 17
-text = "Theme: race down toward Earth's center and plant your flag to claim the deepest point.
+theme_override_font_sizes/font_size = 15
+text = "Descend as deep as possible, then plant the flag to save your score.
+Death or a flag destroyed by lava loses the run.
 
-Rules: deeper flags score higher. Your score saves only after the flag lands on solid ground. If you die, or lava destroys the flag, the run is lost.
+A/D — move or swing    Space — jump
+W/S — shorten or lengthen the rope
+Left mouse — throw selected item
+Right mouse hold/release — grapple/detach
+1/2/3 — select item    Esc — pause or back
 
-Controls:
-A/D - move or swing
-Space - jump
-W/S - shorten or lengthen rope
-Left mouse - throw selected item
-Right mouse hold - grapple
-1/2/3 - select bombs or flag
-Esc - pause or close menus"
+Phone: left stick moves, right stick aims/throws, outer ring grapples."
+vertical_alignment = 0
 autowrap_mode = 2
 
 [node name="HelpBackButton" type="Button" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=505513980]
@@ -396,20 +395,69 @@ theme_override_font_sizes/font_size = 30
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="PhoneControlsToggle" type="CheckButton" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(330, 50)
+[node name="PhoneControlsRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
 layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PhoneControlsLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
 theme_override_font_sizes/font_size = 20
 text = "Phone Controls"
+vertical_alignment = 1
+
+[node name="PhoneControlsToggle" type="CheckButton" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 50)
+layout_mode = 2
 
 [node name="SettingsHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 theme_override_font_sizes/font_size = 15
 text = "Show virtual sticks while playing."
-horizontal_alignment = 1
+horizontal_alignment = 0
+autowrap_mode = 2
+
+[node name="FrameLimitTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 20
+text = "Frame Limit"
+
+[node name="FrameLimitRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FrameLimitSlider" type="HSlider" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 4.0
+step = 1.0
+value = 4.0
+tick_count = 5
+ticks_on_borders = true
+
+[node name="FrameLimitValueLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 17
+text = "Unlimited"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FrameLimitHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
+theme_override_font_sizes/font_size = 15
+text = "Lower limits reduce heat and battery use."
+horizontal_alignment = 0
 autowrap_mode = 2
 
 [node name="SettingsBackButton" type="Button" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
@@ -754,9 +802,9 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 0
 offset_left = 420.0
-offset_top = 140.0
+offset_top = 92.0
 offset_right = 860.0
-offset_bottom = 390.0
+offset_bottom = 628.0
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel" unique_id=447488270]
@@ -790,6 +838,36 @@ theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Resume"
 icon = ExtResource("20_play")
+expand_icon = true
+
+[node name="PauseHelpButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Help"
+icon = ExtResource("18_help")
+expand_icon = true
+
+[node name="PauseSettingsButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Settings"
+icon = ExtResource("23_settings_cog")
 expand_icon = true
 
 [node name="PauseRestartButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=348721915]

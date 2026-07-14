@@ -194,6 +194,7 @@ func _attempt_preview() -> void:
 	_active_request_count += 1
 	_set_status("Generating")
 	_presenter.reset()
+	_presenter.set_force_full_brightness(true)
 	var generator := WorldGenerator.new()
 	var result := generator.generate(_current_profile, _terrain_registry, _current_seed)
 	if result == null:

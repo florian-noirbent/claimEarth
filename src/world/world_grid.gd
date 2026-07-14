@@ -8,7 +8,7 @@ const CELL_TERRAIN := 0
 const CELL_FILL := 1
 const CELL_LIGHT := 2
 const CELL_FLAGS := 3
-const DEFAULT_LIGHTING := 255
+const DEFAULT_LIGHTING := 0
 const DEFAULT_FLAGS := 255
 
 var dimensions: WorldDimensions

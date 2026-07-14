@@ -1,6 +1,16 @@
 extends GutTest
 
 
+func before_each() -> void:
+	Engine.max_fps = 0
+	_remove_frame_limit_test_settings()
+
+
+func after_each() -> void:
+	Engine.max_fps = 0
+	_remove_frame_limit_test_settings()
+
+
 func test_ui_controller_emits_intents_and_applies_phase_visibility() -> void:
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
@@ -41,20 +51,51 @@ func test_ui_controller_emits_intents_and_applies_phase_visibility() -> void:
 
 
 func test_settings_toggle_and_touch_controls_follow_play_state() -> void:
+	var settings_path := "user://gut_ui_frame_limit_settings.json"
 	var scene := load("res://scenes/app/main.tscn") as PackedScene
 	var app_root := scene.instantiate() as AppRoot
 	app_root.set_test_mode(true)
+	app_root.configure_settings_path_for_test(settings_path)
 	add_child_autofree(app_root)
 	await wait_process_frames(1)
 	var ui := app_root.ui
 
 	watch_signals(ui)
 	ui.menu_settings_button.pressed.emit()
+	await wait_process_frames(1)
 	assert_true(ui.settings_panel.visible)
 	assert_false(ui.menu_panel.visible)
 	assert_signal_emitted(ui, "settings_requested")
 	ui.phone_controls_toggle.toggled.emit(true)
 	assert_signal_emitted_with_parameters(ui, "phone_controls_changed", [true])
+	assert_eq(ui.frame_limit_slider.min_value, 0.0)
+	assert_eq(ui.frame_limit_slider.max_value, 4.0)
+	assert_eq(ui.frame_limit_slider.step, 1.0)
+	assert_eq(ui.frame_limit_value_label.text, "Unlimited")
+	var phone_controls_label := ui.get_node("Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow/PhoneControlsLabel") as Label
+	var phone_controls_hint := ui.get_node("Center/Content/SettingsPanel/SettingsMargin/SettingsContent/SettingsHint") as Label
+	var frame_limit_title := ui.get_node("Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitTitle") as Label
+	var frame_limit_hint := ui.get_node("Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitHint") as Label
+	var aligned_left := phone_controls_label.get_global_rect().position.x
+	assert_eq(phone_controls_hint.get_global_rect().position.x, aligned_left)
+	assert_eq(frame_limit_title.get_global_rect().position.x, aligned_left)
+	assert_eq(ui.frame_limit_slider.get_global_rect().position.x, aligned_left)
+	assert_eq(frame_limit_hint.get_global_rect().position.x, aligned_left)
+	assert_lt(phone_controls_hint.get_global_rect().position.y, frame_limit_title.get_global_rect().position.y)
+	var expected_limits := [30, 60, 90, 120, 0]
+	var expected_labels := ["30 FPS", "60 FPS", "90 FPS", "120 FPS", "Unlimited"]
+	for index in range(expected_limits.size()):
+		ui.set_frame_limit_fps(expected_limits[index])
+		assert_eq(ui.frame_limit_slider.value, float(index))
+		assert_eq(ui.frame_limit_value_label.text, expected_labels[index])
+	ui.frame_limit_slider.value_changed.emit(0.0)
+	assert_signal_emitted_with_parameters(ui, "frame_limit_changed", [30])
+	assert_eq(ui.frame_limit_value_label.text, "30 FPS")
+	assert_eq(Engine.max_fps, 30)
+	ui.frame_limit_slider.value_changed.emit(4.0)
+	assert_signal_emitted_with_parameters(ui, "frame_limit_changed", [0])
+	assert_eq(ui.frame_limit_value_label.text, "Unlimited")
+	assert_eq(Engine.max_fps, 0)
 
 	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
 	await wait_process_frames(1)
@@ -81,6 +122,14 @@ func _touch_ring_rect(pad_rect: Rect2) -> Rect2:
 	const OUTER_RING_RADIUS := 112.0
 	var center := pad_rect.get_center()
 	return Rect2(center - Vector2.ONE * OUTER_RING_RADIUS, Vector2.ONE * OUTER_RING_RADIUS * 2.0)
+
+
+func _remove_frame_limit_test_settings() -> void:
+	var settings_path := "user://gut_ui_frame_limit_settings.json"
+	if FileAccess.file_exists(settings_path):
+		DirAccess.remove_absolute(settings_path)
+	if FileAccess.file_exists("%s.tmp" % settings_path):
+		DirAccess.remove_absolute("%s.tmp" % settings_path)
 
 
 func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
@@ -133,9 +182,12 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	assert_eq(ui.selection_name_label.text, "Large Bomb")
 
 	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
+	await wait_process_frames(1)
 	assert_false(ui.item_toolbar.visible)
 	assert_false(ui.pause_button.visible)
 	assert_true(ui.pause_panel.visible)
+	assert_true(ui.pause_panel.get_global_rect().encloses(ui.pause_help_button.get_global_rect()))
+	assert_true(ui.pause_panel.get_global_rect().encloses(ui.pause_settings_button.get_global_rect()))
 	assert_eq(ui.resume_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 	assert_not_null(ui.resume_button.icon)
 	assert_eq(ui.pause_restart_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
@@ -151,6 +203,47 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	assert_eq(ui.result_panel.get_theme_stylebox("panel"), ui.help_panel.get_theme_stylebox("panel"))
 	assert_eq(ui.restart_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
 	assert_eq(ui.result_menu_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+
+
+func test_help_and_settings_open_from_pause_and_return_to_pause() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+
+	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
+	ui.pause_help_button.pressed.emit()
+	await wait_process_frames(1)
+	assert_true(ui.help_panel.is_visible_in_tree())
+	assert_false(ui.pause_panel.visible)
+	assert_false(ui.overlay_root.visible)
+	assert_true(ui.menu_root.visible)
+	var help_title := ui.get_node("Center/Content/HelpPanel/HelpMargin/HelpContent/HelpTitle") as Label
+	var help_body := ui.get_node("Center/Content/HelpPanel/HelpMargin/HelpContent/HelpBody") as Label
+	assert_gte(help_body.get_global_rect().position.y, help_title.get_global_rect().end.y)
+	assert_lt(help_body.get_global_rect().position.y, get_viewport().get_visible_rect().get_center().y)
+	assert_lte(help_body.get_global_rect().end.y, ui.help_back_button.get_global_rect().position.y)
+
+	ui.help_back_button.pressed.emit()
+	assert_false(ui.help_panel.visible)
+	assert_false(ui.menu_root.visible)
+	assert_true(ui.overlay_root.visible)
+	assert_true(ui.pause_panel.visible)
+
+	ui.pause_settings_button.pressed.emit()
+	await wait_process_frames(1)
+	assert_true(ui.settings_panel.is_visible_in_tree())
+	assert_false(ui.pause_panel.visible)
+	assert_false(ui.overlay_root.visible)
+	assert_true(ui.menu_root.visible)
+
+	ui.settings_back_button.pressed.emit()
+	assert_false(ui.settings_panel.visible)
+	assert_false(ui.menu_root.visible)
+	assert_true(ui.overlay_root.visible)
+	assert_true(ui.pause_panel.visible)
 
 
 func test_fps_display_formats_and_samples_only_during_active_play() -> void:

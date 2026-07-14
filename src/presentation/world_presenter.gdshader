@@ -15,6 +15,7 @@ uniform float material_atlas_gutter_size = 1.0;
 uniform vec2 material_atlas_size = vec2(1.0, 1.0);
 uniform float light_black_threshold = 30.0;
 uniform float light_full_brightness_threshold = 160.0;
+uniform bool force_full_brightness = false;
 uniform float fluid_alpha = 0.56;
 uniform float fluid_caustic_strength = 0.28;
 uniform float fluid_caustic_scale = 0.012;
@@ -523,7 +524,9 @@ void fragment() {
 		}
 	}
 	// 4. Light is interpolated over the nearest hexes after material decisions.
-	float brightness = light_brightness(hex_smoothed_light(cell, world_pos - center_for_offset(cell), cell_light));
+	float brightness = force_full_brightness
+		? 1.0
+		: light_brightness(hex_smoothed_light(cell, world_pos - center_for_offset(cell), cell_light));
 	out_color.rgb *= brightness;
 	out_color.a = mix(1.0, out_color.a, brightness);
 	COLOR = out_color;

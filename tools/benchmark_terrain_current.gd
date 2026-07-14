@@ -66,28 +66,28 @@ func _benchmark_scenario(source_world: WorldGrid, registry: TerrainRegistry) -> 
 	var original := source_world.copy_rgba_bytes()
 	var initial_tick_samples: Array[int] = []
 	var steady_tick_samples: Array[int] = []
-	var changed_counts: Array[int] = []
+	var committed_revisions: Array[int] = []
 	for _sample in range(SAMPLE_COUNT):
 		var world := WorldGrid.new(source_world.dimensions, 0)
 		world.replace_from_rgba_bytes(original)
 		var backend := RenderTextureSimulationBackend.new()
 		backend.initialize(world, registry, 12345)
 		var started := Time.get_ticks_usec()
-		var progress := backend.advance(1000000)
+		var progress := backend.advance(RenderTextureSimulationBackend.PASS_COUNT)
 		while not progress.step_completed:
-			progress = backend.advance(1000000)
+			progress = backend.advance(RenderTextureSimulationBackend.PASS_COUNT)
 		initial_tick_samples.append(Time.get_ticks_usec() - started)
 		var commit := backend.commit_if_ready()
-		changed_counts.append(commit.changed_cell_count())
+		committed_revisions.append(commit.revision)
 		started = Time.get_ticks_usec()
-		progress = backend.advance(1000000)
+		progress = backend.advance(RenderTextureSimulationBackend.PASS_COUNT)
 		while not progress.step_completed:
-			progress = backend.advance(1000000)
+			progress = backend.advance(RenderTextureSimulationBackend.PASS_COUNT)
 		steady_tick_samples.append(Time.get_ticks_usec() - started)
 	return {
 		"initial_tick_usec": _stats(initial_tick_samples),
 		"steady_tick_usec": _stats(steady_tick_samples),
-		"changed_cells": _stats(changed_counts),
+		"committed_revision": _stats(committed_revisions),
 	}
 
 

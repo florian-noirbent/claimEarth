@@ -11,20 +11,23 @@ const PASS_RIGHT_DOWN_ODD := 4
 const PASS_LEFT_DOWN_ODD := 5
 const PASS_COUNT := 6
 const EVEN_PHASE_PASS_COUNT := 3
-const RENDER_TARGET_COUNT := 5
+const RENDER_BANK_COUNT := 2
+const RENDER_TARGETS_PER_BANK := PASS_COUNT
+const RENDER_TARGET_COUNT := RENDER_BANK_COUNT * RENDER_TARGETS_PER_BANK
 
 var _world: WorldGrid
 var _metadata: CompiledTerrainData
 var _pass_index := 0
 var _tick_in_progress := false
 var _pending_commit := false
-var _pending_change_set: TerrainChangeSet
-var _tick_start_bytes := PackedByteArray()
 var _revision := 0
 var _advances_performed := 0
 var _commits_performed := 0
 var _passes_performed := 0
 var _ticks_completed := 0
+var _render_request_in_flight := false
+var _render_request_serial := 0
+var _completed_step_pending := false
 var _render_root: Node
 var _viewports: Array[SubViewport] = []
 var _materials: Array[ShaderMaterial] = []
@@ -32,7 +35,6 @@ var _rule_texture: ImageTexture
 var _active_texture: Texture2D
 var _presentation_texture: Texture2D
 var _even_phase_texture: Texture2D
-var _even_phase_target_index := -1
 var _simulation_shader: Shader
 var _player_light_offset := Vector2i(-1, -1)
 var _player_light_level := 190
@@ -40,21 +42,21 @@ var _player_light_update_radius := 18
 
 
 func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void:
+	_invalidate_render_request()
 	_world = world
 	_metadata = CompiledTerrainData.compile(registry)
 	_pass_index = 0
 	_tick_in_progress = false
 	_pending_commit = false
-	_pending_change_set = null
-	_tick_start_bytes = PackedByteArray()
 	_revision = 0
 	_advances_performed = 0
 	_commits_performed = 0
 	_passes_performed = 0
 	_ticks_completed = 0
+	_completed_step_pending = false
 	if _world == null:
 		return
-	_clear_initial_lighting()
+	_initialize_surface_lighting()
 	_world.upload_cpu_snapshot_to_texture()
 	_rule_texture = _create_rule_texture(_metadata)
 	_ensure_render_targets()
@@ -80,38 +82,33 @@ func set_player_light_source(offset: Vector2i, light_level: int, update_radius: 
 	_player_light_update_radius = maxi(0, update_radius)
 
 
-func advance(_time_budget_usec: int) -> SimulationProgress:
+func advance(max_passes: int) -> SimulationProgress:
 	var progress := SimulationProgress.new()
+	progress.step_completed = _completed_step_pending
+	_completed_step_pending = false
 	# Headless Godot has no raster backend. The GPU pipeline is intentionally not emulated.
-	if _world == null or _metadata == null or _pending_commit or DisplayServer.get_name() == "headless":
+	if max_passes <= 0 or _world == null or _metadata == null or _pending_commit or _render_request_in_flight or DisplayServer.get_name() == "headless":
 		return progress
 	var started := Time.get_ticks_usec()
 	if not _tick_in_progress:
 		_tick_in_progress = true
 		_pass_index = 0
-		_tick_start_bytes = _world.copy_rgba_bytes()
 		_active_texture = _presentation_texture if _presentation_texture != null else _world.texture()
-	_render_pass(_pass_index)
-	_pass_index += 1
-	_passes_performed += 1
-	_advances_performed += 1
-	if _pass_index >= PASS_COUNT:
-		_finish_tick_from_render_texture()
-		progress.step_completed = true
+	var batch_size := mini(max_passes, PASS_COUNT - _pass_index)
+	if _schedule_render_pass_batch(_pass_index, batch_size):
+		_advances_performed += 1
+		progress.passes_scheduled = batch_size
 	progress.simulated_usec = Time.get_ticks_usec() - started
 	return progress
 
 
 func commit_if_ready() -> SimulationCommit:
 	var commit := SimulationCommit.new()
-	if not _pending_commit or _pending_change_set == null:
+	if not _pending_commit:
 		return commit
 	commit.did_commit = true
-	commit.change_set = _pending_change_set
-	commit.dirty_rect = _pending_change_set.dirty_rect
-	commit.revision = _pending_change_set.revision
+	commit.revision = _revision
 	_pending_commit = false
-	_pending_change_set = null
 	_commits_performed += 1
 	return commit
 
@@ -189,6 +186,10 @@ func ticks_completed() -> int:
 	return _ticks_completed
 
 
+func is_render_pass_in_flight() -> bool:
+	return _render_request_in_flight
+
+
 func _ensure_render_targets() -> void:
 	if _world == null:
 		return
@@ -205,7 +206,9 @@ func _ensure_render_targets() -> void:
 	if _viewports.size() != RENDER_TARGET_COUNT:
 		for index in range(RENDER_TARGET_COUNT):
 			var viewport := SubViewport.new()
-			viewport.name = "TerrainSimulationPass%d" % index
+			var bank_index := int(index / RENDER_TARGETS_PER_BANK)
+			var bank_pass_index := index % RENDER_TARGETS_PER_BANK
+			viewport.name = "TerrainSimulationBank%dPass%d" % [bank_index, bank_pass_index]
 			viewport.disable_3d = true
 			viewport.transparent_bg = true
 			viewport.size = Vector2i(_world.dimensions.width, _world.dimensions.depth)
@@ -250,59 +253,83 @@ func _reset_gpu_source_from_world() -> void:
 	_active_texture = _world.texture() if _world != null else null
 	_presentation_texture = _active_texture
 	_even_phase_texture = _active_texture
-	_even_phase_target_index = -1
 
 
-func _clear_initial_lighting() -> void:
-	for index in range(_world.dimensions.cell_count()):
-		var offset := _world.dimensions.index_to_offset(index)
-		_world.set_committed_light_by_index(index, 255 if offset.y == 0 else 0)
+func _initialize_surface_lighting() -> void:
+	for col in range(_world.dimensions.width):
+		_world.set_committed_light_by_offset(col, 0, 255)
 
 
-func _render_pass(pass_kind: int) -> void:
+func _schedule_render_pass_batch(first_pass: int, pass_count: int) -> bool:
 	_ensure_render_targets()
-	if _viewports.size() < RENDER_TARGET_COUNT or _active_texture == null:
+	if pass_count <= 0 or first_pass < 0 or first_pass + pass_count > PASS_COUNT or _viewports.size() < RENDER_TARGET_COUNT or _active_texture == null:
+		return false
+	var bank_index := _revision % RENDER_BANK_COUNT
+	var source_texture := _active_texture
+	for pass_kind in range(first_pass, first_pass + pass_count):
+		var target_index := _target_index(bank_index, pass_kind)
+		var material := _materials[target_index]
+		material.set_shader_parameter("source_world", source_texture)
+		material.set_shader_parameter("pass_kind", pass_kind)
+		material.set_shader_parameter("player_light_offset", _player_light_offset)
+		material.set_shader_parameter("player_light_level", _player_light_level)
+		material.set_shader_parameter("player_light_update_radius", _player_light_update_radius)
+		var viewport := _viewports[target_index]
+		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		source_texture = viewport.get_texture()
+	_render_request_serial += 1
+	var request_serial := _render_request_serial
+	_render_request_in_flight = true
+	RenderingServer.request_frame_drawn_callback(
+		_on_render_batch_drawn.bind(request_serial, first_pass, pass_count, bank_index)
+	)
+	return true
+
+
+func _on_render_batch_drawn(request_serial: int, first_pass: int, pass_count: int, bank_index: int) -> void:
+	if request_serial != _render_request_serial or not _render_request_in_flight:
 		return
-	var target_index := _render_target_for_pass(pass_kind)
-	var material := _materials[target_index]
-	material.set_shader_parameter("source_world", _active_texture)
-	material.set_shader_parameter("pass_kind", pass_kind)
-	material.set_shader_parameter("player_light_offset", _player_light_offset)
-	material.set_shader_parameter("player_light_level", _player_light_level)
-	material.set_shader_parameter("player_light_update_radius", _player_light_update_radius)
-	var viewport := _viewports[target_index]
-	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	RenderingServer.force_draw(false)
-	_active_texture = viewport.get_texture()
-	if pass_kind == PASS_LEFT_DOWN_EVEN:
-		_even_phase_texture = _active_texture
-		_even_phase_target_index = target_index
+	_render_request_in_flight = false
+	if first_pass != _pass_index or pass_count <= 0 or first_pass + pass_count > PASS_COUNT or bank_index < 0 or bank_index >= RENDER_BANK_COUNT:
+		_cancel_in_progress_tick()
+		_reset_gpu_source_from_world()
+		return
+	for pass_kind in range(first_pass, first_pass + pass_count):
+		var viewport := _viewports[_target_index(bank_index, pass_kind)]
+		if not is_instance_valid(viewport):
+			_cancel_in_progress_tick()
+			_reset_gpu_source_from_world()
+			return
+	_active_texture = _viewports[_target_index(bank_index, first_pass + pass_count - 1)].get_texture()
+	if first_pass <= PASS_LEFT_DOWN_EVEN and first_pass + pass_count > PASS_LEFT_DOWN_EVEN:
+		_even_phase_texture = _viewports[_target_index(bank_index, PASS_LEFT_DOWN_EVEN)].get_texture()
+	_pass_index += pass_count
+	_passes_performed += pass_count
+	if _pass_index >= PASS_COUNT:
+		_completed_step_pending = _finish_tick_from_render_texture()
 
 
-func _finish_tick_from_render_texture() -> void:
-	if _active_texture != null:
-		_presentation_texture = _active_texture
-		var image := _active_texture.get_image()
-		if image != null and not image.is_empty():
-			image.convert(Image.FORMAT_RGBA8)
-			_world.cell_bytes = image.get_data()
-			_world.cell_image = Image.create_from_data(_world.dimensions.width, _world.dimensions.depth, false, Image.FORMAT_RGBA8, _world.cell_bytes)
-			_world.cell_texture = ImageTexture.create_from_image(_world.cell_image)
-			_world.texture_revision += 1
+func _finish_tick_from_render_texture() -> bool:
+	if _active_texture == null:
+		_cancel_in_progress_tick()
+		return false
+	var image := _active_texture.get_image()
+	if image == null or image.is_empty():
+		_cancel_in_progress_tick()
+		_reset_gpu_source_from_world()
+		return false
+	_presentation_texture = _active_texture
+	image.convert(Image.FORMAT_RGBA8)
+	_world.cell_bytes = image.get_data()
+	_world.cell_image = Image.create_from_data(_world.dimensions.width, _world.dimensions.depth, false, Image.FORMAT_RGBA8, _world.cell_bytes)
+	_world.cell_texture = ImageTexture.create_from_image(_world.cell_image)
+	_world.texture_revision += 1
 	_finish_tick()
+	return true
 
 
-func _render_target_for_pass(pass_kind: int) -> int:
-	match pass_kind:
-		PASS_VERTICAL_EVEN, PASS_VERTICAL_ODD:
-			return 0
-		PASS_RIGHT_DOWN_EVEN, PASS_RIGHT_DOWN_ODD:
-			return 1
-		PASS_LEFT_DOWN_EVEN:
-			return 3 if _even_phase_target_index == 2 else 2
-		PASS_LEFT_DOWN_ODD:
-			return 4
-	return 0
+func _target_index(bank_index: int, pass_kind: int) -> int:
+	return bank_index * RENDER_TARGETS_PER_BANK + pass_kind
 
 
 func _create_rule_texture(metadata: CompiledTerrainData) -> ImageTexture:
@@ -323,23 +350,24 @@ func _write_rule_row(data: PackedByteArray, id: int, row: int, values: Array) ->
 
 
 func _finish_tick() -> void:
-	var change_set := TerrainChangeSet.new(_world.dimensions)
 	_revision += 1
-	change_set.revision = _revision
-	for index in range(_world.dimensions.cell_count()):
-		var offset := index * WorldGrid.BYTES_PER_CELL
-		change_set.add_change(index, _tick_start_bytes[offset + WorldGrid.CELL_TERRAIN], _world.cell_bytes[offset + WorldGrid.CELL_TERRAIN], _metadata, _tick_start_bytes[offset + WorldGrid.CELL_FILL], _world.cell_bytes[offset + WorldGrid.CELL_FILL])
-	_pending_change_set = change_set
-	_pending_commit = not change_set.is_empty()
+	_pending_commit = true
 	_tick_in_progress = false
 	_pass_index = 0
-	_tick_start_bytes = PackedByteArray()
 	_ticks_completed += 1
 
 
 func _cancel_in_progress_tick() -> void:
+	_invalidate_render_request()
 	_tick_in_progress = false
 	_pending_commit = false
-	_pending_change_set = null
+	_completed_step_pending = false
 	_pass_index = 0
-	_tick_start_bytes = PackedByteArray()
+
+
+func _invalidate_render_request() -> void:
+	_render_request_serial += 1
+	_render_request_in_flight = false
+	for viewport in _viewports:
+		if is_instance_valid(viewport):
+			viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
