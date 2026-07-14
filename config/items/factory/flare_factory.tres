@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="FlareItemActionFactory" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/items/flare_item_action_factory.gd" id="1_factory"]
+[ext_resource type="Resource" path="res://config/lighting/flare_light.tres" id="2_light"]
+
+[resource]
+script = ExtResource("1_factory")
+light_definition = ExtResource("2_light")
+throw_distance_hint = 150.0

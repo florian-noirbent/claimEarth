@@ -1,10 +1,15 @@
-[gd_resource type="Resource" script_class="ItemCatalog" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ItemCatalog" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/items/item_catalog.gd" id="1_qwitu"]
 [ext_resource type="Resource" path="res://config/items/small_bomb.tres" id="2_vyjlwm"]
 [ext_resource type="Resource" path="res://config/items/large_bomb.tres" id="3_h0k52"]
 [ext_resource type="Resource" path="res://config/items/flag.tres" id="4_2o84p"]
+[ext_resource type="Resource" path="res://config/items/pickaxe.tres" id="5_pickaxe"]
+[ext_resource type="Resource" path="res://config/items/shovel.tres" id="6_shovel"]
+[ext_resource type="Resource" path="res://config/items/flare.tres" id="7_flare"]
+[ext_resource type="Resource" path="res://config/items/water_bottle.tres" id="8_bottle"]
+[ext_resource type="Resource" path="res://config/items/excavator.tres" id="9_excavator"]
 
 [resource]
 script = ExtResource("1_qwitu")
-definitions = [ExtResource("2_vyjlwm"), ExtResource("3_h0k52"), ExtResource("4_2o84p")]
+definitions = [ExtResource("2_vyjlwm"), ExtResource("3_h0k52"), ExtResource("4_2o84p"), ExtResource("5_pickaxe"), ExtResource("6_shovel"), ExtResource("7_flare"), ExtResource("8_bottle"), ExtResource("9_excavator")]

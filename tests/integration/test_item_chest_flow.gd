@@ -113,4 +113,4 @@ func _status_count(status: Dictionary, item_name: String) -> int:
 	for item in status.items:
 		if item.name == item_name:
 			return int(item.count)
-	return -1
+	return 0

@@ -136,6 +136,42 @@ func test_explosion_pushes_active_projectile_bodies_including_future_item_action
 	assert_almost_eq(projectile.velocity.y, 0.0, 0.001)
 
 
+func test_explosion_pushes_excavator_through_the_shared_rigidbody_contract() -> void:
+	var controller := _configured_explosion_controller()
+	var factory := load("res://config/items/factory/excavator_factory.tres") as ExcavatorItemActionFactory
+	var origin := Vector2(100.0, 100.0)
+	controller.spawn_excavator(origin + Vector2(40.0, 0.0), factory)
+	var robot := controller.get_children().filter(func(child: Node) -> bool: return child is ExcavatorRobot)[0] as ExcavatorRobot
+	var definition := (load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition).duplicate(true) as ExplosionDefinition
+	definition.blast_impulse = 800.0
+
+	controller.resolve_explosion(definition, origin)
+
+	assert_true(robot is WorldRigidBody2D)
+	assert_almost_eq(robot.velocity.x, 400.0, 0.001)
+
+
+func test_excavator_factory_doubles_its_original_lifetime_and_drill_cadence() -> void:
+	var factory := load("res://config/items/factory/excavator_factory.tres") as ExcavatorItemActionFactory
+
+	assert_almost_eq(factory.duration_seconds, 20.0, 0.001)
+	assert_almost_eq(factory.tick_seconds, 0.5, 0.001)
+
+
+func test_excavator_chain_detonation_uses_the_common_explosive_component() -> void:
+	var controller := _configured_explosion_controller()
+	watch_signals(controller)
+	var factory := load("res://config/items/factory/excavator_factory.tres") as ExcavatorItemActionFactory
+	controller.spawn_excavator(HexMetrics.center_for_offset(5, 5, 16.0), factory)
+	var robot := controller.get_children().filter(func(child: Node) -> bool: return child is ExcavatorRobot)[0] as ExcavatorRobot
+
+	assert_true(robot.explosive.try_arm_from_lethal_cells([Vector2i(5, 5)], 16.0))
+	robot.explosive._physics_process(0.31)
+
+	assert_signal_emitted(controller, "explosion_resolved")
+	assert_true(robot.is_queued_for_deletion())
+
+
 func test_bomb_arms_chest_and_chest_detonation_can_arm_bomb() -> void:
 	var controller := RunItemController.new()
 	add_child_autofree(controller)

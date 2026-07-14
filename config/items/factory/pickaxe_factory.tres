@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TerrainToolItemActionFactory" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/items/terrain_tool_item_action_factory.gd" id="1_factory"]
+[ext_resource type="Script" path="res://src/items/terrain_transform_rule.gd" id="2_rule"]
+[ext_resource type="Resource" path="res://config/terrain/stone.tres" id="3_stone"]
+[ext_resource type="Resource" path="res://config/terrain/dirt.tres" id="4_dirt"]
+[ext_resource type="Resource" path="res://config/terrain/sand.tres" id="5_sand"]
+
+[sub_resource type="Resource" id="Rule_stone_dirt"]
+script = ExtResource("2_rule")
+source = ExtResource("3_stone")
+target = ExtResource("4_dirt")
+
+[sub_resource type="Resource" id="Rule_dirt_sand"]
+script = ExtResource("2_rule")
+source = ExtResource("4_dirt")
+target = ExtResource("5_sand")
+
+[resource]
+script = ExtResource("1_factory")
+transformations = Array[ExtResource("2_rule")]([SubResource("Rule_stone_dirt"), SubResource("Rule_dirt_sand")])

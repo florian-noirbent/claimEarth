@@ -306,8 +306,15 @@ to map width, and uses `DescendingCameraModel` for downward-only vertical moveme
 
 Items are registered through `config/items/catalog.tres`. `ItemDefinition` points to
 an `ItemActionFactory`; factories create polymorphic `ItemAction` implementations.
-`RunItemController` treats all selected items through that contract. `ItemProjectile`
-owns flight, terrain sampling, bounce, fuse, and resolution signals.
+`RunItemController` treats all selected items through that contract. `WorldRigidBody2D`
+owns terrain sampling, gravity, collision response, and blast-pulse reception for dynamic item bodies.
+`ItemProjectile` composes that body with item resolution, bounce, fuse, and temporary flare light;
+autonomous objects such as the excavator use the same body directly. The renderer reserves high-frequency light slots for the player and the
+most recently thrown flare; older flares remain visible without displacing the player.
+Immediate item actions resolve one aimed neighboring hex and publish their
+terrain changes through `RunItemController`; float tool charges allow a final
+undercharged valid hit. Item status retains catalog indices while hiding empty
+dynamic slots so toolbar clicks and keyboard shortcuts stay stable.
 
 Item chest rewards use `ItemChestDefinition` and weighted `ItemChestOption` resources.
 Selection is deterministic and without replacement. `RunItemController` owns active
@@ -325,7 +332,7 @@ terrain and is also checked against the player. Bombs and chests compose
 `RunItemController` registers those components generically; lethal-cell footprint
 overlap arms a one-shot delayed chain without branches on the host item type.
 Explosion definitions also tune radial impulse strength. `RunItemController` applies
-that impulse through `ItemProjectile`, so bombs, flags, and future projectile-based
+that impulse through `WorldRigidBody2D`, so bombs, flags, excavators, and future dynamic
 items share the behavior without selection branches. A future jelly perk can expose
 the same receiver behavior from its player-owned perk boundary.
 

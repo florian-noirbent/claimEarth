@@ -38,10 +38,8 @@ var _active_texture: Texture2D
 var _presentation_texture: Texture2D
 var _even_phase_texture: Texture2D
 var _simulation_shader: Shader
-var _high_frequency_light_source_id := StringName()
-var _high_frequency_light_offset := Vector2i(-1, -1)
-var _high_frequency_light_level := 0
-var _high_frequency_light_update_radius := 0
+var _player_high_frequency_light := {}
+var _flare_high_frequency_light := {}
 var _standard_light_sources: Dictionary = {}
 var _standard_light_image: Image
 var _standard_light_texture: ImageTexture
@@ -60,10 +58,8 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_passes_performed = 0
 	_ticks_completed = 0
 	_completed_step_pending = false
-	_high_frequency_light_source_id = StringName()
-	_high_frequency_light_offset = Vector2i(-1, -1)
-	_high_frequency_light_level = 0
-	_high_frequency_light_update_radius = 0
+	_player_high_frequency_light.clear()
+	_flare_high_frequency_light.clear()
 	if _world == null:
 		return
 	_initialize_surface_lighting()
@@ -97,23 +93,23 @@ func set_high_frequency_light_source(
 		return false
 	if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return false
-	if _high_frequency_light_source_id != StringName() and _high_frequency_light_source_id != source_id:
-		return false
-	_high_frequency_light_source_id = source_id
-	_high_frequency_light_offset = offset
-	_high_frequency_light_level = light_level
-	_high_frequency_light_update_radius = update_radius
+	var source_data := {"source_id": source_id, "offset": offset, "light_level": light_level, "update_radius": update_radius}
+	if source_id == &"player":
+		_player_high_frequency_light = source_data
+	else:
+		# The most recently thrown flare owns the one additional dynamic-light slot.
+		_flare_high_frequency_light = source_data
 	return true
 
 
 func remove_high_frequency_light_source(source_id: StringName) -> bool:
-	if source_id == StringName() or source_id != _high_frequency_light_source_id:
-		return false
-	_high_frequency_light_source_id = StringName()
-	_high_frequency_light_offset = Vector2i(-1, -1)
-	_high_frequency_light_level = 0
-	_high_frequency_light_update_radius = 0
-	return true
+	if source_id == &"player" and not _player_high_frequency_light.is_empty():
+		_player_high_frequency_light.clear()
+		return true
+	if not _flare_high_frequency_light.is_empty() and _flare_high_frequency_light.source_id == source_id:
+		_flare_high_frequency_light.clear()
+		return true
+	return false
 
 
 func set_standard_light_source(source_id: StringName, offset: Vector2i, light_level: int) -> bool:
@@ -217,10 +213,8 @@ func shutdown() -> void:
 	_standard_light_sources.clear()
 	_standard_light_image = null
 	_standard_light_texture = null
-	_high_frequency_light_source_id = StringName()
-	_high_frequency_light_offset = Vector2i(-1, -1)
-	_high_frequency_light_level = 0
-	_high_frequency_light_update_radius = 0
+	_player_high_frequency_light.clear()
+	_flare_high_frequency_light.clear()
 
 
 func set_simulation_shader(shader: Shader) -> void:
@@ -398,9 +392,7 @@ func _schedule_render_pass_batch(first_pass: int, pass_count: int) -> bool:
 		var material := _materials[target_index]
 		material.set_shader_parameter("source_world", source_texture)
 		material.set_shader_parameter("pass_kind", pass_kind)
-		material.set_shader_parameter("high_frequency_light_offset", _high_frequency_light_offset)
-		material.set_shader_parameter("high_frequency_light_level", _high_frequency_light_level)
-		material.set_shader_parameter("high_frequency_light_update_radius", _high_frequency_light_update_radius)
+		_set_high_frequency_light_parameters(material)
 		var viewport := _viewports[target_index]
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		source_texture = viewport.get_texture()
@@ -412,6 +404,18 @@ func _schedule_render_pass_batch(first_pass: int, pass_count: int) -> bool:
 		_on_render_batch_drawn.bind(request_serial, first_pass, pass_count, bank_index)
 	)
 	return true
+
+
+func _set_high_frequency_light_parameters(material: ShaderMaterial) -> void:
+	_set_light_parameters(material, "player", _player_high_frequency_light)
+	_set_light_parameters(material, "flare", _flare_high_frequency_light)
+
+
+func _set_light_parameters(material: ShaderMaterial, prefix: String, source: Dictionary) -> void:
+	var offset: Vector2i = source.get("offset", Vector2i(-1, -1))
+	material.set_shader_parameter("%s_light_offset" % prefix, offset)
+	material.set_shader_parameter("%s_light_level" % prefix, int(source.get("light_level", 0)))
+	material.set_shader_parameter("%s_light_update_radius" % prefix, int(source.get("update_radius", 0)))
 
 
 func _on_render_batch_drawn(request_serial: int, first_pass: int, pass_count: int, bank_index: int) -> void:

@@ -371,7 +371,7 @@ func _update_item_toolbar(items: Array) -> void:
 		for index in items.size():
 			var slot := item_toolbar_slot_scene.instantiate() as ItemToolbarSlot
 			item_toolbar_content.add_child(slot)
-			slot.pressed.connect(_on_item_slot_pressed.bind(index))
+			slot.pressed.connect(_on_item_slot_pressed.bind(int(items[index].get("catalog_index", index))))
 	for index in items.size():
 		var item: Dictionary = items[index]
 		var slot := item_toolbar_content.get_child(index) as ItemToolbarSlot
@@ -379,7 +379,7 @@ func _update_item_toolbar(items: Array) -> void:
 		slot.configure(
 			item.get("icon") as Texture2D,
 			str(item.get("shortcut", index + 1)),
-			int(item.get("count", 0)),
+			str(item.get("count_text", str(roundi(float(item.get("count", 0.0)))))),
 			selected
 		)
 		if selected:

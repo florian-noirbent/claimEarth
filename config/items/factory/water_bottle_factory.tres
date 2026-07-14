@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FluidBottleItemActionFactory" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/items/fluid_bottle_item_action_factory.gd" id="1_factory"]
+[ext_resource type="Resource" path="res://config/terrain/water.tres" id="2_water"]
+
+[resource]
+script = ExtResource("1_factory")
+deposited_terrain = ExtResource("2_water")
+throw_distance_hint = 100.0
+gravity = 880.0

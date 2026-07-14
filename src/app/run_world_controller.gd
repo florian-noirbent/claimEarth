@@ -110,6 +110,11 @@ func reset_simulation_clock() -> void:
 func player() -> PlayerController:
 	return _player
 
+func debug_teleport_to_fraction(fraction: float) -> void:
+	if _player == null or _generation_result == null: return
+	var row := clampi(roundi(float(_profile.depth - 3) * clampf(fraction, 0.0, 1.0)), 0, _profile.depth - 3)
+	_player.global_position = HexMetrics.center_for_offset(_profile.width / 2, row, _world_presenter.hex_radius)
+
 
 func current_world() -> WorldGrid:
 	return _generation_result.world if _generation_result != null else null

@@ -169,6 +169,19 @@ func test_playing_ui_uses_toolbar_and_pause_controls() -> void:
 	watch_signals(ui)
 	(ui.item_toolbar_content.get_child(1) as ItemToolbarSlot).pressed.emit()
 	assert_signal_emitted_with_parameters(ui, "item_selected", [1])
+	ui.show_run_status(12, 20, false, {
+		"flag_in_flight": false,
+		"items": [
+			{"name": "Small Bomb", "icon": load("res://assets/objects/small_bomb.svg"), "count": 10, "count_text": "10", "selected": false, "shortcut": 1, "catalog_index": 0},
+			{"name": "Pickaxe", "icon": load("res://assets/objects/flag.svg"), "count": 0.25, "count_text": "1", "selected": true, "shortcut": 4, "catalog_index": 3},
+		],
+	})
+	assert_eq(ui.item_toolbar_content.get_child_count(), 2)
+	var pickaxe_slot := ui.item_toolbar_content.get_child(1) as ItemToolbarSlot
+	assert_eq(pickaxe_slot.key_label.text, "4")
+	assert_eq(pickaxe_slot.count_label.text, "x1")
+	pickaxe_slot.pressed.emit()
+	assert_signal_emitted_with_parameters(ui, "item_selected", [3])
 
 	ui.show_run_status(12, 20, false, {
 		"flag_in_flight": false,

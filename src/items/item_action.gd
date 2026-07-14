@@ -20,6 +20,16 @@ func locks_throwing_until_resolved() -> bool:
 	return false
 
 
+func is_immediate() -> bool:
+	return false
+
+
+## Performs an in-place use and returns the durability charge to consume.
+## Zero means that no valid use occurred.
+func use_immediately(_item_controller: RunItemController, _aim_position: Vector2) -> float:
+	return 0.0
+
+
 func create_projectile(_origin: Vector2, _aim_position: Vector2, _trajectory_service: ItemTrajectoryService, _thrower_velocity: Vector2) -> Dictionary:
 	return {}
 

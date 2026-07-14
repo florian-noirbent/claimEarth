@@ -3,11 +3,18 @@ class_name ItemDefinition
 extends Resource
 
 
+enum CountDisplay {
+	INTEGER,
+	CEILING,
+}
+
+
 @export_range(0, 255) var stable_id := 0
 @export var display_name := ""
 @export_multiline var description := ""
 @export var icon: Texture2D
-@export var starting_inventory := 0
+@export var starting_inventory := 0.0
+@export var count_display := CountDisplay.INTEGER
 @export var action_factory: ItemActionFactory
 
 

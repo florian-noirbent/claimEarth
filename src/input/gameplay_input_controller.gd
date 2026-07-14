@@ -6,6 +6,7 @@ extends Node
 signal throw_requested(aim_position: Vector2)
 signal item_cycle_requested(direction: int)
 signal item_selected_requested(index: int)
+signal item_shortcut_requested(shortcut: int)
 signal pause_requested
 
 
@@ -22,6 +23,11 @@ const PAUSE := &"pause"
 const SELECT_SMALL_BOMB := &"select_small_bomb"
 const SELECT_LARGE_BOMB := &"select_large_bomb"
 const SELECT_FLAG := &"select_flag"
+const SELECT_ITEM_4 := &"select_item_4"
+const SELECT_ITEM_5 := &"select_item_5"
+const SELECT_ITEM_6 := &"select_item_6"
+const SELECT_ITEM_7 := &"select_item_7"
+const SELECT_ITEM_8 := &"select_item_8"
 const CYCLE_ITEM_PREVIOUS := &"cycle_item_previous"
 const CYCLE_ITEM_NEXT := &"cycle_item_next"
 const AIM_LEFT := &"aim_left"
@@ -141,6 +147,11 @@ func handle_unhandled_input(event: InputEvent, mouse_aim_position: Vector2) -> b
 	if _event_action_pressed(event, SELECT_FLAG):
 		item_selected_requested.emit(2)
 		return true
+	var dynamic_item_actions: Array[StringName] = [SELECT_ITEM_4, SELECT_ITEM_5, SELECT_ITEM_6, SELECT_ITEM_7, SELECT_ITEM_8]
+	for index in dynamic_item_actions.size():
+		if _event_action_pressed(event, dynamic_item_actions[index]):
+			item_shortcut_requested.emit(index + 4)
+			return true
 	if _event_action_pressed(event, CYCLE_ITEM_PREVIOUS):
 		item_cycle_requested.emit(-1)
 		return true

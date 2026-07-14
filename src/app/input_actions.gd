@@ -11,6 +11,11 @@ const ROPE_DOWN := "rope_down"
 const SELECT_SMALL_BOMB := "select_small_bomb"
 const SELECT_LARGE_BOMB := "select_large_bomb"
 const SELECT_FLAG := "select_flag"
+const SELECT_ITEM_4 := "select_item_4"
+const SELECT_ITEM_5 := "select_item_5"
+const SELECT_ITEM_6 := "select_item_6"
+const SELECT_ITEM_7 := "select_item_7"
+const SELECT_ITEM_8 := "select_item_8"
 const THROW_SELECTED := "throw_selected"
 const HOOK := "hook"
 const PAUSE := "pause"
@@ -31,6 +36,11 @@ const ALL: PackedStringArray = [
 	SELECT_SMALL_BOMB,
 	SELECT_LARGE_BOMB,
 	SELECT_FLAG,
+	SELECT_ITEM_4,
+	SELECT_ITEM_5,
+	SELECT_ITEM_6,
+	SELECT_ITEM_7,
+	SELECT_ITEM_8,
 	THROW_SELECTED,
 	HOOK,
 	PAUSE,

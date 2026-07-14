@@ -15,6 +15,25 @@ func test_configure_before_entering_tree_builds_visuals_without_nil_polygon_acce
 	GameplayAssertionsScript.assert_projectile_visual_configured(self, projectile, 8)
 
 
+func test_projectile_can_render_an_optional_world_sprite() -> void:
+	var projectile := ItemProjectile.new()
+	projectile.configure({"visual_texture": load("res://assets/objects/flare.svg") as Texture2D})
+	add_child_autofree(projectile)
+	await wait_process_frames(1)
+
+	assert_not_null(projectile.sprite)
+	assert_not_null(projectile.sprite.texture)
+	assert_gt(projectile.sprite.scale.x, 0.0)
+
+
+func test_water_bottle_action_uses_its_icon_as_a_projectile_sprite() -> void:
+	var definition := load("res://config/items/water_bottle.tres") as ItemDefinition
+	var action := definition.action_factory.create_action(definition) as FluidBottleItemAction
+	var projectile_data := action.create_projectile(Vector2.ZERO, Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO)
+
+	assert_eq(projectile_data.get("visual_texture"), definition.icon)
+
+
 func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))

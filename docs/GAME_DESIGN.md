@@ -35,7 +35,7 @@ Keyboard and mouse remain fully supported on desktop.
 | Left mouse | Throw the selected item toward the cursor |
 | Right mouse hold | Launch and hold the grappling hook |
 | Right mouse release | Detach the hook |
-| `1`, `2`, `3` | Select small bomb, large bomb, or flag |
+| `1`–`7` | Select the matching inventory slot; collected dynamic items occupy keys 4–7 in acquisition order |
 | `Escape` | Pause or leave the current modal |
 
 ### Phone Controls
@@ -175,8 +175,20 @@ in three. Death never records current depth.
 
 ## Items
 
-Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Item tuning lives
+Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Pickaxes, shovels,
+flares, and Water Bottles start at zero and are found in chests. Item tuning lives
 under `config/items/`.
+
+- Pickaxe: changes an aimed triangular three-hex wedge of Stone to Dirt or Dirt to
+  Sand. Its charge follows target fill, capped at three per use; a final partial
+  charge still completes a valid use.
+- Shovel: clears an aimed triangular three-hex wedge of Sand with the same charge rules.
+- Flare: is thrown farther than a small bomb, bounces as a visible rotating rod,
+  lights the cave for ten seconds, and breaks on lava. The newest active flare uses
+  the second high-frequency light slot alongside the player.
+- Water Bottle: uses the small bomb's ballistic throw, then breaks on a solid impact
+  to fill the nearest three Air hexes with Water; it breaks without depositing when
+  it hits lava.
 
 ### Item Chests
 
@@ -197,9 +209,8 @@ under `config/items/`.
   exploration threshold.
 - Touching a chest pauses player, projectile, hazard, and terrain activity until a
   reward is chosen. The picker cannot be dismissed without choosing.
-- Chests currently offer 5 small bombs or 2 large bombs. Both choices appear because
-  the initial table contains two weighted options; future tables may select two or
-  three unique choices from larger pools.
+- Chests offer two unique rewards drawn from 5 small bombs, 2 large bombs, 100
+  shovel charge, 20 pickaxe charge, 10 flares, and 3 Water Bottles.
 - Claiming a choice adds its quantity without changing the selected inventory item,
   then removes that chest for the rest of the run.
 - A bomb's lethal core arms a chest for a 0.30-second delayed detonation. An armed
@@ -219,6 +230,12 @@ under `config/items/`.
 - Explosions apply a distance-falloff impulse across their blast radius to airborne
   projectile bodies, including bombs and the flag.
 - The player dies when inside the lethal radius.
+
+### Excavator
+
+- The Excavator lands as a tall industrial walking drill with an exposed front auger, articulated legs, and an orange mining rig body. It then clears a three-wide shaft every half-second for twenty seconds.
+- It uses the same terrain-aware rigidbody behavior as thrown items: it falls onto support and receives blast-pulse impulses.
+- A lethal-core blast arms its short chain fuse and detonates its configured explosive effect.
 
 ### Flag
 

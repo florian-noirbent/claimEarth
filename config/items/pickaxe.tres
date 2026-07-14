@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/items/item_definition.gd" id="1_definition"]
+[ext_resource type="Resource" path="res://config/items/factory/pickaxe_factory.tres" id="2_factory"]
+[ext_resource type="Texture2D" path="res://assets/objects/pickaxe.svg" id="3_icon"]
+
+[resource]
+script = ExtResource("1_definition")
+stable_id = 4
+display_name = "Pickaxe"
+description = "Breaks one aimed Stone into Dirt, or Dirt into Sand."
+icon = ExtResource("3_icon")
+count_display = 1
+action_factory = ExtResource("2_factory")

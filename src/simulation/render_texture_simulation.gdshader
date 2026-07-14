@@ -6,9 +6,12 @@ uniform sampler2D rule_texture : filter_nearest, repeat_disable;
 uniform sampler2D standard_light_sources : filter_nearest, repeat_disable;
 uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
-uniform ivec2 high_frequency_light_offset = ivec2(-1, -1);
-uniform int high_frequency_light_level = 0;
-uniform int high_frequency_light_update_radius = 0;
+uniform ivec2 player_light_offset = ivec2(-1, -1);
+uniform int player_light_level = 0;
+uniform int player_light_update_radius = 0;
+uniform ivec2 flare_light_offset = ivec2(-1, -1);
+uniform int flare_light_level = 0;
+uniform int flare_light_update_radius = 0;
 
 #include "../shader/hex_grid.gdshaderinc"
 
@@ -191,8 +194,10 @@ bool in_bounds(ivec2 coord) {
 }
 
 bool updates_high_frequency_light(ivec2 coord) {
-	return high_frequency_light_offset.x >= 0 && high_frequency_light_offset.y >= 0
-		&& hex_distance(coord, high_frequency_light_offset) <= high_frequency_light_update_radius;
+	return (player_light_offset.x >= 0 && player_light_offset.y >= 0
+		&& hex_distance(coord, player_light_offset) <= player_light_update_radius)
+		|| (flare_light_offset.x >= 0 && flare_light_offset.y >= 0
+		&& hex_distance(coord, flare_light_offset) <= flare_light_update_radius);
 }
 
 int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
@@ -204,9 +209,8 @@ int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
 		emitted_light(cell_id) * fill_amount(terrain_result) / 255,
 		standard_light(coord)
 	);
-	if (coord == high_frequency_light_offset) {
-		source_light = max(source_light, high_frequency_light_level);
-	}
+	if (coord == player_light_offset) source_light = max(source_light, player_light_level);
+	if (coord == flare_light_offset) source_light = max(source_light, flare_light_level);
 	int persistent_light = byte_from_float(current.b) >= 130 ? byte_from_float(current.b) : 0;
 	int propagated_light = 0;
 	for (int direction = 0; direction < 6; direction++) {

@@ -37,10 +37,10 @@ func select_index(index: int) -> void:
 	_selected_index = clampi(index, 0, _ordered_definitions.size() - 1)
 
 
-func count_for(definition: ItemDefinition) -> int:
+func count_for(definition: ItemDefinition) -> float:
 	if definition == null:
-		return 0
-	return int(_counts.get(definition.stable_id, 0))
+		return 0.0
+	return float(_counts.get(definition.stable_id, 0.0))
 
 
 func can_consume(definition: ItemDefinition) -> bool:
@@ -48,18 +48,26 @@ func can_consume(definition: ItemDefinition) -> bool:
 
 
 func consume(definition: ItemDefinition) -> bool:
-	if not can_consume(definition):
-		return false
-	_counts[definition.stable_id] = count_for(definition) - 1
-	return true
+	return consume_amount(definition, 1.0) >= 1.0
 
 
-func restore(definition: ItemDefinition, amount: int = 1) -> void:
+func consume_amount(definition: ItemDefinition, amount: float, allow_partial: bool = false) -> float:
+	if definition == null or amount <= 0.0:
+		return 0.0
+	var available := count_for(definition)
+	if available <= 0.0 or (not allow_partial and available < amount):
+		return 0.0
+	var consumed := minf(available, amount) if allow_partial else amount
+	_counts[definition.stable_id] = maxf(0.0, available - consumed)
+	return consumed
+
+
+func restore(definition: ItemDefinition, amount: float = 1.0) -> void:
 	add(definition, amount)
 
 
-func add(definition: ItemDefinition, amount: int) -> bool:
-	if definition == null or amount <= 0 or not _counts.has(definition.stable_id):
+func add(definition: ItemDefinition, amount: float) -> bool:
+	if definition == null or amount <= 0.0 or not _counts.has(definition.stable_id):
 		return false
 	_counts[definition.stable_id] = count_for(definition) + amount
 	return true

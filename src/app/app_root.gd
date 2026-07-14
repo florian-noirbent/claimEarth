@@ -49,6 +49,7 @@ var _configured_settings_path := ""
 var _injected_leaderboard_service: LeaderboardService
 var _input_controller: GameplayInputController
 var _settings_controller: AppSettingsController
+var _developer_tools: DeveloperToolsController
 
 
 func _notification(what: int) -> void:
@@ -62,6 +63,10 @@ func _ready() -> void:
 	add_child(_input_controller)
 	_settings_controller = AppSettingsController.new()
 	add_child(_settings_controller)
+	if OS.is_debug_build():
+		_developer_tools = DeveloperToolsController.new()
+		add_child(_developer_tools)
+		_developer_tools.configure(self)
 	if not _configured_settings_path.is_empty():
 		_settings_controller.configure(_configured_settings_path)
 	else:
@@ -102,6 +107,7 @@ func _connect_persistent_signals() -> void:
 	_input_controller.throw_requested.connect(_on_throw_requested)
 	_input_controller.item_cycle_requested.connect(_on_item_cycle_requested)
 	_input_controller.item_selected_requested.connect(_on_item_selected)
+	_input_controller.item_shortcut_requested.connect(_on_item_shortcut_requested)
 	_input_controller.pause_requested.connect(_toggle_pause)
 	_settings_controller.phone_controls_changed.connect(_apply_phone_controls_enabled)
 	_settings_controller.frame_limit_changed.connect(_apply_frame_limit)
@@ -243,6 +249,12 @@ func _on_item_selected(index: int) -> void:
 	if _run_coordinator.current_state != RunPhase.PLAYING or item_controller == null:
 		return
 	item_controller.select_index(index)
+
+
+func _on_item_shortcut_requested(shortcut: int) -> void:
+	if _run_coordinator.current_state != RunPhase.PLAYING or item_controller == null:
+		return
+	item_controller.select_dynamic_shortcut(shortcut)
 
 
 func _on_item_cycle_requested(direction: int) -> void:

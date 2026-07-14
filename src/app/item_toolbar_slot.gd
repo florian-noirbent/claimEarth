@@ -11,10 +11,10 @@ extends Button
 @onready var count_label: Label = %CountLabel
 
 
-func configure(icon: Texture2D, shortcut: String, count: int, selected: bool) -> void:
+func configure(icon: Texture2D, shortcut: String, count_text: String, selected: bool) -> void:
 	icon_rect.texture = icon
 	key_label.text = shortcut
-	count_label.text = "x%d" % count
+	count_label.text = "x%s" % count_text
 	var style := selected_style if selected else normal_style
 	add_theme_stylebox_override("normal", style)
 	add_theme_stylebox_override("hover", style)

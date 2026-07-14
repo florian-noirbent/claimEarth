@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ExcavatorItemActionFactory" load_steps=4 format=3]
+[ext_resource type="Script" path="res://src/items/excavator_item_action_factory.gd" id="1"]
+[ext_resource type="Resource" path="res://config/items/explosions/small_bomb_explosion.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/objects/excavator.svg" id="3"]
+[resource]
+script = ExtResource("1")
+explosion_definition = ExtResource("2")
+visual_texture = ExtResource("3")
+duration_seconds = 20.0
+tick_seconds = 0.5
