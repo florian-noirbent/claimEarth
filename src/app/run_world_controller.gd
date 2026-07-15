@@ -202,6 +202,7 @@ func _configure_world_bounds() -> void:
 	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
 	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
+	_player.camera.configure_upward_recovery_margin(_world_presenter.hex_radius)
 	_player.configure_horizontal_bounds(left_edge, right_edge)
 	_side_boundaries.configure(left_edge, right_edge, top_edge, bottom_edge)
 	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
