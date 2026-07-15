@@ -2,25 +2,116 @@
 
 [ext_resource type="Script" uid="uid://dx7a7pt13ex5h" path="res://src/app/app_root.gd" id="1_main"]
 [ext_resource type="PackedScene" uid="uid://bjcil7ntf6ppu" path="res://scenes/app/run_session.tscn" id="2_run_session"]
+[ext_resource type="Script" uid="uid://bs8t7i74mdjuw" path="res://src/generation/base_noise_pass.gd" id="3_hgfhf"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
-[ext_resource type="Resource" uid="uid://k51yn6p208lp" path="res://config/generation/default_profile.tres" id="4_generation_profile"]
+[ext_resource type="Script" uid="uid://hw8ljernfq4o" path="res://src/generation/pocket_noise_pass.gd" id="4_eemob"]
+[ext_resource type="Script" uid="uid://c6xc08gl400h1" path="res://src/generation/spawn_shaft_pass.gd" id="5_3ipti"]
 [ext_resource type="Script" uid="uid://dbmagduv515l6" path="res://src/audio/audio_director.gd" id="5_audio"]
 [ext_resource type="Resource" path="res://config/leaderboard/simpleboards.tres" id="6_leaderboard_config"]
+[ext_resource type="Resource" uid="uid://bxwt8166bt34x" path="res://config/items/item_chest.tres" id="6_ox7et"]
+[ext_resource type="Script" uid="uid://dem5l8k4hfuqc" path="res://src/generation/generated_item_pass.gd" id="7_samyh"]
 [ext_resource type="PackedScene" path="res://scenes/ui/item_toolbar_slot.tscn" id="7_toolbar_slot"]
+[ext_resource type="Resource" path="res://config/terrain/lava.tres" id="8_1ihem"]
 [ext_resource type="Script" uid="uid://bhqvdn4txrc3r" path="res://src/app/app_ui_controller.gd" id="8_ui"]
 [ext_resource type="Script" uid="uid://cbg6nyfogmet2" path="res://src/app/score_controller.gd" id="9_score"]
+[ext_resource type="Script" uid="uid://cl6lpqt7i7yhr" path="res://src/generation/fill_pass.gd" id="9_yx3q6"]
+[ext_resource type="Script" uid="uid://edr3c3akxvxq" path="res://src/generation/generation_profile.gd" id="10_fsmek"]
 [ext_resource type="Texture2D" uid="uid://js0tt46vpvac" path="res://assets/ui/menu_background.jpg" id="14_menu_bg"]
 [ext_resource type="Texture2D" uid="uid://dpyhgwr3fnmsu" path="res://assets/ui/title.png" id="15_title"]
 [ext_resource type="Texture2D" uid="uid://gjybiodddakq" path="res://assets/objects/small_bomb.svg" id="16_small_bomb"]
 [ext_resource type="Texture2D" uid="uid://bgidyprkyaao2" path="res://assets/objects/flag.svg" id="17_flag"]
 [ext_resource type="Texture2D" uid="uid://d1m8v0y3f0n7q" path="res://assets/ui/help_icon.svg" id="18_help"]
 [ext_resource type="Texture2D" uid="uid://deiswgycc57at" path="res://assets/ui/pause_icon.svg" id="19_pause"]
-[ext_resource type="Texture2D" path="res://assets/ui/settings_cog.svg" id="23_settings_cog"]
 [ext_resource type="Texture2D" uid="uid://d38vd08dpjt1y" path="res://assets/ui/play_icon.svg" id="20_play"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hazard_meter_stack.tscn" id="21_hazard_meter_stack"]
-[ext_resource type="Script" path="res://src/ui/virtual_touch_pad.gd" id="22_touch_pad"]
-[ext_resource type="Texture2D" path="res://assets/ui/fullscreen_icon.svg" id="24_fullscreen"]
+[ext_resource type="Script" uid="uid://qptwkvck13nw" path="res://src/ui/virtual_touch_pad.gd" id="22_touch_pad"]
+[ext_resource type="Texture2D" uid="uid://cx53e00kyitsi" path="res://assets/ui/settings_cog.svg" id="23_settings_cog"]
+[ext_resource type="Texture2D" uid="uid://b38nxlyvx83sd" path="res://assets/ui/fullscreen_icon.svg" id="24_fullscreen"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reward_picker_card.tscn" id="25_reward_card"]
+
+[sub_resource type="Resource" id="Resource_7rhj7"]
+script = ExtResource("3_hgfhf")
+octaves = 5
+frequency_x = 0.01
+frequency_y = 0.045
+gain = 0.54
+cave_threshold = 0.12
+dirt_threshold = 0.355
+label = "Base Terrain"
+pass_seed_key = "base_terrain_0"
+allowed_target_ids = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_26qyd"]
+script = ExtResource("4_eemob")
+octaves = 4
+frequency_x = 0.026
+frequency_y = 0.021
+placement_threshold = 0.62
+label = "Sand Hazard"
+pass_seed_key = "sand_hazard_1"
+allowed_target_ids = PackedInt32Array(2)
+
+[sub_resource type="Resource" id="Resource_fr6de"]
+script = ExtResource("4_eemob")
+octaves = 4
+frequency_x = 0.026
+frequency_y = 0.021
+hazard_type = 1
+placement_threshold = 0.58
+label = "Water Hazard"
+pass_seed_key = "water_hazard_2"
+min_depth_ratio = 0.02
+allowed_target_ids = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="Resource_22l3w"]
+script = ExtResource("4_eemob")
+frequency_x = 0.097
+frequency_y = 0.029
+hazard_type = 2
+placement_threshold = 0.522
+label = "Lava Hazard"
+pass_seed_key = "lava_hazard_3"
+min_depth_ratio = 0.06
+allowed_target_ids = PackedInt32Array(1)
+
+[sub_resource type="Resource" id="Resource_6usxm"]
+script = ExtResource("5_3ipti")
+shaft_target_depth = 256
+shaft_width = 6.0
+shaft_steepness = 0.7
+zigzag_min_rows = 6
+zigzag_max_rows = 55
+centerline_jitter = 4.5
+edge_frequency = 0.242
+segment_erase_threshold = 0.34
+segment_frequency = 0.089
+protected_surface_rows = 16
+safe_edge_margin = 7
+label = "Spawn Shaft"
+pass_seed_key = "spawn_shaft_4"
+allowed_target_ids = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_7afvr"]
+script = ExtResource("7_samyh")
+item_definition = ExtResource("6_ox7et")
+label = "Item Chests"
+pass_seed_key = "item_chests_5"
+min_depth_ratio = 0.05
+max_depth_ratio = 0.9
+allowed_target_ids = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_yasd3"]
+script = ExtResource("9_yx3q6")
+fill_terrain = ExtResource("8_1ihem")
+label = "Bottom Lava Fill"
+pass_seed_key = "bottom_lava_fill_6"
+min_depth_ratio = 0.94
+top_blend_distance_ratio = 0.01
+allowed_target_ids = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_gieq0"]
+script = ExtResource("10_fsmek")
+passes = [SubResource("Resource_7rhj7"), SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3")]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
 content_margin_left = 18.0
@@ -134,7 +225,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_main")
 run_session_scene = ExtResource("2_run_session")
-generation_profile = ExtResource("4_generation_profile")
+generation_profile = SubResource("Resource_gieq0")
 player_scene = ExtResource("3_player")
 leaderboard_config = ExtResource("6_leaderboard_config")
 
@@ -286,7 +377,7 @@ text = "Help"
 icon = ExtResource("18_help")
 expand_icon = true
 
-[node name="SettingsButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
+[node name="SettingsButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=854193368]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 58)
 layout_mode = 2
@@ -354,15 +445,14 @@ Right mouse hold/release — grapple/detach
 1/2/3 — select item    Esc — pause or back
 
 Phone: left stick moves, right stick aims/throws, outer ring grapples."
-vertical_alignment = 0
 autowrap_mode = 2
 
 [node name="HelpBackButton" type="Button" parent="UiLayer/Center/Content/HelpPanel/HelpMargin/HelpContent" unique_id=505513980]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 58)
 layout_mode = 2
-focus_mode = 0
 size_flags_horizontal = 4
+focus_mode = 0
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
 theme_override_font_sizes/font_size = 24
@@ -373,35 +463,35 @@ text = "Back"
 icon = ExtResource("17_flag")
 expand_icon = true
 
-[node name="SettingsPanel" type="PanelContainer" parent="UiLayer/Center/Content"]
+[node name="SettingsPanel" type="PanelContainer" parent="UiLayer/Center/Content" unique_id=1134511184]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
-[node name="SettingsMargin" type="MarginContainer" parent="UiLayer/Center/Content/SettingsPanel"]
+[node name="SettingsMargin" type="MarginContainer" parent="UiLayer/Center/Content/SettingsPanel" unique_id=119139647]
 layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 18
 
-[node name="SettingsContent" type="VBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin"]
+[node name="SettingsContent" type="VBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin" unique_id=284752441]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="SettingsTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="SettingsTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=2085467377]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="PhoneControlsRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="PhoneControlsRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=916283887]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="PhoneControlsLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow"]
+[node name="PhoneControlsLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow" unique_id=1021563740]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
@@ -409,42 +499,39 @@ theme_override_font_sizes/font_size = 20
 text = "Phone Controls"
 vertical_alignment = 1
 
-[node name="PhoneControlsToggle" type="CheckButton" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow"]
+[node name="PhoneControlsToggle" type="CheckButton" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/PhoneControlsRow" unique_id=995183923]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 50)
 layout_mode = 2
 
-[node name="SettingsHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="SettingsHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=1875471820]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 theme_override_font_sizes/font_size = 15
 text = "Show virtual sticks while playing."
-horizontal_alignment = 0
 autowrap_mode = 2
 
-[node name="FrameLimitTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="FrameLimitTitle" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=261669143]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
 theme_override_font_sizes/font_size = 20
 text = "Frame Limit"
 
-[node name="FrameLimitRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="FrameLimitRow" type="HBoxContainer" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=987762385]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="FrameLimitSlider" type="HSlider" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow"]
+[node name="FrameLimitSlider" type="HSlider" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow" unique_id=225876882]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 42)
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
 max_value = 4.0
-step = 1.0
 value = 4.0
 tick_count = 5
 ticks_on_borders = true
 
-[node name="FrameLimitValueLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow"]
+[node name="FrameLimitValueLabel" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent/FrameLimitRow" unique_id=2007400224]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 42)
 layout_mode = 2
@@ -454,20 +541,19 @@ text = "Unlimited"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="FrameLimitHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="FrameLimitHint" type="Label" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=1042565471]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.83, 1)
 theme_override_font_sizes/font_size = 15
 text = "Lower limits reduce heat and battery use."
-horizontal_alignment = 0
 autowrap_mode = 2
 
-[node name="SettingsBackButton" type="Button" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent"]
+[node name="SettingsBackButton" type="Button" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=1227367705]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 58)
 layout_mode = 2
-focus_mode = 0
 size_flags_horizontal = 4
+focus_mode = 0
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
 theme_override_font_sizes/font_size = 24
@@ -534,6 +620,7 @@ expand_icon = true
 [node name="OverlayRoot" type="Control" parent="UiLayer" unique_id=202866097]
 unique_name_in_owner = true
 visible = false
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -562,19 +649,6 @@ offset_bottom = 64.0
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="HazardMeterStack" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2071889634 instance=ExtResource("21_hazard_meter_stack")]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 10
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -143.0
-offset_top = 6.0
-offset_right = 143.0
-offset_bottom = 6.0
-grow_horizontal = 2
-mouse_filter = 2
-
 [node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=163240117]
 unique_name_in_owner = true
 layout_mode = 2
@@ -588,11 +662,23 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
 text = "Free"
 
-[node name="FpsLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel"]
+[node name="FpsLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/PlayingPanel" unique_id=654315536]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
 text = "FPS: 0"
+
+[node name="HazardMeterStack" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2071889634 instance=ExtResource("21_hazard_meter_stack")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -143.0
+offset_top = 6.0
+offset_right = 143.0
+offset_bottom = 6.0
+grow_horizontal = 2
 
 [node name="ItemToolbar" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2011239212]
 unique_name_in_owner = true
@@ -625,30 +711,28 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="LeftTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="LeftTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=83026926]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(244, 244)
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 0.0
+anchors_preset = 2
 anchor_top = 1.0
-anchor_right = 0.0
 anchor_bottom = 1.0
 offset_left = 8.0
 offset_top = -252.0
 offset_right = 252.0
 offset_bottom = -8.0
+grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("22_touch_pad")
-kind = 0
 
-[node name="RightTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent"]
+[node name="RightTouchPad" type="Control" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=1994362732]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(244, 244)
 layout_mode = 1
-anchors_preset = 9
+anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -842,7 +926,7 @@ text = "Resume"
 icon = ExtResource("20_play")
 expand_icon = true
 
-[node name="PauseHelpButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseHelpButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=651004613]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
@@ -857,7 +941,7 @@ text = "Help"
 icon = ExtResource("18_help")
 expand_icon = true
 
-[node name="PauseSettingsButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent"]
+[node name="PauseSettingsButton" type="Button" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel/PauseContent" unique_id=1458253116]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 58)
 layout_mode = 2
@@ -902,7 +986,7 @@ text = "Exit to Menu"
 icon = ExtResource("17_flag")
 expand_icon = true
 
-[node name="RewardPickerLayer" type="Control" parent="UiLayer/OverlayRoot"]
+[node name="RewardPickerLayer" type="Control" parent="UiLayer/OverlayRoot" unique_id=7620540]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -911,19 +995,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 
-[node name="Backdrop" type="ColorRect" parent="UiLayer/OverlayRoot/RewardPickerLayer"]
+[node name="Backdrop" type="ColorRect" parent="UiLayer/OverlayRoot/RewardPickerLayer" unique_id=976499879]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.015, 0.012, 0.02, 0.78)
 
-[node name="Center" type="CenterContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer"]
+[node name="Center" type="CenterContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer" unique_id=756438191]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -932,24 +1014,24 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center"]
+[node name="Panel" type="PanelContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center" unique_id=1706945335]
 custom_minimum_size = Vector2(900, 470)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
-[node name="Margin" type="MarginContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel"]
+[node name="Margin" type="MarginContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel" unique_id=1115212024]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 22
 
-[node name="Content" type="VBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin"]
+[node name="Content" type="VBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin" unique_id=982383566]
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="RewardPickerTitle" type="Label" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content"]
+[node name="RewardPickerTitle" type="Label" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content" unique_id=2108676029]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
@@ -957,14 +1039,14 @@ theme_override_font_sizes/font_size = 32
 text = "Choose an item"
 horizontal_alignment = 1
 
-[node name="RewardPickerCards" type="HBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content"]
+[node name="RewardPickerCards" type="HBoxContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer/Center/Panel/Margin/Content" unique_id=1263732729]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 22
 alignment = 1
 
-[node name="TopRightControls" type="HBoxContainer" parent="UiLayer"]
+[node name="TopRightControls" type="HBoxContainer" parent="UiLayer" unique_id=527232074]
 unique_name_in_owner = true
 anchors_preset = 1
 anchor_left = 1.0
@@ -992,7 +1074,7 @@ theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 icon = ExtResource("19_pause")
 expand_icon = true
 
-[node name="FullscreenButton" type="Button" parent="UiLayer/TopRightControls"]
+[node name="FullscreenButton" type="Button" parent="UiLayer/TopRightControls" unique_id=592987678]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(54, 54)
@@ -1010,6 +1092,6 @@ expand_icon = true
 unique_name_in_owner = true
 one_shot = true
 
-[node name="FpsTimer" type="Timer" parent="UiLayer"]
+[node name="FpsTimer" type="Timer" parent="UiLayer" unique_id=567849721]
 unique_name_in_owner = true
 wait_time = 0.5

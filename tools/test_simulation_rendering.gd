@@ -16,6 +16,8 @@ func _run() -> void:
 	if not registry.try_configure(load("res://config/terrain/catalog.tres") as TerrainCatalog):
 		_fail("Could not configure the terrain registry.")
 		return
+	if not await _verify_bottom_edge_is_solid(registry):
+		return
 	if not await _verify_even_phase_sand_trail(registry):
 		return
 	if not await _verify_partial_brightness_preserves_stream_mask(registry):
@@ -106,6 +108,46 @@ func _run() -> void:
 			return
 	print("SIMULATION_RENDERING_TEST_PASSED")
 	quit()
+
+
+func _verify_bottom_edge_is_solid(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var lava := _terrain_id(registry, "Lava")
+	var world := WorldGrid.new(WorldDimensions.new(7, 5), air)
+	var bottom_row := world.dimensions.depth - 1
+	var source_col := 4
+	world.set_committed_by_offset(source_col, bottom_row, lava, 255)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var total_lava_fill := 0
+	var lava_above_floor := false
+	for row in range(world.dimensions.depth):
+		for col in range(world.dimensions.width):
+			if world.get_committed_by_offset(col, row) != lava:
+				continue
+			var fill := world.get_committed_fill_by_offset(col, row)
+			total_lava_fill += fill
+			lava_above_floor = lava_above_floor || (row < bottom_row && fill > 0)
+	var source_fill := world.get_committed_fill_by_offset(source_col, bottom_row)
+	var neighboring_fill := (
+		world.get_committed_fill_by_offset(source_col - 1, bottom_row)
+		+ world.get_committed_fill_by_offset(source_col + 1, bottom_row)
+	)
+	backend.shutdown()
+	await process_frame
+	if not _expect(total_lava_fill == 255, "The solid bottom edge must conserve all lava fill."):
+		return false
+	if not _expect(not lava_above_floor, "Lava resting on the bottom edge must not be displaced upward."):
+		return false
+	return _expect(
+		source_fill < 255 && neighboring_fill > 0,
+		"Bottom-edge lava must spread along in-bounds floor cells instead of leaking below the map."
+	)
 
 
 func _verify_even_phase_sand_trail(registry: TerrainRegistry) -> bool:

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="TerrainToolItemActionFactory" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="TerrainToolItemActionFactory" format=3 uid="uid://dt5q6b775w48a"]
 
-[ext_resource type="Script" path="res://src/items/terrain_tool_item_action_factory.gd" id="1_factory"]
-[ext_resource type="Script" path="res://src/items/terrain_transform_rule.gd" id="2_rule"]
+[ext_resource type="Script" uid="uid://db1qm2vludpv1" path="res://src/items/terrain_tool_item_action_factory.gd" id="1_factory"]
+[ext_resource type="Script" uid="uid://dv2ju2g5mmrvl" path="res://src/items/terrain_transform_rule.gd" id="2_rule"]
 [ext_resource type="Resource" path="res://config/terrain/sand.tres" id="3_sand"]
 [ext_resource type="Resource" path="res://config/terrain/air.tres" id="4_air"]
 

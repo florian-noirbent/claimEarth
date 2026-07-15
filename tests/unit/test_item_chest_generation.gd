@@ -36,7 +36,7 @@ func test_default_generation_places_deterministic_stratified_chests_and_carves_c
 	assert_eq(_spawn_signature(result.item_chest_spawns), _spawn_signature(repeat.item_chest_spawns))
 
 	var air_id := FixtureLoader.terrain_id("Air")
-	var stone_id := FixtureLoader.terrain_id("Stone")
+	var lava_id := FixtureLoader.terrain_id("Lava")
 	for spawn in result.item_chest_spawns:
 		var depth_ratio := float(spawn.anchor_offset.y) / float(profile.depth - 1)
 		assert_true(depth_ratio >= 0.05 and depth_ratio <= 0.9)
@@ -51,7 +51,7 @@ func test_default_generation_places_deterministic_stratified_chests_and_carves_c
 
 	for row in range(profile.depth - 2, profile.depth):
 		for col in range(profile.width):
-			assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
+			assert_eq(result.world.get_committed_by_offset(col, row), lava_id)
 
 
 func test_area_grid_counts_columns_offsets_and_clipped_partial_areas() -> void:

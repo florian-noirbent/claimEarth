@@ -21,6 +21,12 @@ func test_configured_chest_definition_is_valid_and_draws_unique_deterministic_ch
 	assert_eq(chest_explosion.blast_radius, small_explosion.blast_radius)
 	assert_eq(chest_explosion.lethal_radius, small_explosion.lethal_radius)
 	assert_almost_eq(chest_explosion.chain_fuse_seconds, 0.3, 0.001)
+	var excavator_options := definition.options.filter(
+		func(option: ItemChestOption) -> bool: return option.item.stable_id == 8
+	)
+	assert_eq(excavator_options.size(), 1, "Excavator must be registered exactly once in chest rewards")
+	assert_eq(excavator_options[0].quantity, 1)
+	assert_gt(excavator_options[0].selection_weight, 0.0)
 
 	var first := definition.draw_choices(12345)
 	var repeat := definition.draw_choices(12345)
@@ -28,15 +34,22 @@ func test_configured_chest_definition_is_valid_and_draws_unique_deterministic_ch
 	assert_eq(repeat.size(), 2)
 	assert_eq(first[0].item.stable_id, repeat[0].item.stable_id)
 	assert_eq(first[1].item.stable_id, repeat[1].item.stable_id)
+	assert_eq(first[0].quantity, repeat[0].quantity)
+	assert_eq(first[1].quantity, repeat[1].quantity)
 	assert_ne(first[0].item.stable_id, first[1].item.stable_id)
-	assert_eq(first[0].quantity + first[1].quantity, 7)
 
 
 func test_zero_weight_options_are_skipped_and_duplicate_items_fail_validation() -> void:
 	var definition := _definition().duplicate(true) as ItemChestDefinition
+	var skipped_stable_id := definition.options[0].item.stable_id
 	definition.options[0].selection_weight = 0.0
-	assert_false(definition.validate().is_empty())
-	assert_eq(definition.draw_choices(7).size(), 1)
+	assert_true(definition.validate().is_empty())
+	for seed_value in range(32):
+		var choices := definition.draw_choices(seed_value)
+		assert_eq(choices.size(), 2)
+		assert_false(choices.any(
+			func(option: ItemChestOption) -> bool: return option.item.stable_id == skipped_stable_id
+		))
 
 	definition = _definition().duplicate(true) as ItemChestDefinition
 	definition.options[1].item = definition.options[0].item

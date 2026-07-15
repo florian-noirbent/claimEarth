@@ -97,13 +97,16 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 ## World
 
 - The default map is 100 columns by 512 rows of flat-top hexes.
-- The final two rows are stone. Horizontal escape is prevented by invisible player
-  bounds rather than visible stone columns.
-- The camera is horizontally locked to the map and only follows downward.
+- The bottom 6% depth band is filled with lava. Its upper 1% softly blends into the
+  generated cave while the bottom edge remains completely filled. Horizontal escape
+  is prevented by invisible player bounds.
+- The camera is horizontally locked to the map and follows downward. If upward
+  movement carries the player above the screen, it slowly recovers upward until the
+  player has two hexagons of visible space above them.
 - Initial terrain is deterministic for a given seed.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
   layers base cave noise, typed hazard pocket instances for sand/water/lava, a
-  noisy surface spawn shaft, item chest chambers, and bottom sealing.
+  noisy surface spawn shaft, item chest chambers, and a bottom lava fill.
 - The player starts at surface depth 0 in a roughly six-cell-wide zig-zag shaft
   with noisy edges and occasional broken segments that winds down to the configured
   shaft target depth.
@@ -127,6 +130,8 @@ fixed 60 cellular-automata passes per real second, forming ten six-pass ticks pe
 second: vertical even, down-right even, down-left even, then the same three odd
 connection pairs. Each pair resolves
 from its two source cells so a cell is not written by multiple pairs in one pass.
+The out-of-bounds space below the final map row behaves as solid terrain, so fluids
+can settle and spread along the bottom edge without leaving the world.
 Block density, configured on terrain definitions, resolves fall and displacement
 priority rather than terrain IDs. Water/lava contact creates stone whenever both
 have nonzero fill. The renderer uses the completed even phase only to bridge proven
@@ -162,7 +167,9 @@ physics, projectiles, and input remain frame-responsive.
 - `A/D` adds tangential momentum while hooked without forcing same-direction
   overspeed back to walk or air speed caps; `W/S` adjusts rope length.
 - The camera remains horizontally fixed and zooms so the map width fills the
-  viewport. It never scrolls upward during a run.
+  viewport. It tracks descent immediately; upward recovery starts only after the
+  player leaves the top of the screen and moves slowly until two hexagons are visible
+  above the player.
 
 The player dies when a hazard meter fills, from a high-speed terrain impact, from a
 bomb's lethal radius, or by falling below the world. A full lava hex fills in 0.2
@@ -176,8 +183,8 @@ in three. Death never records current depth.
 ## Items
 
 Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Pickaxes, shovels,
-flares, and Water Bottles start at zero and are found in chests. Item tuning lives
-under `config/items/`.
+flares, Water Bottles, and Excavators start at zero and are found in chests. Item
+tuning lives under `config/items/`.
 
 - Pickaxe: changes an aimed triangular three-hex wedge of Stone to Dirt or Dirt to
   Sand. Its charge follows target fill, capped at three per use; a final partial
@@ -209,8 +216,8 @@ under `config/items/`.
   exploration threshold.
 - Touching a chest pauses player, projectile, hazard, and terrain activity until a
   reward is chosen. The picker cannot be dismissed without choosing.
-- Chests offer two unique rewards drawn from 5 small bombs, 2 large bombs, 100
-  shovel charge, 20 pickaxe charge, 10 flares, and 3 Water Bottles.
+- Chests offer two unique rewards drawn from 5 small bombs, 2 large bombs, 120
+  shovel charge, 50 pickaxe charge, 10 flares, 3 Water Bottles, and 1 Excavator.
 - Claiming a choice adds its quantity without changing the selected inventory item,
   then removes that chest for the rest of the run.
 - A bomb's lethal core arms a chest for a 0.30-second delayed detonation. An armed

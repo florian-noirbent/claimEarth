@@ -50,17 +50,17 @@ func depth_blend_weight(pass_resource, row: int) -> float:
 	var ratio := depth_ratio_for_row(row)
 	if ratio < min_ratio or ratio > max_ratio:
 		return 0.0
-	var blend := maxf(0.0, pass_resource.blend_distance_ratio)
-	if blend <= 0.0:
-		return 1.0
 	var range_size := max_ratio - min_ratio
 	if range_size <= 0.0:
 		return 1.0 if is_equal_approx(ratio, min_ratio) else 0.0
-	var effective_blend := minf(blend, range_size * 0.5)
-	if effective_blend <= 0.0:
-		return 1.0
-	var start_weight := clampf((ratio - min_ratio) / effective_blend, 0.0, 1.0)
-	var end_weight := clampf((max_ratio - ratio) / effective_blend, 0.0, 1.0)
+	var top_blend := minf(maxf(0.0, pass_resource.top_blend_distance_ratio), range_size)
+	var bottom_blend := minf(maxf(0.0, pass_resource.bottom_blend_distance_ratio), range_size)
+	var start_weight := 1.0
+	if top_blend > 0.0:
+		start_weight = clampf((ratio - min_ratio) / top_blend, 0.0, 1.0)
+	var end_weight := 1.0
+	if bottom_blend > 0.0:
+		end_weight = clampf((max_ratio - ratio) / bottom_blend, 0.0, 1.0)
 	return minf(start_weight, end_weight)
 
 

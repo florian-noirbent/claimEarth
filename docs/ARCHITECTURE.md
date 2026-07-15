@@ -209,7 +209,10 @@ cannot overwrite a displayed trail.
 draw verified vertical moving-terrain trails through final-air cells. Liquids keep
 their fluid appearance while falling sand uses its solid material. Presenter and
 simulation shaders share only canonical hex topology helpers; pair ownership and
-cellular-automata resolution remain simulation-specific. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
+cellular-automata resolution remain simulation-specific. The simulation supplies a
+virtual solid cell for pair neighbors below the map, preventing moving terrain from
+leaking through the bottom edge without requiring a generated solid row. Pairwise
+resolution preserves material/fill unless an explicit rule applies, such as
 liquid contact or gameplay mutation. A completed six-pass tick publishes only a
 revisioned snapshot commit; the backend does not copy or diff every cell on the CPU.
 Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
@@ -229,17 +232,21 @@ application on the main thread, and remain optional for the single-thread Web bu
 ## Generation
 
 `WorldGenerator` iterates the ordered `GenerationProfile.passes` stack. Each pass is
-a resource instance with its own enable state, parameters, depth-range blend, and
-target-replacement whitelist. The default profile ships base noise, three typed
-hazard pocket instances for sand/water/lava, a noisy surface spawn shaft, and boundary seal
-behaviors, but the stack may be reordered, duplicated, or selectively disabled
-without code changes.
+a resource instance with its own enable state, parameters, independent top/bottom
+depth-range blends, and target-replacement whitelist. The default profile ships base
+noise, three typed hazard pocket instances for sand/water/lava, a noisy surface spawn
+shaft, and a bottom lava fill, but the stack may be reordered, duplicated, or
+selectively disabled without code changes.
 
 `WorldGenerationTask` yields between dynamic progress labels derived from the active
 pass stack, then executes generation once for the requested seed. Generation
-invariants such as spawn air, bottom sealing, air ratio, and valid registered IDs
+invariants such as spawn air, the bottom lava fill, air ratio, and valid registered IDs
 are enforced by deterministic tests rather than a runtime validation pass. The
 active defaults live in `config/generation/default_profile.tres`.
+
+The generic Fill pass exposes its output terrain through the World Gen editor. It
+converts the normalized depth band to a half-open row range before writing cells, so
+a narrow band visits only its selected rows rather than scanning the complete map.
 
 Generation context/results also carry typed `GeneratedItemChestSpawn` records. The
 generic generated-item pass partitions its configured depth band into deterministic
@@ -261,7 +268,7 @@ generated chest visuals without interaction, but does not spawn the player,
 projectiles, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
-spawn air, the bottom two stone rows, and distribution tests. Horizontal player
+spawn air, the default bottom lava band, and distribution tests. Horizontal player
 bounds are invisible runtime constraints; generation does not create stone side
 walls.
 
