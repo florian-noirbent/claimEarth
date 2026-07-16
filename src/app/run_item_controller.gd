@@ -22,6 +22,8 @@ const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
 var _inventory: ItemInventory = ItemInventoryScript.new()
 var _trajectory_service: ItemTrajectoryService = ItemTrajectoryServiceScript.new()
 var _explosion_service: ExplosionService = ExplosionServiceScript.new()
+var _runtime_tuning: RunItemRuntimeTuning = RunItemRuntimeTuning.compile(null)
+var _rewards := RunItemRewards.new()
 var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
@@ -30,14 +32,10 @@ var _hex_radius := 8.0
 var _throw_lock_remaining := 0.0
 var _active_flag_projectile: ItemProjectile
 var _item_registry: ItemRegistry
-var _pending_chest: ItemChest
-var _pending_choices: Array[ItemChestOption] = []
-var _pending_perk_choices: Array[PerkDefinition] = []
 var _perk_controller: RunPerkController
 var _is_active := false
 var _explosives: Array[WorldExplosive2D] = []
 var _dynamic_item_order: Array[ItemDefinition] = []
-var _perk_modifiers: PerkModifierSnapshot
 var _terrain_pulses: Array[DirectionalTerrainPulse] = []
 var _successful_use_counts := {}
 var _world_left_edge := 0.0
@@ -47,17 +45,20 @@ var _world_right_edge := 0.0
 func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
 	_item_registry = item_registry
 	_inventory.configure(item_registry)
+	_rewards.configure(_item_registry, _perk_controller)
 	_hex_radius = hex_radius
 
 
 func configure_perk_controller(controller: RunPerkController) -> void:
 	_perk_controller = controller
+	_rewards.configure(_item_registry, _perk_controller)
 
 
 func set_perk_modifiers(modifiers: PerkModifierSnapshot) -> void:
-	_perk_modifiers = modifiers
+	_runtime_tuning = RunItemRuntimeTuning.compile(modifiers)
+	_rewards.set_tuning(_runtime_tuning)
 	_apply_container_perk_modifiers()
-	if _active_flag_projectile != null and _has_relentless_flag_survival():
+	if _active_flag_projectile != null and _runtime_tuning.flag_survives_hazards:
 		_active_flag_projectile.destroyed_by_lava = false
 
 
@@ -79,9 +80,7 @@ func configure_run(
 	_world_left_edge = HexMetrics.center_for_offset(0, 0, hex_radius).x - hex_radius
 	_world_right_edge = HexMetrics.center_for_offset(world.dimensions.width - 1, 0, hex_radius).x + hex_radius
 	_active_flag_projectile = null
-	_pending_chest = null
-	_pending_choices.clear()
-	_pending_perk_choices.clear()
+	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
 	_dynamic_item_order.clear()
@@ -100,9 +99,7 @@ func clear_run() -> void:
 	_world = null
 	_simulation_backend = null
 	_active_flag_projectile = null
-	_pending_chest = null
-	_pending_choices.clear()
-	_pending_perk_choices.clear()
+	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
 	for child in get_children():
@@ -116,7 +113,7 @@ func set_active(is_active: bool) -> void:
 		if child is WorldRigidBody2D:
 			child.set_physics_process(is_active)
 		elif child is ItemChest:
-			(child as ItemChest).set_active(is_active, _pending_chest == null)
+			(child as ItemChest).set_active(is_active, _rewards.pending_chest() == null)
 		elif child is ExcavatorRobot:
 			(child as ExcavatorRobot).set_active(is_active)
 	for explosive in _explosives:
@@ -125,30 +122,14 @@ func set_active(is_active: bool) -> void:
 
 
 func apply_pending_reward(choice_index: int) -> bool:
-	if _pending_chest == null:
+	var claimed_chest := _rewards.apply(choice_index, _inventory)
+	if claimed_chest == null:
 		return false
-	if not _pending_perk_choices.is_empty():
-		if choice_index < 0 or choice_index >= _pending_perk_choices.size() or _perk_controller == null:
-			return false
-		if not _perk_controller.select_perk(_pending_perk_choices[choice_index]):
-			return false
-	else:
-		if choice_index < 0 or choice_index >= _pending_choices.size():
-			return false
-		var option := _pending_choices[choice_index]
-		if option == null or option.item == null or _item_registry == null:
-			return false
-		var registered_item := _item_registry.get_definition(option.item.stable_id)
-		if registered_item == null or not _inventory.add(registered_item, option.quantity):
-			return false
-		if _is_dynamic_definition(registered_item) and not _dynamic_item_order.has(registered_item):
-			_dynamic_item_order.append(registered_item)
-	var claimed_chest := _pending_chest
+	var registered_item := _rewards.last_item_reward()
+	if registered_item != null and _is_dynamic_definition(registered_item) and not _dynamic_item_order.has(registered_item):
+		_dynamic_item_order.append(registered_item)
 	claimed_chest.set_light_emitting(false)
 	_forget_explosive(claimed_chest.explosive)
-	_pending_chest = null
-	_pending_choices.clear()
-	_pending_perk_choices.clear()
 	if is_instance_valid(claimed_chest):
 		claimed_chest.queue_free()
 	_set_chest_interactivity(_is_active)
@@ -156,9 +137,7 @@ func apply_pending_reward(choice_index: int) -> bool:
 
 
 func cancel_pending_reward() -> void:
-	_pending_chest = null
-	_pending_choices.clear()
-	_pending_perk_choices.clear()
+	_rewards.cancel()
 	_set_chest_interactivity(_is_active)
 
 
@@ -303,14 +282,14 @@ func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector
 
 
 func _has_relentless_flag_survival() -> bool:
-	return _perk_modifiers != null and bool(_perk_modifiers.flags.value("survive_lava_acid_and_drop_on_death", false))
+	return _runtime_tuning.flag_survives_hazards
 
 
 func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2, source_item: ItemDefinition = null) -> void:
 	if _world == null or definition == null or not definition.validate().is_empty():
 		return
 	var spec := ExplosionRuntimeSpec.from_definition(definition)
-	_apply_explosion_perk_modifiers(spec, source_item)
+	_runtime_tuning.apply_to_explosion(spec, source_item)
 	if _player != null and _player.global_position.distance_to(impact_position) <= spec.player_kill_radius * _hex_radius:
 		player_killed.emit(DeathCause.BOMB)
 	_apply_projectile_blast_impulses(spec, impact_position)
@@ -334,7 +313,7 @@ func _apply_projectile_blast_impulses(spec: ExplosionRuntimeSpec, impact_positio
 	for child in get_children():
 		if child is WorldRigidBody2D and not child.is_queued_for_deletion():
 			(child as WorldRigidBody2D).apply_blast_impulse(impact_position, spec.blast_impulse, world_radius)
-	if _player != null and _perk_modifiers != null and bool(_perk_modifiers.explosions.value("player_explosion_impulse_enabled", false)):
+	if _player != null and _runtime_tuning.player_explosion_impulse_enabled:
 		_player.apply_blast_impulse(impact_position, spec.blast_impulse, world_radius)
 
 
@@ -380,11 +359,11 @@ func resolve_terrain_tool_use(transformations: Array[TerrainTransformRule], aim_
 
 
 func _should_vaporize_tool_dirt(source: TerrainDefinition, target_id: int, target: Vector2i) -> bool:
-	if _perk_modifiers == null or source == null or not source.perk_tags.has("dirt"):
+	if source == null or not source.perk_tags.has("dirt"):
 		return false
 	if target_id == 0:
 		return false
-	var chance := clampf(float(_perk_modifiers.terrain.value("dirt_vaporize_chance", 0.0)), 0.0, 1.0)
+	var chance := _runtime_tuning.tool_dirt_vaporize_chance()
 	if chance <= 0.0:
 		return false
 	var seed := SeedUtils.derive_seed(_world.dimensions.width * 1000003 + _world.dimensions.depth, "tool-dirt:%d:%d" % [target.x, target.y])
@@ -420,8 +399,7 @@ func spawn_excavator(position: Vector2, factory: ExcavatorItemActionFactory) -> 
 	var robot := ExcavatorRobot.new()
 	add_child(robot)
 	robot.configure(self, factory, position, _world, _terrain_registry, _hex_radius)
-	if _perk_modifiers != null:
-		robot.tick_interval_multiplier = float(_perk_modifiers.items.value("excavator_tick_interval_multiplier", 1.0))
+	robot.tick_interval_multiplier = _runtime_tuning.excavator_tick_interval_multiplier
 	_register_explosive(robot.explosive)
 	robot.set_active(_is_active)
 
@@ -614,43 +592,21 @@ func _spawn_item_chests(chest_spawns: Array[GeneratedItemChestSpawn]) -> void:
 
 
 func _on_item_chest_touched(chest: ItemChest) -> void:
-	if not _is_active or _pending_chest != null or chest == null or chest.spawn_data == null:
+	if not _is_active or _rewards.pending_chest() != null or chest == null or chest.spawn_data == null:
 		return
-	var definition := chest.spawn_data.definition
-	if definition == null:
-		return
-	_pending_chest = chest
 	_set_chest_interactivity(false)
-	var view_choices: Array[RewardChoiceViewData] = []
-	var choice_count := _reward_choice_count(definition)
-	if definition.reward_kind == ItemChestDefinition.RewardKind.PERKS:
-		if _perk_controller == null:
+	match _rewards.begin(chest):
+		RunItemRewards.BeginResult.STARTED:
+			reward_choices_requested.emit(_rewards.request_title(), _rewards.request_choices())
+		RunItemRewards.BeginResult.INVALID:
 			_invalidate_pending_reward()
-			return
-		_pending_perk_choices = _perk_controller.draw_choices(chest.spawn_data.choice_seed, choice_count)
-		if _pending_perk_choices.is_empty():
+		RunItemRewards.BeginResult.EMPTY:
 			chest.set_interactive(false)
 			chest.set_light_emitting(false)
-			_pending_chest = null
-			return
-		for perk in _pending_perk_choices:
-			view_choices.append(RewardChoiceViewData.new(perk.display_name, perk.description, perk.icon, ""))
-		reward_choices_requested.emit("Choose a perk", view_choices)
-		return
-	_pending_choices = definition.draw_choices(chest.spawn_data.choice_seed, choice_count)
-	if _pending_choices.size() != choice_count:
-		_invalidate_pending_reward()
-		return
-	for option in _pending_choices:
-		view_choices.append(RewardChoiceViewData.new(option.item.display_name, option.item.description, option.item.icon, "+%d" % option.quantity))
-	reward_choices_requested.emit("Choose an item", view_choices)
 
 
 func _reward_choice_count(definition: ItemChestDefinition) -> int:
-	var count := definition.choice_count
-	if _perk_modifiers != null:
-		count += int(_perk_modifiers.rewards.value("choice_count_add", 0))
-	return clampi(count, 1, 3)
+	return _runtime_tuning.reward_choice_count(definition.choice_count) if definition != null else 0
 
 
 func _set_chest_interactivity(interactive: bool) -> void:
@@ -660,51 +616,19 @@ func _set_chest_interactivity(interactive: bool) -> void:
 
 
 func _apply_container_perk_modifiers() -> void:
-	var container_domain = _perk_modifiers.containers if _perk_modifiers != null else null
-	var indestructible := bool(container_domain.value("indestructible", false)) if container_domain != null else false
-	var chest_light_add := int(container_domain.value("light_level_add", 0)) if container_domain != null else 0
 	for child in get_children():
 		var chest := child as ItemChest
 		if chest == null:
 			continue
-		chest.set_destructible(not indestructible)
-		if chest_light_add > 0 and chest.spawn_data != null and chest.spawn_data.definition != null and chest.spawn_data.definition.container_tags.has("item_chest"):
-			chest.set_light_level_override(90 + chest_light_add)
-
-
-func _apply_explosion_perk_modifiers(spec: ExplosionRuntimeSpec, source_item: ItemDefinition = null) -> void:
-	if spec == null or _perk_modifiers == null:
-		return
-	var explosion_domain = _perk_modifiers.explosions
-	spec.player_kill_radius = maxi(0, spec.player_kill_radius + int(explosion_domain.value("player_kill_radius_add", 0)))
-	var terrain_bonus := int(explosion_domain.value("sand_liquid_vaporize_radius_add", 0))
-	if source_item != null and source_item.perk_tags.has("small_bomb"):
-		spec.blast_radius += int(explosion_domain.value("small_bomb_blast_radius_add", 0))
-	if source_item != null and source_item.perk_tags.has("large_bomb"):
-		spec.blast_radius += int(explosion_domain.value("large_bomb_blast_radius_add", 0))
-		spec.vaporize_radius += int(explosion_domain.value("large_bomb_vaporize_radius_add", 0))
-		spec.player_kill_radius += int(explosion_domain.value("large_bomb_player_kill_radius_add", 0))
-	spec.vaporize_radius = clampi(spec.vaporize_radius, 0, spec.blast_radius)
-	spec.player_kill_radius = clampi(spec.player_kill_radius, 0, spec.blast_radius)
-	if terrain_bonus > 0:
-		spec.fluid_vaporize_radius_bonus = func(definition: TerrainDefinition) -> int:
-			return terrain_bonus if definition != null and (definition.perk_tags.has("sand") or definition.perk_tags.has("liquid")) else 0
-	var dirt_vaporize_chance := float(_perk_modifiers.terrain.value("dirt_vaporize_chance", 0.0))
-	if dirt_vaporize_chance > 0.0 and source_item != null and (source_item.perk_tags.has("small_bomb") or source_item.perk_tags.has("large_bomb")):
-		spec.blast_vaporize_chance = func(terrain: TerrainDefinition, _cell: Vector2i) -> float:
-			return dirt_vaporize_chance if terrain != null and terrain.perk_tags.has("dirt") else 0.0
+		chest.set_destructible(not _runtime_tuning.container_indestructible)
+		if _runtime_tuning.item_chest_light_add > 0 and chest.spawn_data != null and chest.spawn_data.definition != null and chest.spawn_data.definition.container_tags.has("item_chest"):
+			chest.set_light_level_override(90 + _runtime_tuning.item_chest_light_add)
 
 
 func _should_preserve_item(definition: ItemDefinition) -> bool:
-	if _perk_modifiers == null or definition == null:
+	if definition == null:
 		return false
-	var chance := 0.0
-	if definition.perk_tags.has("small_bomb"):
-		chance = float(_perk_modifiers.items.value("small_bomb_preserve_chance", 0.0))
-	elif definition.perk_tags.has("large_bomb"):
-		chance = float(_perk_modifiers.items.value("large_bomb_preserve_chance", 0.0))
-	elif definition.perk_tags.has("shovel") or definition.perk_tags.has("pickaxe"):
-		chance = float(_perk_modifiers.items.value("shovel_pickaxe_preserve_chance", 0.0))
+	var chance := _runtime_tuning.preserve_chance_for(definition)
 	if chance <= 0.0:
 		return false
 	var ordinal := int(_successful_use_counts.get(definition.stable_id, 0)) + 1
@@ -743,7 +667,7 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 	var impact_position := explosive.global_position
 	var explosive_host := explosive.host()
 	_forget_explosive(explosive)
-	if explosive_host == _pending_chest:
+	if _rewards.is_pending(explosive_host as ItemChest):
 		_invalidate_pending_reward()
 	if explosive_host is ItemChest:
 		var container := explosive_host as ItemChest
@@ -763,12 +687,11 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 
 
 func _on_item_chest_explosion_armed(chest: ItemChest) -> void:
-	if chest == _pending_chest:
+	if _rewards.is_pending(chest):
 		_invalidate_pending_reward()
 
 
 func _invalidate_pending_reward() -> void:
-	_pending_chest = null
-	_pending_choices.clear()
+	_rewards.invalidate()
 	_set_chest_interactivity(_is_active)
 	pending_reward_invalidated.emit()

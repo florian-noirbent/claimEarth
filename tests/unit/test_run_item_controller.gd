@@ -53,15 +53,18 @@ func test_generated_chest_requests_choices_and_applies_one_reward_once() -> void
 	watch_signals(controller)
 	controller._on_item_chest_touched(chest)
 	assert_signal_emitted(controller, "reward_choices_requested")
-	assert_eq(controller._pending_choices.size(), 2)
-	var selected_option := controller._pending_choices[0] as ItemChestOption
-	var before_count := _status_count(controller.inventory_status(), selected_option.item.display_name)
+	var request: Array = get_signal_parameters(controller, "reward_choices_requested")
+	var choices: Array = request[1]
+	assert_eq(choices.size(), 2)
+	var selected_choice := choices[0] as RewardChoiceViewData
+	var before_count := _status_count(controller.inventory_status(), selected_choice.title)
+	var selected_quantity := int(selected_choice.quantity_text.trim_prefix("+"))
 
 	assert_true(controller.apply_pending_reward(0))
 	assert_false(controller.apply_pending_reward(0))
 	assert_eq(
-		_status_count(controller.inventory_status(), selected_option.item.display_name),
-		before_count + selected_option.quantity
+		_status_count(controller.inventory_status(), selected_choice.title),
+		before_count + selected_quantity
 	)
 	await wait_process_frames(1)
 	assert_eq(controller.item_chest_count(), 0)
