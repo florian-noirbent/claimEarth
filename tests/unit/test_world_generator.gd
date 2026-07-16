@@ -3,7 +3,7 @@ extends GutTest
 const BaseNoisePassScript = preload("res://src/generation/base_noise_pass.gd")
 const PocketNoisePassScript = preload("res://src/generation/pocket_noise_pass.gd")
 const SpawnShaftPassScript = preload("res://src/generation/spawn_shaft_pass.gd")
-const BoundarySealPassScript = preload("res://src/generation/boundary_seal_pass.gd")
+const FillPassScript = preload("res://src/generation/fill_pass.gd")
 
 
 func _default_profile() -> GenerationProfile:
@@ -29,11 +29,12 @@ func _base_profile_for_stack_tests() -> GenerationProfile:
 	var spawn_pass = SpawnShaftPassScript.new()
 	spawn_pass.pass_seed_key = "spawn"
 
-	var boundary_pass = BoundarySealPassScript.new()
-	boundary_pass.pass_seed_key = "boundary"
-	boundary_pass.sealed_row_count = 2
+	var fill_pass = FillPassScript.new()
+	fill_pass.pass_seed_key = "fill"
+	fill_pass.fill_terrain = FixtureLoader.terrain_definition_named("Lava")
+	fill_pass.min_depth_ratio = 0.95
 
-	profile.passes = [base_pass, spawn_pass, boundary_pass]
+	profile.passes = [base_pass, spawn_pass, fill_pass]
 	return profile
 
 
@@ -77,16 +78,16 @@ func test_default_profile_persists_stable_pass_seed_keys() -> void:
 		"lava_hazard_3",
 		"spawn_shaft_4",
 		"item_chests_5",
-		"bottom_seal_6",
+		"bottom_lava_fill_6",
 	]))
 
 
-func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
+func test_generated_world_has_bottom_lava_fill_and_spawn_air() -> void:
 	var generator := WorldGenerator.new()
 	var profile := _default_profile()
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
-	var stone_id := registry.get_definition(1).stable_id
+	var lava_id := FixtureLoader.terrain_id("Lava")
 	var air_id := registry.get_definition(0).stable_id
 
 	var result := generator.generate(profile, registry, 222)
@@ -96,7 +97,7 @@ func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 
 	for row in range(profile.depth - 2, profile.depth):
 		for col in range(profile.width):
-			assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
+			assert_eq(result.world.get_committed_by_offset(col, row), lava_id)
 
 	var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
 	assert_eq(result.world.get_committed_by_offset(spawn_col, 0), air_id)
@@ -167,7 +168,7 @@ func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
 	var profile := _default_profile()
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
-	var stone_id := FixtureLoader.terrain_id("Stone")
+	var lava_id := FixtureLoader.terrain_id("Lava")
 	var air_id := FixtureLoader.terrain_id("Air")
 	var sample_seeds := [
 		SeedUtils.seed_from_text("generation-invariant-1"),
@@ -184,7 +185,7 @@ func test_generation_invariants_hold_across_fixed_seed_sample() -> void:
 
 		for row in range(profile.depth - 2, profile.depth):
 			for col in range(profile.width):
-				assert_eq(result.world.get_committed_by_offset(col, row), stone_id)
+				assert_eq(result.world.get_committed_by_offset(col, row), lava_id)
 
 		assert_eq(result.spawn_rect.position.y, 0)
 		assert_eq(result.spawn_rect.size.y, _spawn_shaft_target_depth(profile) + 1)
@@ -381,7 +382,8 @@ func test_depth_range_and_blend_only_affect_targeted_band() -> void:
 	var pocket_pass = _hazard_pass("banded_water", PocketNoisePassScript.HazardType.WATER, 0.2, PackedInt32Array([dirt_id]))
 	pocket_pass.min_depth_ratio = 0.25
 	pocket_pass.max_depth_ratio = 0.5
-	pocket_pass.blend_distance_ratio = 0.1
+	pocket_pass.top_blend_distance_ratio = 0.1
+	pocket_pass.bottom_blend_distance_ratio = 0.1
 	profile.passes.insert(1, pocket_pass)
 
 	var result := generator.generate(profile, registry, 44)

@@ -55,7 +55,7 @@ history for historical context. Keep documentation focused on the current system
 - New item: add an `ItemDefinition`, action factory/action, resources, catalog entry,
   and item workflow tests. Selection code must remain type-agnostic.
 - Generation changes: edit passes/profile resources and retain seed determinism,
-  spawn safety, valid IDs, and the final two stone rows.
+  spawn safety, valid IDs, and the configured bottom lava fill.
 - UI changes: keep formatting and visibility in `AppUiController`; route gameplay
   intent through `AppRoot`.
 - Simulation changes: preserve `TerrainSimulationBackend` and committed/working

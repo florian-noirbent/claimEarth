@@ -1,7 +1,7 @@
 extends GutTest
 
 const BaseNoisePassScript = preload("res://src/generation/base_noise_pass.gd")
-const BoundarySealPassScript = preload("res://src/generation/boundary_seal_pass.gd")
+const FillPassScript = preload("res://src/generation/fill_pass.gd")
 
 
 func test_generation_task_reports_progress_and_returns_result() -> void:
@@ -34,10 +34,12 @@ func test_generation_task_progress_reflects_active_pass_stack() -> void:
 	var base_pass = BaseNoisePassScript.new()
 	base_pass.pass_seed_key = "base"
 	base_pass.label = "Base Layer"
-	var boundary_pass = BoundarySealPassScript.new()
-	boundary_pass.pass_seed_key = "seal"
-	boundary_pass.label = "Seal"
-	profile.passes = [base_pass, boundary_pass]
+	var fill_pass = FillPassScript.new()
+	fill_pass.pass_seed_key = "fill"
+	fill_pass.label = "Fill"
+	fill_pass.fill_terrain = FixtureLoader.terrain_definition_named("Lava")
+	fill_pass.min_depth_ratio = 0.9
+	profile.passes = [base_pass, fill_pass]
 
 	var task := WorldGenerationTask.new()
 	var labels: Array[String] = []
@@ -50,4 +52,4 @@ func test_generation_task_progress_reflects_active_pass_stack() -> void:
 	assert_not_null(result)
 	assert_eq(labels[0], "Preparing generation")
 	assert_eq(labels[1], base_pass.get_progress_label())
-	assert_eq(labels[2], boundary_pass.get_progress_label())
+	assert_eq(labels[2], fill_pass.get_progress_label())

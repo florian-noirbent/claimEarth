@@ -6,6 +6,7 @@ const GenerationPassCatalogScript = preload("res://src/generation/generation_pas
 const GenerationPassCatalogEntryScript = preload("res://src/generation/generation_pass_catalog_entry.gd")
 const BaseNoisePassScript = preload("res://src/generation/base_noise_pass.gd")
 const PocketNoisePassScript = preload("res://src/generation/pocket_noise_pass.gd")
+const FillPassScript = preload("res://src/generation/fill_pass.gd")
 
 
 class PreviewStub extends Control:
@@ -109,6 +110,11 @@ func _slider_for_property(dock: Control, index: int, property_name: String) -> H
 func _option_button_for_property(dock: Control, index: int, property_name: String) -> OptionButton:
 	var row := _pass_property_row(dock, index, property_name)
 	return row.find_child("ValueOptionButton", true, false) as OptionButton if row != null else null
+
+
+func _fill_terrain_picker(dock: Control, index: int) -> OptionButton:
+	var row := _pass_property_row(dock, index, "fill_terrain")
+	return row.find_child("FillTerrainOptionButton", true, false) as OptionButton if row != null else null
 
 
 func test_generation_tools_dock_adds_duplicates_and_reorders_passes() -> void:
@@ -362,6 +368,37 @@ func test_generation_tools_dock_hazard_pocket_exposes_type_picker_and_removes_ol
 	assert_not_null(_pass_property_row(dock, 0, "placement_threshold"))
 	assert_null(_pass_property_row(dock, 0, "water_depth_start_ratio"))
 	assert_null(_pass_property_row(dock, 0, "lava_depth_start_ratio"))
+
+
+func test_generation_tools_dock_fill_pass_selects_any_registered_terrain() -> void:
+	var dock = GenerationToolsDockScript.new()
+	add_child_autofree(dock)
+	dock.set_pass_catalog_for_test(_catalog([
+		_catalog_entry("Fill", FillPassScript),
+	]))
+	dock.set_profile_for_test(GenerationProfile.new())
+	dock.add_pass_for_test(FillPassScript)
+	_pass_toggle_button(dock, 0).pressed.emit()
+	await wait_process_frames(1)
+
+	var picker := _fill_terrain_picker(dock, 0)
+	assert_not_null(picker)
+	assert_eq(picker.item_count, dock._terrain_registry.count() + 1)
+	assert_not_null(_slider_for_property(dock, 0, "top_blend_distance_ratio"))
+	assert_not_null(_slider_for_property(dock, 0, "bottom_blend_distance_ratio"))
+	assert_null(_pass_property_row(dock, 0, "blend_distance_ratio"))
+	var lava_index := -1
+	for index in range(picker.item_count):
+		if picker.get_item_text(index) == "Lava":
+			lava_index = index
+			break
+	assert_gte(lava_index, 0)
+	picker.select(lava_index)
+	picker.item_selected.emit(lava_index)
+
+	var fill_terrain := dock.selected_pass_for_test().get("fill_terrain") as TerrainDefinition
+	assert_not_null(fill_terrain)
+	assert_eq(fill_terrain.display_name, "Lava")
 
 
 func test_generation_tools_dock_revert_restores_last_saved_profile_values() -> void:

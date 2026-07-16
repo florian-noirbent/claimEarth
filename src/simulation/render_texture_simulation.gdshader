@@ -315,6 +315,17 @@ bool in_bounds(ivec2 coord) {
 	return coord.x >= 0 && coord.y >= 0 && coord.x < int(world_size.x) && coord.y < int(world_size.y);
 }
 
+bool is_below_world(ivec2 coord) {
+	return coord.y >= int(world_size.y);
+}
+
+vec4 read_cell_with_solid_floor(ivec2 coord) {
+	if (is_below_world(coord)) {
+		return make_cell(stone_id(), FULL_QUANTITY);
+	}
+	return read_cell(coord);
+}
+
 bool updates_high_frequency_light(ivec2 coord) {
 	return (player_light_offset.x >= 0 && player_light_offset.y >= 0
 		&& hex_distance(coord, player_light_offset) <= player_light_update_radius)
@@ -577,7 +588,7 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 
 bool direct_bottom_blocked(ivec2 coord, vec4 source) {
 	ivec2 below_coord = hex_neighbor(coord, HEX_DIRECTION_DOWN);
-	return !in_bounds(below_coord) || fall_transfer_amount(source, read_cell(below_coord)) <= 0;
+	return is_below_world(below_coord) || !in_bounds(below_coord) || fall_transfer_amount(source, read_cell(below_coord)) <= 0;
 }
 
 bool bottom_side_blocked(ivec2 coord, vec4 source) {
@@ -629,10 +640,10 @@ void fragment() {
 	ivec2 owner = pair_owner_for(coord);
 	vec4 result = current;
 	ivec2 neighbor = pair_neighbor(owner);
-	if (in_bounds(owner) && in_bounds(neighbor)) {
+	if (in_bounds(owner) && (in_bounds(neighbor) || is_below_world(neighbor))) {
 		bool output_a = coord.x == owner.x && coord.y == owner.y;
 		vec4 a = read_cell(owner);
-		vec4 b = read_cell(neighbor);
+		vec4 b = read_cell_with_solid_floor(neighbor);
 		if (liquid_contact(a, b)) {
 			result = output_a ? air_cell() : make_cell(stone_id(), maximum_quantity(stone_id()));
 		} else {

@@ -9,7 +9,8 @@ extends Resource
 @export var pass_seed_key := ""
 @export_range(0.0, 1.0, 0.001) var min_depth_ratio := 0.0
 @export_range(0.0, 1.0, 0.001) var max_depth_ratio := 1.0
-@export_range(0.0, 1.0, 0.001) var blend_distance_ratio := 0.0
+@export_range(0.0, 1.0, 0.001) var top_blend_distance_ratio := 0.0
+@export_range(0.0, 1.0, 0.001) var bottom_blend_distance_ratio := 0.0
 @export var allowed_target_ids := PackedInt32Array()
 
 

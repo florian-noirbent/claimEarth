@@ -3,6 +3,7 @@ extends VBoxContainer
 
 
 const PASS_CATALOG_PATH := "res://config/generation/pass_catalog.tres"
+const NO_TERRAIN_ID := 256
 
 var _preview: Control
 var _terrain_registry := TerrainRegistry.new()
@@ -458,6 +459,9 @@ func _build_pass_section(index: int, pass_resource: Resource) -> Control:
 		if property_info.name == "allowed_target_ids":
 			body.add_child(_build_whitelist_editor(pass_resource))
 			continue
+		if property_info.name == "fill_terrain":
+			body.add_child(_build_fill_terrain_editor(pass_resource))
+			continue
 		body.add_child(_build_property_editor(pass_resource, property_info))
 	return section
 
@@ -578,6 +582,50 @@ func _build_whitelist_editor(pass_resource: Resource) -> Control:
 	container.add_child(menu_button)
 	_configure_whitelist_menu(menu_button, pass_resource)
 	return container
+
+
+func _build_fill_terrain_editor(pass_resource: Resource) -> Control:
+	var container := VBoxContainer.new()
+	container.name = "Property_fill_terrain"
+	container.set_meta("pass_seed_key", String(pass_resource.get("pass_seed_key")))
+	container.set_meta("property_name", "fill_terrain")
+	container.set_meta("saved_value", pass_resource.get("fill_terrain"))
+	container.tooltip_text = "Choose the terrain type written into this pass's depth band."
+	var label_row := HBoxContainer.new()
+	container.add_child(label_row)
+	var label := Label.new()
+	label.text = "Fill Terrain"
+	label.tooltip_text = container.tooltip_text
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_row.add_child(label)
+	var reset_button := _build_property_reset_button(pass_resource, "fill_terrain", "Restore the saved fill terrain.", container)
+	label_row.add_child(reset_button)
+	var picker := OptionButton.new()
+	picker.name = "FillTerrainOptionButton"
+	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picker.tooltip_text = container.tooltip_text
+	picker.add_item("Select terrain", NO_TERRAIN_ID)
+	for definition in _terrain_registry.all_definitions():
+		picker.add_item(definition.display_name, definition.stable_id)
+	_select_fill_terrain_picker(picker, pass_resource.get("fill_terrain") as TerrainDefinition)
+	picker.item_selected.connect(func(selected_index: int) -> void:
+		var terrain_id := picker.get_item_id(selected_index)
+		pass_resource.set("fill_terrain", _terrain_registry.get_definition(terrain_id))
+		_update_revert_state()
+		_update_property_row_state(container, pass_resource)
+		_mark_preview_dirty()
+	)
+	container.add_child(picker)
+	return container
+
+
+func _select_fill_terrain_picker(picker: OptionButton, definition: TerrainDefinition) -> void:
+	var selected_id := definition.stable_id if definition != null else NO_TERRAIN_ID
+	for index in range(picker.item_count):
+		if picker.get_item_id(index) == selected_id:
+			picker.select(index)
+			return
+	picker.select(0)
 
 
 func _configure_whitelist_menu(menu_button: MenuButton, pass_resource: Resource) -> void:
@@ -750,6 +798,11 @@ func _sync_property_row_value(row: Control, pass_resource: Resource) -> void:
 		var menu_button := row.find_child("AllowedTargetMenuButton", true, false) as MenuButton
 		if menu_button != null:
 			_configure_whitelist_menu(menu_button, pass_resource)
+		return
+	if property_name == "fill_terrain":
+		var terrain_picker := row.find_child("FillTerrainOptionButton", true, false) as OptionButton
+		if terrain_picker != null:
+			_select_fill_terrain_picker(terrain_picker, pass_resource.get("fill_terrain") as TerrainDefinition)
 		return
 	var current_value = pass_resource.get(property_name)
 	var value_check := row.find_child("ValueCheckBox", true, false) as CheckBox
@@ -928,8 +981,10 @@ func _property_tooltip(property_name: String) -> String:
 			return "Top of the depth band where this pass may apply. 0 is the surface and 1 is the bottom."
 		"max_depth_ratio":
 			return "Bottom of the depth band where this pass may apply. 0 is the surface and 1 is the bottom."
-		"blend_distance_ratio":
-			return "Soft fade distance at the top and bottom edges of the targeted depth band."
+		"top_blend_distance_ratio":
+			return "Soft fade distance inward from the top edge of the targeted depth band. Zero keeps the top edge fully applied."
+		"bottom_blend_distance_ratio":
+			return "Soft fade distance inward from the bottom edge of the targeted depth band. Zero keeps the bottom edge fully applied."
 		"allowed_target_ids":
 			return "Restrict this pass to replacing only certain existing terrain types. All means no whitelist."
 		"octaves":
@@ -948,8 +1003,8 @@ func _property_tooltip(property_name: String) -> String:
 			return "Minimum noise value required to place this hazard type."
 		"hazard_type":
 			return "Choose which terrain type this hazard pocket pass places."
-		"sealed_row_count":
-			return "Number of bottom rows that will be forced to the sealing terrain."
+		"fill_terrain":
+			return "Terrain type written into every allowed cell in this pass's depth band."
 		"item_definition":
 			return "Generated world-item definition placed by this pass. Add another pass instance for another item kind."
 		"area_columns":
