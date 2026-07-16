@@ -11,7 +11,11 @@ vec4 sample_even_cell(vec2 cell) {
 }
 
 float terrain_kind(vec4 terrain) {
-	return floor(terrain.r * 255.0 + 0.5);
+	return mod(floor(terrain.r * 255.0 + 0.5), 16.0);
+}
+
+float rendered_quantity(vec4 terrain) {
+	return min(terrain.g * 255.0, 127.0) / 127.0;
 }
 
 float terrain_motion(float cell_kind) {

@@ -471,7 +471,7 @@ func _create_rule_texture(metadata: CompiledTerrainData) -> ImageTexture:
 	for id in range(256):
 		_write_rule_row(data, id, 0, [metadata.motion(id), 1 if metadata.can_fall(id) else 0, 1 if metadata.can_side_down(id) else 0, 1 if metadata.can_side_up(id) else 0])
 		_write_rule_row(data, id, 1, [metadata.density(id), metadata.transfer_rate(id, 0), metadata.transfer_rate(id, 1), metadata.transfer_rate(id, 2)])
-		_write_rule_row(data, id, 2, [metadata.min_fill_difference(id), metadata.side_flow_offset(id), 0, 1 if metadata.is_passable(id) else 0])
+		_write_rule_row(data, id, 2, [metadata.min_fill_difference(id), metadata.side_flow_offset(id), metadata.maximum_quantity(id), 1 if metadata.is_passable(id) else 0])
 		_write_rule_row(data, id, 3, [metadata.air_id, metadata.stone_id, metadata.light_diffusion(id), metadata.emitted_light(id)])
 	return ImageTexture.create_from_image(Image.create_from_data(256, 4, false, Image.FORMAT_RGBA8, data))
 

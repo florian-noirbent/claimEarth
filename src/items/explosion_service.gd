@@ -62,13 +62,13 @@ func resolve(
 		if _is_within_radius(origin, cell, lethal_radius):
 			if definition.stable_id != air_id:
 				var change := world.set_committed_by_offset(cell.x, cell.y, air_id)
-				change_set.add_change(change.index, change.previous_id, change.next_id, metadata)
+				change_set.add_cell_change(change, metadata)
 				changed_cells.append(cell)
 		else:
 			var effect = definition.blast_reaction.resolve()
 			if effect.replacement_id >= 0 and effect.replacement_id != definition.stable_id:
 				var change := world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
-				change_set.add_change(change.index, change.previous_id, change.next_id, metadata)
+				change_set.add_cell_change(change, metadata)
 				changed_cells.append(cell)
 			propagated_strength = (strength - 1.0) * float(effect.propagation_multiplier)
 

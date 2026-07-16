@@ -100,6 +100,7 @@ func test_generated_world_has_sealed_bottom_and_spawn_air() -> void:
 
 	var spawn_col := result.spawn_rect.position.x + int(result.spawn_rect.size.x / 2)
 	assert_eq(result.world.get_committed_by_offset(spawn_col, 0), air_id)
+	assert_eq(result.world.get_committed_quantity_by_offset(spawn_col, 0), WorldGrid.AIR_QUANTITY)
 	assert_true(_row_has_air(result.world, air_id, 100))
 
 

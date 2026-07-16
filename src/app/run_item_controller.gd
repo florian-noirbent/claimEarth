@@ -286,12 +286,13 @@ func resolve_terrain_tool_use(transformations: Array[TerrainTransformRule], aim_
 				break
 		if target_id < 0:
 			continue
-		var fill := _world.get_committed_fill_by_offset(target.x, target.y)
-		var cell_cost := float(fill) / 255.0
+		var quantity := _world.get_committed_quantity_by_offset(target.x, target.y)
+		var source := _terrain_registry.get_definition(source_id)
+		var cell_cost := float(quantity) / float(source.maximum_quantity)
 		if cell_cost <= 0.0:
 			continue
-		var change := _world.set_committed_by_offset(target.x, target.y, target_id, 0 if target_id == 0 else fill)
-		change_set.add_change(change.index, change.previous_id, change.next_id, null, change.previous_fill, change.next_fill)
+		var change := _world.set_committed_by_offset(target.x, target.y, target_id, WorldGrid.AIR_QUANTITY if target_id == 0 else quantity)
+		change_set.add_cell_change(change)
 		cost += cell_cost
 	_commit_external_terrain_changes(change_set)
 	return minf(cost, 3.0)
@@ -314,8 +315,8 @@ func resolve_fluid_bottle_impact(deposited_terrain: TerrainDefinition, impact_po
 			var existing := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 			if existing == null or not existing.is_empty_space:
 				continue
-			var change := _world.set_committed_by_offset(offset.x, offset.y, deposited_terrain.stable_id, 255)
-			change_set.add_change(change.index, change.previous_id, change.next_id, null, change.previous_fill, change.next_fill)
+			var change := _world.set_committed_by_offset(offset.x, offset.y, deposited_terrain.stable_id, deposited_terrain.maximum_quantity)
+			change_set.add_cell_change(change)
 			found += 1
 			if found == 3:
 				break
@@ -338,7 +339,7 @@ func excavator_tick(robot: ExcavatorRobot, factory: ExcavatorItemActionFactory) 
 	for cell in targets:
 		if not _world.dimensions.is_in_bounds_offset(cell.x, cell.y): continue
 		var terrain := _terrain_registry.get_definition(_world.get_committed_by_offset(cell.x, cell.y))
-		if terrain != null and terrain.hazard_behavior.resolve_for_fill(_world.get_committed_fill_by_offset(cell.x, cell.y)) != null and terrain.blast_reaction.resolve().detonate_immediately:
+		if terrain != null and terrain.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(cell.x, cell.y)) != null and terrain.blast_reaction.resolve().detonate_immediately:
 			resolve_explosion(factory.explosion_definition, robot.global_position); robot.queue_free(); return
 		if terrain == null or terrain.is_empty_space or terrain.is_passable: continue
 		clear = false
@@ -347,8 +348,8 @@ func excavator_tick(robot: ExcavatorRobot, factory: ExcavatorItemActionFactory) 
 		elif terrain.stable_id == 2: next_id = 3
 		elif terrain.stable_id == 3: next_id = 0
 		if next_id >= 0:
-			var change := _world.set_committed_by_offset(cell.x, cell.y, next_id, 0 if next_id == 0 else _world.get_committed_fill_by_offset(cell.x, cell.y))
-			changes.add_change(change.index,change.previous_id,change.next_id,null,change.previous_fill,change.next_fill)
+			var change := _world.set_committed_by_offset(cell.x, cell.y, next_id, WorldGrid.AIR_QUANTITY if next_id == 0 else _world.get_committed_quantity_by_offset(cell.x, cell.y))
+			changes.add_cell_change(change)
 	_commit_external_terrain_changes(changes)
 	if clear: robot.global_position = HexMetrics.center_for_offset(origin.x, origin.y + 1, _hex_radius)
 

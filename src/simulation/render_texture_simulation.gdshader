@@ -1,5 +1,5 @@
 shader_type canvas_item;
-render_mode unshaded;
+render_mode unshaded, blend_disabled;
 
 uniform sampler2D source_world : filter_nearest, repeat_disable;
 uniform sampler2D rule_texture : filter_nearest, repeat_disable;
@@ -23,20 +23,21 @@ const int PASS_RIGHT_DOWN_ODD = 4;
 const int PASS_LEFT_DOWN_ODD = 5;
 const int MOTION_STABLE = 0;
 const int MOTION_LIQUID = 2;
-const int AIR_FILL = 0;
-const int FULL_FILL = 255;
-const int HALF_FILL = 128;
+const int MOTION_GAS = 3;
+const int AIR_QUANTITY = 64;
+const int FULL_QUANTITY = 127;
+const int MAX_STORED_QUANTITY = 255;
 
 int byte_from_float(float value) {
 	return int(floor(clamp(value, 0.0, 1.0) * 255.0 + 0.5));
 }
 
-vec4 color_from_bytes(int terrain_id, int fill, int light, int flags) {
+vec4 color_from_bytes(int packed_ids, int primary_quantity, int light, int secondary_quantity) {
 	return vec4(
-		float(clamp(terrain_id, 0, 255)) / 255.0,
-		float(clamp(fill, 0, 255)) / 255.0,
+		float(clamp(packed_ids, 0, 255)) / 255.0,
+		float(clamp(primary_quantity, 0, 255)) / 255.0,
 		float(clamp(light, 0, 255)) / 255.0,
-		float(clamp(flags, 0, 255)) / 255.0
+		float(clamp(secondary_quantity, 0, 255)) / 255.0
 	);
 }
 
@@ -63,11 +64,19 @@ int rule_byte(int terrain_id, int row, int channel) {
 }
 
 int terrain_id(vec4 cell) {
-	return byte_from_float(cell.r);
+	return byte_from_float(cell.r) & 15;
+}
+
+int secondary_terrain_id(vec4 cell) {
+	return (byte_from_float(cell.r) >> 4) & 15;
 }
 
 int fill_amount(vec4 cell) {
 	return byte_from_float(cell.g);
+}
+
+int secondary_fill_amount(vec4 cell) {
+	return byte_from_float(cell.a);
 }
 
 int motion(int id) {
@@ -110,6 +119,10 @@ int side_flow_offset(int id) {
 	return rule_byte(id, 2, 1);
 }
 
+int maximum_quantity(int id) {
+	return rule_byte(id, 2, 2);
+}
+
 bool is_passable(int id) {
 	return rule_byte(id, 2, 3) != 0;
 }
@@ -134,13 +147,122 @@ int standard_light(ivec2 coord) {
 	return byte_from_float(texture(standard_light_sources, (vec2(coord) + vec2(0.5)) / world_size).r);
 }
 
-vec4 make_cell(int cell_id, int fill) {
-	int resolved_fill = cell_id == air_id() ? 0 : clamp(fill, 0, 255);
-	return color_from_bytes(cell_id, resolved_fill, 0, 255);
+vec4 make_components(int primary_id, int primary_quantity, int secondary_id, int secondary_quantity) {
+	int resolved_primary_id = primary_id & 15;
+	int resolved_secondary_id = secondary_id & 15;
+	int resolved_primary_quantity = clamp(primary_quantity, 0, MAX_STORED_QUANTITY);
+	int resolved_secondary_quantity = clamp(secondary_quantity, 0, MAX_STORED_QUANTITY);
+
+	if (resolved_primary_quantity <= 0) {
+		if (resolved_secondary_quantity > 0) {
+			resolved_primary_id = resolved_secondary_id;
+			resolved_primary_quantity = resolved_secondary_quantity;
+			resolved_secondary_id = 0;
+			resolved_secondary_quantity = 0;
+		} else {
+			resolved_primary_id = air_id();
+			resolved_primary_quantity = 0;
+			resolved_secondary_id = 0;
+		}
+	}
+	if (resolved_secondary_quantity <= 0) {
+		resolved_secondary_id = 0;
+		resolved_secondary_quantity = 0;
+	} else if (resolved_primary_id == resolved_secondary_id) {
+		int combined = resolved_primary_quantity + resolved_secondary_quantity;
+		resolved_primary_quantity = min(combined, MAX_STORED_QUANTITY);
+		resolved_secondary_quantity = min(combined - resolved_primary_quantity, MAX_STORED_QUANTITY);
+		if (resolved_secondary_quantity <= 0) {
+			resolved_secondary_id = 0;
+		}
+	}
+	if (resolved_secondary_quantity > 0 && density(resolved_secondary_id) > density(resolved_primary_id)) {
+		int swapped_id = resolved_primary_id;
+		int swapped_quantity = resolved_primary_quantity;
+		resolved_primary_id = resolved_secondary_id;
+		resolved_primary_quantity = resolved_secondary_quantity;
+		resolved_secondary_id = swapped_id;
+		resolved_secondary_quantity = swapped_quantity;
+	}
+	int packed_ids = resolved_primary_id | (resolved_secondary_id << 4);
+	return color_from_bytes(packed_ids, resolved_primary_quantity, 0, resolved_secondary_quantity);
+}
+
+vec4 make_cell(int cell_id, int quantity) {
+	return make_components(cell_id, quantity, 0, 0);
+}
+
+vec4 air_cell() {
+	return make_cell(air_id(), AIR_QUANTITY);
+}
+
+vec4 vacuum_cell() {
+	return make_cell(air_id(), 0);
 }
 
 bool is_moving(int id) {
 	return motion(id) != MOTION_STABLE;
+}
+
+bool has_secondary(vec4 cell) {
+	return secondary_fill_amount(cell) > 0;
+}
+
+int component_capacity(vec4 cell, int component_id, int primary_limit) {
+	int primary_id = terrain_id(cell);
+	int primary_quantity = fill_amount(cell);
+	int secondary_id = secondary_terrain_id(cell);
+	int secondary_quantity = secondary_fill_amount(cell);
+	int capacity = 0;
+	if (primary_id == component_id) {
+		capacity += max(0, primary_limit - primary_quantity);
+	}
+	if (secondary_quantity > 0 && secondary_id == component_id) {
+		capacity += max(0, MAX_STORED_QUANTITY - secondary_quantity);
+	} else if (secondary_quantity <= 0 && primary_id != component_id) {
+		capacity += MAX_STORED_QUANTITY;
+	}
+	return capacity;
+}
+
+vec4 add_component(vec4 cell, int component_id, int quantity, int primary_limit) {
+	int primary_id = terrain_id(cell);
+	int primary_quantity = fill_amount(cell);
+	int secondary_id = secondary_terrain_id(cell);
+	int secondary_quantity = secondary_fill_amount(cell);
+	int remaining = max(0, quantity);
+	if (primary_id == component_id && remaining > 0) {
+		int accepted = min(remaining, max(0, primary_limit - primary_quantity));
+		primary_quantity += accepted;
+		remaining -= accepted;
+	}
+	if (secondary_quantity > 0 && secondary_id == component_id && remaining > 0) {
+		int accepted = min(remaining, MAX_STORED_QUANTITY - secondary_quantity);
+		secondary_quantity += accepted;
+		remaining -= accepted;
+	} else if (secondary_quantity <= 0 && primary_id != component_id && remaining > 0) {
+		secondary_id = component_id;
+		secondary_quantity = min(remaining, MAX_STORED_QUANTITY);
+	}
+	return make_components(primary_id, primary_quantity, secondary_id, secondary_quantity);
+}
+
+vec4 remove_primary_component(vec4 cell, int quantity) {
+	return make_components(
+		terrain_id(cell),
+		fill_amount(cell) - quantity,
+		secondary_terrain_id(cell),
+		secondary_fill_amount(cell)
+	);
+}
+
+vec4 remove_secondary_component(vec4 cell, int quantity) {
+	return make_components(
+		terrain_id(cell),
+		fill_amount(cell),
+		secondary_terrain_id(cell),
+		secondary_fill_amount(cell) - quantity
+	);
 }
 
 bool is_vertical_pass() {
@@ -206,7 +328,7 @@ int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
 	}
 	int cell_id = terrain_id(terrain_result);
 	int source_light = max(
-		emitted_light(cell_id) * fill_amount(terrain_result) / 255,
+		emitted_light(cell_id) * min(fill_amount(terrain_result), maximum_quantity(cell_id)) / maximum_quantity(cell_id),
 		standard_light(coord)
 	);
 	if (coord == player_light_offset) source_light = max(source_light, player_light_level);
@@ -224,190 +346,281 @@ int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
 	return max(source_light, max(persistent_light, propagated_light));
 }
 
-int fall_amount(vec4 upper, vec4 lower) {
-	int upper_id = terrain_id(upper);
-	int lower_id = terrain_id(lower);
-	int upper_fill = fill_amount(upper);
-	int lower_fill = fill_amount(lower);
-	if (upper_fill <= 0 || !can_fall(upper_id)) {
-		return 0;
-	}
-	if (lower_id != upper_id && lower_fill > 0) {
-		if (!is_moving(lower_id) || !is_passable(lower_id)) {
-			return 0;
-		}
-		return density(upper_id) > density(lower_id) ? upper_fill : 0;
-	}
-	if (lower_id != upper_id && lower_id != air_id()) {
-		return 0;
-	}
-	int capacity = FULL_FILL - lower_fill;
-	return min(upper_fill, min(fall_rate(upper_id), capacity));
+bool component_is_liquid(int component_id, int component_quantity) {
+	return component_quantity > 0 && motion(component_id) == MOTION_LIQUID;
 }
 
 bool liquid_contact(vec4 a, vec4 b) {
-	int a_id = terrain_id(a);
-	int b_id = terrain_id(b);
-	if (a_id == b_id || fill_amount(a) <= 0 || fill_amount(b) <= 0) {
-		return false;
+	int a_primary = terrain_id(a);
+	int a_secondary = secondary_terrain_id(a);
+	int b_primary = terrain_id(b);
+	int b_secondary = secondary_terrain_id(b);
+	int a_primary_quantity = fill_amount(a);
+	int a_secondary_quantity = secondary_fill_amount(a);
+	int b_primary_quantity = fill_amount(b);
+	int b_secondary_quantity = secondary_fill_amount(b);
+	if (component_is_liquid(a_primary, a_primary_quantity)) {
+		if (component_is_liquid(b_primary, b_primary_quantity) && a_primary != b_primary) return true;
+		if (component_is_liquid(b_secondary, b_secondary_quantity) && a_primary != b_secondary) return true;
 	}
-	return motion(a_id) == MOTION_LIQUID && motion(b_id) == MOTION_LIQUID;
+	if (component_is_liquid(a_secondary, a_secondary_quantity)) {
+		if (component_is_liquid(b_primary, b_primary_quantity) && a_secondary != b_primary) return true;
+		if (component_is_liquid(b_secondary, b_secondary_quantity) && a_secondary != b_secondary) return true;
+	}
+	bool a_internal_contact = component_is_liquid(a_primary, a_primary_quantity)
+		&& component_is_liquid(a_secondary, a_secondary_quantity)
+		&& a_primary != a_secondary;
+	bool b_internal_contact = component_is_liquid(b_primary, b_primary_quantity)
+		&& component_is_liquid(b_secondary, b_secondary_quantity)
+		&& b_primary != b_secondary;
+	return a_internal_contact || b_internal_contact;
 }
 
-vec4 resolve_fall_for_side(vec4 upper, vec4 lower, bool output_upper) {
-	int upper_id = terrain_id(upper);
-	int lower_id = terrain_id(lower);
-	int upper_fill = fill_amount(upper);
-	int lower_fill = fill_amount(lower);
-	if (upper_fill <= 0 || !can_fall(upper_id)) {
-		return output_upper ? upper : lower;
+int directional_rate(int component_id, bool vertical, bool moves_down) {
+	if (motion(component_id) == MOTION_GAS) {
+		return MAX_STORED_QUANTITY;
 	}
-	if (lower_id != upper_id && lower_fill > 0) {
-		if (!is_moving(lower_id) || !is_passable(lower_id)) {
-			return output_upper ? upper : lower;
-		}
-		if (density(upper_id) <= density(lower_id)) {
-			return output_upper ? upper : lower;
-		}
-		return output_upper ? lower : upper;
+	if (vertical) {
+		return fall_rate(component_id);
 	}
-	if (lower_id != upper_id && lower_id != air_id()) {
-		return output_upper ? upper : lower;
-	}
-	int amount = min(upper_fill, min(fall_rate(upper_id), FULL_FILL - lower_fill));
-	if (amount <= 0) {
-		return output_upper ? upper : lower;
-	}
-	int next_upper_fill = upper_fill - amount;
-	int next_lower_fill = lower_fill + amount;
-	vec4 next_upper = make_cell(next_upper_fill > 0 ? upper_id : air_id(), next_upper_fill);
-	vec4 next_lower = make_cell(upper_id, next_lower_fill);
-	return output_upper ? next_upper : next_lower;
+	return moves_down ? side_down_rate(component_id) : side_up_rate(component_id);
 }
 
-int side_transfer_capacity(int source_id, int source_fill, int target_fill) {
-	int raw_capacity = FULL_FILL - target_fill;
-	if (raw_capacity <= 0) {
+int secondary_transfer_amount(vec4 source, vec4 target, bool vertical, bool moves_down) {
+	int component_id = secondary_terrain_id(source);
+	int source_quantity = secondary_fill_amount(source);
+	if (source_quantity <= 0) {
 		return 0;
 	}
-	int min_difference = min_fill_difference(source_id);
-	if (min_difference > 0 && source_fill - target_fill < min_difference) {
+	int rate = directional_rate(component_id, vertical, moves_down);
+	if (rate <= 0) {
 		return 0;
 	}
-	int equilibrium_distance = source_fill - target_fill + side_flow_offset(source_id);
+	int target_primary_id = terrain_id(target);
+	int target_primary_quantity = fill_amount(target);
+	int target_secondary_id = secondary_terrain_id(target);
+	int target_secondary_quantity = secondary_fill_amount(target);
+	if (target_primary_id == component_id) {
+		if (target_primary_quantity < FULL_QUANTITY) {
+			return min(source_quantity, min(rate, FULL_QUANTITY - target_primary_quantity));
+		}
+		int pressure_difference = FULL_QUANTITY + source_quantity - target_primary_quantity;
+		if (pressure_difference <= 1) {
+			return 0;
+		}
+		return min(
+			source_quantity,
+			min(rate, min(MAX_STORED_QUANTITY - target_primary_quantity, pressure_difference / 2))
+		);
+	}
+	if (target_secondary_quantity > 0 && target_secondary_id == component_id) {
+		return min(source_quantity, min(rate, MAX_STORED_QUANTITY - target_secondary_quantity));
+	}
+	if (target_secondary_quantity <= 0 && (is_moving(target_primary_id) || is_passable(target_primary_id))) {
+		return min(source_quantity, rate);
+	}
+	return 0;
+}
+
+bool resolve_secondary_pair(
+	vec4 a,
+	vec4 b,
+	bool vertical,
+	out vec4 next_a,
+	out vec4 next_b
+) {
+	next_a = a;
+	next_b = b;
+	int amount = secondary_transfer_amount(a, b, vertical, true);
+	if (amount > 0) {
+		int component_id = secondary_terrain_id(a);
+		next_a = remove_secondary_component(a, amount);
+		next_b = add_component(b, component_id, amount, MAX_STORED_QUANTITY);
+		return true;
+	}
+	amount = secondary_transfer_amount(b, a, vertical, false);
+	if (amount > 0) {
+		int component_id = secondary_terrain_id(b);
+		next_b = remove_secondary_component(b, amount);
+		next_a = add_component(a, component_id, amount, MAX_STORED_QUANTITY);
+		return true;
+	}
+	return false;
+}
+
+int primary_target_capacity(vec4 source, vec4 target, int primary_limit) {
+	int source_id = terrain_id(source);
+	int target_id = terrain_id(target);
+	int target_secondary_id = secondary_terrain_id(target);
+	int target_secondary_quantity = secondary_fill_amount(target);
+	if (target_id == source_id) {
+		return max(0, primary_limit - fill_amount(target));
+	}
+	if (target_secondary_quantity > 0 && target_secondary_id != source_id) {
+		return 0;
+	}
+	if (!is_moving(target_id) && !is_passable(target_id)) {
+		return 0;
+	}
+	if (density(source_id) <= density(target_id)) {
+		return 0;
+	}
+	return component_capacity(target, source_id, primary_limit);
+}
+
+int fall_transfer_amount(vec4 source, vec4 target) {
+	int source_id = terrain_id(source);
+	int source_quantity = fill_amount(source);
+	if (source_quantity <= 0 || !can_fall(source_id)) {
+		return 0;
+	}
+	return min(source_quantity, min(fall_rate(source_id), primary_target_capacity(source, target, FULL_QUANTITY)));
+}
+
+int side_down_transfer_amount(vec4 source, vec4 target) {
+	int source_id = terrain_id(source);
+	int source_quantity = fill_amount(source);
+	if (source_quantity <= 0 || !can_side_down(source_id)) {
+		return 0;
+	}
+	int capacity = primary_target_capacity(source, target, FULL_QUANTITY);
+	if (capacity <= 0) {
+		return 0;
+	}
+	if (terrain_id(target) != source_id) {
+		int equilibrium_distance = source_quantity + side_flow_offset(source_id);
+		return min(
+			source_quantity,
+			min(side_down_rate(source_id), min(capacity, equilibrium_distance / 2))
+		);
+	}
+	int target_quantity = fill_amount(target);
+	int minimum_difference = min_fill_difference(source_id);
+	if (minimum_difference > 0 && source_quantity - target_quantity < minimum_difference) {
+		return 0;
+	}
+	int equilibrium_distance = source_quantity - target_quantity + side_flow_offset(source_id);
 	if (equilibrium_distance <= 0) {
 		return 0;
 	}
-	return min(source_fill, min(raw_capacity, equilibrium_distance / 2));
+	return min(
+		source_quantity,
+		min(side_down_rate(source_id), min(capacity, equilibrium_distance / 2))
+	);
 }
 
-int side_up_transfer_capacity(int source_id, int source_fill, int target_fill) {
-	int target_capacity = HALF_FILL - target_fill;
-	if (target_capacity <= 0) {
+int side_up_transfer_amount(vec4 source, vec4 target) {
+	int source_id = terrain_id(source);
+	int source_quantity = fill_amount(source);
+	if (source_quantity <= 0 || !can_side_up(source_id)) {
 		return 0;
 	}
-	int excess = source_fill - side_flow_offset(source_id) - target_fill;
+	int capacity = primary_target_capacity(source, target, FULL_QUANTITY);
+	if (capacity <= 0) {
+		return 0;
+	}
+	if (terrain_id(target) != source_id) {
+		int excess = source_quantity - side_flow_offset(source_id);
+		if (excess <= 0) {
+			return 0;
+		}
+		return min(source_quantity, min(side_up_rate(source_id), min(capacity, excess / 2)));
+	}
+	int target_quantity = fill_amount(target);
+	int excess = source_quantity - side_flow_offset(source_id) - target_quantity;
 	if (excess <= 0) {
 		return 0;
 	}
-	return min(source_fill, min(target_capacity, excess / 2));
+	return min(source_quantity, min(side_up_rate(source_id), min(capacity, excess / 2)));
 }
 
-bool can_receive_side_cell(int source_id, vec4 target_cell, int capacity_limit) {
-	int target_id = terrain_id(target_cell);
-	int target_fill = fill_amount(target_cell);
-	if (target_fill >= capacity_limit) {
+void transfer_primary(
+	vec4 source,
+	vec4 target,
+	int amount,
+	out vec4 next_source,
+	out vec4 next_target
+) {
+	int component_id = terrain_id(source);
+	next_source = remove_primary_component(source, amount);
+	next_target = add_component(target, component_id, amount, FULL_QUANTITY);
+}
+
+bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
+	next_a = a;
+	next_b = b;
+	int component_id = terrain_id(a);
+	if (component_id != terrain_id(b) || fill_amount(a) <= 0 || fill_amount(b) <= 0) {
 		return false;
 	}
-	if (target_id == source_id) {
-		return true;
+	int a_quantity = fill_amount(a);
+	int b_quantity = fill_amount(b);
+	if (motion(component_id) != MOTION_GAS && a_quantity <= FULL_QUANTITY && b_quantity <= FULL_QUANTITY) {
+		return false;
 	}
-	if (target_id == air_id() && target_fill <= 0) {
-		return true;
+	int difference = a_quantity - b_quantity;
+	int amount = abs(difference) / 2;
+	if (amount <= 0) {
+		return false;
 	}
-	return density(target_id) < density(source_id);
+	if (difference > 0) {
+		amount = min(amount, MAX_STORED_QUANTITY - b_quantity);
+		next_a = remove_primary_component(a, amount);
+		next_b = add_component(b, component_id, amount, MAX_STORED_QUANTITY);
+	} else {
+		amount = min(amount, MAX_STORED_QUANTITY - a_quantity);
+		next_b = remove_primary_component(b, amount);
+		next_a = add_component(a, component_id, amount, MAX_STORED_QUANTITY);
+	}
+	return amount > 0;
 }
 
-int side_down_transfer_amount(vec4 source_cell, vec4 target_cell) {
-	int source_id = terrain_id(source_cell);
-	int source_fill = fill_amount(source_cell);
-	if (source_fill <= 0 || !can_side_down(source_id)) {
-		return 0;
-	}
-	if (!can_receive_side_cell(source_id, target_cell, FULL_FILL)) {
-		return 0;
-	}
-	int target_fill = fill_amount(target_cell);
-	return min(side_down_rate(source_id), side_transfer_capacity(source_id, source_fill, target_fill));
-}
-
-int side_up_transfer_amount(vec4 source_cell, vec4 target_cell) {
-	int source_id = terrain_id(source_cell);
-	int source_fill = fill_amount(source_cell);
-	if (source_fill <= 0 || !can_side_up(source_id)) {
-		return 0;
-	}
-	if (!can_receive_side_cell(source_id, target_cell, HALF_FILL)) {
-		return 0;
-	}
-	int target_fill = fill_amount(target_cell);
-	return min(side_up_rate(source_id), side_up_transfer_capacity(source_id, source_fill, target_fill));
-}
-
-bool direct_bottom_blocked(ivec2 coord, vec4 source_cell) {
+bool direct_bottom_blocked(ivec2 coord, vec4 source) {
 	ivec2 below_coord = hex_neighbor(coord, HEX_DIRECTION_DOWN);
-	return !in_bounds(below_coord) || fall_amount(source_cell, read_cell(below_coord)) <= 0;
+	return !in_bounds(below_coord) || fall_transfer_amount(source, read_cell(below_coord)) <= 0;
 }
 
-bool bottom_side_blocked(ivec2 coord, vec4 source_cell) {
+bool bottom_side_blocked(ivec2 coord, vec4 source) {
 	ivec2 bottom_side_coord = pair_neighbor(coord);
-	return !in_bounds(bottom_side_coord) || side_down_transfer_amount(source_cell, read_cell(bottom_side_coord)) <= 0;
+	return !in_bounds(bottom_side_coord) || side_down_transfer_amount(source, read_cell(bottom_side_coord)) <= 0;
 }
 
-vec4 resolve_side_for_output(vec4 source_cell, vec4 target_cell, bool output_source, int amount) {
-	int source_id = terrain_id(source_cell);
-	int source_fill = fill_amount(source_cell);
-	int target_fill = fill_amount(target_cell);
-	if (amount <= 0) {
-		return output_source ? source_cell : target_cell;
+void resolve_pair(
+	ivec2 a_coord,
+	ivec2 b_coord,
+	vec4 a,
+	vec4 b,
+	out vec4 next_a,
+	out vec4 next_b
+) {
+	next_a = a;
+	next_b = b;
+	if (resolve_secondary_pair(a, b, is_vertical_pass(), next_a, next_b)) {
+		return;
 	}
-	int next_source_fill = source_fill - amount;
-	int next_target_fill = target_fill + amount;
-	vec4 next_source = make_cell(next_source_fill > 0 ? source_id : air_id(), next_source_fill);
-	vec4 next_target = make_cell(source_id, next_target_fill);
-	return output_source ? next_source : next_target;
-}
-
-vec4 resolve_side_up_for_output(vec4 source_cell, vec4 target_cell, bool output_source, int amount) {
-	int source_id = terrain_id(source_cell);
-	int source_fill = fill_amount(source_cell);
-	int target_fill = fill_amount(target_cell);
-	if (amount <= 0) {
-		return output_source ? source_cell : target_cell;
+	if (resolve_same_primary_pressure(a, b, next_a, next_b)) {
+		return;
 	}
-	int next_source_fill = source_fill - amount;
-	int next_target_fill = target_fill + amount;
-	vec4 next_source = make_cell(next_source_fill > 0 ? source_id : air_id(), next_source_fill);
-	vec4 next_target = make_cell(source_id, next_target_fill);
-	return output_source ? next_source : next_target;
-}
-
-vec4 resolve_diagonal_for_side(ivec2 a_coord, ivec2 b_coord, vec4 a, vec4 b, bool output_a) {
-	int side_down_amount = 0;
+	if (is_vertical_pass()) {
+		int amount = fall_transfer_amount(a, b);
+		if (amount > 0) {
+			transfer_primary(a, b, amount, next_a, next_b);
+		}
+		return;
+	}
 	if (direct_bottom_blocked(a_coord, a)) {
-		side_down_amount = side_down_transfer_amount(a, b);
+		int amount = side_down_transfer_amount(a, b);
+		if (amount > 0) {
+			transfer_primary(a, b, amount, next_a, next_b);
+			return;
+		}
 	}
-	if (side_down_amount > 0) {
-		return resolve_side_for_output(a, b, output_a, side_down_amount);
-	}
-	int side_up_amount = 0;
 	if (direct_bottom_blocked(b_coord, b) && bottom_side_blocked(b_coord, b)) {
-		side_up_amount = side_up_transfer_amount(b, a);
+		int amount = side_up_transfer_amount(b, a);
+		if (amount > 0) {
+			transfer_primary(b, a, amount, next_b, next_a);
+		}
 	}
-	if (side_up_amount > 0) {
-		return resolve_side_up_for_output(b, a, !output_a, side_up_amount);
-	}
-	return output_a ? a : b;
 }
 
 void fragment() {
@@ -421,16 +634,14 @@ void fragment() {
 		vec4 a = read_cell(owner);
 		vec4 b = read_cell(neighbor);
 		if (liquid_contact(a, b)) {
-			result = output_a ? make_cell(air_id(), AIR_FILL) : make_cell(stone_id(), FULL_FILL);
-		} else if (fill_amount(a) <= 0 && fill_amount(b) <= 0) {
-			result = output_a ? a : b;
-		} else if (is_vertical_pass()) {
-			result = resolve_fall_for_side(a, b, output_a);
+			result = output_a ? air_cell() : make_cell(stone_id(), maximum_quantity(stone_id()));
 		} else {
-			result = resolve_diagonal_for_side(owner, neighbor, a, b, output_a);
+			vec4 next_a;
+			vec4 next_b;
+			resolve_pair(owner, neighbor, a, b, next_a, next_b);
+			result = output_a ? next_a : next_b;
 		}
 	}
 	result.b = float(resolved_light(coord, current, result)) / 255.0;
-	result.a = current.a;
 	COLOR = result;
 }

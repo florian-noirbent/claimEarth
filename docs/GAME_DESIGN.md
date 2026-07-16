@@ -114,22 +114,32 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 | Terrain | Collision | Motion/hazard | Bomb response |
 | --- | --- | --- | --- |
-| Air | Passable | Stable | None |
+| Air | Passable | Pressure-balancing gas; normal pressure is 64 quantity | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
-| Sand | Solid at half fill or more | Falls, can creep side-down, pushes passable moving terrain below side-down before swapping any remainder upward, never rises; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
+| Sand | Solid at half fill or more | Falls and creeps side-down; denser Sand displaces lighter moving terrain into a conserved hidden component that escapes through later pair passes; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
 
-Moving terrain cells store a 0-255 fill amount. A cell keeps one terrain type, but
-partial fill controls movement and rendering. Terrain simulation advances at a
+Terrain cells store a visible primary material and may temporarily retain one
+invisible, less-dense secondary material during displacement. Each component owns
+its quantity independently. Sand, Water, and Lava are visibly full at 127;
+quantities from 128 through 255 represent hidden overpressure. Air is an invisible
+gas: 64 quantity is normal atmospheric pressure and 255 is the packed pressure
+ceiling. Pair passes first evacuate displaced secondary material into compatible
+neighbors; when none is available, its quantity pressure-balances into full
+same-material neighbors over later passes. Simulation transfers conserve Air,
+Sand, Water, and Lava quantities. Explicit gameplay mutations and Water/Lava
+contact remain intentional sources, sinks, or reactions. Terrain simulation advances at a
 fixed 60 cellular-automata passes per real second, forming ten six-pass ticks per
 second: vertical even, down-right even, down-left even, then the same three odd
 connection pairs. Each pair resolves
 from its two source cells so a cell is not written by multiple pairs in one pass.
-Block density, configured on terrain definitions, resolves fall and displacement
-priority rather than terrain IDs. Water/lava contact creates stone whenever both
-have nonzero fill. The renderer uses the completed even phase only to bridge proven
+Block density, configured on terrain definitions, resolves fall, component ordering,
+and displacement priority rather than terrain IDs. Water/lava contact creates stone
+whenever both have nonzero quantity in either component. Only the primary component
+affects rendering, collision, hazards, viscosity, and item contact. The renderer
+uses the completed even phase only to bridge proven
 vertical moving-terrain falls, including sand and liquids, in the final state. High
 frame rates skip simulation work;
 low frame rates may submit the remaining passes of one tick as an ordered batch.

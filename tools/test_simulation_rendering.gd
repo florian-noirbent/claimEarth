@@ -20,6 +20,22 @@ func _run() -> void:
 		return
 	if not await _verify_partial_brightness_preserves_stream_mask(registry):
 		return
+	if not await _verify_air_pressure_equalizes_across_a_hex_edge(registry):
+		return
+	if not await _verify_sand_displaces_water_without_destroying_it(registry):
+		return
+	if not await _verify_trapped_secondary_creates_pairwise_pressure(registry):
+		return
+	if not await _verify_overpressure_propagates_to_nearby_full_cells(registry):
+		return
+	if not await _verify_saturated_pressure_stays_buffered(registry):
+		return
+	if not await _verify_third_material_waits_for_a_free_component_slot(registry):
+		return
+	if not await _verify_single_hex_fluid_quantity_conservation(registry):
+		return
+	if not await _verify_secondary_material_is_not_rendered(registry):
+		return
 	if not await _verify_live_run_player_light():
 		return
 	if not await _verify_player_light_source(registry):
@@ -116,8 +132,8 @@ func _verify_even_phase_sand_trail(registry: TerrainRegistry) -> bool:
 	var even_world := WorldGrid.new(dimensions, air)
 	var trail_cell := Vector2i(1, 1)
 	var below_cell := Vector2i(1, 2)
-	final_world.set_committed_by_offset(below_cell.x, below_cell.y, sand, 255)
-	even_world.set_committed_by_offset(trail_cell.x, trail_cell.y, sand, 128)
+	final_world.set_committed_by_offset(below_cell.x, below_cell.y, sand, 127)
+	even_world.set_committed_by_offset(trail_cell.x, trail_cell.y, sand, 64)
 	final_world.upload_cpu_snapshot_to_texture()
 	even_world.upload_cpu_snapshot_to_texture()
 
@@ -151,8 +167,8 @@ func _verify_partial_brightness_preserves_stream_mask(registry: TerrainRegistry)
 	var water := _terrain_id(registry, "Water")
 	var world := WorldGrid.new(WorldDimensions.new(3, 4), air)
 	var stream_cell := Vector2i(1, 1)
-	world.set_committed_by_offset(stream_cell.x, stream_cell.y - 1, water, 128)
-	world.set_committed_by_offset(stream_cell.x, stream_cell.y, water, 128)
+	world.set_committed_by_offset(stream_cell.x, stream_cell.y - 1, water, 64)
+	world.set_committed_by_offset(stream_cell.x, stream_cell.y, water, 64)
 	for row in range(world.dimensions.depth):
 		for col in range(world.dimensions.width):
 			world.set_committed_light_by_offset(col, row, 95)
@@ -192,6 +208,304 @@ func _verify_partial_brightness_preserves_stream_mask(registry: TerrainRegistry)
 		maxf(outside_stream.r, maxf(outside_stream.g, outside_stream.b)) < 0.01,
 		"Partial brightness must not leak terrain RGB outside the stream mask."
 	)
+
+
+func _verify_air_pressure_equalizes_across_a_hex_edge(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	# SubViewport render targets have a two-pixel minimum width. Keep the second
+	# column inert so the first column remains the isolated vertical Air pair.
+	var world := WorldGrid.new(WorldDimensions.new(2, 2), stone)
+	world.set_committed_by_offset(0, 0, air, 128)
+	world.set_committed_by_offset(0, 1, air, 64)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var top_quantity := world.get_committed_quantity_by_offset(0, 0)
+	var bottom_quantity := world.get_committed_quantity_by_offset(0, 1)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		top_quantity == 96 and bottom_quantity == 96,
+		"Air pressure must equalize across a matching adjacent Air pair while conserving quantity (top %d, bottom %d)." % [top_quantity, bottom_quantity]
+	)
+
+
+func _verify_single_hex_fluid_quantity_conservation(registry: TerrainRegistry) -> bool:
+	# Two isolated edge-to-floor chambers exercise vertical falls, diagonal spread,
+	# side-up overflow, full-cell capacity, and both horizontal map boundaries. Each
+	# fluid begins as exactly one full hex, so any quantity increase is unambiguous.
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var lava := _terrain_id(registry, "Lava")
+	var world := WorldGrid.new(WorldDimensions.new(16, 16), stone)
+	for row in range(1, 15):
+		for col in range(0, 7):
+			world.set_committed_by_offset(col, row, air)
+		for col in range(9, 16):
+			world.set_committed_by_offset(col, row, air)
+	world.set_committed_by_offset(0, 1, water, 127)
+	world.set_committed_by_offset(15, 1, lava, 127)
+
+	var expected_water := _terrain_quantity_total(world, water)
+	var expected_lava := _terrain_quantity_total(world, lava)
+	var expected_air := _terrain_quantity_total(world, air)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	for tick in range(1, 25):
+		if not await _complete_tick(backend, tick, PASS_COUNT):
+			backend.shutdown()
+			return false
+		backend.commit_if_ready()
+		if not _expect(
+			_terrain_quantity_total(world, water) == expected_water,
+			"Water quantity changed after tick %d (expected %d, got %d)." % [tick, expected_water, _terrain_quantity_total(world, water)]
+		):
+			backend.shutdown()
+			return false
+		if not _expect(
+			_terrain_quantity_total(world, lava) == expected_lava,
+			"Lava quantity changed after tick %d (expected %d, got %d)." % [tick, expected_lava, _terrain_quantity_total(world, lava)]
+		):
+			backend.shutdown()
+			return false
+		if not _expect(
+			_terrain_quantity_total(world, air) == expected_air,
+			"Air quantity changed after tick %d (expected %d, got %d)." % [tick, expected_air, _terrain_quantity_total(world, air)]
+		):
+			backend.shutdown()
+			return false
+		if not _expect(_terrain_quantities_respect_storage(world, water), "Water exceeded packed storage after tick %d." % tick):
+			backend.shutdown()
+			return false
+		if not _expect(_terrain_quantities_respect_storage(world, lava), "Lava exceeded packed storage after tick %d." % tick):
+			backend.shutdown()
+			return false
+	if not _expect(_occupied_terrain_cells(world, water) > 1, "A single Water hex must spread into multiple cells without creating quantity. Cells: %s" % [_terrain_cells(world, water)]):
+		backend.shutdown()
+		return false
+	if not _expect(_occupied_terrain_cells(world, lava) > 1, "A single Lava hex must spread into multiple cells without creating quantity."):
+		backend.shutdown()
+		return false
+	backend.shutdown()
+	await process_frame
+	return true
+
+
+func _verify_sand_displaces_water_without_destroying_it(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var sand := _terrain_id(registry, "Sand")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(4, 5), stone)
+	world.set_committed_by_offset(1, 0, air)
+	world.set_committed_by_offset(1, 1, sand, 127)
+	world.set_committed_by_offset(1, 2, water, 127)
+	world.set_committed_by_offset(0, 2, air)
+	world.set_committed_by_offset(2, 2, air)
+	var expected_sand := _terrain_quantity_total(world, sand)
+	var expected_water := _terrain_quantity_total(world, water)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var conserved := (
+		_terrain_quantity_total(world, sand) == expected_sand
+		and _terrain_quantity_total(world, water) == expected_water
+	)
+	var sand_moved_below_source := false
+	for index in range(world.dimensions.cell_count()):
+		if (
+			(world.get_committed_by_index(index) == sand or world.get_committed_secondary_by_index(index) == sand)
+			and world.dimensions.index_to_offset(index).y >= 2
+		):
+			sand_moved_below_source = true
+			break
+	backend.shutdown()
+	await process_frame
+	return _expect(conserved and sand_moved_below_source, "Sand must displace Water conservatively instead of deleting it.")
+
+
+func _verify_trapped_secondary_creates_pairwise_pressure(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(2, 2), stone)
+	world.set_committed_components_by_offset(0, 0, stone, 127, water, 64)
+	world.set_committed_by_offset(0, 1, water, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var buffered := world.get_committed_secondary_quantity_by_offset(0, 0)
+	var pressured := world.get_committed_quantity_by_offset(0, 1)
+	var total := _terrain_quantity_total(world, water)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		buffered == 32 and pressured == 159 and total == 191,
+		"Trapped secondary Water must split its pressure difference with a full Water neighbor (buffer %d, neighbor %d, total %d)." % [buffered, pressured, total]
+	)
+
+
+func _verify_saturated_pressure_stays_buffered(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(2, 2), stone)
+	world.set_committed_components_by_offset(0, 0, stone, 127, water, 64)
+	world.set_committed_by_offset(0, 1, water, 255)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var buffered := world.get_committed_secondary_quantity_by_offset(0, 0)
+	var pressured := world.get_committed_quantity_by_offset(0, 1)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		buffered == 64 and pressured == 255,
+		"A saturated pressure neighbor must leave excess secondary quantity buffered (buffer %d, neighbor %d)." % [buffered, pressured]
+	)
+
+
+func _verify_overpressure_propagates_to_nearby_full_cells(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(2, 3), stone)
+	world.set_committed_components_by_offset(0, 0, stone, 127, water, 64)
+	world.set_committed_by_offset(0, 1, water, 127)
+	world.set_committed_by_offset(0, 2, water, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var buffered := world.get_committed_secondary_quantity_by_offset(0, 0)
+	var middle := world.get_committed_quantity_by_offset(0, 1)
+	var far := world.get_committed_quantity_by_offset(0, 2)
+	var total := _terrain_quantity_total(world, water)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		buffered == 32 and middle == 143 and far == 143 and total == 318,
+		"Overpressure must propagate through later pair passes (buffer %d, middle %d, far %d, total %d)." % [buffered, middle, far, total]
+	)
+
+
+func _verify_third_material_waits_for_a_free_component_slot(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var sand := _terrain_id(registry, "Sand")
+	var water := _terrain_id(registry, "Water")
+	var air := _terrain_id(registry, "Air")
+	var world := WorldGrid.new(WorldDimensions.new(2, 2), stone)
+	world.set_committed_by_offset(0, 0, sand, 127)
+	world.set_committed_components_by_offset(0, 1, water, 64, air, 64)
+	var expected_sand := _terrain_quantity_total(world, sand)
+	var expected_water := _terrain_quantity_total(world, water)
+	var expected_air := _terrain_quantity_total(world, air)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var unchanged := (
+		world.get_committed_by_offset(0, 0) == sand
+		and world.get_committed_quantity_by_offset(0, 0) == 127
+		and _terrain_quantity_total(world, sand) == expected_sand
+		and _terrain_quantity_total(world, water) == expected_water
+		and _terrain_quantity_total(world, air) == expected_air
+	)
+	backend.shutdown()
+	await process_frame
+	return _expect(unchanged, "A third material must wait instead of overwriting either occupied target component.")
+
+
+func _verify_secondary_material_is_not_rendered(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var lava := _terrain_id(registry, "Lava")
+	var world := WorldGrid.new(WorldDimensions.new(3, 3), air)
+	world.set_committed_components_by_offset(1, 1, air, 64, lava, 127)
+	world.upload_cpu_snapshot_to_texture()
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(128, 128)
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
+	var presenter := WorldPresenter.new()
+	presenter.position = Vector2(24.0, 24.0)
+	var presentation_config := load("res://config/presentation/default_world_presentation.tres") as WorldPresentationConfig
+	presenter.presentation_config = presentation_config.duplicate(true)
+	presenter.set_force_full_brightness(true)
+	viewport.add_child(presenter)
+	presenter.configure(world, registry)
+	await process_frame
+	await process_frame
+	var center := Vector2i(presenter.position + HexMetrics.center_for_offset(1, 1, presenter.hex_radius))
+	var rendered := viewport.get_texture().get_image().get_pixelv(center)
+	viewport.free()
+	await process_frame
+	return _expect(rendered.a < 0.01, "Secondary Lava must remain invisible while Air is the primary component.")
+
+
+func _terrain_quantity_total(world: WorldGrid, terrain_id: int) -> int:
+	var total := 0
+	for index in range(world.dimensions.cell_count()):
+		if world.get_committed_by_index(index) == terrain_id:
+			total += world.get_committed_quantity_by_index(index)
+		if world.get_committed_secondary_by_index(index) == terrain_id:
+			total += world.get_committed_secondary_quantity_by_index(index)
+	return total
+
+
+func _terrain_quantities_respect_storage(world: WorldGrid, terrain_id: int) -> bool:
+	for index in range(world.dimensions.cell_count()):
+		if world.get_committed_by_index(index) == terrain_id and world.get_committed_quantity_by_index(index) > 255:
+			return false
+		if world.get_committed_secondary_by_index(index) == terrain_id and world.get_committed_secondary_quantity_by_index(index) > 255:
+			return false
+	return true
+
+
+func _occupied_terrain_cells(world: WorldGrid, terrain_id: int) -> int:
+	var occupied := 0
+	for index in range(world.dimensions.cell_count()):
+		if world.get_committed_by_index(index) == terrain_id and world.get_committed_quantity_by_index(index) > 0:
+			occupied += 1
+		elif world.get_committed_secondary_by_index(index) == terrain_id and world.get_committed_secondary_quantity_by_index(index) > 0:
+			occupied += 1
+	return occupied
+
+
+func _terrain_cells(world: WorldGrid, terrain_id: int) -> Array:
+	var cells: Array = []
+	for index in range(world.dimensions.cell_count()):
+		if world.get_committed_by_index(index) == terrain_id or world.get_committed_secondary_by_index(index) == terrain_id:
+			cells.append({
+				"offset": world.dimensions.index_to_offset(index),
+				"primary": world.get_committed_by_index(index),
+				"quantity": world.get_committed_quantity_by_index(index),
+				"secondary": world.get_committed_secondary_by_index(index),
+				"secondary_quantity": world.get_committed_secondary_quantity_by_index(index),
+			})
+	return cells
 
 
 func _verify_live_run_player_light() -> bool:

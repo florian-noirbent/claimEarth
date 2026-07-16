@@ -4,7 +4,8 @@ class_name TerrainDefinition
 extends Resource
 
 
-@export_range(0, 255) var stable_id := 0
+@export_range(0, 15) var stable_id := 0
+@export_range(1, 255, 1) var maximum_quantity := 127
 @export var display_name := ""
 @export_range(0, 255, 1) var block_density := 0
 @export var is_solid := false
@@ -37,6 +38,8 @@ func validate() -> PackedStringArray:
 		errors.append("%s is missing blast_reaction" % _identity())
 	if is_solid == is_passable:
 		errors.append("%s must be either solid or passable" % _identity())
+	if stable_id > 15:
+		errors.append("%s stable_id must fit in four bits" % _identity())
 	return errors
 
 

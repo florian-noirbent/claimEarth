@@ -157,7 +157,7 @@ func test_world_presenter_upload_world_reflects_committed_grid_changes() -> void
 	presenter.upload_world()
 
 	assert_eq(world.texture_revision, before_revision + 1)
-	assert_eq(_world_pixel_bytes(world, 5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 0, 255]))
+	assert_eq(_world_pixel_bytes(world, 5, 5), PackedByteArray([FixtureLoader.terrain_id("Sand"), 127, 0, 0]))
 
 
 func test_world_presenter_keeps_single_renderer_after_repeated_uploads() -> void:

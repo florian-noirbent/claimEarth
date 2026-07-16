@@ -99,26 +99,26 @@ func test_simultaneous_hazards_keep_independent_meters() -> void:
 	assert_almost_eq(status.statuses()[1].level, 0.5, 0.001)
 
 
-func test_hazard_behaviors_expose_fill_thresholds() -> void:
+func test_hazard_behaviors_expose_quantity_thresholds() -> void:
 	assert_eq(FixtureLoader.terrain_definition_named("Water").hazard_behavior.resolve().cause, DeathCauseScript.NONE)
 	assert_eq(FixtureLoader.terrain_definition_named("Sand").hazard_behavior.resolve().cause, DeathCauseScript.NONE)
-	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().minimum_fill, 26)
+	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().minimum_quantity, 13)
 	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().fill_seconds, 0.2)
 	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().recovery_seconds, 1.0)
-	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_fill(26).fill_rate_multiplier, 0.1, 0.001)
-	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_fill(255).fill_rate_multiplier, 1.0, 0.001)
+	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(13).fill_rate_multiplier, 0.1, 0.001)
+	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(127).fill_rate_multiplier, 1.0, 0.001)
 
 
-func test_hazard_effect_checks_fill_threshold() -> void:
+func test_hazard_effect_checks_quantity_threshold() -> void:
 	var effect = HazardEffectScript.new()
-	effect.minimum_fill = 128
+	effect.minimum_quantity = 64
 
-	assert_false(effect.applies_at_fill(127))
-	assert_true(effect.applies_at_fill(128))
+	assert_false(effect.applies_at_quantity(63))
+	assert_true(effect.applies_at_quantity(64))
 
 
-func test_hazard_behavior_resolves_only_when_fill_applies() -> void:
+func test_hazard_behavior_resolves_only_when_quantity_applies() -> void:
 	var lava_hazard = FixtureLoader.terrain_definition_named("Lava").hazard_behavior
 
-	assert_null(lava_hazard.resolve_for_fill(25))
-	assert_not_null(lava_hazard.resolve_for_fill(26))
+	assert_null(lava_hazard.resolve_for_quantity(12))
+	assert_not_null(lava_hazard.resolve_for_quantity(13))

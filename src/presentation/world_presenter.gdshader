@@ -112,11 +112,11 @@ bool is_streaming_liquid(vec2 cell, float fill_amount) {
 	}
 	vec4 below = sample_world_cell(below_cell);
 	float below_kind = terrain_kind(below);
-	if (below_kind <= 0.5 || below.g <= 0.0) {
+	if (below_kind <= 0.5 || rendered_quantity(below) <= 0.0) {
 		return true;
 	}
 	float below_motion = terrain_motion(below_kind);
-	return below_motion > 1.5 && below.g < 0.999;
+	return below_motion > 1.5 && rendered_quantity(below) < 0.999;
 }
 
 bool is_streaming_falling_solid(vec2 cell, float fill_amount) {
@@ -129,11 +129,11 @@ bool is_streaming_falling_solid(vec2 cell, float fill_amount) {
 	}
 	vec4 below = sample_world_cell(below_cell);
 	float below_kind = terrain_kind(below);
-	if (below_kind <= 0.5 || below.g <= 0.0) {
+	if (below_kind <= 0.5 || rendered_quantity(below) <= 0.0) {
 		return true;
 	}
 	float below_motion = terrain_motion(below_kind);
-	return below_motion > 0.5 && below.g < 0.999;
+	return below_motion > 0.5 && rendered_quantity(below) < 0.999;
 }
 
 // Returns true when a matching moving cell enters from this edge.
@@ -143,7 +143,7 @@ bool has_same_source(vec2 cell, float cell_kind, int side) {
 		return false;
 	}
 	vec4 source = sample_world_cell(source_cell);
-	return source.g > 0.0 && abs(terrain_kind(source) - cell_kind) < 0.5;
+	return rendered_quantity(source) > 0.0 && abs(terrain_kind(source) - cell_kind) < 0.5;
 }
 
 // The retained even phase lets the renderer bridge a moving-terrain fall that
@@ -158,13 +158,13 @@ bool has_even_phase_vertical_source(vec2 cell, float cell_kind) {
 	vec4 even_current = sample_even_cell(cell);
 	vec4 final_current = sample_world_cell(cell);
 	float even_current_kind = terrain_kind(even_current);
-	if (even_above.g <= 0.0 || abs(terrain_kind(even_above) - cell_kind) > 0.5) {
+	if (rendered_quantity(even_above) <= 0.0 || abs(terrain_kind(even_above) - cell_kind) > 0.5) {
 		return false;
 	}
 	if (even_current_kind > 0.5 && abs(even_current_kind - cell_kind) > 0.5) {
 		return false;
 	}
-	return final_current.g > even_current.g;
+	return rendered_quantity(final_current) > rendered_quantity(even_current);
 }
 
 float source_stream_mask(vec2 local, float fill_amount, bool above_source, bool left_source, bool right_source) {
@@ -251,8 +251,8 @@ vec4 render_liquid_above_partial_cell(vec2 cell, vec2 local) {
 		return vec4(0.0);
 	}
 	vec4 terrain = sample_world_cell(above_cell);
-	float cell_kind = floor(terrain.r * 255.0 + 0.5);
-	if (cell_kind <= 0.5 || terrain.g <= 0.0) {
+	float cell_kind = terrain_kind(terrain);
+	if (cell_kind <= 0.5 || rendered_quantity(terrain) <= 0.0) {
 		return vec4(0.0);
 	}
 	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
@@ -275,7 +275,7 @@ vec4 render_even_phase_vertical_trail(vec2 cell, vec2 local) {
 	vec4 even_terrain = sample_even_cell(cell);
 	float cell_kind = terrain_kind(even_terrain);
 	float motion = terrain_motion(cell_kind);
-	if (cell_kind <= 0.5 || even_terrain.g <= 0.0 || motion <= 0.5) {
+	if (cell_kind <= 0.5 || rendered_quantity(even_terrain) <= 0.0 || motion <= 0.5) {
 		return vec4(0.0);
 	}
 	vec2 below_cell = neighbor_for_edge(cell, EDGE_DOWN);
@@ -284,15 +284,15 @@ vec4 render_even_phase_vertical_trail(vec2 cell, vec2 local) {
 	}
 	vec4 even_below = sample_even_cell(below_cell);
 	vec4 final_below = sample_world_cell(below_cell);
-	if (abs(terrain_kind(final_below) - cell_kind) > 0.5 || final_below.g <= even_below.g) {
+	if (abs(terrain_kind(final_below) - cell_kind) > 0.5 || rendered_quantity(final_below) <= rendered_quantity(even_below)) {
 		return vec4(0.0);
 	}
 	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
 	vec4 style = texture(style_data, style_uv);
 	vec4 properties = texture(terrain_properties, style_uv);
-	float mask = vertical_trail_mask(local, even_terrain.g);
+	float mask = vertical_trail_mask(local, rendered_quantity(even_terrain));
 	if (motion > 1.5) {
-		return render_liquid(cell, cell_kind, style, local, even_terrain.g, true, mask);
+		return render_liquid(cell, cell_kind, style, local, rendered_quantity(even_terrain), true, mask);
 	}
 	return render_solid_material(style, properties, mask);
 }
@@ -311,7 +311,7 @@ vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_loca
 	vec4 style = texture(style_data, style_uv);
 	vec4 properties = texture(terrain_properties, style_uv);
 	float motion = terrain_motion(source_kind);
-	float fill_amount = source_terrain.g;
+	float fill_amount = rendered_quantity(source_terrain);
 	if (motion > 1.5) {
 		bool stream = is_streaming_liquid(source_cell, fill_amount);
 		float liquid_mask = 1.0;
@@ -353,10 +353,10 @@ vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_loca
 // material across an upward-facing opening.
 bool is_upward_moving_free_surface(vec2 moving_cell, vec4 moving_terrain, vec2 other_cell, vec4 other_terrain) {
 	float moving_kind = terrain_kind(moving_terrain);
-	if (moving_kind <= 0.5 || moving_terrain.g <= 0.0 || terrain_motion(moving_kind) <= 0.5) {
+	if (moving_kind <= 0.5 || rendered_quantity(moving_terrain) <= 0.0 || terrain_motion(moving_kind) <= 0.5) {
 		return false;
 	}
-	if (terrain_kind(other_terrain) > 0.5 && other_terrain.g > 0.0) {
+	if (terrain_kind(other_terrain) > 0.5 && rendered_quantity(other_terrain) > 0.0) {
 		return false;
 	}
 	return center_for_offset(other_cell).y < center_for_offset(moving_cell).y - 0.001;
@@ -520,7 +520,7 @@ void fragment() {
 			resolve_jittered_boundary(cell, terrain, local, resolved_cell, resolved_terrain, owner_kind, owner_distance, has_boundary);
 			float resolved_kind = terrain_kind(resolved_terrain);
 			if (abs(resolved_kind - cell_kind) > 0.5 || distance(resolved_cell, cell) > 0.1) {
-				if (resolved_kind <= 0.5 || resolved_terrain.g <= 0.0) {
+				if (resolved_kind <= 0.5 || rendered_quantity(resolved_terrain) <= 0.0) {
 					out_color = vec4(0.0);
 				} else {
 					out_color = render_terrain_cell(resolved_cell, resolved_terrain, world_pos - center_for_offset(resolved_cell));

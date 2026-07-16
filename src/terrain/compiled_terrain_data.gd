@@ -6,11 +6,13 @@ extends RefCounted
 const MOTION_STABLE := 0
 const MOTION_FALLING := 1
 const MOTION_LIQUID := 2
+const MOTION_GAS := 3
 
 var motion_by_id := PackedByteArray()
 var solid_by_id := PackedByteArray()
 var passable_by_id := PackedByteArray()
 var density_by_id := PackedByteArray()
+var maximum_quantity_by_id := PackedByteArray()
 var moving_solid_fill_threshold_by_id := PackedByteArray()
 var can_fall_by_id := PackedByteArray()
 var can_side_down_by_id := PackedByteArray()
@@ -48,11 +50,14 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 			result.motion_by_id[stable_id] = MOTION_FALLING
 		elif motion_name == "liquid":
 			result.motion_by_id[stable_id] = MOTION_LIQUID
+		elif motion_name == "gas":
+			result.motion_by_id[stable_id] = MOTION_GAS
 		else:
 			result.motion_by_id[stable_id] = MOTION_STABLE
 		result.solid_by_id[stable_id] = 1 if definition.is_solid else 0
 		result.passable_by_id[stable_id] = 1 if definition.is_passable else 0
 		result.density_by_id[stable_id] = definition.block_density
+		result.maximum_quantity_by_id[stable_id] = definition.maximum_quantity
 		result.moving_solid_fill_threshold_by_id[stable_id] = definition.moving_solid_fill_threshold
 		var motion := definition.motion_behavior
 		result.can_fall_by_id[stable_id] = 1 if motion.can_fall else 0
@@ -97,12 +102,12 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 	return result
 
 
-func is_solid(cell_id: int, fill: int = 255) -> bool:
+func is_solid(cell_id: int, quantity: int = 127) -> bool:
 	if cell_id < 0 or cell_id >= solid_by_id.size() or solid_by_id[cell_id] == 0:
 		return false
 	if motion(cell_id) == MOTION_STABLE:
 		return true
-	return fill >= int(moving_solid_fill_threshold_by_id[cell_id])
+	return quantity >= int(moving_solid_fill_threshold_by_id[cell_id])
 
 
 func is_passable(cell_id: int) -> bool:
@@ -111,6 +116,10 @@ func is_passable(cell_id: int) -> bool:
 
 func density(cell_id: int) -> int:
 	return int(density_by_id[cell_id]) if cell_id >= 0 and cell_id < density_by_id.size() else 0
+
+func maximum_quantity(cell_id: int) -> int:
+	return int(maximum_quantity_by_id[cell_id]) if cell_id >= 0 and cell_id < maximum_quantity_by_id.size() else 127
+
 
 
 func motion(cell_id: int) -> int:
@@ -181,6 +190,7 @@ func _resize_tables(size: int) -> void:
 	solid_by_id.resize(size)
 	passable_by_id.resize(size)
 	density_by_id.resize(size)
+	maximum_quantity_by_id.resize(size)
 	moving_solid_fill_threshold_by_id.resize(size)
 	can_fall_by_id.resize(size)
 	can_side_down_by_id.resize(size)

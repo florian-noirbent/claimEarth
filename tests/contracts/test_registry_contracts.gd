@@ -79,3 +79,16 @@ func test_terrain_definition_rejects_invalid_viscosity() -> void:
 	definition.blast_reaction = NoBlastReaction.new()
 
 	assert_true("\n".join(definition.validate()).contains("viscosity"))
+
+
+func test_terrain_definition_rejects_ids_outside_packed_nibble() -> void:
+	var definition := TerrainDefinition.new()
+	definition.stable_id = 16
+	definition.display_name = "Too many terrain types"
+	definition.is_solid = true
+	definition.is_passable = false
+	definition.motion_behavior = StableMotionBehavior.new()
+	definition.hazard_behavior = NoHazardBehavior.new()
+	definition.blast_reaction = NoBlastReaction.new()
+
+	assert_true("\n".join(definition.validate()).contains("four bits"))

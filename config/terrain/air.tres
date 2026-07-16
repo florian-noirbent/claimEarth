@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="TerrainDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_1bi3n"]
-[ext_resource type="Resource" path="res://config/terrain/motion/stable_motion.tres" id="2_3htqf"]
+[ext_resource type="Resource" path="res://config/terrain/motion/gas_motion.tres" id="2_3htqf"]
 [ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_asv5i"]
 [ext_resource type="Resource" path="res://config/terrain/blast/no_blast_reaction.tres" id="4_7v0ht"]
 [ext_resource type="Resource" path="res://config/visual/air_style.tres" id="5_3xqma"]
@@ -9,6 +9,7 @@
 [resource]
 script = ExtResource("1_1bi3n")
 stable_id = 0
+maximum_quantity = 255
 display_name = "Air"
 block_density = 0
 is_solid = false

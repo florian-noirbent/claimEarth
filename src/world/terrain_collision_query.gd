@@ -25,7 +25,7 @@ func is_solid_cell(col: int, row: int) -> bool:
 		return false
 	return metadata.is_solid(
 		world.get_committed_by_offset(col, row),
-		world.get_committed_fill_by_offset(col, row)
+		world.get_committed_quantity_by_offset(col, row)
 	)
 
 
@@ -38,15 +38,15 @@ func is_solid_at_world(position: Vector2) -> bool:
 	return is_solid_cell(offset.x, offset.y)
 
 
-func fill_weighted_viscosity_at_world(position: Vector2) -> float:
+func quantity_weighted_viscosity_at_world(position: Vector2) -> float:
 	if not is_configured():
 		return 0.0
 	var offset := HexMetrics.offset_for_world(position, hex_radius)
 	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return 0.0
 	var cell_id := world.get_committed_by_offset(offset.x, offset.y)
-	var fill_fraction := float(world.get_committed_fill_by_offset(offset.x, offset.y)) / 255.0
-	return metadata.viscosity(cell_id) * fill_fraction
+	var quantity_fraction := float(world.get_committed_quantity_by_offset(offset.x, offset.y)) / float(metadata.maximum_quantity(cell_id))
+	return metadata.viscosity(cell_id) * clampf(quantity_fraction, 0.0, 1.0)
 
 
 func convex_polygon_overlaps_solid(polygon: PackedVector2Array) -> bool:

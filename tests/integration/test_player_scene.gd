@@ -170,11 +170,11 @@ func test_player_fluid_drag_averages_partial_fill_and_mixed_body_samples() -> vo
 	var sampled_cells := sample_counts.keys()
 	var water_cell := sampled_cells[0] as Vector2i
 	var lava_cell := sampled_cells[1] as Vector2i
-	world.set_committed_by_offset(water_cell.x, water_cell.y, FixtureLoader.terrain_id("Water"), 128)
-	world.set_committed_by_offset(lava_cell.x, lava_cell.y, FixtureLoader.terrain_id("Lava"), 255)
+	world.set_committed_by_offset(water_cell.x, water_cell.y, FixtureLoader.terrain_id("Water"), 64)
+	world.set_committed_by_offset(lava_cell.x, lava_cell.y, FixtureLoader.terrain_id("Lava"), 127)
 	player.configure_environment(world, FixtureLoader.terrain_registry(), 16.0)
 	var expected := (
-		float(sample_counts[water_cell]) * 0.8 * 128.0 / 255.0
+		float(sample_counts[water_cell]) * 0.8 * 64.0 / 127.0
 		+ float(sample_counts[lava_cell]) * 4.0
 	) / 3.0
 
@@ -388,7 +388,7 @@ func test_subthreshold_and_position_only_unstuck_are_harmless() -> void:
 
 
 func test_partial_sand_does_not_unstuck_or_fabricate_an_impact() -> void:
-	var player := await _player_embedded_in_sand(127, Vector2.ZERO, false)
+	var player := await _player_embedded_in_sand(63, Vector2.ZERO, false)
 	player.velocity.y = player.movement_config.lethal_impact_speed
 	watch_signals(player)
 	var result := player._apply_terrain_unstuck(0.1)
@@ -414,7 +414,7 @@ func test_suffocation_samples_air_above_a_partial_head_hex() -> void:
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Stone"))
 	var head_cell := Vector2i(3, 3)
 	var above_cell := HexCoord.from_offset_odd_q(head_cell.x, head_cell.y).neighbor(2).to_offset_odd_q()
-	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 128)
+	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 64)
 	world.set_committed_by_offset(above_cell.x, above_cell.y, FixtureLoader.terrain_id("Air"))
 	player.configure_environment(world, registry, 16.0)
 	player.global_position = HexMetrics.center_for_offset(head_cell.x, head_cell.y, 16.0)
@@ -432,7 +432,7 @@ func test_suffocation_starts_when_the_head_hex_is_full_non_air() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
 	var head_cell := Vector2i(3, 3)
-	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 255)
+	world.set_committed_by_offset(head_cell.x, head_cell.y, FixtureLoader.terrain_id("Water"), 127)
 	player.configure_environment(world, registry, 16.0)
 	player.global_position = HexMetrics.center_for_offset(head_cell.x, head_cell.y, 16.0)
 
@@ -460,16 +460,16 @@ func _player_embedded_in_sand(fill: int, initial_velocity: Vector2, surrounded :
 	return player
 
 
-func _player_in_uniform_terrain(terrain_name: String, fill := 255) -> PlayerController:
+func _player_in_uniform_terrain(terrain_name: String, quantity := 127) -> PlayerController:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController
 	add_child_autofree(player)
 	await wait_process_frames(1)
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id(terrain_name))
-	if fill < 255:
+	if quantity < 127:
 		for row in world.dimensions.depth:
 			for col in world.dimensions.width:
-				world.set_committed_by_offset(col, row, FixtureLoader.terrain_id(terrain_name), fill)
+				world.set_committed_by_offset(col, row, FixtureLoader.terrain_id(terrain_name), quantity)
 	player.configure_environment(world, FixtureLoader.terrain_registry(), 16.0)
 	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
 	return player

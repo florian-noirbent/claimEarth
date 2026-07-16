@@ -4,11 +4,11 @@
 
 [resource]
 script = ExtResource("1_1n8gt")
-viscosity = 100
-fall_rate = 128
-side_down_rate = 32
-side_up_rate = 8
-min_fill_difference = 51
-side_flow_offset = 128
-low_fill_decay_threshold = 51
+viscosity = 4.0
+fall_rate = 64
+side_down_rate = 16
+side_up_rate = 4
+min_fill_difference = 25
+side_flow_offset = 64
+low_fill_decay_threshold = 25
 low_fill_decay_rate = 1

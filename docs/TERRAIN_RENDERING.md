@@ -8,8 +8,10 @@ turns world pixels into flat-top hex cells.
 ## Data flow
 
 `WorldGrid` remains the CPU-authoritative packed snapshot. Its RGBA8 cells use
-`R` for stable terrain ID, `G` for fill, `B` for light, and `A` for reserved
-flags. During a run, `RenderTextureSimulationBackend` supplies the final GPU
+`R` for packed primary/secondary terrain IDs, `G` for primary quantity, `B` for
+light, and `A` for secondary quantity. The secondary material is simulation-only
+and is never rendered; primary quantities above visible fullness 127 are rendered
+as full. During a run, `RenderTextureSimulationBackend` supplies the final GPU
 terrain texture to the presenter. The presenter also receives the retained even
 simulation phase only to draw a proven vertical moving-terrain trail through
 final-air cells. Liquids retain their fluid styling, while sand retains its solid

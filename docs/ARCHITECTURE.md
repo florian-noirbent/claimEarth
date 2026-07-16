@@ -95,10 +95,16 @@ is applied. Terminal outcomes clear and supersede a pending reward.
 `WorldGrid` owns the packed terrain state as one RGBA8 cell buffer plus an
 `ImageTexture` mirror:
 
-- `R`: terrain stable ID.
-- `G`: 0-255 fill amount.
-- `B`: lighting/reserved byte.
-- `A`: flags/reserved byte.
+- `R`: primary terrain ID in the low 4 bits and secondary terrain ID in the high
+  4 bits.
+- `G`: primary quantity from 0-255.
+- `B`: committed lighting.
+- `A`: secondary quantity from 0-255.
+
+The primary component is the denser visible/gameplay material. The optional
+secondary component is an invisible simulation work buffer for displaced lighter
+material. Quantity 127 is visual fullness and 128-255 is overpressure. External
+gameplay writes replace the primary component and clear the secondary component.
 
 New grids initialize the `B` byte to darkness. The simulation backend lights only
 the surface row during initialization, then owns lighting updates in that byte. It preserves light by
@@ -197,7 +203,7 @@ batch completes through one post-draw callback after Godot's normal viewport ren
 phase; simulation never forces a global viewport redraw.
 
 The backend compiles resource definitions into packed ID-indexed motion,
-directional transfer, block density, fill-sensitive solidity, passability, and
+directional transfer, block density, quantity-sensitive solidity, passability, and
 color tables. One logical simulation tick is six pairwise CA passes over the full
 world: the three even connection pairs, then the three odd pairs. Two alternating
 banks each contain one `SubViewport` per logical pass. A batch chains each slot from
@@ -209,8 +215,15 @@ cannot overwrite a displayed trail.
 draw verified vertical moving-terrain trails through final-air cells. Liquids keep
 their fluid appearance while falling sand uses its solid material. Presenter and
 simulation shaders share only canonical hex topology helpers; pair ownership and
-cellular-automata resolution remain simulation-specific. Pairwise resolution preserves material/fill unless an explicit rule applies, such as
-liquid contact or gameplay mutation. A completed six-pass tick publishes only a
+cellular-automata resolution remain simulation-specific. Each pair normalizes its
+two-component outputs by removing empty components, merging matching material,
+promoting a remaining secondary, and ordering different material by density.
+Secondary material first moves into compatible or partial neighbors. When trapped,
+it pressure-balances pairwise into full same-material neighbors up to the packed
+255 ceiling. This replaces whole-cell density swaps and preserves lighter liquids
+under falling or landsliding Sand. Pairwise resolution conserves component
+quantities unless an explicit rule applies, such as liquid contact or gameplay
+mutation. A completed six-pass tick publishes only a
 revisioned snapshot commit; the backend does not copy or diff every cell on the CPU.
 Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
 affected cells are already known.

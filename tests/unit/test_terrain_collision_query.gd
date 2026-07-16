@@ -22,7 +22,7 @@ func test_circle_overlaps_solid_static_terrain() -> void:
 func test_sand_below_collision_threshold_is_passable() -> void:
 	var sand_id := FixtureLoader.terrain_id("Sand")
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
-	world.set_committed_by_offset(2, 2, sand_id, 127)
+	world.set_committed_by_offset(2, 2, sand_id, 63)
 	var query = _query_for_world(world)
 
 	assert_false(query.circle_overlaps_solid(HexMetrics.center_for_offset(2, 2, 16.0), 14.0))
@@ -31,34 +31,34 @@ func test_sand_below_collision_threshold_is_passable() -> void:
 func test_sand_at_collision_threshold_is_solid() -> void:
 	var sand_id := FixtureLoader.terrain_id("Sand")
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
-	world.set_committed_by_offset(2, 2, sand_id, 128)
+	world.set_committed_by_offset(2, 2, sand_id, 64)
 	var query = _query_for_world(world)
 
 	assert_true(query.circle_overlaps_solid(HexMetrics.center_for_offset(2, 2, 16.0), 14.0))
 
 
-func test_fill_weighted_viscosity_uses_committed_fluid_fill() -> void:
+func test_quantity_weighted_viscosity_uses_committed_fluid_quantity() -> void:
 	var water_id := FixtureLoader.terrain_id("Water")
 	var lava_id := FixtureLoader.terrain_id("Lava")
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
 	var water_center := HexMetrics.center_for_offset(1, 2, 16.0)
 	var lava_center := HexMetrics.center_for_offset(3, 2, 16.0)
-	world.set_committed_by_offset(1, 2, water_id, 128)
-	world.set_committed_by_offset(3, 2, lava_id, 255)
+	world.set_committed_by_offset(1, 2, water_id, 127)
+	world.set_committed_by_offset(3, 2, lava_id, 127)
 	var query = _query_for_world(world)
 
 	assert_almost_eq(
-		query.fill_weighted_viscosity_at_world(water_center),
-		0.8 * 128.0 / 255.0,
+		query.quantity_weighted_viscosity_at_world(water_center),
+		0.8,
 		0.001
 	)
-	assert_almost_eq(query.fill_weighted_viscosity_at_world(lava_center), 4.0, 0.001)
+	assert_almost_eq(query.quantity_weighted_viscosity_at_world(lava_center), 4.0, 0.001)
 	assert_almost_eq(
-		query.fill_weighted_viscosity_at_world(HexMetrics.center_for_offset(2, 2, 16.0)),
+		query.quantity_weighted_viscosity_at_world(HexMetrics.center_for_offset(2, 2, 16.0)),
 		0.0,
 		0.001
 	)
-	assert_almost_eq(query.fill_weighted_viscosity_at_world(Vector2(-100.0, -100.0)), 0.0, 0.001)
+	assert_almost_eq(query.quantity_weighted_viscosity_at_world(Vector2(-100.0, -100.0)), 0.0, 0.001)
 
 
 func test_nearest_clear_circle_air_center_skips_cramped_current_cell_and_prefers_up() -> void:

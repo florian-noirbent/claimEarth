@@ -152,7 +152,7 @@ func test_lava_sensitive_projectile_ignores_lava_below_hazard_fill_threshold() -
 func test_lava_sensitive_projectile_resolves_on_lava_at_hazard_fill_threshold() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
-	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Lava"), 26)
+	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Lava"), 13)
 
 	var projectile := ItemProjectile.new()
 	projectile.world = world
@@ -173,9 +173,9 @@ func test_lava_sensitive_projectile_resolves_on_lava_at_hazard_fill_threshold() 
 	var definition := projectile._sample_terrain(projectile.global_position)
 	assert_not_null(definition)
 	assert_eq(definition.display_name, "Lava")
-	assert_eq(projectile._sample_fill(projectile.global_position), 26)
+	assert_eq(projectile._sample_quantity(projectile.global_position), 13)
 	assert_true(definition.blast_reaction.resolve().detonate_immediately)
-	assert_not_null(definition.hazard_behavior.resolve_for_fill(26))
+	assert_not_null(definition.hazard_behavior.resolve_for_quantity(13))
 	projectile._physics_process(0.016)
 
 	assert_eq(resolved_kinds, [&"lava"])

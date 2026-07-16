@@ -8,7 +8,7 @@ func test_pickaxe_changes_three_aimed_hexes_and_caps_charge_at_three() -> void:
 	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
 	var targets := [Vector2i(4, 3), Vector2i(5, 3), Vector2i(6, 3)]
 	for target in targets:
-		world.set_committed_by_offset(target.x, target.y, FixtureLoader.terrain_id("Stone"), 255)
+		world.set_committed_by_offset(target.x, target.y, FixtureLoader.terrain_id("Stone"), 127)
 	var controller := RunItemController.new()
 	add_child_autofree(controller)
 	controller.configure_catalog(_item_registry(), 16.0)
@@ -20,7 +20,7 @@ func test_pickaxe_changes_three_aimed_hexes_and_caps_charge_at_three() -> void:
 	assert_eq(cost, 3.0)
 	for target in targets:
 		assert_eq(world.get_committed_by_offset(target.x, target.y), FixtureLoader.terrain_id("Dirt"))
-		assert_eq(world.get_committed_fill_by_offset(target.x, target.y), 255)
+		assert_eq(world.get_committed_quantity_by_offset(target.x, target.y), 127)
 
 
 func test_water_bottle_fills_nearest_air_hexes() -> void:

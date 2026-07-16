@@ -418,7 +418,7 @@ func _average_body_fluid_viscosity() -> float:
 		return 0.0
 	var summed_viscosity := 0.0
 	for sample_position in sample_positions:
-		summed_viscosity += _terrain_query.fill_weighted_viscosity_at_world(sample_position)
+		summed_viscosity += _terrain_query.quantity_weighted_viscosity_at_world(sample_position)
 	return summed_viscosity / float(sample_positions.size())
 
 
@@ -429,7 +429,7 @@ func _hazard_effect_at(world_position: Vector2):
 	var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 	if definition == null:
 		return null
-	return definition.hazard_behavior.resolve_for_fill(_world.get_committed_fill_by_offset(offset.x, offset.y))
+	return definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
 
 
 func _suffocation_effect_at_head():
@@ -444,7 +444,7 @@ func _head_has_breathable_air() -> bool:
 		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 		if definition == null or definition.is_empty_space:
 			return true
-		if _world.get_committed_fill_by_offset(offset.x, offset.y) >= 255:
+		if _world.get_committed_quantity_by_offset(offset.x, offset.y) >= definition.maximum_quantity:
 			return false
 		offset = HexCoord.from_offset_odd_q(offset.x, offset.y).neighbor(2).to_offset_odd_q()
 	return true

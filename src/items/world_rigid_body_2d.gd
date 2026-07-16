@@ -81,7 +81,7 @@ func advance_body(delta: float) -> StringName:
 	var definition := _sample_terrain(global_position)
 	if definition == null:
 		return &""
-	if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately and definition.hazard_behavior.resolve_for_fill(_sample_fill(global_position)) != null:
+	if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately and definition.hazard_behavior.resolve_for_quantity(_sample_quantity(global_position)) != null:
 		return &"lava"
 	if definition.is_passable:
 		return &""
@@ -125,13 +125,13 @@ func _sample_terrain(world_position: Vector2) -> TerrainDefinition:
 	return terrain_registry.get_definition(world.get_committed_by_offset(offset.x, offset.y))
 
 
-func _sample_fill(world_position: Vector2) -> int:
+func _sample_quantity(world_position: Vector2) -> int:
 	if world == null:
 		return 0
 	var offset := HexMetrics.offset_for_world(world_position, hex_radius)
 	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return 0
-	return world.get_committed_fill_by_offset(offset.x, offset.y)
+	return world.get_committed_quantity_by_offset(offset.x, offset.y)
 
 
 func _bounce(previous_position: Vector2, delta: float) -> void:

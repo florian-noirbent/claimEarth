@@ -10,4 +10,4 @@ bar_color = Color(0.34902, 0.721569, 0.909804, 1)
 fill_seconds = 3.0
 recovery_seconds = 3.0
 display_order = 10
-minimum_fill = 1
+minimum_quantity = 1

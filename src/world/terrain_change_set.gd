@@ -13,16 +13,48 @@ func _init(dimensions: WorldDimensions = null) -> void:
 	_dimensions = dimensions
 
 
-func add_change(index: int, previous_id: int, next_id: int, _metadata: CompiledTerrainData, previous_fill: int = 255, next_fill: int = 255) -> void:
+func add_change(
+	index: int,
+	previous_id: int,
+	next_id: int,
+	_metadata: CompiledTerrainData,
+	previous_quantity: int = 127,
+	next_quantity: int = 127,
+	previous_secondary_id: int = 0,
+	next_secondary_id: int = 0,
+	previous_secondary_quantity: int = 0,
+	next_secondary_quantity: int = 0
+) -> void:
 	if _dimensions == null:
 		return
 	var id_changed := previous_id != next_id
-	var fill_changed := previous_fill != next_fill
-	if not id_changed and not fill_changed:
+	var quantity_changed := previous_quantity != next_quantity
+	var secondary_changed := (
+		previous_secondary_id != next_secondary_id
+		or previous_secondary_quantity != next_secondary_quantity
+	)
+	if not id_changed and not quantity_changed and not secondary_changed:
 		return
 	changed_indices.append(index)
 	var offset := _dimensions.index_to_offset(index)
 	_expand_dirty_rect(offset)
+
+
+func add_cell_change(change: CellChange, metadata: CompiledTerrainData = null) -> void:
+	if change == null:
+		return
+	add_change(
+		change.index,
+		change.previous_id,
+		change.next_id,
+		metadata,
+		change.previous_quantity,
+		change.next_quantity,
+		change.previous_secondary_id,
+		change.next_secondary_id,
+		change.previous_secondary_quantity,
+		change.next_secondary_quantity
+	)
 
 
 func merge(other: TerrainChangeSet) -> void:

@@ -1,9 +1,5 @@
 # New features
 
-## physics
-
-- extend the implemented projectile blast impulse to bottles and the player with the jelly perk when those features are added
-
 ## perks
 breath underwater:
 + +10s breath time
@@ -68,9 +64,6 @@ sand worm:
 + breath in sand
 
 ## new items
-* pickaxe: turn stone to dirt and dirt to sand, durability is a float, partial blocks consume a partial charge, 1 block range in mouse direction
-* shovel: turn sand to air, durability is a float, partial blocks consume a partial charge, 1 block range in mouse direction
-* flare: throw a flare like a bomb, illuminating, 10s lifespan
 * fluid bottle: throw a bottle, on impact, turn the closest 3 air hexagons into the bottle fluid type, break on lava
 
 ## map
