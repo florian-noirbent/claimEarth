@@ -213,12 +213,42 @@ func test_sand_worm_outline_only_shows_while_inside_sand() -> void:
 	effect.apply(builder)
 	player.set_perk_modifiers(builder.build())
 
-	player._update_sand_outline()
+	player._update_sand_presentation()
 
-	assert_true(player.sand_outline.visible)
+	assert_true(player.presentation.sand_outline.visible)
 	world.set_committed_by_offset(sand_cell.x, sand_cell.y, FixtureLoader.terrain_id("Air"), WorldGrid.AIR_QUANTITY)
-	player._update_sand_outline()
-	assert_false(player.sand_outline.visible)
+	player._update_sand_presentation()
+	assert_false(player.presentation.sand_outline.visible)
+
+
+func test_sand_worm_collision_policy_survives_pre_tree_configuration_order() -> void:
+	var player := load("res://scenes/player/player.tscn").instantiate() as PlayerController
+	var builder := PerkModifierBuilder.new()
+	var sand_worm := load("res://config/perks/sand_worm.tres") as PerkDefinition
+	for effect in sand_worm.effects:
+		effect.apply(builder)
+	player.set_perk_modifiers(builder.build())
+	add_child_autofree(player)
+	var sand_cell := Vector2i(3, 3)
+	var world := WorldGrid.new(
+		WorldDimensions.new(7, 7),
+		FixtureLoader.terrain_id("Air")
+	)
+	world.set_committed_by_offset(
+		sand_cell.x,
+		sand_cell.y,
+		FixtureLoader.terrain_id("Sand"),
+		127
+	)
+
+	player.configure_environment(
+		world,
+		FixtureLoader.terrain_registry(),
+		16.0
+	)
+
+	assert_false(player._terrain_query.is_solid_cell(sand_cell.x, sand_cell.y))
+	assert_eq(player.movement_config.gravity, 1400.0)
 
 
 func _jelly_modifiers() -> PerkModifierSnapshot:

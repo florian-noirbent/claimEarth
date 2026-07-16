@@ -301,7 +301,14 @@ walls.
 
 `PlayerController` is a `CharacterBody2D` node coordinating `PlayerMovementModel`,
 `GrappleModel`, environment sampling, grid-backed terrain motion, and horizontal
-clamping. It does not use Godot terrain colliders for movement; terrain collision
+clamping. `PlayerRuntimeTuning` compiles the immutable perk snapshot against the
+authored movement and grapple resources, producing duplicated active configs and
+typed player, terrain, and hazard policy without exposing modifier keys throughout
+the controller. `PlayerPresentationController` owns the editor-authored body, rope,
+hook, and sand-outline visuals; `PlayerController` updates it synchronously after
+physics and it owns no gameplay decisions or independent processing.
+
+The player does not use Godot terrain colliders for movement; terrain collision
 is delegated to the world-level query and motion solver. It combines velocity changes
 reported by ordinary motion, post-grapple correction, and terrain unsticking once per
 physics frame. The greatest qualifying change adds its hazardous excess to a

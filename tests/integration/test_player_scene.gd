@@ -31,7 +31,8 @@ func test_player_scene_loads_with_camera_and_visual() -> void:
 	assert_eq(player.world_light_source.definition.update_mode, WorldLightSourceDefinition.UpdateMode.HIGH_FREQUENCY)
 	assert_eq(player.world_light_source.definition.light_level, 190)
 	assert_eq(player.world_light_source.definition.update_radius, 18)
-	assert_not_null(player.body_polygon)
+	assert_not_null(player.presentation)
+	assert_not_null(player.presentation.body_polygon)
 	assert_gt(player.movement_config.impact_hazard_minimum_speed, 0.0)
 	assert_lt(player.movement_config.impact_hazard_minimum_speed, player.movement_config.medium_impact_speed)
 	assert_gt(player.movement_config.medium_impact_speed, 0.0)
@@ -301,19 +302,19 @@ func test_player_hook_launch_animation_plays_without_anchor() -> void:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController
 	player.configure_grapple_anchor_query(MissingAnchorQuery.new())
-	player.hook_launch_animation_seconds = 0.1
 	add_child_autofree(player)
 	await wait_process_frames(1)
+	player.presentation.hook_launch_animation_seconds = 0.1
 
 	ScenarioDriverScript.set_mouse_world_position(player, Vector2.RIGHT * 10000.0)
 	Input.action_press(InputActions.HOOK)
 	await wait_physics_frames(1)
 
 	assert_false(player.is_grapple_attached())
-	assert_true(player.rope_line.visible)
-	assert_true(player.hook_indicator.visible)
-	assert_gt(player.rope_line.points[1].length(), 0.0)
-	assert_lt(player.rope_line.points[1].length(), player.grapple_config.effective_attach_range())
+	assert_true(player.presentation.rope_line.visible)
+	assert_true(player.presentation.hook_indicator.visible)
+	assert_gt(player.presentation.rope_line.points[1].length(), 0.0)
+	assert_lt(player.presentation.rope_line.points[1].length(), player.grapple_config.effective_attach_range())
 
 	Input.action_release(InputActions.HOOK)
 	await wait_physics_frames(1)
@@ -323,16 +324,16 @@ func test_player_hook_launch_animation_uses_full_range_for_close_cursor() -> voi
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController
 	player.configure_grapple_anchor_query(MissingAnchorQuery.new())
-	player.hook_launch_animation_seconds = 0.1
 	add_child_autofree(player)
 	await wait_process_frames(1)
+	player.presentation.hook_launch_animation_seconds = 0.1
 
 	ScenarioDriverScript.set_mouse_world_position(player, Vector2.RIGHT * 20.0)
 	Input.action_press(InputActions.HOOK)
 	await wait_physics_frames(1)
 
-	assert_true(player.rope_line.visible)
-	assert_gt(player.rope_line.points[1].length(), 20.0)
+	assert_true(player.presentation.rope_line.visible)
+	assert_gt(player.presentation.rope_line.points[1].length(), 20.0)
 
 	Input.action_release(InputActions.HOOK)
 	await wait_physics_frames(1)

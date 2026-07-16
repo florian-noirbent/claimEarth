@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/player/player_presentation_controller.gd" id="1_presentation"]
+[ext_resource type="Texture2D" path="res://assets/objects/player_body.svg" id="2_body"]
+
+[node name="PlayerPresentation" type="Node2D"]
+script = ExtResource("1_presentation")
+
+[node name="BodyVisual" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="BodyPolygon" type="Polygon2D" parent="BodyVisual"]
+unique_name_in_owner = true
+color = Color(0.14, 0.08, 0.04, 0.28)
+polygon = PackedVector2Array(-14, -18, 14, -18, 18, 14, -18, 14)
+position = Vector2(0, 4)
+
+[node name="BodySprite" type="Sprite2D" parent="BodyVisual"]
+texture = ExtResource("2_body")
+position = Vector2(0, -2)
+scale = Vector2(0.3, 0.3)
+
+[node name="SandOutline" type="Line2D" parent="."]
+unique_name_in_owner = true
+z_index = 10
+z_as_relative = false
+visible = false
+width = 2.5
+default_color = Color(0.98, 0.82, 0.28, 0.95)
+points = PackedVector2Array(-14, -14, 14, -14, 18, 18, -18, 18, -14, -14)
+
+[node name="RopeLine" type="Line2D" parent="."]
+unique_name_in_owner = true
+visible = false
+width = 2.0
+default_color = Color(0.95, 0.95, 0.95, 0.9)
+
+[node name="HookIndicator" type="Polygon2D" parent="."]
+unique_name_in_owner = true
+visible = false
+color = Color(0.96, 0.75, 0.19, 1)
+polygon = PackedVector2Array(0, -6, 6, 0, 0, 6, -6, 0)
