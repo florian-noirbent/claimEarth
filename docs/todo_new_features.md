@@ -1,67 +1,36 @@
 # New features
 
+## meta
+### statistics page
+
+- number of time each object was used
+- number of time each object was selected from a chest
+- number of time each perk was picked
+- number of time for each death type
+- number of planted flag
+- maximum depth reached
+- victory count (flag planted in the earth lava core [relentless required!])
+- number of chest opened
+- number of perk geode opened
+- total depth traveled (sum of all run)
+- number of played games (at least depth 30)
+- total in game time ()
+
+### leaderboard
+- replace name input with device id
+- replace name list with depth reached histogram of all players
+
 ## perks
-breath underwater:
-+ +10s breath time
-
-lava resistance:
-+ +1s touching lava delay
-
 sulfur resistance:
 + immune to sulfur_dioxide poison
 + breath in sulfur_dioxide
 + +2s touching sulfuric_acid delay
 
-hard skin:
-+ increase impact velocity thresholds, so high impact knock out instead of killing and medium impact are ignored,
-+ reduce explosion killing blast radius by 1
-- player slide
-- remove jelly perk from pool
-
-jelly:
-+ remove all fall damage and knock out effects
-+ player float in liquids
-- player bounce
-- player is thrown away by explosions (kill radius unchanged)
-- remove hard skin perk from pool
-
-looter:
-+ future item/perks picks offer 3 choices instead of 2
-+ increase chest glow to 160
-+ all chests indestructible
-
-acrobat:
-+ double jump
-+ +50% player rope length
-
-vaporizer:
-+ generate 50% less sand on explosion
-+ increase sand and liquid vaporized radius by 1 in all explosions
-
-cave dweller:
-+ shift light rendering ranges by 25 (dark vision)
-+ 50% chance not to consume shovel and pickaxe when used
-
-small boom:
-+ small_bombs blast radius +1,
-+ 50% chance not to consume small_bombs when used
-+ (killing radius not changed)
-- small_bombs generate sulfur_dioxide
-
-large boom:
-+ large_bombs blast radius +2
-+ large_bombs vaporize radius +1
-+ 33% chance not to consume large_bombs when used
-- large_bombs killing blast radius + 1
-- large_bombs generate sulfur_dioxide
-
-relentless:
-+ the flag ignore lava and acid
-+ the flag is dropped on death: ensure a scored run
-
-sand worm:
-+ sand colision behave like fluid to the player
-+ breath in sand
+glass canon:
++ immune to lava, acid, poison, breathing
+- increase player killing blast radius by 2
+- remove knockout and decrease impact velocity thresholds so previous knockout is now the deadly level (cancel out 'jelly' and 'hard skin' knockout effect reduction, return to normal)
+- remove air control, -50 % rope length, increase gravity (cancel out acrobat, return to normal)
 
 ## new items
 * fluid bottle: throw a bottle, on impact, turn the closest 3 air hexagons into the bottle fluid type, break on lava
@@ -75,9 +44,10 @@ sand worm:
 
 ### explosive barrel
 - physic enabled object
-- explode like a large_bombs (separate config) when touched by lava, sulfuric_acid or in an explosion blast radius,
+- explode like a large_bombs (separate config) when touched by lava, sulfuric_acid or in an explosion blast radius, or with an high impact
 - the player can push barrels
 - the player can attach his hook to barrels and pull them.
+- the barrel generate an overpressured cloud of sulfur_dioxide
 
 ### Sulfur block
 yellow block
@@ -101,14 +71,6 @@ yellow block
 - overpressurized sulfur_dioxide expands up
 - consumed to turn water in contact into sulfuric_acid in 3-1 ratio (3 unit sulfur_dioxide = 1 sulfuric_acid)
 - explosions don't destroy sulfur_dioxide, but push the pressure away, creating a ring of high pressure at the edge of the explosion
-
-### uranium blocks
-green glowing block
-source of radiation, level = 255
-diffuse like light with the same target: max_radiation_level = highest_neigbhour * current_hexagon_diffusion_coefficient. but the transfer is slow, like fluid viscosity.
-if the current value is above target, the radiation level reduce slowly, with a 10% chance to randomly decrease each tick
-tech note: diffusion logic for light and radiation should be implemented in a generic way. and both resolved together in a single pass
-radiation level rendered in the 4th texture slot. add a green shade to the blocks with intensity proportionnal to the radiation level
 
 
 note: all values should be configurable in editor

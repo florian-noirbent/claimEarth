@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=10 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/glass_cannon.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[ext_resource type="Script" path="res://src/perks/perk_cancellation_effect.gd" id="4"]
+[sub_resource type="Resource" id="Effect_hazards"]
+script = ExtResource("3")
+domain = 1
+modifier_key = "all_hazards_immune"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_kill"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "player_kill_radius_add"
+value = 2.0
+[sub_resource type="Resource" id="Effect_impact"]
+script = ExtResource("3")
+contribution_tag = "glass_impact_fragility"
+modifier_key = "impact_mode"
+operation = 2
+value = 3.0
+[sub_resource type="Resource" id="Effect_air"]
+script = ExtResource("3")
+contribution_tag = "glass_free_air_control_restriction"
+modifier_key = "free_air_control_disabled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_rope"]
+script = ExtResource("3")
+modifier_key = "rope_length_multiplier_delta"
+value = -0.5
+[sub_resource type="Resource" id="Effect_gravity"]
+script = ExtResource("3")
+modifier_key = "gravity_multiplier_delta"
+value = 0.25
+[sub_resource type="Resource" id="Effect_cancel"]
+script = ExtResource("4")
+cancelled_contribution_tags = PackedStringArray("hard_skin_impact_protection", "jelly_impact_protection")
+[resource]
+script = ExtResource("1")
+stable_id = 15
+display_name = "Glass Cannon"
+description = "Immune to hazards, but fragile and heavy."
+icon = ExtResource("2")
+effects = [SubResource("Effect_hazards"), SubResource("Effect_kill"), SubResource("Effect_impact"), SubResource("Effect_air"), SubResource("Effect_rope"), SubResource("Effect_gravity"), SubResource("Effect_cancel")]

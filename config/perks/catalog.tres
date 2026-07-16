@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="PerkCatalog" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://src/perks/perk_catalog.gd" id="1"]
+[ext_resource type="Resource" path="res://config/perks/breath_resistance.tres" id="2"]
+[ext_resource type="Resource" path="res://config/perks/lava_resistance.tres" id="3"]
+[ext_resource type="Resource" path="res://config/perks/sulfur_resistance.tres" id="4"]
+[ext_resource type="Resource" path="res://config/perks/hard_skin.tres" id="5"]
+[ext_resource type="Resource" path="res://config/perks/jelly.tres" id="6"]
+[ext_resource type="Resource" path="res://config/perks/looter.tres" id="7"]
+[ext_resource type="Resource" path="res://config/perks/acrobat.tres" id="8"]
+[ext_resource type="Resource" path="res://config/perks/vaporizer.tres" id="9"]
+[ext_resource type="Resource" path="res://config/perks/cave_dweller.tres" id="10"]
+[ext_resource type="Resource" path="res://config/perks/small_boom.tres" id="11"]
+[ext_resource type="Resource" path="res://config/perks/large_boom.tres" id="12"]
+[ext_resource type="Resource" path="res://config/perks/relentless.tres" id="13"]
+[ext_resource type="Resource" path="res://config/perks/sand_worm.tres" id="14"]
+[ext_resource type="Resource" path="res://config/perks/excavator.tres" id="15"]
+[ext_resource type="Resource" path="res://config/perks/glass_cannon.tres" id="16"]
+
+[resource]
+script = ExtResource("1")
+definitions = [ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16")]

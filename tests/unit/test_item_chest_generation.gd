@@ -44,7 +44,7 @@ func test_default_generation_places_deterministic_stratified_chests_and_carves_c
 	_assert_chambers_only_carve_their_upper_halves(
 		result.world,
 		baseline.world,
-		result.item_chest_spawns,
+		result.item_chest_spawns + result.perk_geode_spawns,
 		3,
 		air_id
 	)

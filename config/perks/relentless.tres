@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=4 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/relentless.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_flag"]
+script = ExtResource("3")
+domain = 7
+modifier_key = "survive_lava_acid_and_drop_on_death"
+operation = 2
+value = 1.0
+[resource]
+script = ExtResource("1")
+stable_id = 12
+display_name = "Relentless"
+description = "Flags survive lava and are dropped on death."
+icon = ExtResource("2")
+effects = [SubResource("Effect_flag")]

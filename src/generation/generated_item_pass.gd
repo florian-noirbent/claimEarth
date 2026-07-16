@@ -68,7 +68,7 @@ func _place_column_areas(
 			var anchor := _reserve_random_anchor(context, area_rect, column_index, area_start)
 			if anchor.x >= 0:
 				if not item_definition.prepare_terrain(context, anchor):
-					context.release_generated_item_anchor(anchor)
+					context.release_generated_item_area(anchor, item_definition.required_edge_clearance())
 					return false
 				var spawn_seed := SeedUtils.derive_seed(
 					context.run_seed,
@@ -81,7 +81,7 @@ func _place_column_areas(
 					]
 				)
 				if not item_definition.record_spawn(context, anchor, spawn_seed):
-					context.release_generated_item_anchor(anchor)
+					context.release_generated_item_area(anchor, item_definition.required_edge_clearance())
 					return false
 		area_start += area_height_rows
 	return true
@@ -132,6 +132,6 @@ func _reserve_random_anchor(
 			area_rect.position.x + candidate_index % area_rect.size.x,
 			area_rect.position.y + int(candidate_index / area_rect.size.x)
 		)
-		if context.try_reserve_generated_item_anchor(anchor):
+		if context.try_reserve_generated_item_area(anchor, item_definition.required_edge_clearance()):
 			return anchor
 	return Vector2i(-1, -1)

@@ -13,10 +13,13 @@ signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
-signal reward_choices_requested(choices: Array)
+signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
+signal perks_changed(perks: Array)
+signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition)
 
 @onready var item_controller: RunItemController = %RunItemController
+@onready var perk_controller: RunPerkController = %RunPerkController
 @onready var world_controller: RunWorldController = %RunWorldController
 @onready var world_background: WorldBackground = %WorldBackground
 @onready var world_presenter: WorldPresenter = %WorldPresenter
@@ -32,7 +35,9 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 		return
 	_configured = true
 	world_controller.configure(profile, player_scene, world_background, world_presenter, depth_markers, world_side_boundaries)
+	perk_controller.configure()
 	item_controller.configure_catalog(world_controller.item_registry(), world_presenter.hex_radius)
+	item_controller.configure_perk_controller(perk_controller)
 	world_controller.generation_progressed.connect(generation_progressed.emit)
 	world_controller.run_ready.connect(_on_run_ready)
 	world_controller.player_died.connect(player_died.emit)
@@ -46,6 +51,9 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	item_controller.reward_choices_requested.connect(reward_choices_requested.emit)
 	item_controller.pending_reward_invalidated.connect(pending_reward_invalidated.emit)
 	item_controller.terrain_changed.connect(world_controller.refresh_terrain_presentation)
+	item_controller.terrain_pulse_started.connect(terrain_pulse_started.emit)
+	perk_controller.perks_changed.connect(perks_changed.emit)
+	perk_controller.modifiers_changed.connect(_on_perk_modifiers_changed)
 
 
 func start_run(run_seed: int) -> void:
@@ -95,6 +103,25 @@ func _on_run_ready(next_seed: int) -> void:
 		world_controller.terrain_registry(),
 		world_presenter.hex_radius,
 		world_controller.simulation_backend(),
-		world_controller.generation_result().item_chest_spawns
+		world_controller.generation_result().item_chest_spawns,
+		world_controller.generation_result().perk_geode_spawns
 	)
+	player.set_perk_modifiers(perk_controller.modifiers())
+	item_controller.set_perk_modifiers(perk_controller.modifiers())
+	_apply_presentation_perk_modifiers(perk_controller.modifiers())
 	run_ready.emit(next_seed)
+
+
+func _on_perk_modifiers_changed(modifiers: PerkModifierSnapshot) -> void:
+	var player := world_controller.player()
+	if player != null:
+		player.set_perk_modifiers(modifiers)
+	item_controller.set_perk_modifiers(modifiers)
+	_apply_presentation_perk_modifiers(modifiers)
+
+
+func _apply_presentation_perk_modifiers(modifiers: PerkModifierSnapshot) -> void:
+	if world_presenter == null:
+		return
+	var offset := 0.0 if modifiers == null else float(modifiers.presentation.value("lighting_threshold_offset", 0.0))
+	world_presenter.set_lighting_threshold_offset(offset)

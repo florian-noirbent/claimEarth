@@ -29,6 +29,7 @@ var _runtime_physics := false
 var _active := false
 var _grounded := false
 var _grounded_check_remaining := 0.0
+var _destructible := true
 
 
 func _ready() -> void:
@@ -51,8 +52,12 @@ func configure(
 	_apply_geometry()
 	if data != null:
 		global_position = generated_center_position(data.anchor_offset)
-	if light_source != null and data != null and data.definition != null:
+	if light_source != null and data != null and data.definition != null and data.definition.emits_light:
 		light_source.configure(simulation_backend, _hex_radius, _chest_light_source_id(data))
+		if data.definition.emitted_light_level_override > 0:
+			light_source.set_light_level(data.definition.emitted_light_level_override)
+	elif light_source != null:
+		light_source.set_emitting(false)
 	if explosive != null and data != null and data.definition != null:
 		explosive.configure(data.definition.explosion_definition, _body_polygon, self)
 	_runtime_physics = world != null and terrain_registry != null
@@ -67,6 +72,17 @@ func set_active(is_active: bool, interactive_allowed: bool = true) -> void:
 	if explosive != null:
 		explosive.set_active(is_active)
 	set_interactive(is_active and interactive_allowed)
+
+
+func set_destructible(destructible: bool) -> void:
+	_destructible = destructible
+	if not destructible and explosive != null and explosive.has_method("disarm"):
+		explosive.disarm()
+
+
+func set_light_level_override(light_level: int) -> void:
+	if light_source != null:
+		light_source.set_light_level(light_level)
 
 
 func set_interactive(interactive: bool) -> void:
@@ -154,6 +170,9 @@ func _sweep_down(distance: float) -> void:
 
 func _apply_support_tilt() -> void:
 	var definition := spawn_data.definition
+	if not definition.allow_support_tilt:
+		visual_root.rotation = 0.0
+		return
 	var half_size := _body_half_size()
 	var left_distance := _support_distance(-half_size.x * 0.72, half_size.y, definition.support_probe_distance)
 	var right_distance := _support_distance(half_size.x * 0.72, half_size.y, definition.support_probe_distance)
@@ -211,19 +230,25 @@ func _polygon_overlaps_at(center: Vector2, rotation_value: float) -> bool:
 
 
 func _body_half_size() -> Vector2:
+	if spawn_data != null and spawn_data.definition != null:
+		return Vector2(
+			spawn_data.definition.body_width_radii * _hex_radius,
+			spawn_data.definition.body_height_radii * _hex_radius
+		) * 0.5
 	return Vector2(3.25 * _hex_radius, 2.0 * _hex_radius) * 0.5
 
 
 func _apply_geometry() -> void:
 	if not is_node_ready() or sprite.texture == null:
 		return
-	var target_width := 3.5 * _hex_radius
+	var definition := spawn_data.definition if spawn_data != null else null
+	var target_width := (definition.sprite_width_radii if definition != null else 3.5) * _hex_radius
 	var uniform_scale := target_width / maxf(1.0, sprite.texture.get_width())
 	sprite.scale = Vector2.ONE * uniform_scale
 	sprite.position = Vector2.ZERO
 	var rectangle := collision_shape.shape as RectangleShape2D
 	if rectangle != null:
-		rectangle.size = Vector2(3.25 * _hex_radius, 2.0 * _hex_radius)
+		rectangle.size = _body_half_size() * 2.0
 	var half_size := _body_half_size()
 	_body_polygon = PackedVector2Array([
 		Vector2(-half_size.x, -half_size.y),
@@ -240,6 +265,10 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _on_explosion_chain_armed(_source: WorldExplosive2D) -> void:
+	if not _destructible:
+		if explosive != null and explosive.has_method("disarm"):
+			explosive.disarm()
+		return
 	set_interactive(false)
 	explosion_armed.emit(self)
 

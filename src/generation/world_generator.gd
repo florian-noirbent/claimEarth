@@ -21,5 +21,6 @@ func generate(profile: GenerationProfile, terrain_registry: TerrainRegistry, run
 	result.attempts = 1
 	result.spawn_rect = context.spawn_rect
 	result.item_chest_spawns = context.item_chest_spawns.duplicate()
+	result.perk_geode_spawns = context.perk_geode_spawns.duplicate()
 	result.world_hash = world.committed_hash()
 	return result

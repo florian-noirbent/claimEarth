@@ -9,6 +9,7 @@ var terrain_registry: TerrainRegistry
 var world: WorldGrid
 var spawn_rect := Rect2i()
 var item_chest_spawns: Array[GeneratedItemChestSpawn] = []
+var perk_geode_spawns: Array[GeneratedItemChestSpawn] = []
 var _generated_item_anchor_indices := {}
 
 
@@ -29,19 +30,45 @@ func depth_ratio_for_row(row: int) -> float:
 
 
 func try_reserve_generated_item_anchor(anchor: Vector2i) -> bool:
+	return try_reserve_generated_item_area(anchor, 0)
+
+
+## Generated containers reserve their chamber footprint as well as the anchor so a
+## later pass cannot overwrite an earlier container's carved space.
+func try_reserve_generated_item_area(anchor: Vector2i, radius: int) -> bool:
 	if not world.dimensions.is_in_bounds_offset(anchor.x, anchor.y):
 		return false
-	var index := world.dimensions.offset_to_index(anchor.x, anchor.y)
-	if _generated_item_anchor_indices.has(index):
-		return false
-	_generated_item_anchor_indices[index] = true
+	var cells := _generated_item_area_cells(anchor, radius)
+	for cell in cells:
+		if _generated_item_anchor_indices.has(world.dimensions.offset_to_index(cell.x, cell.y)):
+			return false
+	for cell in cells:
+		_generated_item_anchor_indices[world.dimensions.offset_to_index(cell.x, cell.y)] = true
 	return true
 
 
 func release_generated_item_anchor(anchor: Vector2i) -> void:
+	release_generated_item_area(anchor, 0)
+
+
+func release_generated_item_area(anchor: Vector2i, radius: int) -> void:
 	if not world.dimensions.is_in_bounds_offset(anchor.x, anchor.y):
 		return
-	_generated_item_anchor_indices.erase(world.dimensions.offset_to_index(anchor.x, anchor.y))
+	for cell in _generated_item_area_cells(anchor, radius):
+		_generated_item_anchor_indices.erase(world.dimensions.offset_to_index(cell.x, cell.y))
+
+
+func _generated_item_area_cells(anchor: Vector2i, radius: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	var anchor_hex := HexCoord.from_offset_odd_q(anchor.x, anchor.y)
+	for delta_q in range(-radius, radius + 1):
+		var min_delta_r := maxi(-radius, -delta_q - radius)
+		var max_delta_r := mini(radius, -delta_q + radius)
+		for delta_r in range(min_delta_r, max_delta_r + 1):
+			var cell := anchor_hex.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q()
+			if world.dimensions.is_in_bounds_offset(cell.x, cell.y):
+				cells.append(cell)
+	return cells
 
 
 func depth_blend_weight(pass_resource, row: int) -> float:

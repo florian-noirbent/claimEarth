@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=6 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/looter.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_choices"]
+script = ExtResource("3")
+domain = 4
+modifier_key = "choice_count_add"
+value = 1.0
+[sub_resource type="Resource" id="Effect_glow"]
+script = ExtResource("3")
+domain = 5
+modifier_key = "light_level_add"
+value = 70.0
+[sub_resource type="Resource" id="Effect_safe"]
+script = ExtResource("3")
+domain = 5
+modifier_key = "indestructible"
+operation = 2
+value = 1.0
+[resource]
+script = ExtResource("1")
+stable_id = 6
+display_name = "Looter"
+description = "More choices, brighter and indestructible containers."
+icon = ExtResource("2")
+effects = [SubResource("Effect_choices"), SubResource("Effect_glow"), SubResource("Effect_safe")]

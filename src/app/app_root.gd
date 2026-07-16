@@ -18,6 +18,9 @@ signal gameplay_started
 var item_controller: RunItemController:
 	get:
 		return _session.item_controller if is_instance_valid(_session) else null
+var perk_controller: RunPerkController:
+	get:
+		return _session.perk_controller if is_instance_valid(_session) else null
 var world_controller: RunWorldController:
 	get:
 		return _session.world_controller if is_instance_valid(_session) else null
@@ -40,6 +43,7 @@ var _session_change_serial := 0
 var _current_seed := 0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
+var _relentless_flag_drop_pending := false
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _reward_return_state: StringName = RunPhase.PLAYING
 var _enable_menu_preview := false
@@ -130,6 +134,8 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.item_thrown.connect(audio_director.play_throw)
 	session.reward_choices_requested.connect(_on_reward_choices_requested)
 	session.pending_reward_invalidated.connect(_on_pending_reward_invalidated)
+	session.terrain_pulse_started.connect(_on_terrain_pulse_started)
+	session.perks_changed.connect(_on_perks_changed)
 
 
 func _initial_run_seed() -> int:
@@ -324,6 +330,7 @@ func _apply_state(next_state: StringName) -> void:
 			_set_session_active(false)
 		RunPhase.GENERATING:
 			_terminal_outcome_locked = false
+			_relentless_flag_drop_pending = false
 			_pending_score_depth = -1
 			generation_started.emit()
 			_start_new_run()
@@ -434,6 +441,19 @@ func _on_explosion_resolved(impact_position: Vector2, color: Color, blast_radius
 		get_player().camera.apply_shake(10.0 if is_large else 6.0)
 
 
+func _on_terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition) -> void:
+	if gameplay_feedback == null or world_presenter == null or definition == null:
+		return
+	gameplay_feedback.spawn_directional_pulse(
+		origin,
+		definition.color,
+		definition.width * world_presenter.hex_radius * 1.5,
+		definition.step_count * sqrt(3.0) * world_presenter.hex_radius,
+		definition.pulse_tick_count * definition.step_interval_seconds,
+		definition.front_load_decay
+	)
+
+
 func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
@@ -459,6 +479,11 @@ func _on_flag_flight_changed(in_flight: bool) -> void:
 
 
 func _on_player_death_requested(cause: StringName) -> void:
+	if _relentless_flag_drop_pending:
+		return
+	if item_controller != null and item_controller.drop_flag_on_player_death():
+		_relentless_flag_drop_pending = true
+		return
 	audio_director.play_death()
 	if get_player() != null:
 		get_player().camera.apply_shake(14.0)
@@ -469,6 +494,7 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 	if _terminal_outcome_locked:
 		return
 	_terminal_outcome_locked = true
+	_relentless_flag_drop_pending = false
 	_cancel_pending_reward()
 	ui.show_result(message)
 	transition_to(next_state)
@@ -525,13 +551,13 @@ func _on_pending_retry_finished(successful_count: int, message: String) -> void:
 		ui.leaderboard_status.text = message
 
 
-func _on_reward_choices_requested(choices: Array) -> void:
+func _on_reward_choices_requested(title: String, choices: Array) -> void:
 	if _terminal_outcome_locked or _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
 		_cancel_pending_reward()
 		return
 	_reward_return_state = _run_coordinator.current_state
 	transition_to(RunPhase.REWARD_PICKER)
-	ui.show_reward_choices("Choose an item", choices)
+	ui.show_reward_choices(title, choices)
 
 
 func _on_reward_selected(index: int) -> void:
@@ -552,3 +578,12 @@ func _cancel_pending_reward() -> void:
 func _on_pending_reward_invalidated() -> void:
 	if _run_coordinator.current_state == RunPhase.REWARD_PICKER:
 		transition_to(_reward_return_state)
+
+
+func _on_perks_changed(perks: Array) -> void:
+	var views: Array[PerkViewData] = []
+	for perk_value in perks:
+		var perk := perk_value as PerkDefinition
+		if perk != null:
+			views.append(PerkViewData.new(StringName(str(perk.stable_id)), perk.display_name, perk.description, perk.icon))
+	ui.show_perks(views)

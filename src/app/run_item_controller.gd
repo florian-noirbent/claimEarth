@@ -10,7 +10,8 @@ signal flag_destroyed
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
 signal terrain_changed(change_set: TerrainChangeSet)
-signal reward_choices_requested(choices: Array)
+signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition)
+signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
 
 const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
@@ -31,9 +32,16 @@ var _active_flag_projectile: ItemProjectile
 var _item_registry: ItemRegistry
 var _pending_chest: ItemChest
 var _pending_choices: Array[ItemChestOption] = []
+var _pending_perk_choices: Array[PerkDefinition] = []
+var _perk_controller: RunPerkController
 var _is_active := false
 var _explosives: Array[WorldExplosive2D] = []
 var _dynamic_item_order: Array[ItemDefinition] = []
+var _perk_modifiers: PerkModifierSnapshot
+var _terrain_pulses: Array[DirectionalTerrainPulse] = []
+var _successful_use_counts := {}
+var _world_left_edge := 0.0
+var _world_right_edge := 0.0
 
 
 func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
@@ -42,13 +50,25 @@ func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
 	_hex_radius = hex_radius
 
 
+func configure_perk_controller(controller: RunPerkController) -> void:
+	_perk_controller = controller
+
+
+func set_perk_modifiers(modifiers: PerkModifierSnapshot) -> void:
+	_perk_modifiers = modifiers
+	_apply_container_perk_modifiers()
+	if _active_flag_projectile != null and _has_relentless_flag_survival():
+		_active_flag_projectile.destroyed_by_lava = false
+
+
 func configure_run(
 	player: PlayerController,
 	world: WorldGrid,
 	terrain_registry: TerrainRegistry,
 	hex_radius: float,
 	simulation_backend: TerrainSimulationBackend = null,
-	chest_spawns: Array[GeneratedItemChestSpawn] = []
+	chest_spawns: Array[GeneratedItemChestSpawn] = [],
+	geode_spawns: Array[GeneratedItemChestSpawn] = []
 ) -> void:
 	_inventory.reset()
 	_player = player
@@ -56,13 +76,20 @@ func configure_run(
 	_terrain_registry = terrain_registry
 	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
+	_world_left_edge = HexMetrics.center_for_offset(0, 0, hex_radius).x - hex_radius
+	_world_right_edge = HexMetrics.center_for_offset(world.dimensions.width - 1, 0, hex_radius).x + hex_radius
 	_active_flag_projectile = null
 	_pending_chest = null
 	_pending_choices.clear()
+	_pending_perk_choices.clear()
+	_terrain_pulses.clear()
 	_explosives.clear()
 	_dynamic_item_order.clear()
+	_successful_use_counts.clear()
 	_throw_lock_remaining = 1.0
 	_spawn_item_chests(chest_spawns)
+	_spawn_item_chests(geode_spawns)
+	_apply_container_perk_modifiers()
 	flag_flight_changed.emit(false)
 
 
@@ -75,6 +102,8 @@ func clear_run() -> void:
 	_active_flag_projectile = null
 	_pending_chest = null
 	_pending_choices.clear()
+	_pending_perk_choices.clear()
+	_terrain_pulses.clear()
 	_explosives.clear()
 	for child in get_children():
 		if child is WorldRigidBody2D or child is ItemChest:
@@ -96,21 +125,30 @@ func set_active(is_active: bool) -> void:
 
 
 func apply_pending_reward(choice_index: int) -> bool:
-	if _pending_chest == null or choice_index < 0 or choice_index >= _pending_choices.size():
+	if _pending_chest == null:
 		return false
-	var option := _pending_choices[choice_index]
-	if option == null or option.item == null or _item_registry == null:
-		return false
-	var registered_item := _item_registry.get_definition(option.item.stable_id)
-	if registered_item == null or not _inventory.add(registered_item, option.quantity):
-		return false
-	if _is_dynamic_definition(registered_item) and not _dynamic_item_order.has(registered_item):
-		_dynamic_item_order.append(registered_item)
+	if not _pending_perk_choices.is_empty():
+		if choice_index < 0 or choice_index >= _pending_perk_choices.size() or _perk_controller == null:
+			return false
+		if not _perk_controller.select_perk(_pending_perk_choices[choice_index]):
+			return false
+	else:
+		if choice_index < 0 or choice_index >= _pending_choices.size():
+			return false
+		var option := _pending_choices[choice_index]
+		if option == null or option.item == null or _item_registry == null:
+			return false
+		var registered_item := _item_registry.get_definition(option.item.stable_id)
+		if registered_item == null or not _inventory.add(registered_item, option.quantity):
+			return false
+		if _is_dynamic_definition(registered_item) and not _dynamic_item_order.has(registered_item):
+			_dynamic_item_order.append(registered_item)
 	var claimed_chest := _pending_chest
 	claimed_chest.set_light_emitting(false)
 	_forget_explosive(claimed_chest.explosive)
 	_pending_chest = null
 	_pending_choices.clear()
+	_pending_perk_choices.clear()
 	if is_instance_valid(claimed_chest):
 		claimed_chest.queue_free()
 	_set_chest_interactivity(_is_active)
@@ -120,13 +158,14 @@ func apply_pending_reward(choice_index: int) -> bool:
 func cancel_pending_reward() -> void:
 	_pending_chest = null
 	_pending_choices.clear()
+	_pending_perk_choices.clear()
 	_set_chest_interactivity(_is_active)
 
 
 func item_chest_count() -> int:
 	var count := 0
 	for child in get_children():
-		if child is ItemChest and not child.is_queued_for_deletion():
+		if child is ItemChest and not child.is_queued_for_deletion() and (child as ItemChest).spawn_data.definition.reward_kind == ItemChestDefinition.RewardKind.ITEMS:
 			count += 1
 	return count
 
@@ -148,6 +187,7 @@ func debug_clear_world_items() -> void:
 
 func advance(delta: float) -> void:
 	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
+	_advance_terrain_pulses(delta)
 
 
 func select_index(index: int) -> void:
@@ -184,6 +224,8 @@ func cycle_selection(direction: int) -> void:
 
 
 func consume_amount(definition: ItemDefinition, amount: float, allow_partial: bool = false) -> float:
+	if definition != null and amount > 0.0 and _inventory.can_consume(definition) and _should_preserve_item(definition):
+		return minf(amount, _inventory.count_for(definition)) if allow_partial else amount
 	var consumed := _inventory.consume_amount(definition, amount, allow_partial)
 	if consumed > 0.0 and _inventory.count_for(definition) <= 0.0:
 		_dynamic_item_order.erase(definition)
@@ -211,53 +253,89 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 		return true
 	if consume_amount(definition, 1.0) < 1.0:
 		return false
-	var projectile_data: Dictionary = action.create_projectile(_player.global_position, aim_position, _trajectory_service, _player.velocity)
+	_spawn_projectile(action, _player.global_position, aim_position, _player.velocity)
+	item_thrown.emit()
+	return true
+
+
+## Drops the held flag through the normal projectile path before a Relentless death settles.
+func drop_flag_on_player_death() -> bool:
+	if not _has_relentless_flag_survival() or _player == null or _world == null:
+		return false
+	if is_flag_in_flight():
+		if _has_relentless_flag_survival():
+			_active_flag_projectile.destroyed_by_lava = false
+		return true
+	var flag_definition: ItemDefinition
+	for definition in _inventory.definitions():
+		if definition != null and definition.perk_tags.has(&"flag") and _inventory.can_consume(definition):
+			flag_definition = definition
+			break
+	if flag_definition == null or flag_definition.action_factory == null:
+		return false
+	var action := flag_definition.action_factory.create_action(flag_definition) as ItemAction
+	if action == null or not action.locks_throwing_until_resolved() or consume_amount(flag_definition, 1.0) < 1.0:
+		return false
+	_spawn_projectile(action, _player.global_position, _player.global_position + Vector2(0.0, _hex_radius * 2.0), Vector2.ZERO)
+	return true
+
+
+func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector2, thrower_velocity: Vector2) -> void:
+	var projectile_data: Dictionary = action.create_projectile(origin, aim_position, _trajectory_service, thrower_velocity)
+	if _has_relentless_flag_survival() and action.locks_throwing_until_resolved():
+		projectile_data["destroyed_by_lava"] = false
 	var projectile: ItemProjectile = ItemProjectileScript.new()
 	projectile.action = action
 	projectile.simulation_backend = _simulation_backend
 	projectile.world = _world
 	projectile.terrain_registry = _terrain_registry
 	projectile.hex_radius = _hex_radius
-	projectile.global_position = _player.global_position
+	projectile.global_position = origin
 	projectile.configure(projectile_data)
+	projectile.configure_horizontal_bounds(_world_left_edge, _world_right_edge)
 	_register_explosive(projectile.explosive)
 	projectile.set_physics_process(_is_active)
 	projectile.resolved.connect(_on_projectile_resolved)
 	add_child(projectile)
-	item_thrown.emit()
 	if action.locks_throwing_until_resolved():
 		_active_flag_projectile = projectile
 		flag_flight_changed.emit(true)
-	return true
 
 
-func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2) -> void:
+func _has_relentless_flag_survival() -> bool:
+	return _perk_modifiers != null and bool(_perk_modifiers.flags.value("survive_lava_acid_and_drop_on_death", false))
+
+
+func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2, source_item: ItemDefinition = null) -> void:
 	if _world == null or definition == null or not definition.validate().is_empty():
 		return
-	if _player != null and _player.global_position.distance_to(impact_position) <= definition.lethal_radius * _hex_radius:
+	var spec := ExplosionRuntimeSpec.from_definition(definition)
+	_apply_explosion_perk_modifiers(spec, source_item)
+	if _player != null and _player.global_position.distance_to(impact_position) <= spec.player_kill_radius * _hex_radius:
 		player_killed.emit(DeathCause.BOMB)
-	_apply_projectile_blast_impulses(definition, impact_position)
-	var result := _explosion_service.resolve(
+	_apply_projectile_blast_impulses(spec, impact_position)
+	var result := _explosion_service.resolve_spec(
 		_world,
 		_terrain_registry,
 		impact_position,
 		_hex_radius,
-		definition.blast_radius,
-		definition.lethal_radius
+		spec
 	)
 	var change_set := result.terrain_changes
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
 	terrain_changed.emit(change_set)
-	explosion_resolved.emit(impact_position, definition.effect_color, definition.blast_radius, definition.large_feedback)
-	_arm_explosives_in(result.lethal_cells)
+	explosion_resolved.emit(impact_position, definition.effect_color, spec.blast_radius, definition.large_feedback)
+	_arm_explosives_in(result.destructive_core_cells)
 
 
-func _apply_projectile_blast_impulses(definition: ExplosionDefinition, impact_position: Vector2) -> void:
-	var world_radius := definition.blast_radius * _hex_radius
+func _apply_projectile_blast_impulses(spec: ExplosionRuntimeSpec, impact_position: Vector2) -> void:
+	var world_radius := spec.blast_radius * _hex_radius
 	for child in get_children():
 		if child is WorldRigidBody2D and not child.is_queued_for_deletion():
-			(child as WorldRigidBody2D).apply_blast_impulse(impact_position, definition.blast_impulse, world_radius)
+			(child as WorldRigidBody2D).apply_blast_impulse(impact_position, spec.blast_impulse, world_radius)
+	if _player != null and _perk_modifiers != null and bool(_perk_modifiers.explosions.value("player_explosion_impulse_enabled", false)):
+		_player.apply_blast_impulse(impact_position, spec.blast_impulse, world_radius)
 
 
 func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile, resolution_kind: StringName) -> void:
@@ -291,11 +369,26 @@ func resolve_terrain_tool_use(transformations: Array[TerrainTransformRule], aim_
 		var cell_cost := float(quantity) / float(source.maximum_quantity)
 		if cell_cost <= 0.0:
 			continue
-		var change := _world.set_committed_by_offset(target.x, target.y, target_id, WorldGrid.AIR_QUANTITY if target_id == 0 else quantity)
+		var resolved_target_id := target_id
+		if _should_vaporize_tool_dirt(source, target_id, target):
+			resolved_target_id = 0
+		var change := _world.set_committed_by_offset(target.x, target.y, resolved_target_id, WorldGrid.AIR_QUANTITY if resolved_target_id == 0 else quantity)
 		change_set.add_cell_change(change)
 		cost += cell_cost
 	_commit_external_terrain_changes(change_set)
 	return minf(cost, 3.0)
+
+
+func _should_vaporize_tool_dirt(source: TerrainDefinition, target_id: int, target: Vector2i) -> bool:
+	if _perk_modifiers == null or source == null or not source.perk_tags.has("dirt"):
+		return false
+	if target_id == 0:
+		return false
+	var chance := clampf(float(_perk_modifiers.terrain.value("dirt_vaporize_chance", 0.0)), 0.0, 1.0)
+	if chance <= 0.0:
+		return false
+	var seed := SeedUtils.derive_seed(_world.dimensions.width * 1000003 + _world.dimensions.depth, "tool-dirt:%d:%d" % [target.x, target.y])
+	return float(posmod(seed, 1000000)) / 1000000.0 < chance
 
 
 func resolve_fluid_bottle_impact(deposited_terrain: TerrainDefinition, impact_position: Vector2) -> void:
@@ -327,6 +420,8 @@ func spawn_excavator(position: Vector2, factory: ExcavatorItemActionFactory) -> 
 	var robot := ExcavatorRobot.new()
 	add_child(robot)
 	robot.configure(self, factory, position, _world, _terrain_registry, _hex_radius)
+	if _perk_modifiers != null:
+		robot.tick_interval_multiplier = float(_perk_modifiers.items.value("excavator_tick_interval_multiplier", 1.0))
 	_register_explosive(robot.explosive)
 	robot.set_active(_is_active)
 
@@ -360,6 +455,19 @@ func _commit_external_terrain_changes(change_set: TerrainChangeSet) -> void:
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
 	terrain_changed.emit(change_set)
+
+
+func _advance_terrain_pulses(delta: float) -> void:
+	if _terrain_pulses.is_empty() or _world == null or _terrain_registry == null:
+		return
+	var air_id := _terrain_registry.stable_id_for_name("Air")
+	var merged := TerrainChangeSet.new(_world.dimensions)
+	for pulse in _terrain_pulses.duplicate():
+		var changes: TerrainChangeSet = pulse.advance(delta, _world, air_id)
+		merged.merge(changes)
+		if pulse.is_complete():
+			_terrain_pulses.erase(pulse)
+	_commit_external_terrain_changes(merged)
 
 
 func _aimed_neighbor(aim_position: Vector2) -> Vector2i:
@@ -502,6 +610,7 @@ func _spawn_item_chests(chest_spawns: Array[GeneratedItemChestSpawn]) -> void:
 		_register_explosive(chest.explosive)
 		chest.touched.connect(_on_item_chest_touched)
 		chest.explosion_armed.connect(_on_item_chest_explosion_armed)
+	_apply_container_perk_modifiers()
 
 
 func _on_item_chest_touched(chest: ItemChest) -> void:
@@ -510,27 +619,99 @@ func _on_item_chest_touched(chest: ItemChest) -> void:
 	var definition := chest.spawn_data.definition
 	if definition == null:
 		return
-	var choices := definition.draw_choices(chest.spawn_data.choice_seed)
-	if choices.size() != definition.choice_count:
-		return
 	_pending_chest = chest
-	_pending_choices = choices
 	_set_chest_interactivity(false)
 	var view_choices: Array[RewardChoiceViewData] = []
-	for option in choices:
-		view_choices.append(RewardChoiceViewData.new(
-			option.item.display_name,
-			option.item.description,
-			option.item.icon,
-			"+%d" % option.quantity
-		))
-	reward_choices_requested.emit(view_choices)
+	var choice_count := _reward_choice_count(definition)
+	if definition.reward_kind == ItemChestDefinition.RewardKind.PERKS:
+		if _perk_controller == null:
+			_invalidate_pending_reward()
+			return
+		_pending_perk_choices = _perk_controller.draw_choices(chest.spawn_data.choice_seed, choice_count)
+		if _pending_perk_choices.is_empty():
+			chest.set_interactive(false)
+			chest.set_light_emitting(false)
+			_pending_chest = null
+			return
+		for perk in _pending_perk_choices:
+			view_choices.append(RewardChoiceViewData.new(perk.display_name, perk.description, perk.icon, ""))
+		reward_choices_requested.emit("Choose a perk", view_choices)
+		return
+	_pending_choices = definition.draw_choices(chest.spawn_data.choice_seed, choice_count)
+	if _pending_choices.size() != choice_count:
+		_invalidate_pending_reward()
+		return
+	for option in _pending_choices:
+		view_choices.append(RewardChoiceViewData.new(option.item.display_name, option.item.description, option.item.icon, "+%d" % option.quantity))
+	reward_choices_requested.emit("Choose an item", view_choices)
+
+
+func _reward_choice_count(definition: ItemChestDefinition) -> int:
+	var count := definition.choice_count
+	if _perk_modifiers != null:
+		count += int(_perk_modifiers.rewards.value("choice_count_add", 0))
+	return clampi(count, 1, 3)
 
 
 func _set_chest_interactivity(interactive: bool) -> void:
 	for child in get_children():
 		if child is ItemChest:
 			(child as ItemChest).set_interactive(interactive)
+
+
+func _apply_container_perk_modifiers() -> void:
+	var container_domain = _perk_modifiers.containers if _perk_modifiers != null else null
+	var indestructible := bool(container_domain.value("indestructible", false)) if container_domain != null else false
+	var chest_light_add := int(container_domain.value("light_level_add", 0)) if container_domain != null else 0
+	for child in get_children():
+		var chest := child as ItemChest
+		if chest == null:
+			continue
+		chest.set_destructible(not indestructible)
+		if chest_light_add > 0 and chest.spawn_data != null and chest.spawn_data.definition != null and chest.spawn_data.definition.container_tags.has("item_chest"):
+			chest.set_light_level_override(90 + chest_light_add)
+
+
+func _apply_explosion_perk_modifiers(spec: ExplosionRuntimeSpec, source_item: ItemDefinition = null) -> void:
+	if spec == null or _perk_modifiers == null:
+		return
+	var explosion_domain = _perk_modifiers.explosions
+	spec.player_kill_radius = maxi(0, spec.player_kill_radius + int(explosion_domain.value("player_kill_radius_add", 0)))
+	var terrain_bonus := int(explosion_domain.value("sand_liquid_vaporize_radius_add", 0))
+	if source_item != null and source_item.perk_tags.has("small_bomb"):
+		spec.blast_radius += int(explosion_domain.value("small_bomb_blast_radius_add", 0))
+	if source_item != null and source_item.perk_tags.has("large_bomb"):
+		spec.blast_radius += int(explosion_domain.value("large_bomb_blast_radius_add", 0))
+		spec.vaporize_radius += int(explosion_domain.value("large_bomb_vaporize_radius_add", 0))
+		spec.player_kill_radius += int(explosion_domain.value("large_bomb_player_kill_radius_add", 0))
+	spec.vaporize_radius = clampi(spec.vaporize_radius, 0, spec.blast_radius)
+	spec.player_kill_radius = clampi(spec.player_kill_radius, 0, spec.blast_radius)
+	if terrain_bonus > 0:
+		spec.fluid_vaporize_radius_bonus = func(definition: TerrainDefinition) -> int:
+			return terrain_bonus if definition != null and (definition.perk_tags.has("sand") or definition.perk_tags.has("liquid")) else 0
+	var dirt_vaporize_chance := float(_perk_modifiers.terrain.value("dirt_vaporize_chance", 0.0))
+	if dirt_vaporize_chance > 0.0 and source_item != null and (source_item.perk_tags.has("small_bomb") or source_item.perk_tags.has("large_bomb")):
+		spec.blast_vaporize_chance = func(terrain: TerrainDefinition, _cell: Vector2i) -> float:
+			return dirt_vaporize_chance if terrain != null and terrain.perk_tags.has("dirt") else 0.0
+
+
+func _should_preserve_item(definition: ItemDefinition) -> bool:
+	if _perk_modifiers == null or definition == null:
+		return false
+	var chance := 0.0
+	if definition.perk_tags.has("small_bomb"):
+		chance = float(_perk_modifiers.items.value("small_bomb_preserve_chance", 0.0))
+	elif definition.perk_tags.has("large_bomb"):
+		chance = float(_perk_modifiers.items.value("large_bomb_preserve_chance", 0.0))
+	elif definition.perk_tags.has("shovel") or definition.perk_tags.has("pickaxe"):
+		chance = float(_perk_modifiers.items.value("shovel_pickaxe_preserve_chance", 0.0))
+	if chance <= 0.0:
+		return false
+	var ordinal := int(_successful_use_counts.get(definition.stable_id, 0)) + 1
+	_successful_use_counts[definition.stable_id] = ordinal
+	var rng := RandomNumberGenerator.new()
+	rng.seed = SeedUtils.derive_seed(_world.dimensions.width * 1000003 + _world.dimensions.depth, "%d:%d" % [definition.stable_id, ordinal])
+	return rng.randf() < chance
 
 
 func _register_explosive(explosive: WorldExplosive2D) -> void:
@@ -564,9 +745,21 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 	_forget_explosive(explosive)
 	if explosive_host == _pending_chest:
 		_invalidate_pending_reward()
+	if explosive_host is ItemChest:
+		var container := explosive_host as ItemChest
+		if container.spawn_data != null and container.spawn_data.definition != null and container.spawn_data.definition.destruction_pulse != null:
+			var origin := HexMetrics.offset_for_world(container.global_position, _hex_radius)
+			var pulse_definition := container.spawn_data.definition.destruction_pulse
+			_terrain_pulses.append(DirectionalTerrainPulse.new(pulse_definition, origin))
+			terrain_pulse_started.emit(HexMetrics.center_for_offset(origin.x, origin.y, _hex_radius), pulse_definition)
 	if is_instance_valid(explosive_host):
 		explosive_host.queue_free()
-	resolve_explosion(definition, impact_position)
+	var source_item: ItemDefinition
+	if explosive_host is ItemProjectile:
+		var projectile := explosive_host as ItemProjectile
+		if projectile.action != null:
+			source_item = projectile.action.definition
+	resolve_explosion(definition, impact_position, source_item)
 
 
 func _on_item_chest_explosion_armed(chest: ItemChest) -> void:

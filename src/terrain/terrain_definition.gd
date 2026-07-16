@@ -15,6 +15,7 @@ extends Resource
 @export var is_destructible := false
 @export var is_empty_space := false
 @export var is_liquid_contact_product := false
+@export var perk_tags := PackedStringArray()
 @export_range(0.0, 1.0, 0.01) var light_diffusion_coefficient := 0.0
 @export_range(0, 255, 1) var emitted_light := 0
 @export var debug_color := Color.WHITE

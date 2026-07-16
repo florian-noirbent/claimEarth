@@ -57,6 +57,29 @@ func test_air_control_and_gravity_apply_in_air() -> void:
 	assert_eq(model.current_state, PlayerMovementState.FALL)
 
 
+func test_air_control_permission_disables_only_horizontal_air_acceleration() -> void:
+	var model := PlayerMovementModel.new(_config())
+	var frame := PlayerInputFrame.new()
+	frame.move_axis = 1.0
+
+	model.step(frame, false, 0.1, false, false)
+
+	assert_eq(model.velocity.x, 0.0)
+	assert_true(model.velocity.y > 0.0)
+	assert_eq(model.current_state, PlayerMovementState.FALL)
+
+
+func test_air_control_permission_does_not_disable_ground_movement() -> void:
+	var model := PlayerMovementModel.new(_config())
+	var frame := PlayerInputFrame.new()
+	frame.move_axis = 1.0
+
+	model.step(frame, true, 0.1, false, false)
+
+	assert_true(model.velocity.x > 0.0)
+	assert_eq(model.current_state, PlayerMovementState.RUN)
+
+
 func test_same_direction_air_input_preserves_rightward_overspeed() -> void:
 	var model := PlayerMovementModel.new(_config())
 	var frame := PlayerInputFrame.new()

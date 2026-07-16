@@ -78,6 +78,7 @@ func test_default_profile_persists_stable_pass_seed_keys() -> void:
 		"lava_hazard_3",
 		"spawn_shaft_4",
 		"item_chests_5",
+		"perk_geodes_6",
 		"bottom_lava_fill_6",
 	]))
 

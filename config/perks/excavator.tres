@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=5 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/excavator.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_speed"]
+script = ExtResource("3")
+domain = 2
+modifier_key = "excavator_tick_interval_multiplier"
+operation = 1
+value = 0.5
+[sub_resource type="Resource" id="Effect_weight"]
+script = ExtResource("3")
+domain = 4
+modifier_key = "excavator_chest_weight_multiplier"
+operation = 1
+value = 2.0
+[resource]
+script = ExtResource("1")
+stable_id = 14
+display_name = "Excavator"
+description = "Excavators dig faster and appear more often."
+icon = ExtResource("2")
+effects = [SubResource("Effect_speed"), SubResource("Effect_weight")]

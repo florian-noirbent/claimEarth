@@ -17,7 +17,7 @@ func test_configure_before_entering_tree_builds_visuals_without_nil_polygon_acce
 
 func test_projectile_can_render_an_optional_world_sprite() -> void:
 	var projectile := ItemProjectile.new()
-	projectile.configure({"visual_texture": load("res://assets/objects/flare.svg") as Texture2D})
+	projectile.configure({"visual_texture": load("res://assets/objects/flare.svg") as Texture2D, "fuse_seconds": 5.0})
 	add_child_autofree(projectile)
 	await wait_process_frames(1)
 
@@ -97,6 +97,25 @@ func test_bomb_projectile_bounces_on_solid_terrain_until_fuse_expires() -> void:
 
 	assert_true(is_instance_valid(projectile))
 	assert_true(projectile.velocity.y < 0.0)
+
+
+func test_bomb_projectile_bounces_from_a_configured_map_side() -> void:
+	var projectile := ItemProjectile.new()
+	projectile.configure({
+		"fuse_seconds": 5.0,
+		"bounce_on_impact": true,
+		"gravity": 0.0,
+		"horizontal_bounce_damping": 0.5,
+		"velocity": Vector2(-120.0, 0.0),
+		"polygon": PackedVector2Array([-4, -4, 4, -4, 4, 4, -4, 4]),
+	})
+	projectile.configure_horizontal_bounds(0.0, 100.0)
+	projectile.global_position = Vector2(5.0, 40.0)
+
+	projectile.advance_body(0.1)
+
+	assert_almost_eq(projectile.global_position.x, 0.0, 0.001)
+	assert_eq(projectile.velocity.x, 60.0)
 
 
 func test_buried_bouncing_projectile_resolves_when_fuse_expires() -> void:

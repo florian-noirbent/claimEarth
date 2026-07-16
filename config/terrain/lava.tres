@@ -10,6 +10,7 @@
 script = ExtResource("1_0dxqn")
 stable_id = 5
 display_name = "Lava"
+perk_tags = PackedStringArray("lava", "liquid")
 block_density = 96
 is_solid = false
 is_passable = true

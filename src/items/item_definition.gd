@@ -13,6 +13,7 @@ enum CountDisplay {
 @export var display_name := ""
 @export_multiline var description := ""
 @export var icon: Texture2D
+@export var perk_tags := PackedStringArray()
 @export var starting_inventory := 0.0
 @export var count_display := CountDisplay.INTEGER
 @export var action_factory: ItemActionFactory

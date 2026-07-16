@@ -29,4 +29,4 @@ func resolve(item_controller: RunItemController, impact_position: Vector2, proje
 	if projectile != null and projectile.explosive != null:
 		projectile.explosive.request_immediate_detonation()
 	else:
-		item_controller.resolve_explosion(factory.explosion_definition, impact_position)
+		item_controller.resolve_explosion(factory.explosion_definition, impact_position, definition)

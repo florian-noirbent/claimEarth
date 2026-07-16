@@ -11,7 +11,8 @@ func before_each() -> void:
 func test_touching_chest_pauses_run_and_selected_reward_is_added_once() -> void:
 	var app_root := await _start_app("playing")
 	assert_eq(app_root.item_chest_count_for_test(), 19)
-	assert_eq(app_root.simulation_backend().standard_light_source_count(), 19)
+	# The generated geode pass mirrors chest density; both container types light the cave.
+	assert_eq(app_root.simulation_backend().standard_light_source_count(), 38)
 	var chest := _first_chest(app_root.item_controller)
 	assert_not_null(chest)
 	var chest_light_cell := chest.light_source.registered_offset()
@@ -36,7 +37,7 @@ func test_touching_chest_pauses_run_and_selected_reward_is_added_once() -> void:
 	assert_eq(_status_count(app_root.inventory_status_for_test(), reward_name), before_count + reward_amount)
 	await wait_process_frames(1)
 	assert_eq(app_root.item_chest_count_for_test(), 18)
-	assert_eq(app_root.simulation_backend().standard_light_source_count(), 18)
+	assert_eq(app_root.simulation_backend().standard_light_source_count(), 37)
 	assert_eq(app_root.simulation_backend().standard_light_level_at(chest_light_cell), 0)
 	first_card.pressed.emit()
 	assert_eq(_status_count(app_root.inventory_status_for_test(), reward_name), before_count + reward_amount)

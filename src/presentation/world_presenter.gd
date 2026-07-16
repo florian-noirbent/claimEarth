@@ -29,6 +29,7 @@ var _material_atlas_texture: ImageTexture
 var _material_atlas_columns := 1
 var _material_atlas_size := Vector2.ONE
 var _force_full_brightness := false
+var _lighting_threshold_offset := 0.0
 var _polygon := Polygon2D.new()
 var _material := ShaderMaterial.new()
 
@@ -53,6 +54,7 @@ func reset() -> void:
 	_material_atlas_columns = 1
 	_material_atlas_size = Vector2.ONE
 	_force_full_brightness = false
+	_lighting_threshold_offset = 0.0
 	if is_instance_valid(_polygon):
 		_polygon.polygon = PackedVector2Array()
 		_polygon.material = null
@@ -90,6 +92,11 @@ func use_simulation_textures(final_texture: Texture2D, even_texture: Texture2D) 
 func set_force_full_brightness(enabled: bool) -> void:
 	_force_full_brightness = enabled
 	_material.set_shader_parameter("force_full_brightness", enabled)
+
+
+func set_lighting_threshold_offset(offset: float) -> void:
+	_lighting_threshold_offset = offset
+	_sync_presentation_parameters()
 
 
 func total_renderer_nodes() -> int:
@@ -150,8 +157,8 @@ func _configure_shader() -> void:
 func _sync_presentation_parameters() -> void:
 	if presentation_config == null:
 		return
-	_material.set_shader_parameter("light_black_threshold", presentation_config.light_black_threshold)
-	_material.set_shader_parameter("light_full_brightness_threshold", presentation_config.light_full_brightness_threshold)
+	_material.set_shader_parameter("light_black_threshold", presentation_config.light_black_threshold + _lighting_threshold_offset)
+	_material.set_shader_parameter("light_full_brightness_threshold", presentation_config.light_full_brightness_threshold + _lighting_threshold_offset)
 	_material.set_shader_parameter("fluid_alpha", presentation_config.fluid_alpha)
 	_material.set_shader_parameter("fluid_caustic_strength", presentation_config.fluid_caustic_strength)
 	_material.set_shader_parameter("fluid_caustic_scale", presentation_config.fluid_caustic_scale)

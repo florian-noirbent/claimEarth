@@ -47,6 +47,7 @@ signal touch_hook_released
 @onready var overlay_root: Control = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
 @onready var hazard_meter_stack = %HazardMeterStack
+@onready var perk_stack: PerkStack = get_node_or_null("%PerkStack") as PerkStack
 @onready var play_status_label: Label = %PlayStatus
 @onready var run_state_label: Label = %RunStateLabel
 @onready var fps_label: Label = %FpsLabel
@@ -152,6 +153,8 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 	]
 	var is_active_play := state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	playing_panel.visible = is_active_play
+	if perk_stack != null:
+		perk_stack.visible = is_active_play
 	fps_label.visible = is_active_play
 	if is_active_play:
 		show_fps(roundi(Engine.get_frames_per_second()))
@@ -175,6 +178,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 	warning_label.text = storage_warning
 	if state in [RunPhase.MAIN_MENU, RunPhase.GENERATING]:
 		hazard_meter_stack.clear_hazards()
+		clear_perks()
 
 	match state:
 		RunPhase.MAIN_MENU:
@@ -354,6 +358,17 @@ func _on_fps_timer_timeout() -> void:
 ## Updates the generic top-center icon meters from gameplay-owned hazard snapshots.
 func show_hazard_statuses(statuses: Array) -> void:
 	hazard_meter_stack.update_hazards(statuses)
+
+
+## Updates the generic acquired-perk badge stack when the host scene provides one.
+func show_perks(perks: Array) -> void:
+	if perk_stack != null:
+		perk_stack.show_perks(perks)
+
+
+func clear_perks() -> void:
+	if perk_stack != null:
+		perk_stack.clear_perks()
 
 
 func show_run_status(depth: int, personal_best: int, hooked: bool, item_status: Dictionary) -> void:

@@ -9,6 +9,7 @@ var tick_remaining := 0.0
 var active := true
 var explosive: WorldExplosive2D
 var _grounded := false
+var tick_interval_multiplier := 1.0
 
 
 func configure(
@@ -67,7 +68,7 @@ func _physics_process(delta: float) -> void:
 	remaining -= delta
 	tick_remaining -= delta
 	if _grounded and tick_remaining <= 0.0 and remaining >= 0.0:
-		tick_remaining += factory.tick_seconds
+		tick_remaining += factory.tick_seconds * tick_interval_multiplier
 		controller.excavator_tick(self, factory)
 	if remaining <= 0.0:
 		queue_free()

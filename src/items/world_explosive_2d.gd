@@ -1,5 +1,5 @@
 @tool
-## Reusable one-shot explosive state and lethal-core footprint receiver.
+## Reusable one-shot explosive state and destructive-core footprint receiver.
 class_name WorldExplosive2D
 extends Node2D
 
@@ -50,6 +50,10 @@ func try_arm_from_lethal_cells(lethal_cells: Array[Vector2i], hex_radius: float)
 	return true
 
 
+func try_arm_from_destructive_core_cells(cells: Array[Vector2i], hex_radius: float) -> bool:
+	return try_arm_from_lethal_cells(cells, hex_radius)
+
+
 func request_immediate_detonation() -> bool:
 	if _state == State.CONSUMED or definition == null:
 		return false
@@ -61,6 +65,12 @@ func request_immediate_detonation() -> bool:
 
 func is_chain_armed() -> bool:
 	return _state == State.CHAIN_ARMED
+
+
+func disarm() -> void:
+	if _state == State.CHAIN_ARMED:
+		_state = State.UNARMED
+		_chain_fuse_remaining = 0.0
 
 
 func is_consumed() -> bool:

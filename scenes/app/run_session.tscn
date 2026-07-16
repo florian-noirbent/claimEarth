@@ -13,6 +13,8 @@
 [ext_resource type="Resource" path="res://config/items/catalog.tres" id="12_item_catalog"]
 [ext_resource type="Shader" uid="uid://prjnm80y6o23" path="res://src/simulation/render_texture_simulation.gdshader" id="14_simulation_shader"]
 [ext_resource type="Resource" uid="uid://dow2vhhcb5f5u" path="res://config/presentation/default_world_presentation.tres" id="15_presentation_config"]
+[ext_resource type="Script" path="res://src/perks/run_perk_controller.gd" id="16_perks"]
+[ext_resource type="Resource" path="res://config/perks/catalog.tres" id="17_perk_catalog"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u8yu8"]
 shader = ExtResource("7_u8yu8")
@@ -37,6 +39,11 @@ script = ExtResource("1_session")
 [node name="RunItemController" type="Node" parent="." unique_id=1210138215]
 unique_name_in_owner = true
 script = ExtResource("2_items")
+
+[node name="RunPerkController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("16_perks")
+perk_catalog = ExtResource("17_perk_catalog")
 
 [node name="RunWorldController" type="Node" parent="." unique_id=1221077346]
 unique_name_in_owner = true

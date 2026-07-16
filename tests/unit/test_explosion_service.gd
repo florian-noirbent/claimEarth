@@ -1,6 +1,9 @@
 extends GutTest
 
 
+const ExplosionRuntimeSpecScript = preload("res://src/items/explosion_runtime_spec.gd")
+
+
 func test_explosion_applies_registered_blast_reactions_and_reports_changed_region() -> void:
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(FixtureLoader.terrain_catalog()))
@@ -96,3 +99,66 @@ func test_explosion_result_reports_inclusive_lethal_core_cells() -> void:
 	assert_true(result.lethal_cells.has(origin))
 	assert_true(result.lethal_cells.has(HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(3, 0)).to_offset_odd_q()))
 	assert_false(result.lethal_cells.has(HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(4, 0)).to_offset_odd_q()))
+
+
+func test_runtime_spec_separates_blast_vaporize_and_player_kill_radii() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(12, 12), FixtureLoader.terrain_id("Stone"))
+	var service := ExplosionService.new()
+	var origin := Vector2i(5, 5)
+	var spec = ExplosionRuntimeSpecScript.new()
+	spec.blast_radius = 4
+	spec.vaporize_radius = 1
+	spec.player_kill_radius = 3
+
+	var result := service.resolve_spec(
+		world,
+		registry,
+		HexMetrics.center_for_offset(origin.x, origin.y, 16.0),
+		16.0,
+		spec
+	)
+
+	assert_eq(result.destructive_core_cells.size(), 7)
+	assert_eq(result.lethal_cells, result.destructive_core_cells)
+	assert_eq(world.get_committed_by_offset(origin.x, origin.y), FixtureLoader.terrain_id("Air"))
+	var blast_only := HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(2, 0)).to_offset_odd_q()
+	assert_eq(world.get_committed_by_offset(blast_only.x, blast_only.y), FixtureLoader.terrain_id("Dirt"))
+
+
+func test_fluid_vaporize_radius_can_expand_without_expanding_solid_vaporization() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(12, 12), FixtureLoader.terrain_id("Stone"))
+	var origin := Vector2i(5, 5)
+	var water_cell := HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(3, 0)).to_offset_odd_q()
+	var stone_cell := HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(2, 0)).to_offset_odd_q()
+	world.set_committed_by_offset(water_cell.x, water_cell.y, FixtureLoader.terrain_id("Water"))
+	var spec = ExplosionRuntimeSpecScript.new()
+	spec.blast_radius = 3
+	spec.vaporize_radius = 1
+	spec.player_kill_radius = 1
+	spec.fluid_vaporize_radius_bonus = func(definition: TerrainDefinition) -> int:
+		return 2 if definition.perk_tags.has("liquid") else 0
+
+	ExplosionService.new().resolve_spec(world, registry, HexMetrics.center_for_offset(origin.x, origin.y, 16.0), 16.0, spec)
+
+	assert_eq(world.get_committed_by_offset(water_cell.x, water_cell.y), FixtureLoader.terrain_id("Air"))
+	assert_eq(world.get_committed_by_offset(stone_cell.x, stone_cell.y), FixtureLoader.terrain_id("Dirt"))
+
+
+func test_blast_vaporize_chance_can_replace_dirt_blast_reaction() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(9, 9), FixtureLoader.terrain_id("Air"))
+	var origin := Vector2i(4, 4)
+	var dirt_cell := HexCoord.from_offset_odd_q(origin.x, origin.y).add(HexCoord.new(2, 0)).to_offset_odd_q()
+	world.set_committed_by_offset(dirt_cell.x, dirt_cell.y, FixtureLoader.terrain_id("Dirt"))
+	var spec = ExplosionRuntimeSpecScript.new()
+	spec.blast_radius = 2
+	spec.vaporize_radius = 1
+	spec.player_kill_radius = 1
+	spec.blast_vaporize_chance = func(definition: TerrainDefinition, _cell: Vector2i) -> float:
+		return 1.0 if definition.perk_tags.has("dirt") else 0.0
+
+	ExplosionService.new().resolve_spec(world, registry, HexMetrics.center_for_offset(origin.x, origin.y, 16.0), 16.0, spec)
+
+	assert_eq(world.get_committed_by_offset(dirt_cell.x, dirt_cell.y), FixtureLoader.terrain_id("Air"))

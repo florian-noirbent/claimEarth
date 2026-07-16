@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=5 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/vaporizer.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_sand"]
+script = ExtResource("3")
+domain = 8
+modifier_key = "dirt_vaporize_chance"
+operation = 2
+value = 0.5
+[sub_resource type="Resource" id="Effect_radius"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "sand_liquid_vaporize_radius_add"
+value = 1.0
+[resource]
+script = ExtResource("1")
+stable_id = 8
+display_name = "Vaporizer"
+description = "Blasts leave less sand and vaporize more fluid."
+icon = ExtResource("2")
+effects = [SubResource("Effect_sand"), SubResource("Effect_radius")]

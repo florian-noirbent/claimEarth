@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=9 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/acrobat.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[ext_resource type="Script" path="res://src/perks/perk_cancellation_effect.gd" id="4"]
+[sub_resource type="Resource" id="Effect_jump"]
+script = ExtResource("3")
+modifier_key = "extra_air_jumps_add"
+value = 1.0
+[sub_resource type="Resource" id="Effect_rope"]
+script = ExtResource("3")
+contribution_tag = "acrobat_rope"
+modifier_key = "rope_length_multiplier_delta"
+value = 0.5
+[sub_resource type="Resource" id="Effect_gravity"]
+script = ExtResource("3")
+contribution_tag = "acrobat_gravity"
+modifier_key = "gravity_multiplier_delta"
+value = -0.25
+[sub_resource type="Resource" id="Effect_speed"]
+script = ExtResource("3")
+modifier_key = "movement_speed_multiplier"
+operation = 1
+value = 1.25
+[sub_resource type="Resource" id="Effect_cancel_glass_air"]
+script = ExtResource("4")
+cancelled_contribution_tags = PackedStringArray("glass_free_air_control_restriction")
+[resource]
+script = ExtResource("1")
+stable_id = 7
+display_name = "Acrobat"
+description = "Double jump, faster movement, longer rope, lower gravity."
+icon = ExtResource("2")
+effects = [SubResource("Effect_jump"), SubResource("Effect_rope"), SubResource("Effect_gravity"), SubResource("Effect_speed"), SubResource("Effect_cancel_glass_air")]

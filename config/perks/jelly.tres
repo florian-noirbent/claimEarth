@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=12 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/jelly.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[ext_resource type="Script" path="res://src/perks/perk_cancellation_effect.gd" id="4"]
+[sub_resource type="Resource" id="Effect_impact"]
+script = ExtResource("3")
+contribution_tag = "jelly_impact_protection"
+modifier_key = "impact_disabled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_float"]
+script = ExtResource("3")
+modifier_key = "liquid_gravity_cancelled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_buoyancy"]
+script = ExtResource("3")
+modifier_key = "liquid_buoyancy_multiplier"
+operation = 2
+value = 1.5
+[sub_resource type="Resource" id="Effect_drag"]
+script = ExtResource("3")
+modifier_key = "liquid_drag_disabled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_restitution"]
+script = ExtResource("3")
+modifier_key = "hard_surface_restitution"
+operation = 2
+value = 0.5
+[sub_resource type="Resource" id="Effect_settle"]
+script = ExtResource("3")
+modifier_key = "bounce_settle_speed"
+operation = 2
+value = 60.0
+[sub_resource type="Resource" id="Effect_impulse"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "player_explosion_impulse_enabled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_cancel_glass"]
+script = ExtResource("4")
+cancelled_contribution_tags = PackedStringArray("glass_impact_fragility")
+[resource]
+script = ExtResource("1")
+stable_id = 5
+display_name = "Jelly"
+description = "Float in liquids, ignore falls, and bounce on hard surfaces and with blasts."
+icon = ExtResource("2")
+exclusion_group = "impact_body"
+effects = [SubResource("Effect_impact"), SubResource("Effect_float"), SubResource("Effect_buoyancy"), SubResource("Effect_drag"), SubResource("Effect_restitution"), SubResource("Effect_settle"), SubResource("Effect_impulse"), SubResource("Effect_cancel_glass")]

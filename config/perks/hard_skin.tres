@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=9 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/hard_skin.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[ext_resource type="Script" path="res://src/perks/perk_cancellation_effect.gd" id="4"]
+[sub_resource type="Resource" id="Effect_threshold"]
+script = ExtResource("3")
+contribution_tag = "hard_skin_impact_protection"
+modifier_key = "impact_threshold_add"
+value = 220.0
+[sub_resource type="Resource" id="Effect_death"]
+script = ExtResource("3")
+contribution_tag = "hard_skin_impact_protection"
+modifier_key = "impact_death_disabled"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_radius"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "player_kill_radius_add"
+value = -1.0
+[sub_resource type="Resource" id="Effect_slide"]
+script = ExtResource("3")
+modifier_key = "ground_friction_multiplier"
+operation = 1
+value = 0.25
+[sub_resource type="Resource" id="Effect_cancel_glass"]
+script = ExtResource("4")
+cancelled_contribution_tags = PackedStringArray("glass_impact_fragility")
+[resource]
+script = ExtResource("1")
+stable_id = 4
+display_name = "Hard Skin"
+description = "Resist impacts and explosions, but slide."
+icon = ExtResource("2")
+exclusion_group = "impact_body"
+effects = [SubResource("Effect_threshold"), SubResource("Effect_death"), SubResource("Effect_radius"), SubResource("Effect_slide"), SubResource("Effect_cancel_glass")]

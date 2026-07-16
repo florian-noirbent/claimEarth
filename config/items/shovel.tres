@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 stable_id = 5
 display_name = "Shovel"
+perk_tags = PackedStringArray("shovel", "terrain_tool")
 description = "Clears one aimed Sand hex."
 icon = ExtResource("3_icon")
 count_display = 1

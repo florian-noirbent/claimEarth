@@ -3,11 +3,13 @@ extends VBoxContainer
 
 
 const PASS_CATALOG_PATH := "res://config/generation/pass_catalog.tres"
+const GENERATED_ITEM_CATALOG_PATH := "res://config/generation/item_catalog.tres"
 const NO_TERRAIN_ID := 256
 
 var _preview: Control
 var _terrain_registry := TerrainRegistry.new()
 var _pass_catalog: Resource
+var _generated_item_catalog: GeneratedItemPlacementCatalog
 var _profile: GenerationProfile
 var _saved_profile_snapshot: GenerationProfile
 var _saved_pass_values_by_key := {}
@@ -41,6 +43,7 @@ func _ready() -> void:
 	_preview_enabled = Engine.is_editor_hint()
 	var terrain_catalog := load("res://config/terrain/catalog.tres") as TerrainCatalog
 	_terrain_registry.try_configure(terrain_catalog)
+	_generated_item_catalog = load(GENERATED_ITEM_CATALOG_PATH) as GeneratedItemPlacementCatalog
 	_build_ui()
 	_load_pass_catalog(PASS_CATALOG_PATH)
 
@@ -462,6 +465,9 @@ func _build_pass_section(index: int, pass_resource: Resource) -> Control:
 		if property_info.name == "fill_terrain":
 			body.add_child(_build_fill_terrain_editor(pass_resource))
 			continue
+		if property_info.name == "item_definition":
+			body.add_child(_build_generated_item_editor(pass_resource))
+			continue
 		body.add_child(_build_property_editor(pass_resource, property_info))
 	return section
 
@@ -557,6 +563,49 @@ func _build_property_editor(pass_resource: Resource, property_info: Dictionary) 
 			)
 			row.add_child(line_edit)
 	return row
+
+
+func _build_generated_item_editor(pass_resource: Resource) -> Control:
+	var container := VBoxContainer.new()
+	container.name = "Property_item_definition"
+	container.set_meta("pass_seed_key", String(pass_resource.get("pass_seed_key")))
+	container.set_meta("property_name", "item_definition")
+	container.set_meta("saved_value", pass_resource.get("item_definition"))
+	container.tooltip_text = "Choose the generated item this pass places."
+	var label_row := HBoxContainer.new()
+	container.add_child(label_row)
+	var label := Label.new()
+	label.text = "Generated Item"
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_row.add_child(label)
+	label_row.add_child(_build_property_reset_button(pass_resource, "item_definition", "Restore the saved generated item.", container))
+	var picker := OptionButton.new()
+	picker.name = "GeneratedItemOptionButton"
+	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picker.tooltip_text = container.tooltip_text
+	var current := pass_resource.get("item_definition") as GeneratedItemPlacementDefinition
+	if _generated_item_catalog != null:
+		for index in _generated_item_catalog.definitions.size():
+			var definition := _generated_item_catalog.definitions[index]
+			if definition == null:
+				continue
+			picker.add_item(_generated_item_label(definition), index)
+			if definition == current:
+				picker.select(picker.item_count - 1)
+	picker.item_selected.connect(func(selected_id: int) -> void:
+		if _generated_item_catalog == null or selected_id < 0 or selected_id >= _generated_item_catalog.definitions.size():
+			return
+		pass_resource.set("item_definition", _generated_item_catalog.definitions[selected_id])
+		_update_revert_state()
+		_update_property_row_state(container, pass_resource)
+		_mark_preview_dirty()
+	)
+	container.add_child(picker)
+	return container
+
+
+func _generated_item_label(definition: GeneratedItemPlacementDefinition) -> String:
+	return definition.resource_path.get_file().get_basename().capitalize().replace("_", " ")
 
 
 func _build_whitelist_editor(pass_resource: Resource) -> Control:

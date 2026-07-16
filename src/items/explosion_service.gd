@@ -2,6 +2,7 @@
 class_name ExplosionService
 extends RefCounted
 
+const ExplosionRuntimeSpecScript = preload("res://src/items/explosion_runtime_spec.gd")
 
 func explode(
 	world: WorldGrid,
@@ -9,9 +10,9 @@ func explode(
 	impact_position: Vector2,
 	hex_radius: float,
 	blast_radius: int,
-	lethal_radius: int = 0
+	vaporize_radius: int = 0
 ) -> Rect2i:
-	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).terrain_changes.dirty_rect
+	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, vaporize_radius).terrain_changes.dirty_rect
 
 
 func explode_with_changes(
@@ -20,9 +21,9 @@ func explode_with_changes(
 	impact_position: Vector2,
 	hex_radius: float,
 	blast_radius: int,
-	lethal_radius: int = 0
+	vaporize_radius: int = 0
 ) -> TerrainChangeSet:
-	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, lethal_radius).terrain_changes
+	return resolve(world, terrain_registry, impact_position, hex_radius, blast_radius, vaporize_radius).terrain_changes
 
 
 func resolve(
@@ -31,18 +32,37 @@ func resolve(
 	impact_position: Vector2,
 	hex_radius: float,
 	blast_radius: int,
-	lethal_radius: int = 0
+	vaporize_radius: int = 0
 ) -> ExplosionResult:
+	var spec = ExplosionRuntimeSpecScript.new()
+	spec.blast_radius = blast_radius
+	spec.vaporize_radius = vaporize_radius
+	spec.player_kill_radius = vaporize_radius
+	return resolve_spec(world, terrain_registry, impact_position, hex_radius, spec)
+
+
+func resolve_spec(
+	world: WorldGrid,
+	terrain_registry: TerrainRegistry,
+	impact_position: Vector2,
+	hex_radius: float,
+	spec
+) -> ExplosionResult:
+	if spec == null or not spec.validate().is_empty():
+		return ExplosionResult.new(TerrainChangeSet.new(world.dimensions))
 	var origin := HexMetrics.offset_for_world(impact_position, hex_radius)
 	var air_id := _terrain_id(terrain_registry, "Air")
 	var metadata := CompiledTerrainData.compile(terrain_registry)
 	var change_set := TerrainChangeSet.new(world.dimensions)
 	var queue: Array[Dictionary] = [{
 		"cell": origin,
-		"strength": float(blast_radius),
+		"strength": float(spec.blast_radius),
 	}]
 	var visited := {}
 	var changed_cells: Array[Vector2i] = []
+	## Start with the inclusive base core, preserving old chain behavior even when
+	## those cells contain Air. Terrain-specific extensions can add to it below.
+	var destructive_core_cells := _cells_within_radius(origin, spec.vaporize_radius)
 
 	while not queue.is_empty():
 		var current: Dictionary = queue.pop_front()
@@ -59,15 +79,20 @@ func resolve(
 		if definition == null:
 			continue
 		var propagated_strength := strength - 1.0
-		if _is_within_radius(origin, cell, lethal_radius):
+		if _is_within_radius(origin, cell, spec.vaporize_radius_for(definition)):
+			if not destructive_core_cells.has(cell):
+				destructive_core_cells.append(cell)
 			if definition.stable_id != air_id:
 				var change := world.set_committed_by_offset(cell.x, cell.y, air_id)
 				change_set.add_cell_change(change, metadata)
 				changed_cells.append(cell)
 		else:
 			var effect = definition.blast_reaction.resolve()
-			if effect.replacement_id >= 0 and effect.replacement_id != definition.stable_id:
-				var change := world.set_committed_by_offset(cell.x, cell.y, effect.replacement_id)
+			var replacement_id: int = effect.replacement_id
+			if _roll_blast_vaporize(spec, definition, cell, origin):
+				replacement_id = air_id
+			if replacement_id >= 0 and replacement_id != definition.stable_id:
+				var change := world.set_committed_by_offset(cell.x, cell.y, replacement_id)
 				change_set.add_cell_change(change, metadata)
 				changed_cells.append(cell)
 			propagated_strength = (strength - 1.0) * float(effect.propagation_multiplier)
@@ -78,9 +103,9 @@ func resolve(
 
 	if changed_cells.is_empty():
 		change_set.dirty_rect = Rect2i(origin, Vector2i.ONE)
-		return ExplosionResult.new(change_set, _cells_within_radius(origin, lethal_radius))
+		return ExplosionResult.new(change_set, destructive_core_cells)
 
-	return ExplosionResult.new(change_set, _cells_within_radius(origin, lethal_radius))
+	return ExplosionResult.new(change_set, destructive_core_cells)
 
 
 func _enqueue_neighbors(queue: Array[Dictionary], cell: Vector2i, strength: float) -> void:
@@ -123,6 +148,19 @@ func _cells_within_radius(origin: Vector2i, radius: int) -> Array[Vector2i]:
 		for delta_r in range(min_delta_r, max_delta_r + 1):
 			result.append(center.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q())
 	return result
+
+
+func _roll_blast_vaporize(spec: ExplosionRuntimeSpec, definition: TerrainDefinition, cell: Vector2i, origin: Vector2i) -> bool:
+	var chance: float = spec.blast_vaporize_chance_for(definition, cell)
+	if chance <= 0.0:
+		return false
+	if chance >= 1.0:
+		return true
+	var seed := SeedUtils.derive_seed(
+		origin.x * 73856093 + origin.y * 19349663,
+		"%d:%d:%d" % [cell.x, cell.y, definition.stable_id]
+	)
+	return float(posmod(seed, 1000000)) / 1000000.0 < chance
 
 
 func _terrain_id(registry: TerrainRegistry, name: String) -> int:

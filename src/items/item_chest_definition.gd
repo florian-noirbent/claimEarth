@@ -3,9 +3,16 @@
 class_name ItemChestDefinition
 extends GeneratedItemPlacementDefinition
 
+enum RewardKind { ITEMS, PERKS }
 
 @export var chest_scene: PackedScene
 @export var explosion_definition: ExplosionDefinition
+@export var destruction_pulse: DirectionalTerrainPulseDefinition
+@export var container_tags := PackedStringArray(["item_chest"])
+@export var emits_light := true
+## Zero retains the light configured by the reusable container scene.
+@export_range(0, 255, 1) var emitted_light_level_override := 0
+@export var reward_kind := RewardKind.ITEMS
 @export_range(1, 3, 1) var choice_count := 2
 @export var options: Array[ItemChestOption] = []
 @export_category("Generation")
@@ -17,6 +24,10 @@ extends GeneratedItemPlacementDefinition
 @export_range(0, 32, 1) var terrain_unstuck_search_ring := 8
 @export_range(0.0, 4000.0, 1.0) var terrain_unstuck_push_speed := 900.0
 @export_range(0.0, 90.0, 1.0) var uneven_ground_tilt_degrees := 45.0
+@export var allow_support_tilt := true
+@export_range(0.5, 8.0, 0.05) var sprite_width_radii := 3.5
+@export_range(0.5, 8.0, 0.05) var body_width_radii := 3.25
+@export_range(0.5, 8.0, 0.05) var body_height_radii := 2.0
 
 
 func validate() -> PackedStringArray:
@@ -40,6 +51,23 @@ func validate() -> PackedStringArray:
 		errors.append("item chest terrain unstuck tuning is invalid")
 	if choice_count < 1 or choice_count > 3:
 		errors.append("item chest choice_count must be between 1 and 3")
+	if emitted_light_level_override < 0 or emitted_light_level_override > 255:
+		errors.append("item chest emitted light override must be between 0 and 255")
+	if destruction_pulse != null:
+		for error in destruction_pulse.validate():
+			errors.append("destruction pulse: %s" % error)
+	if sprite_width_radii <= 0.0 or body_width_radii <= 0.0 or body_height_radii <= 0.0:
+		errors.append("item chest geometry sizes must be positive")
+	if requires_item_options():
+		_validate_item_options(errors)
+	return errors
+
+
+func requires_item_options() -> bool:
+	return true
+
+
+func _validate_item_options(errors: PackedStringArray) -> void:
 	var positive_weight_count := 0
 	var stable_ids := {}
 	for index in options.size():
@@ -59,7 +87,6 @@ func validate() -> PackedStringArray:
 			stable_ids[option.item.stable_id] = true
 	if positive_weight_count < choice_count:
 		errors.append("item chest requires at least %d positive-weight options" % choice_count)
-	return errors
 
 
 func required_edge_clearance() -> int:
@@ -88,7 +115,7 @@ func record_spawn(context: GenerationContext, anchor: Vector2i, spawn_seed: int)
 	return true
 
 
-func draw_choices(seed_value: int) -> Array[ItemChestOption]:
+func draw_choices(seed_value: int, requested_count: int = -1) -> Array[ItemChestOption]:
 	var remaining: Array[ItemChestOption] = []
 	for option in options:
 		if option != null and option.selection_weight > 0.0:
@@ -96,7 +123,8 @@ func draw_choices(seed_value: int) -> Array[ItemChestOption]:
 	var result: Array[ItemChestOption] = []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
-	while result.size() < choice_count and not remaining.is_empty():
+	var target_count := choice_count if requested_count < 0 else requested_count
+	while result.size() < target_count and not remaining.is_empty():
 		var total_weight := 0.0
 		for option in remaining:
 			total_weight += option.selection_weight

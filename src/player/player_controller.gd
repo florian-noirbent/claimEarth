@@ -16,6 +16,7 @@ const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_q
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
 const TerrainBodyUnstuckSolverScript = preload("res://src/world/terrain_body_unstuck_solver.gd")
 const GameplayInputControllerScript = preload("res://src/input/gameplay_input_controller.gd")
+const FLOOR_CONTACT_NORMAL_Y := -0.35
 
 @export var movement_config: PlayerMovementConfig
 @export var grapple_config: GrappleConfig
@@ -30,6 +31,7 @@ const GameplayInputControllerScript = preload("res://src/input/gameplay_input_co
 
 @onready var body_polygon: Polygon2D = %BodyPolygon
 @onready var body_visual: Node2D = %BodyVisual
+@onready var sand_outline: Line2D = %SandOutline
 @onready var camera: DescendingCameraController = %FollowCamera
 @onready var rope_line: Line2D = %RopeLine
 @onready var hook_indicator: Polygon2D = %HookIndicator
@@ -58,9 +60,14 @@ var _input_controller: GameplayInputController
 var _owns_input_controller := false
 var _ragdoll_remaining := 0.0
 var _ragdoll_spin_direction := 1.0
+var _base_movement_config: PlayerMovementConfig
+var _base_grapple_config: GrappleConfig
+var _perk_modifiers: PerkModifierSnapshot
 
 
 func _ready() -> void:
+	_base_movement_config = movement_config
+	_base_grapple_config = grapple_config
 	_movement_model = PlayerMovementModel.new(movement_config)
 	_grapple_model = GrappleModelScript.new(grapple_config)
 	_impact_hazard_effect = _create_impact_hazard_effect()
@@ -73,6 +80,71 @@ func _ready() -> void:
 		# Standalone player scenes use the same adapter as the composed application.
 		_input_controller = GameplayInputControllerScript.new()
 		_owns_input_controller = true
+	_rebuild_perk_tuning()
+
+
+func set_perk_modifiers(modifiers: PerkModifierSnapshot) -> void:
+	_perk_modifiers = modifiers
+	_rebuild_perk_tuning()
+
+
+func apply_blast_impulse(origin: Vector2, maximum_impulse: float, radius: float) -> void:
+	if maximum_impulse <= 0.0 or radius <= 0.0:
+		return
+	var displacement := global_position - origin
+	var distance := displacement.length()
+	if distance > radius:
+		return
+	var direction := Vector2.UP if distance <= 0.001 else displacement / distance
+	velocity += direction * maximum_impulse * (1.0 - distance / radius)
+
+
+func _rebuild_perk_tuning() -> void:
+	if _base_movement_config == null or _base_grapple_config == null:
+		return
+	movement_config = _base_movement_config.duplicate() as PlayerMovementConfig
+	grapple_config = _base_grapple_config.duplicate() as GrappleConfig
+	var player_domain = _perk_modifiers.player if _perk_modifiers != null else null
+	if player_domain != null:
+		movement_config.gravity *= maxf(0.0, 1.0 + float(player_domain.value("gravity_multiplier_delta", 0.0)))
+		var speed_multiplier := maxf(0.0, float(player_domain.value("movement_speed_multiplier", 1.0)))
+		movement_config.max_ground_speed *= speed_multiplier
+		movement_config.max_air_speed *= speed_multiplier
+		movement_config.ground_friction *= float(player_domain.value("ground_friction_multiplier", 1.0))
+		movement_config.extra_air_jumps += int(player_domain.value("extra_air_jumps_add", 0))
+		grapple_config.max_rope_length *= maxf(0.0, 1.0 + float(player_domain.value("rope_length_multiplier_delta", 0.0)))
+		var impact_mode := int(player_domain.value("impact_mode", 0))
+		if bool(player_domain.value("impact_disabled", false)):
+			movement_config.impact_hazard_minimum_speed = INF
+		elif bool(player_domain.value("impact_death_disabled", false)):
+			var threshold_add := float(player_domain.value("impact_threshold_add", 0.0))
+			movement_config.impact_hazard_minimum_speed += threshold_add
+			movement_config.medium_impact_speed += threshold_add
+			movement_config.lethal_impact_speed += threshold_add
+		elif impact_mode == 1: # Hard Skin: medium impacts ignored, previous lethal knocks out.
+			movement_config.impact_hazard_minimum_speed = _base_movement_config.medium_impact_speed
+			movement_config.medium_impact_speed = _base_movement_config.lethal_impact_speed
+			movement_config.lethal_impact_speed = maxf(
+				_base_movement_config.lethal_impact_speed + 1.0,
+				_base_movement_config.lethal_impact_speed + (_base_movement_config.lethal_impact_speed - _base_movement_config.medium_impact_speed)
+			)
+		elif impact_mode == 2: # Jelly: no fall damage or knockout.
+			movement_config.impact_hazard_minimum_speed = INF
+		elif impact_mode == 3: # Glass Cannon: previous knockout becomes lethal.
+			movement_config.impact_hazard_minimum_speed = _base_movement_config.impact_hazard_minimum_speed
+			movement_config.medium_impact_speed = _base_movement_config.medium_impact_speed
+			movement_config.lethal_impact_speed = _base_movement_config.medium_impact_speed
+	var ignored_ids := PackedInt32Array()
+	if _perk_modifiers != null and bool(_perk_modifiers.terrain.value("player_sand_passable", false)) and _terrain_registry != null:
+		for definition in _terrain_registry.all_definitions():
+			if definition.perk_tags.has("sand"):
+				ignored_ids.append(definition.stable_id)
+	_terrain_query.set_ignored_solid_ids(ignored_ids)
+	if _movement_model != null:
+		_movement_model.config = movement_config
+	if _grapple_model != null:
+		_grapple_model.config = grapple_config
+	_impact_hazard_effect = _create_impact_hazard_effect()
 
 
 func _exit_tree() -> void:
@@ -88,7 +160,13 @@ func _physics_process(delta: float) -> void:
 	if is_ragdolling():
 		_grapple_model.detach()
 	var grounded_for_input := _is_grounded_for_movement()
-	_movement_model.step(input_frame, grounded_for_input, delta)
+	_movement_model.step(
+		input_frame,
+		grounded_for_input,
+		delta,
+		_has_jelly_liquid_jump_support(),
+		_is_horizontal_air_control_enabled()
+	)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
 	_apply_fluid_drag(delta)
 	if input_frame.hook_pressed:
@@ -123,6 +201,7 @@ func _physics_process(delta: float) -> void:
 	_update_visual_state(delta)
 	_update_grapple_visuals(delta)
 	_sample_environment(delta)
+	_update_sand_outline()
 	if global_position.y > world_bottom_y:
 		death_requested.emit(DeathCauseScript.BOUNDS)
 		bounds_exited.emit()
@@ -199,6 +278,20 @@ func _is_grounded_for_movement() -> bool:
 	if velocity.y < 0.0:
 		return false
 	return _grounded
+
+
+func _has_jelly_liquid_jump_support() -> bool:
+	return _perk_modifiers != null \
+		and bool(_perk_modifiers.player.value("liquid_gravity_cancelled", false)) \
+		and _body_intersects_perk_tag("liquid")
+
+
+func _is_horizontal_air_control_enabled() -> bool:
+	if _perk_modifiers == null:
+		return true
+	if not bool(_perk_modifiers.player.value("free_air_control_disabled", false)):
+		return true
+	return _grapple_model != null and _grapple_model.state.is_attached
 
 
 func _update_visual_state(delta: float) -> void:
@@ -287,6 +380,48 @@ func _handle_physics_impacts(
 		unstuck_result.velocity_change.length()
 	)
 	_handle_terrain_impact(greatest_velocity_change)
+	_apply_jelly_surface_bounce(motion_result, post_grapple_result)
+
+
+func _apply_jelly_surface_bounce(
+	motion_result: TerrainBodyMotionResult,
+	post_grapple_result: TerrainBodyMotionResult
+) -> bool:
+	if _perk_modifiers == null or _body_intersects_perk_tag("liquid"):
+		return false
+	var restitution := clampf(
+		float(_perk_modifiers.player.value("hard_surface_restitution", 0.0)),
+		0.0,
+		1.0
+	)
+	if restitution <= 0.0:
+		return false
+	var settle_speed := maxf(
+		0.0,
+		float(_perk_modifiers.player.value("bounce_settle_speed", 0.0))
+	)
+	var impact_speed := maxf(
+		_downward_floor_impact_speed(motion_result),
+		_downward_floor_impact_speed(post_grapple_result)
+	)
+	if impact_speed <= settle_speed:
+		return false
+	velocity.y = -impact_speed * restitution
+	_grounded = false
+	return true
+
+
+func _downward_floor_impact_speed(result: TerrainBodyMotionResult) -> float:
+	if result == null or not result.collided:
+		return 0.0
+	var has_floor_contact := false
+	for normal in result.hit_normals:
+		if normal.y < FLOOR_CONTACT_NORMAL_Y:
+			has_floor_contact = true
+			break
+	if not has_floor_contact:
+		return 0.0
+	return maxf(0.0, -result.velocity_change.y)
 
 
 func _update_grapple_visuals(delta: float) -> void:
@@ -407,7 +542,38 @@ func _apply_fluid_drag(delta: float) -> void:
 	var average_viscosity := _average_body_fluid_viscosity()
 	if average_viscosity <= 0.0:
 		return
-	velocity *= exp(-average_viscosity * delta)
+	var jelly_in_liquid := _perk_modifiers != null \
+		and bool(_perk_modifiers.player.value("liquid_gravity_cancelled", false)) \
+		and _body_intersects_perk_tag("liquid")
+	var liquid_drag_disabled := _perk_modifiers != null \
+		and bool(_perk_modifiers.player.value("liquid_drag_disabled", false))
+	if not (jelly_in_liquid and liquid_drag_disabled):
+		velocity *= exp(-average_viscosity * delta)
+	if jelly_in_liquid:
+		var buoyancy := maxf(1.0, float(_perk_modifiers.player.value("liquid_buoyancy_multiplier", 1.0)))
+		velocity.y -= movement_config.gravity * buoyancy * _liquid_submersion_fraction() * delta
+
+
+func _liquid_submersion_fraction() -> float:
+	var sample_positions := _occupied_sample_positions()
+	if sample_positions.is_empty():
+		return 0.0
+	var submerged_count := 0
+	for sample_position in sample_positions:
+		var offset := HexMetrics.offset_for_world(sample_position, _hex_radius)
+		if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+			continue
+		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+		if definition != null and definition.perk_tags.has("liquid"):
+			submerged_count += 1
+	return float(submerged_count) / float(sample_positions.size())
+
+
+func _update_sand_outline() -> void:
+	if sand_outline == null:
+		return
+	var can_burrow := _perk_modifiers != null and bool(_perk_modifiers.terrain.value("player_sand_passable", false))
+	sand_outline.visible = can_burrow and _body_intersects_perk_tag("sand")
 
 
 func _average_body_fluid_viscosity() -> float:
@@ -429,13 +595,21 @@ func _hazard_effect_at(world_position: Vector2):
 	var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 	if definition == null:
 		return null
-	return definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
+	if _perk_modifiers != null and bool(_perk_modifiers.hazards.value("all_hazards_immune", false)):
+		return null
+	var effect = definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
+	if effect != null and _perk_modifiers != null and definition.perk_tags.has("lava"):
+		effect.fill_seconds += float(_perk_modifiers.hazards.value("lava_duration_seconds_add", 0.0))
+	return effect
 
 
 func _suffocation_effect_at_head():
-	if suffocation_hazard_behavior == null or _head_has_breathable_air():
+	if suffocation_hazard_behavior == null or _head_has_breathable_air() or (_perk_modifiers != null and bool(_perk_modifiers.hazards.value("all_hazards_immune", false))):
 		return null
-	return suffocation_hazard_behavior.resolve()
+	var effect = suffocation_hazard_behavior.resolve()
+	if _perk_modifiers != null and _head_has_perk_tag("water"):
+		effect.fill_seconds += float(_perk_modifiers.hazards.value("suffocation_duration_seconds_add", 0.0))
+	return effect
 
 
 func _head_has_breathable_air() -> bool:
@@ -444,7 +618,32 @@ func _head_has_breathable_air() -> bool:
 		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
 		if definition == null or definition.is_empty_space:
 			return true
+		if _perk_modifiers != null and definition.perk_tags.has("sand") and bool(_perk_modifiers.hazards.value("sand_breathable", false)):
+			return true
 		if _world.get_committed_quantity_by_offset(offset.x, offset.y) >= definition.maximum_quantity:
 			return false
 		offset = HexCoord.from_offset_odd_q(offset.x, offset.y).neighbor(2).to_offset_odd_q()
 	return true
+
+
+func _head_has_perk_tag(tag: String) -> bool:
+	if _world == null or _terrain_registry == null:
+		return false
+	var offset := HexMetrics.offset_for_world(global_position + Vector2(0.0, -10.0), _hex_radius)
+	if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+		return false
+	var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+	return definition != null and definition.perk_tags.has(tag)
+
+
+func _body_intersects_perk_tag(tag: String) -> bool:
+	if _world == null or _terrain_registry == null:
+		return false
+	for sample_position in _occupied_sample_positions():
+		var offset := HexMetrics.offset_for_world(sample_position, _hex_radius)
+		if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+			continue
+		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+		if definition != null and definition.perk_tags.has(tag):
+			return true
+	return false

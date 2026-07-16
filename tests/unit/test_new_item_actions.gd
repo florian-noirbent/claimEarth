@@ -6,7 +6,7 @@ func test_pickaxe_changes_three_aimed_hexes_and_caps_charge_at_three() -> void:
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
 	var player := PlayerController.new()
 	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
-	var targets := [Vector2i(4, 3), Vector2i(5, 3), Vector2i(6, 3)]
+	var targets := [Vector2i(4, 3), Vector2i(5, 3), Vector2i(4, 2)]
 	for target in targets:
 		world.set_committed_by_offset(target.x, target.y, FixtureLoader.terrain_id("Stone"), 127)
 	var controller := RunItemController.new()
@@ -38,6 +38,34 @@ func test_water_bottle_fills_nearest_air_hexes() -> void:
 	controller.resolve_fluid_bottle_impact(registry.get_definition(FixtureLoader.terrain_id("Water")), HexMetrics.center_for_offset(origin.x, origin.y, 16.0))
 
 	assert_eq(world.count_committed(FixtureLoader.terrain_id("Water")), 3)
+
+
+func test_vaporizer_turns_pickaxe_dirt_transformations_into_air_when_configured() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
+	var player := PlayerController.new()
+	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+	var targets := [Vector2i(4, 3), Vector2i(5, 3), Vector2i(4, 2)]
+	for target in targets:
+		world.set_committed_by_offset(target.x, target.y, FixtureLoader.terrain_id("Dirt"), 127)
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(player, world, registry, 16.0)
+	var builder := PerkModifierBuilder.new()
+	var effect := PerkModifierEffect.new()
+	effect.domain = PerkModifierEffect.Domain.TERRAIN
+	effect.modifier_key = "dirt_vaporize_chance"
+	effect.operation = PerkModifierEffect.Operation.SET
+	effect.value = 1.0
+	effect.apply(builder)
+	controller.set_perk_modifiers(builder.build())
+	var factory := load("res://config/items/factory/pickaxe_factory.tres") as TerrainToolItemActionFactory
+
+	controller.resolve_terrain_tool_use(factory.transformations, HexMetrics.center_for_offset(targets[0].x, targets[0].y, 16.0))
+
+	for target in targets:
+		assert_eq(world.get_committed_by_offset(target.x, target.y), FixtureLoader.terrain_id("Air"))
 
 
 func _item_registry() -> ItemRegistry:

@@ -15,6 +15,9 @@ var simulation_backend: TerrainSimulationBackend
 var world: WorldGrid
 var terrain_registry: TerrainRegistry
 var hex_radius := 16.0
+var _horizontal_bounds_enabled := false
+var _horizontal_min_x := 0.0
+var _horizontal_max_x := 0.0
 
 var body: Polygon2D
 var outline: Line2D
@@ -69,6 +72,13 @@ func apply_blast_impulse(origin: Vector2, maximum_impulse: float, radius: float)
 	velocity += direction * maximum_impulse * (1.0 - distance / radius)
 
 
+func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
+	var half_width := _body_half_width()
+	_horizontal_min_x = left_edge + half_width
+	_horizontal_max_x = right_edge - half_width
+	_horizontal_bounds_enabled = _horizontal_min_x <= _horizontal_max_x
+
+
 ## Advances one body step and returns lava, impact, grounded, or an empty kind.
 func advance_body(delta: float) -> StringName:
 	if delta <= 0.0:
@@ -78,6 +88,7 @@ func advance_body(delta: float) -> StringName:
 		rotation = velocity.angle()
 	var previous_position := global_position
 	global_position += velocity * delta
+	_enforce_horizontal_bounds()
 	var definition := _sample_terrain(global_position)
 	if definition == null:
 		return &""
@@ -151,3 +162,23 @@ func _bounce(previous_position: Vector2, delta: float) -> void:
 func _is_blocked(world_position: Vector2) -> bool:
 	var definition := _sample_terrain(world_position)
 	return definition != null and not definition.is_passable
+
+
+func _enforce_horizontal_bounds() -> void:
+	if not _horizontal_bounds_enabled or (global_position.x >= _horizontal_min_x and global_position.x <= _horizontal_max_x):
+		return
+	var hit_left := global_position.x < _horizontal_min_x
+	global_position.x = _horizontal_min_x if hit_left else _horizontal_max_x
+	if bounce_on_impact:
+		velocity.x = absf(velocity.x) * horizontal_bounce_damping if hit_left else -absf(velocity.x) * horizontal_bounce_damping
+	else:
+		velocity.x = 0.0
+
+
+func _body_half_width() -> float:
+	if _pending_polygon.is_empty():
+		return 0.0
+	var width := 0.0
+	for point in _pending_polygon:
+		width = maxf(width, absf(point.x))
+	return width

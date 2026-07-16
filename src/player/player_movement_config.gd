@@ -22,3 +22,4 @@ extends Resource
 @export var lethal_impact_speed := 840.0
 @export var ragdoll_seconds := 1.0
 @export var ragdoll_spin_speed := 8.0
+@export_range(0, 4, 1) var extra_air_jumps := 0

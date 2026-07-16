@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=7 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/large_boom.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_blast"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "large_bomb_blast_radius_add"
+value = 2.0
+[sub_resource type="Resource" id="Effect_vaporize"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "large_bomb_vaporize_radius_add"
+value = 1.0
+[sub_resource type="Resource" id="Effect_kill"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "large_bomb_player_kill_radius_add"
+value = 1.0
+[sub_resource type="Resource" id="Effect_preserve"]
+script = ExtResource("3")
+domain = 2
+modifier_key = "large_bomb_preserve_chance"
+operation = 2
+value = 0.33
+[sub_resource type="Resource" id="Effect_sulfur"]
+script = ExtResource("3")
+domain = 3
+modifier_key = "large_bomb_emits_sulfur_dioxide"
+operation = 2
+value = 1.0
+[resource]
+script = ExtResource("1")
+stable_id = 11
+display_name = "Large Boom"
+description = "Large bombs are stronger, deadlier, and may be preserved."
+icon = ExtResource("2")
+effects = [SubResource("Effect_blast"), SubResource("Effect_vaporize"), SubResource("Effect_kill"), SubResource("Effect_preserve"), SubResource("Effect_sulfur")]

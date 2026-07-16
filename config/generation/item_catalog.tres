@@ -1,0 +1,9 @@
+[gd_resource type="Resource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/generation/generated_item_placement_catalog.gd" id="1_catalog"]
+[ext_resource type="Resource" path="res://config/items/item_chest.tres" id="2_chest"]
+[ext_resource type="Resource" path="res://config/items/perk_geode.tres" id="3_geode"]
+
+[resource]
+script = ExtResource("1_catalog")
+definitions = Array[ExtResource("2_chest")]([ExtResource("2_chest"), ExtResource("3_geode")])

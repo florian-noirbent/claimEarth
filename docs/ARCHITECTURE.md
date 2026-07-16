@@ -49,7 +49,8 @@ disposable session:
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
 | `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
-| `RunSession` | `RunItemController` | Inventory, selection, item chests, projectiles, explosions, flag flight |
+| `RunSession` | `RunItemController` | Inventory, selection, reward containers, projectiles, explosions, flag flight |
+| `RunSession` | `RunPerkController` | Unique perk pool, selected perks, and compiled immutable modifier snapshot |
 
 Controllers receive dependencies through typed `configure(...)` methods. They do not
 reach into one another. UI emits intent; gameplay controllers emit outcomes;
@@ -89,6 +90,18 @@ cancelled and freed.
 `AppRoot` remembers the originating phase, suspends the complete run session, routes
 one UI choice back to `RunItemController`, and restores that phase after the reward
 is applied. Terminal outcomes clear and supersede a pending reward.
+
+## Perks And Reward Containers
+
+`PerkDefinition` resources contain composable modifier and cancellation effects.
+`RunPerkController` draws unique choices from `PerkCatalog`, then compiles the
+selected effects into `PerkModifierSnapshot`; consumers receive the snapshot rather
+than mutating authored tuning resources. `ItemChestDefinition.reward_kind` keeps the
+chest picker generic: ordinary chests draw item options while geodes draw perks.
+Container geometry, destruction behavior, light, and generated placement remain
+definition-driven. Explosion runtime specs keep terrain destruction, vaporization,
+and player-kill radii separate so perks can safely adjust one without changing the
+others.
 
 ## World Data And Presentation
 

@@ -10,6 +10,7 @@
 script = ExtResource("1_2jger")
 stable_id = 2
 display_name = "Dirt"
+perk_tags = PackedStringArray("dirt")
 block_density = 220
 is_solid = true
 is_passable = false

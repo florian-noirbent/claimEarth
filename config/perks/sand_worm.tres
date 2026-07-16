@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=5 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/sand_worm.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_collision"]
+script = ExtResource("3")
+domain = 8
+modifier_key = "player_sand_passable"
+operation = 2
+value = 1.0
+[sub_resource type="Resource" id="Effect_breathe"]
+script = ExtResource("3")
+domain = 1
+modifier_key = "sand_breathable"
+operation = 2
+value = 1.0
+[resource]
+script = ExtResource("1")
+stable_id = 13
+display_name = "Sand Worm"
+description = "Move through and breathe in sand."
+icon = ExtResource("2")
+effects = [SubResource("Effect_collision"), SubResource("Effect_breathe")]

@@ -10,6 +10,7 @@
 script = ExtResource("1_14pcm")
 stable_id = 4
 display_name = "Water"
+perk_tags = PackedStringArray("water", "liquid")
 block_density = 64
 is_solid = false
 is_passable = true

@@ -17,7 +17,7 @@ the flag loses it.
    rules, controls, and device preferences.
 2. Starting creates a randomized deterministic map and a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
-4. Touching generated item chests pauses the run and offers a mandatory choice of supplies.
+4. Touching generated item chests pauses the run and offers a mandatory choice of supplies. Lootable purple geodes use the same choice flow to offer permanent, unique perks instead; destroying one drives a purple, front-loaded 5-wide pulse 20 hexes downward over 1.6 seconds.
 5. The player throws the flag when ready to claim a depth.
 6. A valid landing opens editable name entry and saves/submits the score.
 7. Death or a flag destroyed by lava ends the run without saving its depth.
@@ -35,7 +35,7 @@ Keyboard and mouse remain fully supported on desktop.
 | Left mouse | Throw the selected item toward the cursor |
 | Right mouse hold | Launch and hold the grappling hook |
 | Right mouse release | Detach the hook |
-| `1`–`7` | Select the matching inventory slot; collected dynamic items occupy keys 4–7 in acquisition order |
+| `1`–`8` | Select the matching inventory slot; collected dynamic items occupy keys 4–8 in acquisition order |
 | `Escape` | Pause or leave the current modal |
 
 ### Phone Controls
@@ -83,6 +83,12 @@ item highlighted. Toolbar items can be clicked to select them. Changing selectio
 briefly shows the item name above the toolbar.
 A live integer FPS reading appears with the top-left run status during active play in
 all release and debug builds so device performance can be compared directly.
+Collected perks appear as an icon stack above that status; hovering an icon shows its
+name and effect. The stack wraps before the hazard display.
+Jelly removes impact damage and knockout, makes the player float in liquids, enables
+jumping from the liquid surface, rebounds from meaningful hard-surface landings, and
+lets explosions throw the player without changing their lethal radius. Small residual
+contacts settle normally so walking and ground jumping remain responsive.
 A compact pause button opens the pause menu, which contains Resume, Restart, and
 Back to Menu actions together with in-run access to the same Help and Settings
 panels as the main menu. Closing either panel returns to the paused run.
@@ -156,6 +162,12 @@ physics, projectiles, and input remain frame-responsive.
 - The player is about two hexes tall and can step up low hex slopes.
 - Movement includes ground acceleration, air control, coyote time, jump buffering,
   and floor support probing.
+- Glass Cannon disables horizontal control during unsupported free flight, while
+  retaining normal `A`/`D` swing control whenever the grappling hook is attached.
+- Glass Cannon and either Hard Skin or Jelly mutually cancel their impact changes,
+  restoring the normal fall-damage and knockout thresholds. Acrobat and Glass
+  Cannon similarly offset their rope-length, gravity, and free-air-control changes
+  back to baseline.
 - Fluid viscosity damps the player's complete velocity, including walking, jumping,
   falling, swinging, ragdoll motion, and carried impulses. Drag scales with committed
   cell fill and the fraction of the three-point body sample immersed; Water has mild

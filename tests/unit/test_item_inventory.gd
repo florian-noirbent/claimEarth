@@ -8,11 +8,11 @@ func test_inventory_uses_starting_counts_and_selection_order() -> void:
 	inventory.configure(registry)
 
 	var definitions := inventory.definitions()
-	assert_eq(definitions.size(), 7)
+	assert_eq(definitions.size(), 8)
 	assert_eq(inventory.count_for(definitions[0]), 10)
 	assert_eq(inventory.count_for(definitions[1]), 2)
 	assert_eq(inventory.count_for(definitions[2]), 1)
-	for index in range(3, 7):
+	for index in range(3, 8):
 		assert_eq(inventory.count_for(definitions[index]), 0.0)
 	assert_eq(inventory.selected_definition().display_name, "Small Bomb")
 
@@ -47,7 +47,7 @@ func test_reset_restores_starting_counts_and_selection() -> void:
 	assert_eq(inventory.count_for(definitions[0]), 10)
 	assert_eq(inventory.count_for(definitions[1]), 2)
 	assert_eq(inventory.count_for(definitions[2]), 1)
-	for index in range(3, 7):
+	for index in range(3, 8):
 		assert_eq(inventory.count_for(definitions[index]), 0.0)
 	assert_eq(inventory.selected_definition(), definitions[0])
 
@@ -77,7 +77,7 @@ func test_partial_consumption_uses_the_remaining_fraction_and_clamps_to_zero() -
 	var small_bomb := inventory.definitions()[0]
 
 	assert_true(inventory.add(small_bomb, 0.25))
-	assert_eq(inventory.consume_amount(small_bomb, 10.1), 0.0)
-	assert_eq(inventory.consume_amount(small_bomb, 10.1, true), 10.25)
+	assert_eq(inventory.consume_amount(small_bomb, 10.3), 0.0)
+	assert_eq(inventory.consume_amount(small_bomb, 10.3, true), 10.25)
 	assert_eq(inventory.count_for(small_bomb), 0.0)
 	assert_eq(inventory.consume_amount(small_bomb, 1.0, true), 0.0)

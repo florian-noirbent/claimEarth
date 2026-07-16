@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 stable_id = 4
 display_name = "Pickaxe"
+perk_tags = PackedStringArray("pickaxe", "terrain_tool")
 description = "Breaks one aimed Stone into Dirt, or Dirt into Sand."
 icon = ExtResource("3_icon")
 count_display = 1

@@ -7,6 +7,7 @@ var world: WorldGrid
 var metadata: CompiledTerrainData
 var hex_radius := 16.0
 var _corners := PackedVector2Array()
+var _ignored_solid_ids := {}
 
 
 func configure(world_value: WorldGrid, metadata_value: CompiledTerrainData, hex_radius_value: float) -> void:
@@ -20,8 +21,16 @@ func is_configured() -> bool:
 	return world != null and metadata != null
 
 
+func set_ignored_solid_ids(ids: PackedInt32Array) -> void:
+	_ignored_solid_ids.clear()
+	for terrain_id in ids:
+		_ignored_solid_ids[terrain_id] = true
+
+
 func is_solid_cell(col: int, row: int) -> bool:
 	if not is_configured() or not world.dimensions.is_in_bounds_offset(col, row):
+		return false
+	if _ignored_solid_ids.has(world.get_committed_by_offset(col, row)):
 		return false
 	return metadata.is_solid(
 		world.get_committed_by_offset(col, row),

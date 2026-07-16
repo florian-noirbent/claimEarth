@@ -8,16 +8,24 @@ var velocity := Vector2.ZERO
 var current_state: StringName = PlayerMovementState.IDLE
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
+var _air_jumps_remaining := 0
 
 
 func _init(config_value: PlayerMovementConfig) -> void:
 	config = config_value
 
 
-func step(input_frame: PlayerInputFrame, grounded: bool, delta: float) -> void:
+func step(
+	input_frame: PlayerInputFrame,
+	grounded: bool,
+	delta: float,
+	liquid_jump_supported: bool = false,
+	horizontal_air_control_enabled: bool = true
+) -> void:
 	var jumped_this_frame := false
 	if grounded:
 		_coyote_timer = config.coyote_time_seconds
+		_air_jumps_remaining = config.extra_air_jumps
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 
@@ -26,15 +34,22 @@ func step(input_frame: PlayerInputFrame, grounded: bool, delta: float) -> void:
 	else:
 		_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
 
-	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
+	if _jump_buffer_timer > 0.0 and (_coyote_timer > 0.0 or liquid_jump_supported):
 		velocity.y = config.jump_velocity
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		grounded = false
 		jumped_this_frame = true
+	elif _jump_buffer_timer > 0.0 and not grounded and _air_jumps_remaining > 0:
+		velocity.y = config.jump_velocity
+		_jump_buffer_timer = 0.0
+		_air_jumps_remaining -= 1
+		jumped_this_frame = true
 
 	var target_speed := input_frame.move_axis * (config.max_ground_speed if grounded else config.max_air_speed)
 	var acceleration := config.ground_acceleration if grounded else config.air_acceleration
+	if not grounded and not horizontal_air_control_enabled:
+		acceleration = 0.0
 
 	if absf(input_frame.move_axis) > 0.001:
 		if not _is_preserving_horizontal_overspeed(input_frame.move_axis, target_speed):

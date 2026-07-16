@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="PerkDefinition" load_steps=5 format=3]
+[ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/perks/cave_dweller.svg" id="2"]
+[ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
+[sub_resource type="Resource" id="Effect_vision"]
+script = ExtResource("3")
+domain = 6
+modifier_key = "lighting_threshold_offset"
+value = -25.0
+[sub_resource type="Resource" id="Effect_tools"]
+script = ExtResource("3")
+domain = 2
+modifier_key = "shovel_pickaxe_preserve_chance"
+operation = 2
+value = 0.5
+[resource]
+script = ExtResource("1")
+stable_id = 9
+display_name = "Cave Dweller"
+description = "See deeper and sometimes preserve tools."
+icon = ExtResource("2")
+effects = [SubResource("Effect_vision"), SubResource("Effect_tools")]

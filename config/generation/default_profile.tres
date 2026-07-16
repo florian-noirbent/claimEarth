@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://dem5l8k4hfuqc" path="res://src/generation/generated_item_pass.gd" id="6_item_pass"]
 [ext_resource type="Resource" uid="uid://bxwt8166bt34x" path="res://config/items/item_chest.tres" id="7_chest_definition"]
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="8_lava"]
+[ext_resource type="Resource" path="res://config/items/perk_geode.tres" id="9_geode_definition"]
 
 [sub_resource type="Resource" id="Resource_26qyd"]
 script = ExtResource("2_base")
@@ -80,6 +81,15 @@ min_depth_ratio = 0.05
 max_depth_ratio = 0.9
 allowed_target_ids = PackedInt32Array()
 
+[sub_resource type="Resource" id="Resource_perk_geodes"]
+script = ExtResource("6_item_pass")
+item_definition = ExtResource("9_geode_definition")
+label = "Perk Geodes"
+pass_seed_key = "perk_geodes_6"
+min_depth_ratio = 0.05
+max_depth_ratio = 0.9
+allowed_target_ids = PackedInt32Array()
+
 [sub_resource type="Resource" id="Resource_5hsgh"]
 script = ExtResource("5_fill")
 fill_terrain = ExtResource("8_lava")
@@ -91,4 +101,4 @@ allowed_target_ids = PackedInt32Array(1, 2, 3, 4, 5, 0)
 
 [resource]
 script = ExtResource("1_profile")
-passes = [SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_5hsgh")]
+passes = [SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_perk_geodes"), SubResource("Resource_5hsgh")]

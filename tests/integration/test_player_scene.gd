@@ -225,6 +225,78 @@ func test_player_hook_attaches_adjusts_rope_and_releases_with_input() -> void:
 	assert_false(player.is_grapple_attached())
 
 
+func test_glass_disables_free_air_control_but_preserves_attached_swing_control() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	player.configure_grapple_anchor_query(FakeAnchorQuery.new())
+	add_child_autofree(player)
+	await wait_process_frames(1)
+	var base_air_acceleration := player.movement_config.air_acceleration
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/glass_cannon.tres"]))
+
+	assert_eq(player.movement_config.air_acceleration, base_air_acceleration)
+	Input.action_press(InputActions.MOVE_RIGHT)
+	player._physics_process(0.1)
+	Input.action_release(InputActions.MOVE_RIGHT)
+	assert_almost_eq(player.velocity.x, 0.0, 0.001)
+
+	player.velocity = Vector2.ZERO
+	player._movement_model.velocity = Vector2.ZERO
+	ScenarioDriverScript.set_mouse_world_position(player, Vector2(64, -24))
+	Input.action_press(InputActions.HOOK)
+	await wait_physics_frames(1)
+	assert_true(player.is_grapple_attached())
+
+	Input.action_press(InputActions.MOVE_RIGHT)
+	await wait_physics_frames(3)
+	Input.action_release(InputActions.MOVE_RIGHT)
+	assert_gt(player.velocity.x, 0.0)
+
+	Input.action_release(InputActions.HOOK)
+	await wait_physics_frames(1)
+
+
+func test_glass_preserves_ground_control() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/glass_cannon.tres"]))
+	player._grounded = true
+	player.velocity = Vector2.ZERO
+	player._movement_model.velocity = Vector2.ZERO
+
+	Input.action_press(InputActions.MOVE_RIGHT)
+	player._physics_process(0.1)
+	Input.action_release(InputActions.MOVE_RIGHT)
+
+	assert_gt(player.velocity.x, 0.0)
+
+
+func test_acrobat_and_glass_preserve_attached_swing_control() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	player.configure_grapple_anchor_query(FakeAnchorQuery.new())
+	add_child_autofree(player)
+	await wait_process_frames(1)
+	player.set_perk_modifiers(_perk_modifiers([
+		"res://config/perks/acrobat.tres",
+		"res://config/perks/glass_cannon.tres",
+	]))
+	ScenarioDriverScript.set_mouse_world_position(player, Vector2(64, -24))
+	Input.action_press(InputActions.HOOK)
+	await wait_physics_frames(1)
+	assert_true(player.is_grapple_attached())
+
+	Input.action_press(InputActions.MOVE_RIGHT)
+	await wait_physics_frames(3)
+	Input.action_release(InputActions.MOVE_RIGHT)
+
+	assert_gt(player.velocity.x, 0.0)
+	Input.action_release(InputActions.HOOK)
+	await wait_physics_frames(1)
+
+
 func test_player_hook_launch_animation_plays_without_anchor() -> void:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController
@@ -483,3 +555,12 @@ func _set_air_hex_radius(world: WorldGrid, center: HexCoord, radius: int) -> voi
 			var cell := center.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q()
 			if world.dimensions.is_in_bounds_offset(cell.x, cell.y):
 				world.set_committed_by_offset(cell.x, cell.y, FixtureLoader.terrain_id("Air"))
+
+
+func _perk_modifiers(resource_paths: Array[String]) -> PerkModifierSnapshot:
+	var builder := PerkModifierBuilder.new()
+	for resource_path in resource_paths:
+		var definition := load(resource_path) as PerkDefinition
+		for effect in definition.effects:
+			effect.apply(builder)
+	return builder.build()

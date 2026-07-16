@@ -6,6 +6,7 @@
 script = ExtResource("1")
 stable_id = 8
 display_name = "Excavator"
+perk_tags = PackedStringArray("excavator")
 description = "Deploys a walking drill that clears a three-wide shaft for twenty seconds."
 icon = ExtResource("3")
 action_factory = ExtResource("2")

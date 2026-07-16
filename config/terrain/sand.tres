@@ -10,6 +10,7 @@
 script = ExtResource("1_4t44v")
 stable_id = 3
 display_name = "Sand"
+perk_tags = PackedStringArray("sand")
 block_density = 160
 is_solid = true
 moving_solid_fill_threshold = 64
