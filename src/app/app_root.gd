@@ -46,7 +46,6 @@ var _terminal_outcome_locked := false
 var _relentless_flag_drop_pending := false
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _reward_return_state: StringName = RunPhase.PLAYING
-var _enable_menu_preview := false
 var _test_mode := false
 var _configured_save_path := ""
 var _configured_settings_path := ""
@@ -164,12 +163,6 @@ func configure_settings_path_for_test(settings_path: String) -> void:
 
 func set_test_mode(enabled: bool) -> void:
 	_test_mode = enabled
-	if enabled:
-		_enable_menu_preview = false
-
-
-func set_menu_preview_enabled(enabled: bool) -> void:
-	_enable_menu_preview = enabled
 
 
 func configure_leaderboard_service_for_test(service: LeaderboardService) -> void:
@@ -178,7 +171,6 @@ func configure_leaderboard_service_for_test(service: LeaderboardService) -> void
 
 func start_run_for_test(run_seed: int) -> void:
 	_current_seed = run_seed
-	_enable_menu_preview = false
 	transition_to(RunPhase.GENERATING)
 
 
@@ -325,7 +317,7 @@ func _apply_state(next_state: StringName) -> void:
 	match next_state:
 		RunPhase.MAIN_MENU:
 			_set_session_active(false)
-			_enter_menu_session()
+			_enter_main_menu()
 		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.REWARD_PICKER, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
 			_set_session_active(false)
 		RunPhase.GENERATING:
@@ -351,18 +343,9 @@ func _start_new_run() -> void:
 	session.start_run(_current_seed)
 
 
-func _enter_menu_session() -> void:
-	var serial := _begin_session_change()
+func _enter_main_menu() -> void:
+	_begin_session_change()
 	await _dispose_current_session()
-	if serial != _session_change_serial or _run_coordinator.current_state != RunPhase.MAIN_MENU:
-		return
-	if not _enable_menu_preview:
-		return
-	var session := await _replace_session(serial)
-	if session == null or serial != _session_change_serial or _run_coordinator.current_state != RunPhase.MAIN_MENU:
-		return
-	if _enable_menu_preview:
-		session.start_preview(_current_seed)
 
 
 func _begin_session_change() -> int:

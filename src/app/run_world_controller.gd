@@ -32,6 +32,8 @@ var _grapple_anchor_query: WorldGrappleAnchorQuery = WorldGrappleAnchorQueryScri
 var _simulation_backend: TerrainSimulationBackend = RenderTextureSimulationBackendScript.new()
 var _simulation_clock: FixedSimulationPassClock = FixedSimulationPassClockScript.new()
 var _generation_serial := 0
+var _loading_generation_units := 1
+var _loading_settle_ticks := 0
 
 
 func configure(profile: GenerationProfile, player_scene: PackedScene, world_background: WorldBackground, world_presenter: WorldPresenter, depth_markers: Node2D, side_boundaries: WorldSideBoundaries) -> void:
@@ -41,7 +43,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene, world_back
 	_world_presenter = world_presenter
 	_depth_markers = depth_markers
 	_side_boundaries = side_boundaries
-	_generation_task.progress_changed.connect(generation_progressed.emit)
+	_generation_task.progress_changed.connect(_on_generation_progressed)
 	_configure_registries()
 
 
@@ -51,26 +53,19 @@ func start_run(run_seed: int) -> void:
 	_clear_player()
 	_generation_result = null
 	_world_presenter.reset()
+	_loading_generation_units = maxi(1, _profile.active_passes().size() + 1)
+	_loading_settle_ticks = maxi(0, _profile.initial_settle_ticks)
 	var generated_result: WorldGenerationResult = await _generation_task.generate_async(self, _profile, _terrain_registry, run_seed)
 	if serial != _generation_serial or generated_result == null:
 		return
 	_generation_result = generated_result
-	_attach_run_world()
-	run_ready.emit(SeedUtils.derive_seed(run_seed, "next_run"))
-
-
-func start_preview(run_seed: int) -> void:
-	_generation_serial += 1
-	var serial := _generation_serial
-	var preview_task: WorldGenerationTask = WorldGenerationTask.new()
-	var generated_result: WorldGenerationResult = await preview_task.generate_async(self, _profile, _terrain_registry, SeedUtils.derive_seed(run_seed, "menu_preview"))
-	if serial != _generation_serial or generated_result == null:
+	_prepare_run_world()
+	if not await _settle_initial_world(serial):
 		return
-	_generation_result = generated_result
-	_clear_player()
-	_world_presenter.set_force_full_brightness(true)
-	_world_presenter.configure(generated_result.world, _terrain_registry)
-	_configure_marker_bounds()
+	if serial != _generation_serial:
+		return
+	_finish_run_world_attachment()
+	run_ready.emit(SeedUtils.derive_seed(run_seed, "next_run"))
 
 
 func cancel_generation() -> void:
@@ -144,9 +139,42 @@ func spawn_rect() -> Rect2i:
 	return _generation_result.spawn_rect if _generation_result != null else Rect2i()
 
 
-func _attach_run_world() -> void:
+func _prepare_run_world() -> void:
 	_world_presenter.set_force_full_brightness(false)
 	_world_presenter.configure(_generation_result.world, _terrain_registry)
+	if _simulation_backend.has_method("set_simulation_shader"):
+		_simulation_backend.set_simulation_shader(simulation_shader)
+	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
+	_simulation_backend.attach_to(self)
+
+
+func _settle_initial_world(serial: int) -> bool:
+	if _loading_settle_ticks <= 0 or not _simulation_backend.is_available():
+		generation_progressed.emit(1.0, "Run ready")
+		return true
+
+	var completed_ticks := 0
+	generation_progressed.emit(_loading_progress(completed_ticks), "Settling terrain")
+	while completed_ticks < _loading_settle_ticks:
+		if serial != _generation_serial or not is_instance_valid(self) or is_queued_for_deletion():
+			return false
+		var commit := _simulation_backend.commit_if_ready()
+		if commit.did_commit:
+			completed_ticks += 1
+			generation_progressed.emit(_loading_progress(completed_ticks), "Settling terrain")
+			if completed_ticks >= _loading_settle_ticks:
+				break
+		_simulation_backend.advance(MAX_SIMULATION_PASSES_PER_RENDER)
+		await Engine.get_main_loop().process_frame
+
+	_world_presenter.use_simulation_textures(
+		_simulation_backend.presentation_texture(),
+		_simulation_backend.presentation_even_texture()
+	)
+	return true
+
+
+func _finish_run_world_attachment() -> void:
 	_ensure_player()
 
 
@@ -171,10 +199,6 @@ func _ensure_player() -> void:
 	)
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_generation_result.world, _terrain_registry, _world_presenter.hex_radius)
-	if _simulation_backend.has_method("set_simulation_shader"):
-		_simulation_backend.set_simulation_shader(simulation_shader)
-	_simulation_backend.initialize(_generation_result.world, _terrain_registry, _generation_result.final_seed)
-	_simulation_backend.attach_to(self)
 	_player.world_light_source.configure(
 		_simulation_backend,
 		_world_presenter.hex_radius,
@@ -208,16 +232,27 @@ func _configure_world_bounds() -> void:
 	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
 
 
-func _configure_marker_bounds() -> void:
-	var left_edge := HexMetrics.center_for_offset(0, 0, _world_presenter.hex_radius).x - _world_presenter.hex_radius
-	var right_edge := HexMetrics.center_for_offset(_profile.width - 1, 0, _world_presenter.hex_radius).x + _world_presenter.hex_radius
-	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y + _world_presenter.hex_radius
-	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
-	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
-
-
 func _clear_player() -> void:
 	if _player == null:
 		return
 	_player.free()
 	_player = null
+
+
+func _on_generation_progressed(progress: float, label: String) -> void:
+	var total_units := _loading_generation_units + _loading_settle_ticks
+	var overall_progress := progress
+	if total_units > 0:
+		overall_progress = clampf(progress, 0.0, 1.0) * float(_loading_generation_units) / float(total_units)
+	generation_progressed.emit(overall_progress, label)
+
+
+func _loading_progress(completed_settle_ticks: int) -> float:
+	var total_units := _loading_generation_units + _loading_settle_ticks
+	if total_units <= 0:
+		return 1.0
+	return clampf(
+		float(_loading_generation_units + completed_settle_ticks) / float(total_units),
+		0.0,
+		1.0
+	)

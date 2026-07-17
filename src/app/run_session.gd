@@ -1,4 +1,4 @@
-## Composes the disposable gameplay session for one preview or active run.
+## Composes the disposable gameplay session for one active run.
 class_name RunSession
 extends Node
 
@@ -58,10 +58,6 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 
 func start_run(run_seed: int) -> void:
 	world_controller.start_run(run_seed)
-
-
-func start_preview(run_seed: int) -> void:
-	world_controller.start_preview(run_seed)
 
 
 func set_active(is_active: bool) -> void:

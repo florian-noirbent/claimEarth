@@ -16,6 +16,8 @@ func _run() -> void:
 	if not registry.try_configure(load("res://config/terrain/catalog.tres") as TerrainCatalog):
 		_fail("Could not configure the terrain registry.")
 		return
+	if not await _verify_fixed_seed_initial_settlement(registry):
+		return
 	if not await _verify_bottom_edge_is_solid(registry):
 		return
 	if not await _verify_even_phase_sand_trail(registry):
@@ -552,7 +554,6 @@ func _terrain_cells(world: WorldGrid, terrain_id: int) -> Array:
 
 func _verify_live_run_player_light() -> bool:
 	var app := (load("res://scenes/app/main.tscn") as PackedScene).instantiate() as AppRoot
-	app.set_menu_preview_enabled(false)
 	app.configure_save_path_for_test("user://simulation_rendering_player_light.json")
 	app.configure_settings_path_for_test("user://simulation_rendering_player_light_settings.json")
 	app.configure_leaderboard_service_for_test(FakeLeaderboardServiceScript.new())
@@ -564,6 +565,14 @@ func _verify_live_run_player_light() -> bool:
 		await process_frame
 		ready_frames += 1
 	if not _expect(app.get_run_state() == RunPhase.PLAYING and app.get_player() != null, "The live run must reach PLAYING with a real player."):
+		app.free()
+		return false
+	var expected_settle_ticks := maxi(0, app.generation_profile.initial_settle_ticks)
+	var live_backend := app.simulation_backend() as RenderTextureSimulationBackend
+	if not _expect(
+		live_backend != null and live_backend.ticks_completed() >= expected_settle_ticks,
+		"The live run must commit all configured settlement ticks before PLAYING."
+	):
 		app.free()
 		return false
 	var player := app.get_player()
@@ -591,6 +600,35 @@ func _verify_live_run_player_light() -> bool:
 	app.free()
 	await process_frame
 	return true
+
+
+func _verify_fixed_seed_initial_settlement(registry: TerrainRegistry) -> bool:
+	var profile := load("res://config/generation/default_profile.tres").duplicate(true) as GenerationProfile
+	profile.width = 32
+	profile.depth = 96
+	var run_seed := SeedUtils.seed_from_text("renderer-settlement-determinism")
+	var generator := WorldGenerator.new()
+	var first_result := generator.generate(profile, registry, run_seed)
+	var second_result := generator.generate(profile, registry, run_seed)
+	if not _expect(first_result != null and second_result != null, "Fixed-seed settlement fixtures must generate successfully."):
+		return false
+	var settled_snapshots: Array[PackedByteArray] = []
+	for result in [first_result, second_result]:
+		var backend := _backend(result.world, registry)
+		backend.attach_to(root)
+		await process_frame
+		for revision in range(1, maxi(0, profile.initial_settle_ticks) + 1):
+			if not await _complete_tick(backend, revision, PASS_COUNT):
+				backend.shutdown()
+				return false
+			backend.commit_if_ready()
+		settled_snapshots.append(result.world.copy_rgba_bytes())
+		backend.shutdown()
+		await process_frame
+	return _expect(
+		settled_snapshots[0] == settled_snapshots[1],
+		"The same seed must produce identical packed terrain after initial settlement."
+	)
 
 
 func _verify_player_light_source(registry: TerrainRegistry) -> bool:

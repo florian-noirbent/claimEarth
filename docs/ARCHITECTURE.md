@@ -16,7 +16,7 @@ historical build plan.
 ```text
 config/                 Tunable Resource definitions and catalogs
 scenes/app/main.tscn    Persistent application shell
-scenes/app/run_session.tscn Disposable gameplay/preview composition
+scenes/app/run_session.tscn Disposable gameplay composition
 scenes/player/          Player scene
 scenes/ui/              Reusable editor-authored UI components
 src/app/                Run state, preferences, input, and top-level controllers
@@ -80,11 +80,11 @@ single phone gesture from producing duplicate gameplay actions.
 flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
 
-`GENERATING` creates a new run session and resets inventory from item resources.
-`MAIN_MENU` disposes the active gameplay session. The legacy generated menu preview
-path remains opt-in for tests and development, and previews use their own fresh
-session when enabled. Generation tasks must tolerate their host session being
-cancelled and freed.
+`GENERATING` creates a new run session, generates terrain, initializes the GPU
+simulation backend, and commits the configured initial settlement ticks before the
+player, generated containers, and inventory are attached. `MAIN_MENU` disposes the
+active gameplay session and shows static menu art. Generation and settlement tasks
+must tolerate their host session being cancelled and freed.
 
 `REWARD_PICKER` is a mandatory modal entered from `PLAYING` or `FLAG_IN_FLIGHT`.
 `AppRoot` remembers the originating phase, suspends the complete run session, routes
@@ -138,8 +138,8 @@ black, graded, and full-brightness output.
 
 CPU gameplay reads the packed RAM buffer through `WorldGrid` accessors. At runtime,
 rendering samples the backend's final GPU simulation texture directly; the packed
-`WorldGrid` texture remains the CPU snapshot mirror for gameplay writes, previews,
-and reset state.
+`WorldGrid` texture remains the CPU snapshot mirror for gameplay writes, editor
+previews, and reset state.
 
 `WorldDimensions` owns rectangular indexing. `HexCoord` and `HexMetrics` own grid and
 world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
@@ -148,8 +148,8 @@ world-space conversion. Terrain byte IDs resolve through `TerrainRegistry`.
 World Gen preview: terrain/fluid shader controls plus the sky, grass, and cave
 backdrop. `WorldBackground` draws that backdrop behind terrain. Editing the shared
 resource refreshes active renderer parameters without regenerating the world.
-Static menu and editor previews force full brightness in `WorldPresenter` without
-rewriting the generated grid's lighting bytes.
+Static editor previews force full brightness in `WorldPresenter` without rewriting
+the generated grid's lighting bytes; the main menu uses separate static art.
 Terrain visual styles provide shader colors, and terrain materials with fill
 textures are packed into a material-index atlas for shader sampling. Edge resources
 are retained as assets/resources but are not part of the current terrain renderer.
@@ -204,7 +204,8 @@ generic and never branches on a hazard cause. New terrain hazards therefore add 
 behavior resource and authored icon rather than UI logic.
 
 `TerrainSimulationBackend` defines initialization, advancement, commit, region
-read, render attachment, active texture access, mutation notification, and shutdown.
+read, render attachment, active texture access, availability, mutation notification,
+and shutdown.
 `RenderTextureSimulationBackend` is the implemented backend. `RunWorldController`
 owns a real-time accumulator that accrues 60 CA passes per active gameplay second.
 It schedules only whole due passes, deducts only work accepted by the backend, and
@@ -250,7 +251,12 @@ independent from the visual simulation cadence while preventing simulation races
 with explosions or digging.
 
 The shipped backend is GPU render-texture only; headless tests do not emulate terrain
-motion. Threaded and compute backends are not implemented. A future threaded backend must
+motion. Playable runs use `GenerationProfile.initial_settle_ticks` to advance complete
+six-pass ticks before attaching the player and generated containers. Progress is
+reported as one monotonic loading sequence weighted by generation steps and committed
+settlement ticks. Headless runs detect the unavailable backend, skip settlement, and
+continue so automated startup tests remain usable. Threaded and compute backends are
+not implemented. A future threaded backend must
 reuse the plain simulation/build inputs and outputs, keep scene-tree and resource
 application on the main thread, and remain optional for the single-thread Web build.
 

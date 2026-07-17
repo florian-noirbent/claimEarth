@@ -9,6 +9,7 @@ extends Resource
 @export var spawn_width := 10
 @export var spawn_height := 4
 @export var spawn_margin_top := 0
+@export var initial_settle_ticks := 0
 @export var passes: Array = []
 
 

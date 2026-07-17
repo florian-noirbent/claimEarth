@@ -70,6 +70,16 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_reset_gpu_source_from_world()
 
 
+func is_available() -> bool:
+	return (
+		DisplayServer.get_name() != "headless"
+		and _world != null
+		and _metadata != null
+		and _simulation_shader != null
+		and _viewports.size() == RENDER_TARGET_COUNT
+	)
+
+
 func queue_change(_change: CellChange) -> void:
 	_cancel_in_progress_tick()
 	if _world != null:

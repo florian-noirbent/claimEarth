@@ -7,6 +7,10 @@ func initialize(_world: WorldGrid, _registry: TerrainRegistry, _seed: int) -> vo
 	pass
 
 
+func is_available() -> bool:
+	return false
+
+
 func queue_change(_change: CellChange) -> void:
 	pass
 

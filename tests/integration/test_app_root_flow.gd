@@ -34,6 +34,7 @@ func test_start_transitions_from_menu_to_generating_to_playing() -> void:
 	assert_signal_emitted(app_root, "generation_started")
 	assert_signal_emitted(app_root, "gameplay_started")
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
+	assert_false(app_root.simulation_backend().is_available())
 	assert_false(app_root.ui.menu_root.visible)
 	assert_false(app_root.ui.menu_background.visible)
 	assert_false(app_root.ui.menu_panel.visible)
@@ -254,24 +255,6 @@ func test_hazards_apply_in_live_run() -> void:
 	, 0.5)
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
-
-
-func test_starting_run_cancels_preview_without_overwriting_active_world() -> void:
-	var scene := load("res://scenes/app/main.tscn") as PackedScene
-	var app_root := scene.instantiate() as AppRoot
-	app_root.configure_save_path_for_test("user://gut_app_root_flow_preview_cancel.json")
-	app_root.set_test_mode(true)
-	app_root.set_menu_preview_enabled(true)
-	add_child_autofree(app_root)
-	await wait_process_frames(1)
-
-	var run_seed := SeedUtils.seed_from_text("preview-cancel-run")
-	app_root.start_run_for_test(run_seed)
-	await wait_until(func() -> bool:
-		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
-	, 2.0)
-
-	assert_eq(app_root.last_generation_result_for_test().final_seed, run_seed)
 
 
 func test_repeated_menu_and_restart_cycles_keep_single_player_and_clear_projectiles() -> void:

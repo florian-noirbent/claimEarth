@@ -101,4 +101,5 @@ allowed_target_ids = PackedInt32Array(1, 2, 3, 4, 5, 0)
 
 [resource]
 script = ExtResource("1_profile")
+initial_settle_ticks = 50
 passes = [SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_perk_geodes"), SubResource("Resource_5hsgh")]

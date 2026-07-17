@@ -15,7 +15,7 @@ the flag loses it.
 1. The menu shows illustrated cave background art, a top-centered title, stylized
    action buttons, a corner leaderboard owner, and Help and Settings pages for
    rules, controls, and device preferences.
-2. Starting creates a randomized deterministic map and a fresh inventory.
+2. Starting creates a randomized deterministic map, settles it for 50 six-pass terrain-simulation ticks while loading, and prepares a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
 4. Touching generated item chests pauses the run and offers a mandatory choice of supplies. Lootable purple geodes use the same choice flow to offer permanent, unique perks instead; destroying one drives a purple, front-loaded 5-wide pulse 20 hexes downward over 1.6 seconds.
 5. The player throws the flag when ready to claim a depth.
@@ -110,6 +110,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
   movement carries the player above the screen, it slowly recovers upward until the
   player has two hexagons of visible space above them.
 - Initial terrain is deterministic for a given seed.
+- Before the player and generated containers enter the run, loading advances the generated terrain through 50 complete simulation ticks (300 GPU passes). The loading status reports settlement progress, and gameplay begins only after the final committed tick.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
   layers base cave noise, typed hazard pocket instances for sand/water/lava, a
   noisy surface spawn shaft, item chest chambers, and a bottom lava fill.
