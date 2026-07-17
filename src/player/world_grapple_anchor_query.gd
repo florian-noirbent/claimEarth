@@ -7,7 +7,6 @@ var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _hex_radius := 16.0
 var _probe_step := 8.0
-var _max_range := 220.0
 var _corners := PackedVector2Array()
 
 
@@ -15,14 +14,12 @@ func configure(
 	world: WorldGrid,
 	terrain_registry: TerrainRegistry,
 	hex_radius: float,
-	probe_step: float,
-	max_range: float
+	probe_step: float
 ) -> void:
 	_world = world
 	_terrain_registry = terrain_registry
 	_hex_radius = hex_radius
 	_probe_step = probe_step
-	_max_range = max_range
 	_corners = HexMetrics.corners(hex_radius)
 
 
@@ -36,7 +33,7 @@ func find_anchor(origin: Vector2, target: Vector2) -> GrappleAnchor:
 		return null
 
 	var direction := delta / distance
-	var probe_distance := minf(distance, _max_range)
+	var probe_distance := distance
 	var previous_position := origin
 	var travel := _probe_step
 	while travel <= probe_distance:

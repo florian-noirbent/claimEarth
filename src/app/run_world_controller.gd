@@ -194,8 +194,7 @@ func _ensure_player() -> void:
 		_generation_result.world,
 		_terrain_registry,
 		_world_presenter.hex_radius,
-		_player.grapple_config.probe_step,
-		_player.grapple_config.effective_attach_range()
+		_player.grapple_config.probe_step
 	)
 	_player.configure_grapple_anchor_query(_grapple_anchor_query)
 	_player.configure_environment(_generation_result.world, _terrain_registry, _world_presenter.hex_radius)
