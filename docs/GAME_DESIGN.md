@@ -130,6 +130,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Sand | Solid at half fill or more | Falls and creeps side-down; denser Sand displaces lighter moving terrain into a conserved hidden component that escapes through later pair passes; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
+| Sulfur | Solid | Static yellow mineral. Water slowly converts it and nearby water into sulfuric acid; Lava permanently ignites it, consuming it into sulfur dioxide | None |
+| Sulfuric Acid | Passable | Dense yellow-green liquid that sinks beneath water and consumes sand below it into water | None |
+| Sulfur Dioxide | Passable | Heavy yellow-green gas. One bar is 63 quantity, with four bars maximum; it settles through air and only overpressure rises | None |
 
 Terrain cells store a visible primary material and may temporarily retain one
 invisible, less-dense secondary material during displacement. Each component owns
@@ -295,9 +298,9 @@ tuning lives under `config/items/`.
   while matching terrain can round outward into concave gaps.
 - Water, lava, sand, stone, and dirt must remain distinguishable by pattern and shape,
   not color alone. Partial moving cells show their fill level with smoothed surfaces
-  between matching neighboring moving terrain; if a partial moving cell has liquid
-  above, the empty portion draws that liquid, and if it has solid above, it renders
-  as a full hex of its own material.
+  between matching neighboring moving terrain. If a partial moving cell has liquid
+  or gas above, its empty portion draws that material; solid terrain above does not
+  fill the empty portion.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
 - Lighting diffuses through neighboring hexes using the emitting hex's

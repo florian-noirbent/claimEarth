@@ -7,6 +7,7 @@ enum HazardType {
 	SAND,
 	WATER,
 	LAVA,
+	SULFUR,
 }
 
 
@@ -74,5 +75,7 @@ func _hazard_type_display_name() -> String:
 			return "Water"
 		HazardType.LAVA:
 			return "Lava"
+		HazardType.SULFUR:
+			return "Sulfur"
 		_:
 			return "Sand"

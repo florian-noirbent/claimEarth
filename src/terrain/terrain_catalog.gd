@@ -5,3 +5,5 @@ extends Resource
 
 
 @export var definitions: Array = []
+## Ordered, resource-authored pair reactions evaluated by the terrain simulator.
+@export var contact_reactions: Array = []

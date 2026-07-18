@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TerrainCatalog" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="TerrainCatalog" load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/terrain_catalog.gd" id="1_h6xrb"]
 [ext_resource type="Resource" path="res://config/terrain/air.tres" id="2_fr7r6"]
@@ -7,7 +7,16 @@
 [ext_resource type="Resource" path="res://config/terrain/sand.tres" id="5_a7h5i"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="6_3bxp7"]
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="7_rqm1w"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur.tres" id="8_sulfur"]
+[ext_resource type="Resource" path="res://config/terrain/sulfuric_acid.tres" id="9_acid"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_dioxide.tres" id="10_gas"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_water_reaction.tres" id="11_sw"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_lava_reaction.tres" id="12_sl"]
+[ext_resource type="Resource" path="res://config/terrain/acid_sand_reaction.tres" id="13_as"]
+[ext_resource type="Resource" path="res://config/terrain/gas_water_reaction.tres" id="14_gw"]
+[ext_resource type="Resource" path="res://config/terrain/water_lava_reaction.tres" id="15_wl"]
 
 [resource]
 script = ExtResource("1_h6xrb")
-definitions = [ExtResource("2_fr7r6"), ExtResource("3_qvytl"), ExtResource("4_tw4o8"), ExtResource("5_a7h5i"), ExtResource("6_3bxp7"), ExtResource("7_rqm1w")]
+definitions = [ExtResource("2_fr7r6"), ExtResource("3_qvytl"), ExtResource("4_tw4o8"), ExtResource("5_a7h5i"), ExtResource("6_3bxp7"), ExtResource("7_rqm1w"), ExtResource("8_sulfur"), ExtResource("9_acid"), ExtResource("10_gas")]
+contact_reactions = [ExtResource("11_sw"), ExtResource("12_sl"), ExtResource("13_as"), ExtResource("14_gw"), ExtResource("15_wl")]

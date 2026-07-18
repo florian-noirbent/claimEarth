@@ -245,7 +245,23 @@ vec4 render_liquid(vec2 cell, float cell_kind, vec4 style, vec2 local, float fil
 	return vec4(liquid, style.a * opacity * mask_alpha);
 }
 
-vec4 render_liquid_above_partial_cell(vec2 cell, vec2 local) {
+// Gases fill the complete hex instead of forming a liquid surface.
+vec4 render_gas(vec4 style, float quantity) {
+	float pressure = clamp(quantity / 63.0, 0.0, 4.0);
+	float opacity = style.a * (0.22 + min(pressure, 1.0) * 0.45 + max(pressure - 1.0, 0.0) * 0.08);
+	vec3 color = mix(style.rgb * 0.78, style.rgb * 1.16, 0.5 + 0.5 * sin(TIME * 0.7 + world_pos.y * 0.04));
+	return vec4(color, clamp(opacity, 0.0, 1.0));
+}
+
+// The empty portion of a partial surface shows liquid or gas entering from the
+// physical cell above. Stable and falling terrain intentionally do not fill it.
+vec4 render_moving_material_above_partial_cell(
+	vec2 cell,
+	vec2 local,
+	float partial_fill_amount,
+	out float rendered_kind
+) {
+	rendered_kind = 0.0;
 	vec2 above_cell = neighbor_for_edge(cell, EDGE_UP);
 	if (!in_world(above_cell)) {
 		return vec4(0.0);
@@ -258,11 +274,15 @@ vec4 render_liquid_above_partial_cell(vec2 cell, vec2 local) {
 	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
 	vec4 properties = texture(terrain_properties, style_uv);
 	float motion = floor(properties.r * 255.0 + 0.5);
-	if (motion < 1.5) {
+	if (motion < 1.5 || motion > 4.5) {
 		return vec4(0.0);
 	}
+	rendered_kind = cell_kind;
 	vec4 style = texture(style_data, style_uv);
-	return render_liquid(above_cell, cell_kind, style, local, 1.0, false, 1.0);
+	if (motion > 2.5) {
+		return render_gas(style, terrain.g * 255.0);
+	}
+	return render_liquid(above_cell, cell_kind, style, local, partial_fill_amount, false, 1.0);
 }
 
 float vertical_trail_mask(vec2 local, float fill_amount) {
@@ -305,13 +325,17 @@ bool has_render_priority(float current_kind, float neighbor_kind) {
 
 // Renders either the current cell or a boundary-resolved neighbor. Keeping this
 // in one function ensures partial fill rules cannot diverge at material seams.
-vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_local) {
+vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_local, out float rendered_kind) {
 	float source_kind = terrain_kind(source_terrain);
+	rendered_kind = source_kind;
 	vec2 style_uv = vec2((source_kind + 0.5) / 256.0, 0.5);
 	vec4 style = texture(style_data, style_uv);
 	vec4 properties = texture(terrain_properties, style_uv);
 	float motion = terrain_motion(source_kind);
 	float fill_amount = rendered_quantity(source_terrain);
+	if (motion > 3.5) {
+		return render_gas(style, source_terrain.g * 255.0);
+	}
 	if (motion > 1.5) {
 		bool stream = is_streaming_liquid(source_cell, fill_amount);
 		float liquid_mask = 1.0;
@@ -326,7 +350,7 @@ vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_loca
 			}
 		}
 		if (liquid_mask <= 0.001) {
-			return vec4(0.0);
+			return render_moving_material_above_partial_cell(source_cell, source_local, fill_amount, rendered_kind);
 		}
 		return render_liquid(source_cell, source_kind, style, source_local, fill_amount, stream, liquid_mask);
 	}
@@ -342,24 +366,11 @@ vec4 render_terrain_cell(vec2 source_cell, vec4 source_terrain, vec2 source_loca
 			solid_mask = 0.0;
 		}
 		if (solid_mask <= 0.001) {
-			return render_liquid_above_partial_cell(source_cell, source_local);
+			return render_moving_material_above_partial_cell(source_cell, source_local, fill_amount, rendered_kind);
 		}
 		return render_solid_material(style, properties, solid_mask);
 	}
 	return render_solid_material(style, properties, 1.0);
-}
-
-// Free liquid/sand surfaces stay crisp: boundary rounding never pulls another
-// material across an upward-facing opening.
-bool is_upward_moving_free_surface(vec2 moving_cell, vec4 moving_terrain, vec2 other_cell, vec4 other_terrain) {
-	float moving_kind = terrain_kind(moving_terrain);
-	if (moving_kind <= 0.5 || rendered_quantity(moving_terrain) <= 0.0 || terrain_motion(moving_kind) <= 0.5) {
-		return false;
-	}
-	if (terrain_kind(other_terrain) > 0.5 && rendered_quantity(other_terrain) > 0.0) {
-		return false;
-	}
-	return center_for_offset(other_cell).y < center_for_offset(moving_cell).y - 0.001;
 }
 
 // Chooses which terrain owns the pixel near a mixed-material edge. The cheap
@@ -408,13 +419,6 @@ void resolve_jittered_boundary(
 		float first_density = terrain_block_density(first_kind);
 		float second_density = terrain_block_density(second_kind);
 		float circle_distance = corner_circle_distance(local, vertex, radius);
-		bool current_top_surface = is_upward_moving_free_surface(cell, terrain, first_cell, first_terrain)
-			|| is_upward_moving_free_surface(cell, terrain, second_cell, second_terrain);
-		bool neighbor_top_surface = is_upward_moving_free_surface(first_cell, first_terrain, cell, terrain)
-			|| is_upward_moving_free_surface(second_cell, second_terrain, cell, terrain);
-		if (current_top_surface || neighbor_top_surface) {
-			return;
-		}
 
 		if (current_density > first_density && current_density > second_density) {
 			has_boundary = true;
@@ -451,10 +455,6 @@ void resolve_jittered_boundary(
 	vec4 neighbor = sample_world_or_air(neighbor_cell);
 	float neighbor_kind = terrain_kind(neighbor);
 	if (abs(neighbor_kind - current_kind) < 0.5) {
-		return;
-	}
-	if (is_upward_moving_free_surface(cell, terrain, neighbor_cell, neighbor)
-			|| is_upward_moving_free_surface(neighbor_cell, neighbor, cell, terrain)) {
 		return;
 	}
 	float neighbor_density = terrain_block_density(neighbor_kind);
@@ -505,28 +505,39 @@ void fragment() {
 		float cell_kind = terrain_kind(terrain);
 		vec2 local = world_pos - center_for_offset(cell);
 		if (inside_hex(local)) {
+			float visible_kind = cell_kind;
 			// 2. Render the cell's own fill. Air can show a retained moving-terrain trail.
 			if (cell_kind <= 0.5) {
 				out_color = render_even_phase_vertical_trail(cell, local);
 			} else {
-				out_color = render_terrain_cell(cell, terrain, local);
+				out_color = render_terrain_cell(cell, terrain, local, visible_kind);
 			}
 			// 3. Near a mixed edge, replace the material with the chosen neighbor.
-			vec2 resolved_cell;
-			vec4 resolved_terrain;
-			float owner_kind;
-			float owner_distance;
-			bool has_boundary;
-			resolve_jittered_boundary(cell, terrain, local, resolved_cell, resolved_terrain, owner_kind, owner_distance, has_boundary);
-			float resolved_kind = terrain_kind(resolved_terrain);
-			if (abs(resolved_kind - cell_kind) > 0.5 || distance(resolved_cell, cell) > 0.1) {
-				if (resolved_kind <= 0.5 || rendered_quantity(resolved_terrain) <= 0.0) {
-					out_color = vec4(0.0);
-				} else {
-					out_color = render_terrain_cell(resolved_cell, resolved_terrain, world_pos - center_for_offset(resolved_cell));
+			// A material entering the empty part of a partial cell owns that pixel;
+			// the hidden primary terrain must not resolve or outline its boundary.
+			if (abs(visible_kind - cell_kind) < 0.5) {
+				vec2 resolved_cell;
+				vec4 resolved_terrain;
+				float owner_kind;
+				float owner_distance;
+				bool has_boundary;
+				resolve_jittered_boundary(cell, terrain, local, resolved_cell, resolved_terrain, owner_kind, owner_distance, has_boundary);
+				float resolved_kind = terrain_kind(resolved_terrain);
+				if (abs(resolved_kind - cell_kind) > 0.5 || distance(resolved_cell, cell) > 0.1) {
+					if (resolved_kind <= 0.5 || rendered_quantity(resolved_terrain) <= 0.0) {
+						out_color = vec4(0.0);
+						visible_kind = resolved_kind;
+					} else {
+						out_color = render_terrain_cell(
+							resolved_cell,
+							resolved_terrain,
+							world_pos - center_for_offset(resolved_cell),
+							visible_kind
+						);
+					}
 				}
+				out_color = apply_resolved_outline(out_color, visible_kind, owner_kind, owner_distance, has_boundary);
 			}
-			out_color = apply_resolved_outline(out_color, resolved_kind, owner_kind, owner_distance, has_boundary);
 		}
 	}
 	// 4. Light is interpolated over the nearest hexes after material decisions.

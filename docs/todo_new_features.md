@@ -52,7 +52,7 @@ glass canon:
 ### Sulfur block
 yellow block
 - turn water in contact into sulfuric_acid. consumed in a 1-5 ratio (1 sulfur hex = 5 water hex converted to sulfuric_acid)
-- in contact with lava, burn blue and produce sulfur_dioxide in a 1-15 hex ratio (so 1 sulfur hex produce 15 sulfur_dioxide at 1 bar or 3 hex at 5 bar ). burn pause if there is no air and all sulfur_dioxide in a 2 hex radius are full.
+- in contact with lava, burn blue and produce sulfur_dioxide in a 1-15 hex ratio (so 1 sulfur hex produce 15 sulfur_dioxide at 1 bar ). burn pause if there is no air and all sulfur_dioxide in a 2 hex radius are full.
 - it takes 10 seconds to burn and 20 seconds to dissolve
 - sulfur in a blast explosions turn into sulfur_dioxide instantly, filling the 3 nearest air blocks at 5 bar (or completing existing sulfur_dioxide blocks)
 
@@ -64,13 +64,14 @@ yellow block
 - destroy flag
 
 ### sulfur_dioxide
-- first gas type, yellow-green
+- yellow-green gas
 - poison player hazard
-- 51/255 is a unit of filled hexagon (1 bar = 51/255) above that value, it is overpressure.
+- 63/254 is a unit of filled hexagon (1 bar = 63/254) above that value, it is overpressure.
 - fall in air blocks, displaced by everything else, simulated like a liquid with no viscosity
 - overpressurized sulfur_dioxide expands up
 - consumed to turn water in contact into sulfuric_acid in 3-1 ratio (3 unit sulfur_dioxide = 1 sulfuric_acid)
-- explosions don't destroy sulfur_dioxide, but push the pressure away, creating a ring of high pressure at the edge of the explosion
+
+explosions don't destroy gas, but push the pressure away, creating a ring of high pressure at the edge of the explosion
 
 
 note: all values should be configurable in editor

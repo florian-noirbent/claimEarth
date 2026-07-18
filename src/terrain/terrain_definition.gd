@@ -6,6 +6,9 @@ extends Resource
 
 @export_range(0, 15) var stable_id := 0
 @export_range(1, 255, 1) var maximum_quantity := 127
+## Quantity used for a normally full component. Storage may hold more pressure.
+@export_range(1, 255, 1) var normal_quantity := 127
+@export_range(1, 255, 1) var storage_capacity := 255
 @export var display_name := ""
 @export_range(0, 255, 1) var block_density := 0
 @export var is_solid := false
@@ -41,6 +44,8 @@ func validate() -> PackedStringArray:
 		errors.append("%s must be either solid or passable" % _identity())
 	if stable_id > 15:
 		errors.append("%s stable_id must fit in four bits" % _identity())
+	if normal_quantity > storage_capacity:
+		errors.append("%s normal_quantity must not exceed storage_capacity" % _identity())
 	return errors
 
 

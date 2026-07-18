@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TerrainVisualStyle" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/terrain_visual_style.gd" id="1_style"]
+
+[resource]
+script = ExtResource("1_style")
+fill_color = Color(0.78, 0.9, 0.25, 0.52)
+accent_color = Color(0.94, 1, 0.55, 0.3)
+outline_color = Color(0.27, 0.38, 0.05, 0.55)
+pattern_mode = "flow"
+pattern_strength = 0.35
+outline_width = 1.0

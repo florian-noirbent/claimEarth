@@ -358,7 +358,11 @@ func _refresh_profile_ui() -> void:
 
 func _refresh_pass_editor() -> void:
 	for child in _pass_editor_list.get_children():
-		child.free()
+		# This method is also called from pass-header button callbacks.  Detach
+		# first and defer destruction so the emitting Control stays valid until
+		# Godot has finished dispatching its signal.
+		_pass_editor_list.remove_child(child)
+		child.queue_free()
 	if _profile == null:
 		return
 	for index in range(_profile.passes.size()):

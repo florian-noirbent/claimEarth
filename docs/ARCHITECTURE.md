@@ -241,6 +241,15 @@ mutation. The simulation supplies a virtual solid cell for pair neighbors below 
 map, preventing moving terrain from leaking through the bottom edge without
 requiring a generated solid row. A completed six-pass tick publishes only a
 revisioned snapshot commit; the backend does not copy or diff every cell on the CPU.
+Terrain contact reactions are authored through `TerrainContactReaction` resources in
+the terrain catalog and compiled into a packed pair table. Dense gases author their
+normal pressure and packed capacity on their terrain definition, so selection does
+not rely on terrain-name branches.
+Persistent ignition compiles a per-terrain burn-product ID into the rule texture;
+`255` means no burn product. Static burning Sulfur retains one unit of its matching
+secondary Sulfur Dioxide as the ignition token while all non-burning secondary
+materials, including Air ID `0`, may drain completely.
+
 Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
 affected cells are already known.
 
@@ -411,7 +420,7 @@ model it as a server secret. Never use the live service from automated tests.
 1. Create/reuse motion, hazard, blast, and visual resources.
 2. Create the `TerrainDefinition` resource with a unique stable ID.
 3. Add it to `config/terrain/catalog.tres`.
-4. Extend simulation behavior only through strategy/registry compilation.
+4. Add contact rules through `TerrainContactReaction` resources and extend simulation only through strategy/registry compilation.
 5. Add registry, rule, generation, and rendering tests as applicable.
 
 ### Add An Item

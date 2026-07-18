@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TerrainContactReaction" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_contact_reaction.gd" id="1_rule"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur.tres" id="2_sulfur"]
+[ext_resource type="Resource" path="res://config/terrain/lava.tres" id="3_lava"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_dioxide.tres" id="4_gas"]
+
+[resource]
+script = ExtResource("1_rule")
+reactant_a = ExtResource("2_sulfur")
+reactant_b = ExtResource("3_lava")
+generated_product = ExtResource("4_gas")
+kind = 1
+duration_seconds = 10.0
+output_units = 15
+persistent_ignition = true

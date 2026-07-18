@@ -3,9 +3,11 @@ render_mode unshaded, blend_disabled;
 
 uniform sampler2D source_world : filter_nearest, repeat_disable;
 uniform sampler2D rule_texture : filter_nearest, repeat_disable;
+uniform sampler2D reaction_texture : filter_nearest, repeat_disable;
 uniform sampler2D standard_light_sources : filter_nearest, repeat_disable;
 uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
+uniform int simulation_tick = 0;
 uniform ivec2 player_light_offset = ivec2(-1, -1);
 uniform int player_light_level = 0;
 uniform int player_light_update_radius = 0;
@@ -24,9 +26,11 @@ const int PASS_LEFT_DOWN_ODD = 5;
 const int MOTION_STABLE = 0;
 const int MOTION_LIQUID = 2;
 const int MOTION_GAS = 3;
+const int MOTION_DENSE_GAS = 4;
 const int AIR_QUANTITY = 64;
 const int FULL_QUANTITY = 127;
 const int MAX_STORED_QUANTITY = 255;
+const int NO_BURN_PRODUCT_ID = 255;
 
 int byte_from_float(float value) {
 	return int(floor(clamp(value, 0.0, 1.0) * 255.0 + 0.5));
@@ -46,7 +50,7 @@ vec4 read_cell(ivec2 coord) {
 }
 
 vec4 read_rule(int terrain_id, int row) {
-	return texture(rule_texture, (vec2(float(terrain_id), float(row)) + vec2(0.5)) / vec2(256.0, 4.0));
+	return texture(rule_texture, (vec2(float(terrain_id), float(row)) + vec2(0.5)) / vec2(256.0, 5.0));
 }
 
 int rule_byte(int terrain_id, int row, int channel) {
@@ -141,6 +145,29 @@ int light_diffusion(int id) {
 
 int emitted_light(int id) {
 	return rule_byte(id, 3, 3);
+}
+
+int normal_quantity(int id) {
+	return rule_byte(id, 4, 0);
+}
+
+int storage_capacity(int id) {
+	return rule_byte(id, 4, 1);
+}
+
+int persistent_burn_product(int id) {
+	return rule_byte(id, 4, 2);
+}
+
+vec4 read_reaction(int a, int b) {
+	return texture(reaction_texture, (vec2(float(b & 15), float(a & 15)) + vec2(0.5)) / vec2(16.0));
+}
+
+int reaction_byte(vec4 reaction, int channel) {
+	if (channel == 0) return byte_from_float(reaction.r);
+	if (channel == 1) return byte_from_float(reaction.g);
+	if (channel == 2) return byte_from_float(reaction.b);
+	return byte_from_float(reaction.a);
 }
 
 int standard_light(ivec2 coord) {
@@ -443,6 +470,10 @@ bool resolve_secondary_pair(
 	next_a = a;
 	next_b = b;
 	int amount = secondary_transfer_amount(a, b, vertical, true);
+	int a_burn_product = persistent_burn_product(terrain_id(a));
+	if (a_burn_product != NO_BURN_PRODUCT_ID && a_burn_product == secondary_terrain_id(a) && secondary_fill_amount(a) - amount < 1) {
+		amount = max(0, secondary_fill_amount(a) - 1);
+	}
 	if (amount > 0) {
 		int component_id = secondary_terrain_id(a);
 		next_a = remove_secondary_component(a, amount);
@@ -450,6 +481,10 @@ bool resolve_secondary_pair(
 		return true;
 	}
 	amount = secondary_transfer_amount(b, a, vertical, false);
+	int b_burn_product = persistent_burn_product(terrain_id(b));
+	if (b_burn_product != NO_BURN_PRODUCT_ID && b_burn_product == secondary_terrain_id(b) && secondary_fill_amount(b) - amount < 1) {
+		amount = max(0, secondary_fill_amount(b) - 1);
+	}
 	if (amount > 0) {
 		int component_id = secondary_terrain_id(b);
 		next_b = remove_secondary_component(b, amount);
@@ -566,7 +601,7 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 	}
 	int a_quantity = fill_amount(a);
 	int b_quantity = fill_amount(b);
-	if (motion(component_id) != MOTION_GAS && a_quantity <= FULL_QUANTITY && b_quantity <= FULL_QUANTITY) {
+	if (motion(component_id) != MOTION_GAS && motion(component_id) != MOTION_DENSE_GAS && a_quantity <= FULL_QUANTITY && b_quantity <= FULL_QUANTITY) {
 		return false;
 	}
 	int difference = a_quantity - b_quantity;
@@ -584,6 +619,93 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 		next_a = add_component(a, component_id, amount, MAX_STORED_QUANTITY);
 	}
 	return amount > 0;
+}
+
+bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
+	next_a = a;
+	next_b = b;
+	vec4 reaction = read_reaction(terrain_id(a), terrain_id(b));
+	int kind = reaction_byte(reaction, 0);
+	if (kind == 0) return false;
+	if (kind == 5) {
+		next_a = air_cell();
+		next_b = make_cell(stone_id(), maximum_quantity(stone_id()));
+		return true;
+	}
+	if (kind == 2) {
+		int gas = reaction_byte(reaction, 3);
+		int a_burn_product = persistent_burn_product(terrain_id(a));
+		if (a_burn_product != NO_BURN_PRODUCT_ID && a_burn_product == gas) next_a = add_component(a, gas, 1, storage_capacity(gas));
+		else next_b = add_component(b, gas, 1, storage_capacity(gas));
+		return true;
+	}
+	if (kind == 1 && is_vertical_pass()) {
+		int acid = reaction_byte(reaction, 2);
+		if (persistent_burn_product(terrain_id(a)) != NO_BURN_PRODUCT_ID) {
+			next_a = remove_primary_component(a, min(1, fill_amount(a)));
+			next_b = make_cell(acid, fill_amount(b));
+		} else {
+			next_b = remove_primary_component(b, min(1, fill_amount(b)));
+			next_a = make_cell(acid, fill_amount(a));
+		}
+		return true;
+	}
+	if (kind == 3) {
+		int water = reaction_byte(reaction, 1);
+		int consumed = min(fill_amount(a), max(1, fill_amount(b) / 2));
+		if (consumed <= 0) return false;
+		next_a = make_cell(water, consumed);
+		next_b = fill_amount(b) <= consumed * 2 ? air_cell() : remove_primary_component(b, consumed * 2);
+		return true;
+	}
+	if (kind == 4) {
+		int gas_side = motion(terrain_id(a)) == MOTION_DENSE_GAS ? 0 : 1;
+		int gas_fill = gas_side == 0 ? fill_amount(a) : fill_amount(b);
+		if (gas_fill < 3) return false;
+		int acid = reaction_byte(reaction, 2);
+		int consumed = min(gas_fill, normal_quantity(terrain_id(gas_side == 0 ? a : b)));
+		int acid_fill = max(1, consumed * normal_quantity(acid) / (normal_quantity(terrain_id(gas_side == 0 ? a : b)) * 3));
+		if (gas_side == 0) {
+			next_a = remove_primary_component(a, consumed);
+			next_b = make_cell(acid, min(fill_amount(b), acid_fill));
+		} else {
+			next_b = remove_primary_component(b, consumed);
+			next_a = make_cell(acid, min(fill_amount(a), acid_fill));
+		}
+		return true;
+	}
+	return false;
+}
+
+bool resolve_persistent_burn(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
+	next_a = a;
+	next_b = b;
+	// The even vertical pairing covers every in-bounds row exactly once per tick.
+	if (pass_kind != PASS_VERTICAL_EVEN) return false;
+	int a_burn_product = persistent_burn_product(terrain_id(a));
+	int b_burn_product = persistent_burn_product(terrain_id(b));
+	bool burns_a = a_burn_product != NO_BURN_PRODUCT_ID && a_burn_product == secondary_terrain_id(a) && secondary_fill_amount(a) > 0;
+	bool burns_b = b_burn_product != NO_BURN_PRODUCT_ID && b_burn_product == secondary_terrain_id(b) && secondary_fill_amount(b) > 0;
+	if (!burns_a && !burns_b) return false;
+	if (burns_a) {
+		int extra = (simulation_tick * 27 + fill_amount(a)) % 100 < 27 ? 1 : 0;
+		int consumed = min(fill_amount(a), 1 + extra);
+		int gas = a_burn_product;
+		int produced = consumed * 7 + extra;
+		next_a = remove_primary_component(a, consumed);
+		if (fill_amount(next_a) > 0) next_a = add_component(next_a, gas, produced, storage_capacity(gas));
+		else next_a = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(a) + produced));
+	}
+	if (burns_b) {
+		int extra = (simulation_tick * 27 + fill_amount(b)) % 100 < 27 ? 1 : 0;
+		int consumed = min(fill_amount(b), 1 + extra);
+		int gas = b_burn_product;
+		int produced = consumed * 7 + extra;
+		next_b = remove_primary_component(b, consumed);
+		if (fill_amount(next_b) > 0) next_b = add_component(next_b, gas, produced, storage_capacity(gas));
+		else next_b = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(b) + produced));
+	}
+	return true;
 }
 
 bool direct_bottom_blocked(ivec2 coord, vec4 source) {
@@ -606,6 +728,12 @@ void resolve_pair(
 ) {
 	next_a = a;
 	next_b = b;
+	if (resolve_authored_contact(a, b, next_a, next_b)) {
+		return;
+	}
+	if (resolve_persistent_burn(a, b, next_a, next_b)) {
+		return;
+	}
 	if (resolve_secondary_pair(a, b, is_vertical_pass(), next_a, next_b)) {
 		return;
 	}
@@ -644,14 +772,10 @@ void fragment() {
 		bool output_a = coord.x == owner.x && coord.y == owner.y;
 		vec4 a = read_cell(owner);
 		vec4 b = read_cell_with_solid_floor(neighbor);
-		if (liquid_contact(a, b)) {
-			result = output_a ? air_cell() : make_cell(stone_id(), maximum_quantity(stone_id()));
-		} else {
-			vec4 next_a;
-			vec4 next_b;
-			resolve_pair(owner, neighbor, a, b, next_a, next_b);
-			result = output_a ? next_a : next_b;
-		}
+		vec4 next_a;
+		vec4 next_b;
+		resolve_pair(owner, neighbor, a, b, next_a, next_b);
+		result = output_a ? next_a : next_b;
 	}
 	result.b = float(resolved_light(coord, current, result)) / 255.0;
 	COLOR = result;

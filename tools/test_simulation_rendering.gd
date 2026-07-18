@@ -24,7 +24,17 @@ func _run() -> void:
 		return
 	if not await _verify_partial_brightness_preserves_stream_mask(registry):
 		return
+	if not await _verify_partial_fill_uses_liquid_or_gas_above(registry):
+		return
+	if not await _verify_partial_sand_air_edge_is_polished(registry):
+		return
+	if not await _verify_partial_liquid_air_edge_is_polished(registry):
+		return
 	if not await _verify_air_pressure_equalizes_across_a_hex_edge(registry):
+		return
+	if not await _verify_non_burning_secondary_air_can_drain(registry):
+		return
+	if not await _verify_static_sulfur_burn_persists(registry):
 		return
 	if not await _verify_sand_displaces_water_without_destroying_it(registry):
 		return
@@ -208,10 +218,11 @@ func _verify_even_phase_sand_trail(registry: TerrainRegistry) -> bool:
 
 func _verify_partial_brightness_preserves_stream_mask(registry: TerrainRegistry) -> bool:
 	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
 	var water := _terrain_id(registry, "Water")
 	var world := WorldGrid.new(WorldDimensions.new(3, 4), air)
 	var stream_cell := Vector2i(1, 1)
-	world.set_committed_by_offset(stream_cell.x, stream_cell.y - 1, water, 64)
+	world.set_committed_by_offset(stream_cell.x, stream_cell.y - 1, stone, 127)
 	world.set_committed_by_offset(stream_cell.x, stream_cell.y, water, 64)
 	for row in range(world.dimensions.depth):
 		for col in range(world.dimensions.width):
@@ -254,6 +265,127 @@ func _verify_partial_brightness_preserves_stream_mask(registry: TerrainRegistry)
 	)
 
 
+func _verify_partial_fill_uses_liquid_or_gas_above(registry: TerrainRegistry) -> bool:
+	var sand := _terrain_id(registry, "Sand")
+	var water := _terrain_id(registry, "Water")
+	var sulfur_dioxide := _terrain_id(registry, "Sulfur Dioxide")
+	var stone := _terrain_id(registry, "Stone")
+	var liquid_samples := await _render_partial_fill_samples(registry, sand, water)
+	var liquid_overlay := liquid_samples.center as Color
+	if not _expect(
+		liquid_overlay.a > 0.2 and liquid_overlay.b > liquid_overlay.r,
+		"The empty portion of partial Sand must render Water from the cell above."
+	):
+		return false
+	var liquid_surface := liquid_samples.surface as Color
+	var liquid_top := liquid_samples.top as Color
+	if not _expect(
+		_brightness(liquid_surface) > _brightness(liquid_top) + 0.05,
+		"The overlaid Water surface line must follow the partial fill boundary instead of the top hex edge."
+	):
+		return false
+	var liquid_edge := liquid_samples.edge as Color
+	if not _expect(
+		liquid_edge.b > liquid_edge.r,
+		"The empty portion must not receive the hidden partial terrain's edge outline."
+	):
+		return false
+	var gas_samples := await _render_partial_fill_samples(registry, water, sulfur_dioxide)
+	var gas_overlay := gas_samples.center as Color
+	if not _expect(
+		gas_overlay.a > 0.1 and gas_overlay.g > gas_overlay.b,
+		"The empty portion of partial Water must render gas from the cell above."
+	):
+		return false
+	var solid_samples := await _render_partial_fill_samples(registry, sand, stone)
+	var solid_above := solid_samples.center as Color
+	return _expect(
+		solid_above.a < 0.01,
+		"Solid terrain above a partial fill must not fill its empty portion."
+	)
+
+
+func _verify_partial_sand_air_edge_is_polished(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var sand := _terrain_id(registry, "Sand")
+	var samples := await _render_partial_fill_samples(registry, sand, air, 123)
+	var center := samples.center as Color
+	var upper_edge := samples.upper_edge as Color
+	return _expect(
+		_brightness(upper_edge) < _brightness(center) - 0.15,
+		"A partial Sand-Air boundary must retain Sand's polished edge outline."
+	)
+
+
+func _verify_partial_liquid_air_edge_is_polished(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var water := _terrain_id(registry, "Water")
+	var samples := await _render_partial_fill_samples(registry, water, air, 123, 0.0)
+	var center := samples.center as Color
+	var upper_edge := samples.upper_edge as Color
+	return _expect(
+		_brightness(upper_edge) < _brightness(center) - 0.03
+		and upper_edge.a > center.a + 0.2,
+		"A partial Water-Air boundary must retain Water's polished edge outline (center %s, edge %s)." % [center, upper_edge]
+	)
+
+
+func _render_partial_fill_samples(
+	registry: TerrainRegistry,
+	partial_id: int,
+	above_id: int,
+	partial_quantity: int = 32,
+	surface_glow_strength: float = 1.0
+) -> Dictionary:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var world := WorldGrid.new(WorldDimensions.new(3, 4), air)
+	var partial_cell := Vector2i(1, 1)
+	world.set_committed_by_offset(partial_cell.x, partial_cell.y - 1, above_id, 127)
+	world.set_committed_by_offset(partial_cell.x, partial_cell.y, partial_id, partial_quantity)
+	world.set_committed_by_offset(partial_cell.x, partial_cell.y + 1, stone, 127)
+	world.upload_cpu_snapshot_to_texture()
+
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(128, 128)
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
+	var presenter := WorldPresenter.new()
+	presenter.position = Vector2(24.0, 24.0)
+	var presentation_config := load("res://config/presentation/default_world_presentation.tres") as WorldPresentationConfig
+	presenter.presentation_config = presentation_config.duplicate(true)
+	presenter.presentation_config.exposed_edge_jitter_strength = 0.0
+	presenter.presentation_config.fluid_caustic_strength = 0.0
+	presenter.presentation_config.fluid_shimmer_strength = 0.0
+	presenter.presentation_config.fluid_hot_glow_strength = 0.0
+	presenter.presentation_config.fluid_surface_glow_strength = surface_glow_strength
+	presenter.set_force_full_brightness(true)
+	viewport.add_child(presenter)
+	presenter.configure(world, registry)
+	await process_frame
+	await process_frame
+	var center := Vector2i(
+		presenter.position
+		+ HexMetrics.center_for_offset(partial_cell.x, partial_cell.y, presenter.hex_radius)
+	)
+	var image := viewport.get_texture().get_image()
+	var rendered := {
+		"center": image.get_pixelv(center),
+		"surface": image.get_pixelv(center + Vector2i(0, 5)),
+		"top": image.get_pixelv(center + Vector2i(0, -10)),
+		"edge": image.get_pixelv(center + Vector2i(15, 0)),
+		"upper_edge": image.get_pixelv(center + Vector2i(0, -12)),
+	}
+	viewport.free()
+	await process_frame
+	return rendered
+
+
+func _brightness(color: Color) -> float:
+	return maxf(color.r, maxf(color.g, color.b))
+
+
 func _verify_air_pressure_equalizes_across_a_hex_edge(registry: TerrainRegistry) -> bool:
 	var air := _terrain_id(registry, "Air")
 	var stone := _terrain_id(registry, "Stone")
@@ -276,6 +408,98 @@ func _verify_air_pressure_equalizes_across_a_hex_edge(registry: TerrainRegistry)
 	return _expect(
 		top_quantity == 96 and bottom_quantity == 96,
 		"Air pressure must equalize across a matching adjacent Air pair while conserving quantity (top %d, bottom %d)." % [top_quantity, bottom_quantity]
+	)
+
+
+func _verify_non_burning_secondary_air_can_drain(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(2, 2), stone)
+	world.set_committed_components_by_offset(0, 0, water, 127, air, 1)
+	world.set_committed_by_offset(0, 1, air, 0)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	var completed_before := backend.passes_performed()
+	var progress := backend.advance(1)
+	if not _expect(progress.passes_scheduled == 1, "The secondary-Air fixture must schedule exactly one vertical pass."):
+		backend.shutdown()
+		return false
+	var waited := 0
+	while backend.passes_performed() == completed_before and waited < MAX_WAIT_FRAMES:
+		await process_frame
+		waited += 1
+	if not _expect(backend.passes_performed() == completed_before + 1, "The secondary-Air fixture did not complete its vertical pass."):
+		backend.shutdown()
+		return false
+	var bytes := _texture_bytes(backend._active_texture)
+	var source_offset := world.dimensions.offset_to_index(0, 0) * WorldGrid.BYTES_PER_CELL
+	var target_offset := world.dimensions.offset_to_index(0, 1) * WorldGrid.BYTES_PER_CELL
+	var source_secondary_quantity := int(bytes[source_offset + WorldGrid.CELL_SECONDARY_QUANTITY])
+	var target_id := int(bytes[target_offset + WorldGrid.CELL_HEX_IDS]) & WorldGrid.PRIMARY_HEX_ID_MASK
+	var target_quantity := int(bytes[target_offset + WorldGrid.CELL_QUANTITY])
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		source_secondary_quantity == 0 && target_id == air && target_quantity == 1,
+		"A non-burning Water cell must release its final secondary Air unit (source secondary %d, target %d:%d)." % [source_secondary_quantity, target_id, target_quantity]
+	)
+
+
+func _verify_static_sulfur_burn_persists(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var lava := _terrain_id(registry, "Lava")
+	var sulfur := _terrain_id(registry, "Sulfur")
+	var sulfur_dioxide := _terrain_id(registry, "Sulfur Dioxide")
+	var world := WorldGrid.new(WorldDimensions.new(4, 4), air)
+	for col in range(world.dimensions.width):
+		world.set_committed_by_offset(col, world.dimensions.depth - 1, stone)
+	var sulfur_cell := Vector2i(1, 1)
+	var lava_cell := Vector2i(1, 2)
+	world.set_committed_by_offset(sulfur_cell.x, sulfur_cell.y, sulfur, 127)
+	world.set_committed_by_offset(lava_cell.x, lava_cell.y, lava, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	if not _expect(
+		world.get_committed_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur
+		and world.get_committed_secondary_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur_dioxide
+		and world.get_committed_secondary_quantity_by_offset(sulfur_cell.x, sulfur_cell.y) >= 1,
+		"Lava contact must ignite static Sulfur with a retained Sulfur Dioxide product."
+	):
+		backend.shutdown()
+		return false
+	var quantity_after_ignition := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var lava_change := world.set_committed_by_offset(lava_cell.x, lava_cell.y, air, WorldGrid.AIR_QUANTITY)
+	backend.queue_change(lava_change)
+	if not await _complete_tick(backend, 2, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var quantity_after_first_burn := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	if not await _complete_tick(backend, 3, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var quantity_after_second_burn := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var marker_retained := (
+		world.get_committed_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur
+		and world.get_committed_secondary_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur_dioxide
+		and world.get_committed_secondary_quantity_by_offset(sulfur_cell.x, sulfur_cell.y) >= 1
+	)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		quantity_after_first_burn < quantity_after_ignition
+		and quantity_after_second_burn < quantity_after_first_burn
+		and marker_retained,
+		"Static Sulfur must keep burning after Lava leaves (quantities %d -> %d -> %d, marker retained %s)." % [quantity_after_ignition, quantity_after_first_burn, quantity_after_second_burn, marker_retained]
 	)
 
 

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DenseGasMotionBehavior" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/dense_gas_motion_behavior.gd" id="1_dense_gas"]
+
+[resource]
+script = ExtResource("1_dense_gas")
+side_flow_offset = 63

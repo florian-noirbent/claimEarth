@@ -10,7 +10,7 @@
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="8_lava"]
 [ext_resource type="Resource" path="res://config/items/perk_geode.tres" id="9_geode_definition"]
 
-[sub_resource type="Resource" id="Resource_26qyd"]
+[sub_resource type="Resource" id="Resource_fr6de"]
 script = ExtResource("2_base")
 octaves = 5
 frequency_x = 0.01
@@ -22,7 +22,7 @@ label = "Base Terrain"
 pass_seed_key = "base_terrain_0"
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_fr6de"]
+[sub_resource type="Resource" id="Resource_22l3w"]
 script = ExtResource("3_pocket")
 octaves = 4
 frequency_x = 0.026
@@ -32,7 +32,7 @@ label = "Sand Hazard"
 pass_seed_key = "sand_hazard_1"
 allowed_target_ids = PackedInt32Array(2)
 
-[sub_resource type="Resource" id="Resource_22l3w"]
+[sub_resource type="Resource" id="Resource_6usxm"]
 script = ExtResource("3_pocket")
 octaves = 4
 frequency_x = 0.026
@@ -44,7 +44,7 @@ pass_seed_key = "water_hazard_2"
 min_depth_ratio = 0.02
 allowed_target_ids = PackedInt32Array(0)
 
-[sub_resource type="Resource" id="Resource_6usxm"]
+[sub_resource type="Resource" id="Resource_7afvr"]
 script = ExtResource("3_pocket")
 frequency_x = 0.097
 frequency_y = 0.029
@@ -55,7 +55,19 @@ pass_seed_key = "lava_hazard_3"
 min_depth_ratio = 0.06
 allowed_target_ids = PackedInt32Array(1)
 
-[sub_resource type="Resource" id="Resource_7afvr"]
+[sub_resource type="Resource" id="Resource_yasd3"]
+script = ExtResource("3_pocket")
+octaves = 1
+frequency_x = 0.04
+frequency_y = 0.231
+gain = 0.0
+hazard_type = 3
+placement_threshold = 0.804
+pass_seed_key = "hazard_pocket_4"
+min_depth_ratio = 0.3
+allowed_target_ids = PackedInt32Array(1, 2)
+
+[sub_resource type="Resource" id="Resource_5hsgh"]
 script = ExtResource("4_spawn")
 shaft_target_depth = 256
 shaft_width = 6.0
@@ -69,32 +81,32 @@ segment_frequency = 0.089
 protected_surface_rows = 16
 safe_edge_margin = 7
 label = "Spawn Shaft"
-pass_seed_key = "spawn_shaft_4"
+pass_seed_key = "spawn_shaft_5"
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_yasd3"]
+[sub_resource type="Resource" id="Resource_tpxme"]
 script = ExtResource("6_item_pass")
 item_definition = ExtResource("7_chest_definition")
 label = "Item Chests"
-pass_seed_key = "item_chests_5"
+pass_seed_key = "item_chests_6"
 min_depth_ratio = 0.05
 max_depth_ratio = 0.9
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_perk_geodes"]
+[sub_resource type="Resource" id="Resource_u4642"]
 script = ExtResource("6_item_pass")
 item_definition = ExtResource("9_geode_definition")
 label = "Perk Geodes"
-pass_seed_key = "perk_geodes_6"
+pass_seed_key = "perk_geodes_7"
 min_depth_ratio = 0.05
 max_depth_ratio = 0.9
 allowed_target_ids = PackedInt32Array()
 
-[sub_resource type="Resource" id="Resource_5hsgh"]
+[sub_resource type="Resource" id="Resource_2uer4"]
 script = ExtResource("5_fill")
 fill_terrain = ExtResource("8_lava")
 label = "Bottom Lava Fill"
-pass_seed_key = "bottom_lava_fill_6"
+pass_seed_key = "bottom_lava_fill_8"
 min_depth_ratio = 0.94
 top_blend_distance_ratio = 0.02
 allowed_target_ids = PackedInt32Array(1, 2, 3, 4, 5, 0)
@@ -102,4 +114,4 @@ allowed_target_ids = PackedInt32Array(1, 2, 3, 4, 5, 0)
 [resource]
 script = ExtResource("1_profile")
 initial_settle_ticks = 50
-passes = [SubResource("Resource_26qyd"), SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_perk_geodes"), SubResource("Resource_5hsgh")]
+passes = [SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_5hsgh"), SubResource("Resource_tpxme"), SubResource("Resource_u4642"), SubResource("Resource_2uer4")]

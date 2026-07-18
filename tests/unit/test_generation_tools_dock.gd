@@ -361,10 +361,11 @@ func test_generation_tools_dock_hazard_pocket_exposes_type_picker_and_removes_ol
 
 	var hazard_type_picker := _option_button_for_property(dock, 0, "hazard_type")
 	assert_not_null(hazard_type_picker)
-	assert_eq(hazard_type_picker.item_count, 3)
+	assert_eq(hazard_type_picker.item_count, 4)
 	assert_eq(hazard_type_picker.get_item_text(0), "Sand")
 	assert_eq(hazard_type_picker.get_item_text(1), "Water")
 	assert_eq(hazard_type_picker.get_item_text(2), "Lava")
+	assert_eq(hazard_type_picker.get_item_text(3), "Sulfur")
 	assert_not_null(_pass_property_row(dock, 0, "placement_threshold"))
 	assert_null(_pass_property_row(dock, 0, "water_depth_start_ratio"))
 	assert_null(_pass_property_row(dock, 0, "lava_depth_start_ratio"))

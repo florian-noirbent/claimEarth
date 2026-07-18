@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TerrainDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_def"]
+[ext_resource type="Resource" path="res://config/terrain/motion/dense_gas_motion.tres" id="2_motion"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_hazard"]
+[ext_resource type="Resource" path="res://config/terrain/blast/no_blast_reaction.tres" id="4_blast"]
+[ext_resource type="Resource" path="res://config/visual/sulfur_dioxide_style.tres" id="5_style"]
+
+[resource]
+script = ExtResource("1_def")
+stable_id = 8
+maximum_quantity = 254
+normal_quantity = 63
+storage_capacity = 254
+display_name = "Sulfur Dioxide"
+perk_tags = PackedStringArray("sulfur_dioxide", "gas")
+block_density = 32
+is_solid = false
+is_passable = true
+is_hookable = false
+is_destructible = false
+light_diffusion_coefficient = 0.92
+debug_color = Color(0.78, 0.9, 0.25, 0.52)
+visual_style = ExtResource("5_style")
+motion_behavior = ExtResource("2_motion")
+hazard_behavior = ExtResource("3_hazard")
+blast_reaction = ExtResource("4_blast")

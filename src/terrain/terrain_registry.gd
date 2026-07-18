@@ -6,6 +6,7 @@ extends RefCounted
 var _definitions_by_id: Dictionary = {}
 var _definitions_by_name: Dictionary = {}
 var _ordered_definitions: Array[TerrainDefinition] = []
+var _contact_reactions: Array[TerrainContactReaction] = []
 var validation_errors := PackedStringArray()
 
 
@@ -13,6 +14,7 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 	_definitions_by_id.clear()
 	_definitions_by_name.clear()
 	_ordered_definitions.clear()
+	_contact_reactions.clear()
 	validation_errors = PackedStringArray()
 
 	if catalog == null:
@@ -49,6 +51,18 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 		validation_errors.append("terrain catalog must define exactly one empty-space terrain")
 	if contact_product_count != 1:
 		validation_errors.append("terrain catalog must define exactly one liquid-contact product")
+	for reaction_variant in catalog.contact_reactions:
+		var reaction := reaction_variant as TerrainContactReaction
+		if reaction == null:
+			validation_errors.append("terrain catalog contains an invalid contact reaction")
+			continue
+		for error in reaction.validate():
+			validation_errors.append(error)
+		if reaction.reactant_a != null and not has_definition(reaction.reactant_a.stable_id):
+			validation_errors.append("contact reaction references an unregistered first reactant")
+		if reaction.reactant_b != null and not has_definition(reaction.reactant_b.stable_id):
+			validation_errors.append("contact reaction references an unregistered second reactant")
+		_contact_reactions.append(reaction)
 
 	return validation_errors.is_empty()
 
@@ -72,6 +86,10 @@ func has_definition(stable_id: int) -> bool:
 
 func all_definitions() -> Array[TerrainDefinition]:
 	return _ordered_definitions.duplicate()
+
+
+func contact_reactions() -> Array[TerrainContactReaction]:
+	return _contact_reactions.duplicate()
 
 
 func count() -> int:

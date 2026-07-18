@@ -33,6 +33,12 @@ the packing code in `WorldPresenter`. Material fill textures are packed into a
 single atlas. Keep changes to packing, uniforms, shader sampling, and presenter
 tests together.
 
+Partial liquid and falling-terrain surfaces render liquid or gas from the physical
+cell above in their empty portion. Stable and falling terrain above remain hidden
+there; they do not force the partial cell to render as full.
+Sand keeps its configured polished outline against Air even when partially filled;
+liquids and gases use the same rounded boundary and configured-outline path.
+
 Cave darkness raises output alpha toward opaque black so the backdrop cannot leak
 through unexplored cells. The final lighting composition preserves the material's
 premultiplied contribution when converting back to straight alpha; masked terrain

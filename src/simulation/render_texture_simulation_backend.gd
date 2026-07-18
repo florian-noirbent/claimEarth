@@ -34,6 +34,7 @@ var _render_root: Node
 var _viewports: Array[SubViewport] = []
 var _materials: Array[ShaderMaterial] = []
 var _rule_texture: ImageTexture
+var _reaction_texture: ImageTexture
 var _active_texture: Texture2D
 var _presentation_texture: Texture2D
 var _even_phase_texture: Texture2D
@@ -65,6 +66,7 @@ func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void
 	_initialize_surface_lighting()
 	_world.upload_cpu_snapshot_to_texture()
 	_rule_texture = _create_rule_texture(_metadata)
+	_reaction_texture = _create_reaction_texture(_metadata)
 	_initialize_standard_light_texture()
 	_ensure_render_targets()
 	_reset_gpu_source_from_world()
@@ -345,6 +347,7 @@ func _configure_materials() -> void:
 		return
 	for material in _materials:
 		material.set_shader_parameter("rule_texture", _rule_texture)
+		material.set_shader_parameter("reaction_texture", _reaction_texture)
 		material.set_shader_parameter("standard_light_sources", _standard_light_texture)
 		material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
 
@@ -402,6 +405,7 @@ func _schedule_render_pass_batch(first_pass: int, pass_count: int) -> bool:
 		var material := _materials[target_index]
 		material.set_shader_parameter("source_world", source_texture)
 		material.set_shader_parameter("pass_kind", pass_kind)
+		material.set_shader_parameter("simulation_tick", _ticks_completed)
 		_set_high_frequency_light_parameters(material)
 		var viewport := _viewports[target_index]
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -477,13 +481,26 @@ func _target_index(bank_index: int, pass_kind: int) -> int:
 
 func _create_rule_texture(metadata: CompiledTerrainData) -> ImageTexture:
 	var data := PackedByteArray()
-	data.resize(256 * 4 * 4)
+	data.resize(256 * 5 * 4)
 	for id in range(256):
 		_write_rule_row(data, id, 0, [metadata.motion(id), 1 if metadata.can_fall(id) else 0, 1 if metadata.can_side_down(id) else 0, 1 if metadata.can_side_up(id) else 0])
 		_write_rule_row(data, id, 1, [metadata.density(id), metadata.transfer_rate(id, 0), metadata.transfer_rate(id, 1), metadata.transfer_rate(id, 2)])
 		_write_rule_row(data, id, 2, [metadata.min_fill_difference(id), metadata.side_flow_offset(id), metadata.maximum_quantity(id), 1 if metadata.is_passable(id) else 0])
 		_write_rule_row(data, id, 3, [metadata.air_id, metadata.stone_id, metadata.light_diffusion(id), metadata.emitted_light(id)])
-	return ImageTexture.create_from_image(Image.create_from_data(256, 4, false, Image.FORMAT_RGBA8, data))
+		_write_rule_row(data, id, 4, [metadata.normal_quantity(id), metadata.storage_capacity(id), metadata.persistent_burn_product_by_id[id], 0])
+	return ImageTexture.create_from_image(Image.create_from_data(256, 5, false, Image.FORMAT_RGBA8, data))
+
+
+func _create_reaction_texture(metadata: CompiledTerrainData) -> ImageTexture:
+	var data := PackedByteArray()
+	data.resize(16 * 16 * 4)
+	for index in range(256):
+		var offset := index * 4
+		data[offset] = metadata.reaction_by_pair[index]
+		data[offset + 1] = metadata.reaction_product_a_by_pair[index]
+		data[offset + 2] = metadata.reaction_product_b_by_pair[index]
+		data[offset + 3] = metadata.reaction_generated_by_pair[index]
+	return ImageTexture.create_from_image(Image.create_from_data(16, 16, false, Image.FORMAT_RGBA8, data))
 
 
 func _write_rule_row(data: PackedByteArray, id: int, row: int, values: Array) -> void:

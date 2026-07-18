@@ -162,6 +162,26 @@ func test_default_profile_uses_typed_hazard_pocket_instances_without_showcase_pa
 	assert_eq(hazard_passes[0].hazard_type, PocketNoisePassScript.HazardType.SAND)
 	assert_eq(hazard_passes[1].hazard_type, PocketNoisePassScript.HazardType.WATER)
 	assert_eq(hazard_passes[2].hazard_type, PocketNoisePassScript.HazardType.LAVA)
+	assert_eq(PocketNoisePassScript.HazardType.SULFUR, 3)
+
+
+func test_configured_sulfur_hazard_pocket_uses_registered_sulfur_definition() -> void:
+	var generator := WorldGenerator.new()
+	var registry := FixtureLoader.terrain_registry()
+	var profile := _base_profile_for_stack_tests()
+	var sulfur_id := FixtureLoader.terrain_id("Sulfur")
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var pocket := _hazard_pass(
+		"sulfur_editor_fixture",
+		PocketNoisePassScript.HazardType.SULFUR,
+		0.2,
+		PackedInt32Array([stone_id])
+	)
+	profile.passes.insert(1, pocket)
+
+	var result := generator.generate(profile, registry, 9917)
+	assert_not_null(result)
+	assert_gt(result.world.count_committed(sulfur_id), 0)
 
 
 func test_generation_invariants_hold_across_fixed_seed_sample() -> void:

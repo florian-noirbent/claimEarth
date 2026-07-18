@@ -5,9 +5,11 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	var catalog := FixtureLoader.terrain_catalog()
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(catalog), "\n".join(registry.validation_errors))
-	assert_eq(registry.count(), 6)
+	assert_eq(registry.count(), 9)
 	assert_true(registry.has_definition(0))
 	assert_true(registry.has_definition(5))
+	assert_true(registry.has_definition(8))
+	assert_eq(registry.contact_reactions().size(), 5)
 
 	for definition in registry.all_definitions():
 		assert_eq(definition.validate().size(), 0, definition.display_name)
@@ -20,6 +22,19 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Lava")), 4.0, 0.001)
 	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Air")), 0.0, 0.001)
 	assert_almost_eq(metadata.viscosity(FixtureLoader.terrain_id("Stone")), 0.0, 0.001)
+	assert_eq(metadata.normal_quantity(FixtureLoader.terrain_id("Sulfur Dioxide")), 63)
+	assert_eq(metadata.storage_capacity(FixtureLoader.terrain_id("Sulfur Dioxide")), 254)
+	assert_eq(metadata.motion(FixtureLoader.terrain_id("Sulfur Dioxide")), CompiledTerrainData.MOTION_DENSE_GAS)
+	for terrain_name in ["Air", "Water", "Sand", "Lava"]:
+		assert_eq(
+			metadata.persistent_burn_product_by_id[FixtureLoader.terrain_id(terrain_name)],
+			CompiledTerrainData.NO_BURN_PRODUCT_ID,
+			"%s must not compile a persistent burn product." % terrain_name
+		)
+	assert_eq(
+		metadata.persistent_burn_product_by_id[FixtureLoader.terrain_id("Sulfur")],
+		FixtureLoader.terrain_id("Sulfur Dioxide")
+	)
 
 
 func test_item_catalog_loads_all_required_definitions() -> void:
