@@ -55,3 +55,22 @@ func test_camera_clamps_to_bounds() -> void:
 
 	var camera_position := model.update(Vector2(0, 1000), Vector2(1200, 720), 1.0 / 60.0)
 	assert_eq(camera_position.y, 100.0)
+
+
+func test_camera_bottom_edge_clamp_aligns_the_viewport_to_the_final_hex_edge() -> void:
+	var controller := DescendingCameraController.new()
+	var model = controller._model
+	var bottom_edge := 1000.0
+	controller.configure_bounds(0.0, INF)
+	controller.configure_world_bottom_edge(bottom_edge)
+	model.reset(0.0)
+
+	var first_visible_height := 720.0
+	controller._apply_world_bottom_edge(first_visible_height)
+	var first_position := model.update(Vector2(0.0, 2000.0), Vector2(1200.0, first_visible_height), 1.0 / 60.0)
+	assert_almost_eq(first_position.y + first_visible_height * 0.5, bottom_edge, 0.001)
+
+	var resized_visible_height := 400.0
+	controller._apply_world_bottom_edge(resized_visible_height)
+	var resized_position := model.update(Vector2(0.0, 2000.0), Vector2(1200.0, resized_visible_height), 1.0 / 60.0)
+	assert_almost_eq(resized_position.y + resized_visible_height * 0.5, bottom_edge, 0.001)

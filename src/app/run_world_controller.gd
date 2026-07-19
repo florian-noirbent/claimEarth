@@ -217,9 +217,11 @@ func _configure_world_bounds() -> void:
 	var right_edge := HexMetrics.center_for_offset(_profile.width - 1, 0, _world_presenter.hex_radius).x + _world_presenter.hex_radius
 	var map_width := right_edge - left_edge
 	var horizontal_zoom := maxf(0.1, get_viewport().get_visible_rect().size.x) / maxf(1.0, map_width - 16.0)
-	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y + _world_presenter.hex_radius
+	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y \
+		+ _world_presenter.hex_radius * sqrt(3.0) * 0.5
 	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
-	_player.camera.configure_bounds(0.0, bottom_edge)
+	_player.camera.configure_bounds(0.0, INF)
+	_player.camera.configure_world_bottom_edge(bottom_edge)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
 	_player.camera.configure_upward_recovery_margin(_world_presenter.hex_radius)
 	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
