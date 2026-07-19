@@ -481,26 +481,35 @@ func _target_index(bank_index: int, pass_kind: int) -> int:
 
 func _create_rule_texture(metadata: CompiledTerrainData) -> ImageTexture:
 	var data := PackedByteArray()
-	data.resize(256 * 5 * 4)
+	data.resize(256 * 7 * 4)
 	for id in range(256):
 		_write_rule_row(data, id, 0, [metadata.motion(id), 1 if metadata.can_fall(id) else 0, 1 if metadata.can_side_down(id) else 0, 1 if metadata.can_side_up(id) else 0])
 		_write_rule_row(data, id, 1, [metadata.density(id), metadata.transfer_rate(id, 0), metadata.transfer_rate(id, 1), metadata.transfer_rate(id, 2)])
 		_write_rule_row(data, id, 2, [metadata.min_fill_difference(id), metadata.side_flow_offset(id), metadata.maximum_quantity(id), 1 if metadata.is_passable(id) else 0])
 		_write_rule_row(data, id, 3, [metadata.air_id, metadata.stone_id, metadata.light_diffusion(id), metadata.emitted_light(id)])
-		_write_rule_row(data, id, 4, [metadata.normal_quantity(id), metadata.storage_capacity(id), metadata.persistent_burn_product_by_id[id], 0])
-	return ImageTexture.create_from_image(Image.create_from_data(256, 5, false, Image.FORMAT_RGBA8, data))
+		_write_rule_row(data, id, 4, [metadata.normal_quantity(id), metadata.storage_capacity(id), metadata.persistent_burn_product_by_id[id], metadata.persistent_burn_ignition_quantity_by_id[id]])
+		_write_rule_row(data, id, 5, [metadata.persistent_burn_base_consumption_by_id[id], metadata.persistent_burn_bonus_consumption_by_id[id], metadata.persistent_burn_bonus_frequency_numerator_by_id[id], metadata.persistent_burn_bonus_frequency_period_by_id[id]])
+		_write_rule_row(data, id, 6, [metadata.persistent_burn_product_per_consumed_by_id[id], metadata.persistent_burn_bonus_product_by_id[id], 0, 0])
+	return ImageTexture.create_from_image(Image.create_from_data(256, 7, false, Image.FORMAT_RGBA8, data))
 
 
 func _create_reaction_texture(metadata: CompiledTerrainData) -> ImageTexture:
 	var data := PackedByteArray()
-	data.resize(16 * 16 * 4)
+	data.resize(16 * 32 * 4)
 	for index in range(256):
-		var offset := index * 4
-		data[offset] = metadata.reaction_by_pair[index]
-		data[offset + 1] = metadata.reaction_product_a_by_pair[index]
-		data[offset + 2] = metadata.reaction_product_b_by_pair[index]
-		data[offset + 3] = metadata.reaction_generated_by_pair[index]
-	return ImageTexture.create_from_image(Image.create_from_data(16, 16, false, Image.FORMAT_RGBA8, data))
+		var a := int(index / 16)
+		var b := index % 16
+		var header_offset := (a * 16 + b) * 4
+		data[header_offset] = metadata.reaction_opcode_by_pair[index]
+		data[header_offset + 1] = metadata.reaction_product_a_by_pair[index]
+		data[header_offset + 2] = metadata.reaction_product_b_by_pair[index]
+		data[header_offset + 3] = 0
+		var parameter_offset := ((a + 16) * 16 + b) * 4
+		data[parameter_offset] = metadata.reaction_parameter_0_by_pair[index]
+		data[parameter_offset + 1] = metadata.reaction_parameter_1_by_pair[index]
+		data[parameter_offset + 2] = metadata.reaction_parameter_2_by_pair[index]
+		data[parameter_offset + 3] = metadata.reaction_parameter_3_by_pair[index]
+	return ImageTexture.create_from_image(Image.create_from_data(16, 32, false, Image.FORMAT_RGBA8, data))
 
 
 func _write_rule_row(data: PackedByteArray, id: int, row: int, values: Array) -> void:

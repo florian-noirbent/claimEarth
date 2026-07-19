@@ -26,6 +26,7 @@ extends Resource
 @export var motion_behavior: TerrainMotionBehavior
 @export var hazard_behavior: TerrainHazardBehavior
 @export var blast_reaction: BlastReaction
+@export var persistent_burn_behavior: TerrainPersistentBurnBehavior
 
 
 func validate() -> PackedStringArray:
@@ -40,6 +41,9 @@ func validate() -> PackedStringArray:
 		errors.append("%s is missing hazard_behavior" % _identity())
 	if blast_reaction == null:
 		errors.append("%s is missing blast_reaction" % _identity())
+	if persistent_burn_behavior != null:
+		for error in persistent_burn_behavior.validate():
+			errors.append("%s %s" % [_identity(), error])
 	if is_solid == is_passable:
 		errors.append("%s must be either solid or passable" % _identity())
 	if stable_id > 15:

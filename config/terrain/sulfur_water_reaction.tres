@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="TerrainContactReaction" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="CatalyticLiquidConversionReaction" load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://src/terrain/terrain_contact_reaction.gd" id="1_rule"]
+[ext_resource type="Script" path="res://src/terrain/catalytic_liquid_conversion_reaction.gd" id="1_rule"]
 [ext_resource type="Resource" path="res://config/terrain/sulfur.tres" id="2_sulfur"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="3_water"]
 [ext_resource type="Resource" path="res://config/terrain/sulfuric_acid.tres" id="4_acid"]
@@ -9,8 +9,5 @@
 script = ExtResource("1_rule")
 reactant_a = ExtResource("2_sulfur")
 reactant_b = ExtResource("3_water")
-product_b = ExtResource("4_acid")
-kind = 0
-duration_seconds = 20.0
-input_a_units = 1
-input_b_units = 10
+liquid_product = ExtResource("4_acid")
+liquid_quantity_per_catalyst_quantity = 10

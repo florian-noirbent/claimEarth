@@ -27,6 +27,11 @@ const int MOTION_STABLE = 0;
 const int MOTION_LIQUID = 2;
 const int MOTION_GAS = 3;
 const int MOTION_DENSE_GAS = 4;
+const int REACTION_CATALYTIC_LIQUID_CONVERSION = 1;
+const int REACTION_PERSISTENT_IGNITION = 2;
+const int REACTION_EROSION = 3;
+const int REACTION_GAS_ABSORPTION = 4;
+const int REACTION_MUTUAL_REPLACEMENT = 5;
 const int AIR_QUANTITY = 64;
 const int FULL_QUANTITY = 127;
 const int MAX_STORED_QUANTITY = 255;
@@ -50,7 +55,7 @@ vec4 read_cell(ivec2 coord) {
 }
 
 vec4 read_rule(int terrain_id, int row) {
-	return texture(rule_texture, (vec2(float(terrain_id), float(row)) + vec2(0.5)) / vec2(256.0, 5.0));
+	return texture(rule_texture, (vec2(float(terrain_id), float(row)) + vec2(0.5)) / vec2(256.0, 7.0));
 }
 
 int rule_byte(int terrain_id, int row, int channel) {
@@ -159,8 +164,40 @@ int persistent_burn_product(int id) {
 	return rule_byte(id, 4, 2);
 }
 
-vec4 read_reaction(int a, int b) {
-	return texture(reaction_texture, (vec2(float(b & 15), float(a & 15)) + vec2(0.5)) / vec2(16.0));
+int persistent_burn_ignition_quantity(int id) {
+	return rule_byte(id, 4, 3);
+}
+
+int persistent_burn_base_consumption(int id) {
+	return rule_byte(id, 5, 0);
+}
+
+int persistent_burn_bonus_consumption(int id) {
+	return rule_byte(id, 5, 1);
+}
+
+int persistent_burn_bonus_frequency_numerator(int id) {
+	return rule_byte(id, 5, 2);
+}
+
+int persistent_burn_bonus_frequency_period(int id) {
+	return rule_byte(id, 5, 3);
+}
+
+int persistent_burn_product_per_consumed(int id) {
+	return rule_byte(id, 6, 0);
+}
+
+int persistent_burn_bonus_product(int id) {
+	return rule_byte(id, 6, 1);
+}
+
+vec4 read_reaction_header(int a, int b) {
+	return texture(reaction_texture, (vec2(float(b & 15), float(a & 15)) + vec2(0.5)) / vec2(16.0, 32.0));
+}
+
+vec4 read_reaction_parameters(int a, int b) {
+	return texture(reaction_texture, (vec2(float(b & 15), float((a & 15) + 16)) + vec2(0.5)) / vec2(16.0, 32.0));
 }
 
 int reaction_byte(vec4 reaction, int channel) {
@@ -624,27 +661,32 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 	next_a = a;
 	next_b = b;
-	vec4 reaction = read_reaction(terrain_id(a), terrain_id(b));
-	int kind = reaction_byte(reaction, 0);
-	if (kind == 0) return false;
-	if (kind == 5) {
-		next_a = air_cell();
-		next_b = make_cell(stone_id(), maximum_quantity(stone_id()));
+	vec4 reaction = read_reaction_header(terrain_id(a), terrain_id(b));
+	int opcode = reaction_byte(reaction, 0);
+	if (opcode == 0) return false;
+	if (opcode == REACTION_MUTUAL_REPLACEMENT) {
+		vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
+		next_a = make_cell(reaction_byte(reaction, 1), reaction_byte(parameters, 0));
+		next_b = make_cell(reaction_byte(reaction, 2), reaction_byte(parameters, 1));
 		return true;
 	}
-	if (kind == 2) {
-		int gas = reaction_byte(reaction, 3);
+	if (opcode == REACTION_PERSISTENT_IGNITION) {
 		int a_burn_product = persistent_burn_product(terrain_id(a));
-		if (a_burn_product != NO_BURN_PRODUCT_ID && a_burn_product == gas) next_a = add_component(a, gas, 1, storage_capacity(gas));
-		else next_b = add_component(b, gas, 1, storage_capacity(gas));
+		if (a_burn_product != NO_BURN_PRODUCT_ID) {
+			next_a = add_component(a, a_burn_product, persistent_burn_ignition_quantity(terrain_id(a)), storage_capacity(a_burn_product));
+		} else {
+			int gas = persistent_burn_product(terrain_id(b));
+			next_b = add_component(b, gas, persistent_burn_ignition_quantity(terrain_id(b)), storage_capacity(gas));
+		}
 		return true;
 	}
-	if (kind == 1 && is_vertical_pass()) {
+	if (opcode == REACTION_CATALYTIC_LIQUID_CONVERSION && is_vertical_pass()) {
+		vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
 		int acid = reaction_byte(reaction, 2);
 		int sulfur_side = persistent_burn_product(terrain_id(a)) != NO_BURN_PRODUCT_ID ? 0 : 1;
 		vec4 sulfur_cell = sulfur_side == 0 ? a : b;
 		vec4 water_cell = sulfur_side == 0 ? b : a;
-		int water_per_sulfur = max(1, reaction_byte(reaction, 3));
+		int water_per_sulfur = max(1, reaction_byte(parameters, 0));
 		int sulfur_fill = fill_amount(sulfur_cell);
 		int water_fill = fill_amount(water_cell);
 		int acid_fill = min(water_fill, sulfur_fill * water_per_sulfur);
@@ -666,21 +708,26 @@ bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) 
 		}
 		return true;
 	}
-	if (kind == 3) {
+	if (opcode == REACTION_EROSION) {
+		vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
 		int water = reaction_byte(reaction, 1);
-		int consumed = min(fill_amount(a), max(1, fill_amount(b) / 2));
+		int solid_per_fluid = max(1, reaction_byte(parameters, 0));
+		int minimum_consumed = max(1, reaction_byte(parameters, 1));
+		int maximum_consumed = max(minimum_consumed, reaction_byte(parameters, 2));
+		int consumed = min(fill_amount(a), min(maximum_consumed, max(minimum_consumed, fill_amount(b) / solid_per_fluid)));
 		if (consumed <= 0) return false;
-		next_a = make_cell(water, consumed);
-		next_b = fill_amount(b) <= consumed * 2 ? air_cell() : remove_primary_component(b, consumed * 2);
+		next_a = add_component(remove_primary_component(a, consumed), water, consumed, storage_capacity(water));
+		next_b = fill_amount(b) <= consumed * solid_per_fluid ? make_cell(reaction_byte(reaction, 2), normal_quantity(reaction_byte(reaction, 2))) : remove_primary_component(b, consumed * solid_per_fluid);
 		return true;
 	}
-	if (kind == 4) {
+	if (opcode == REACTION_GAS_ABSORPTION) {
+		vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
 		int gas_side = motion(terrain_id(a)) == MOTION_DENSE_GAS ? 0 : 1;
 		int gas_fill = gas_side == 0 ? fill_amount(a) : fill_amount(b);
-		if (gas_fill < 3) return false;
+		if (gas_fill < reaction_byte(parameters, 0)) return false;
 		int acid = reaction_byte(reaction, 2);
-		int consumed = min(gas_fill, normal_quantity(terrain_id(gas_side == 0 ? a : b)));
-		int acid_fill = max(1, consumed * normal_quantity(acid) / (normal_quantity(terrain_id(gas_side == 0 ? a : b)) * 3));
+		int consumed = min(gas_fill, reaction_byte(parameters, 1));
+		int acid_fill = max(1, consumed * reaction_byte(parameters, 3) / max(1, reaction_byte(parameters, 2)));
 		if (gas_side == 0) {
 			next_a = remove_primary_component(a, consumed);
 			next_b = make_cell(acid, min(fill_amount(b), acid_fill));
@@ -704,19 +751,25 @@ bool resolve_persistent_burn(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 	bool burns_b = b_burn_product != NO_BURN_PRODUCT_ID && b_burn_product == secondary_terrain_id(b) && secondary_fill_amount(b) > 0;
 	if (!burns_a && !burns_b) return false;
 	if (burns_a) {
-		int extra = (simulation_tick * 27 + fill_amount(a)) % 100 < 27 ? 1 : 0;
-		int consumed = min(fill_amount(a), 1 + extra);
+		int a_id = terrain_id(a);
+		int numerator = persistent_burn_bonus_frequency_numerator(a_id);
+		int period = max(1, persistent_burn_bonus_frequency_period(a_id));
+		bool bonus_tick = (simulation_tick * numerator + fill_amount(a)) % period < numerator;
+		int consumed = min(fill_amount(a), persistent_burn_base_consumption(a_id) + (bonus_tick ? persistent_burn_bonus_consumption(a_id) : 0));
 		int gas = a_burn_product;
-		int produced = (consumed * 7 + extra) * 10;
+		int produced = consumed * persistent_burn_product_per_consumed(a_id) + (bonus_tick ? persistent_burn_bonus_product(a_id) : 0);
 		next_a = remove_primary_component(a, consumed);
 		if (fill_amount(next_a) > 0) next_a = add_component(next_a, gas, produced, storage_capacity(gas));
 		else next_a = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(a) + produced));
 	}
 	if (burns_b) {
-		int extra = (simulation_tick * 27 + fill_amount(b)) % 100 < 27 ? 1 : 0;
-		int consumed = min(fill_amount(b), 1 + extra);
+		int b_id = terrain_id(b);
+		int numerator = persistent_burn_bonus_frequency_numerator(b_id);
+		int period = max(1, persistent_burn_bonus_frequency_period(b_id));
+		bool bonus_tick = (simulation_tick * numerator + fill_amount(b)) % period < numerator;
+		int consumed = min(fill_amount(b), persistent_burn_base_consumption(b_id) + (bonus_tick ? persistent_burn_bonus_consumption(b_id) : 0));
 		int gas = b_burn_product;
-		int produced = (consumed * 7 + extra) * 10;
+		int produced = consumed * persistent_burn_product_per_consumed(b_id) + (bonus_tick ? persistent_burn_bonus_product(b_id) : 0);
 		next_b = remove_primary_component(b, consumed);
 		if (fill_amount(next_b) > 0) next_b = add_component(next_b, gas, produced, storage_capacity(gas));
 		else next_b = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(b) + produced));

@@ -35,6 +35,37 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 		metadata.persistent_burn_product_by_id[FixtureLoader.terrain_id("Sulfur")],
 		FixtureLoader.terrain_id("Sulfur Dioxide")
 	)
+	var sulfur_id := FixtureLoader.terrain_id("Sulfur")
+	assert_eq(metadata.persistent_burn_ignition_quantity_by_id[sulfur_id], 1)
+	assert_eq(metadata.persistent_burn_base_consumption_by_id[sulfur_id], 1)
+	assert_eq(metadata.persistent_burn_bonus_consumption_by_id[sulfur_id], 1)
+	assert_eq(metadata.persistent_burn_bonus_frequency_numerator_by_id[sulfur_id], 27)
+	assert_eq(metadata.persistent_burn_bonus_frequency_period_by_id[sulfur_id], 100)
+	assert_eq(metadata.persistent_burn_product_per_consumed_by_id[sulfur_id], 70)
+	assert_eq(metadata.persistent_burn_bonus_product_by_id[sulfur_id], 10)
+
+	_assert_reaction_bytes(metadata, "Sulfur", "Water", 1, [0, FixtureLoader.terrain_id("Sulfuric Acid")], [10, 0, 0, 0])
+	_assert_reaction_bytes(metadata, "Sulfur", "Lava", 2, [0, 0], [0, 0, 0, 0])
+	_assert_reaction_bytes(metadata, "Sulfuric Acid", "Sand", 3, [FixtureLoader.terrain_id("Water"), FixtureLoader.terrain_id("Air")], [2, 1, 2, 0])
+	_assert_reaction_bytes(metadata, "Sulfur Dioxide", "Water", 4, [0, FixtureLoader.terrain_id("Sulfuric Acid")], [3, 63, 189, 127])
+	_assert_reaction_bytes(metadata, "Water", "Lava", 5, [FixtureLoader.terrain_id("Air"), FixtureLoader.terrain_id("Stone")], [64, 127, 0, 0])
+
+	var removed_properties := ["kind", "duration_seconds", "input_a_units", "input_b_units", "output_units", "persistent_ignition"]
+	var base_property_names := (TerrainContactReaction.new().get_property_list() as Array).map(
+		func(property: Dictionary) -> String: return property.name
+	)
+	for property_name in removed_properties:
+		assert_false(base_property_names.has(property_name), "Legacy reaction property %s must be removed." % property_name)
+	for path in [
+		"res://config/terrain/sulfur_water_reaction.tres",
+		"res://config/terrain/sulfur_lava_reaction.tres",
+		"res://config/terrain/acid_sand_reaction.tres",
+		"res://config/terrain/gas_water_reaction.tres",
+		"res://config/terrain/water_lava_reaction.tres",
+	]:
+		var serialized := FileAccess.get_file_as_string(path)
+		for property_name in removed_properties:
+			assert_false(serialized.contains("%s =" % property_name), "%s still serializes %s." % [path, property_name])
 
 
 func test_item_catalog_loads_all_required_definitions() -> void:
@@ -55,6 +86,26 @@ func test_item_catalog_loads_all_required_definitions() -> void:
 	for stable_id in [4, 5, 6, 7, 8, 9]:
 		assert_eq(registry.get_definition(stable_id).starting_inventory, 0.0)
 	assert_eq(registry.get_definition(9).display_name, "Acid Bottle")
+
+
+func _assert_reaction_bytes(
+	metadata: CompiledTerrainData,
+	reactant_a_name: String,
+	reactant_b_name: String,
+	opcode: int,
+	products: Array,
+	parameters: Array
+) -> void:
+	var a := FixtureLoader.terrain_id(reactant_a_name)
+	var b := FixtureLoader.terrain_id(reactant_b_name)
+	var index := (a & 15) * 16 + (b & 15)
+	assert_eq(metadata.reaction_opcode_by_pair[index], opcode)
+	assert_eq(metadata.reaction_product_a_by_pair[index], products[0])
+	assert_eq(metadata.reaction_product_b_by_pair[index], products[1])
+	assert_eq(metadata.reaction_parameter_0_by_pair[index], parameters[0])
+	assert_eq(metadata.reaction_parameter_1_by_pair[index], parameters[1])
+	assert_eq(metadata.reaction_parameter_2_by_pair[index], parameters[2])
+	assert_eq(metadata.reaction_parameter_3_by_pair[index], parameters[3])
 
 
 func test_duplicate_stable_ids_fail_validation() -> void:

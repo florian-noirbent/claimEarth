@@ -51,6 +51,11 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 		validation_errors.append("terrain catalog must define exactly one empty-space terrain")
 	if contact_product_count != 1:
 		validation_errors.append("terrain catalog must define exactly one liquid-contact product")
+	for definition in _ordered_definitions:
+		var burn_behavior := definition.persistent_burn_behavior
+		if burn_behavior != null and burn_behavior.product != null and not has_definition(burn_behavior.product.stable_id):
+			validation_errors.append("persistent burn behavior references an unregistered product")
+	var occupied_pairs := {}
 	for reaction_variant in catalog.contact_reactions:
 		var reaction := reaction_variant as TerrainContactReaction
 		if reaction == null:
@@ -58,10 +63,18 @@ func try_configure(catalog: TerrainCatalog) -> bool:
 			continue
 		for error in reaction.validate():
 			validation_errors.append(error)
-		if reaction.reactant_a != null and not has_definition(reaction.reactant_a.stable_id):
-			validation_errors.append("contact reaction references an unregistered first reactant")
-		if reaction.reactant_b != null and not has_definition(reaction.reactant_b.stable_id):
-			validation_errors.append("contact reaction references an unregistered second reactant")
+		for reference in reaction.referenced_terrains():
+			if reference != null and not has_definition(reference.stable_id):
+				validation_errors.append("contact reaction references an unregistered terrain")
+		if reaction.reactant_a != null and reaction.reactant_b != null:
+			var pair_keys := [_pair_key(reaction.reactant_a.stable_id, reaction.reactant_b.stable_id)]
+			if reaction.is_bidirectional() and reaction.reactant_a.stable_id != reaction.reactant_b.stable_id:
+				pair_keys.append(_pair_key(reaction.reactant_b.stable_id, reaction.reactant_a.stable_id))
+			for pair_key in pair_keys:
+				if occupied_pairs.has(pair_key):
+					validation_errors.append("duplicate contact reaction pair %s" % pair_key)
+				else:
+					occupied_pairs[pair_key] = true
 		_contact_reactions.append(reaction)
 
 	return validation_errors.is_empty()
@@ -94,3 +107,7 @@ func contact_reactions() -> Array[TerrainContactReaction]:
 
 func count() -> int:
 	return _ordered_definitions.size()
+
+
+func _pair_key(a: int, b: int) -> String:
+	return "%d:%d" % [a, b]

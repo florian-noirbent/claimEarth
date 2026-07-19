@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="TerrainContactReaction" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="MutualReplacementReaction" load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://src/terrain/terrain_contact_reaction.gd" id="1_rule"]
+[ext_resource type="Script" path="res://src/terrain/mutual_replacement_reaction.gd" id="1_rule"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="2_water"]
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="3_lava"]
 [ext_resource type="Resource" path="res://config/terrain/air.tres" id="4_air"]
@@ -10,6 +10,7 @@
 script = ExtResource("1_rule")
 reactant_a = ExtResource("2_water")
 reactant_b = ExtResource("3_lava")
-product_a = ExtResource("4_air")
-product_b = ExtResource("5_stone")
-kind = 4
+replacement_a = ExtResource("4_air")
+replacement_b = ExtResource("5_stone")
+replacement_a_quantity = 64
+replacement_b_quantity = 127

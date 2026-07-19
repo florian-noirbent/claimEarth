@@ -38,6 +38,12 @@ func _run() -> void:
 		return
 	if not await _verify_sulfur_converts_water_one_to_one_before_depleting(registry):
 		return
+	if not await _verify_water_lava_reaction_uses_authored_quantities(registry):
+		return
+	if not await _verify_erosion_uses_authored_contact_limit(registry):
+		return
+	if not await _verify_gas_absorption_uses_authored_quantities(registry):
+		return
 	if not await _verify_sand_displaces_water_without_destroying_it(registry):
 		return
 	if not await _verify_trapped_secondary_creates_pairwise_pressure(registry):
@@ -478,6 +484,7 @@ func _verify_static_sulfur_burn_persists(registry: TerrainRegistry) -> bool:
 		backend.shutdown()
 		return false
 	var quantity_after_ignition := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var gas_after_ignition := _terrain_quantity_total(world, sulfur_dioxide)
 	var lava_change := world.set_committed_by_offset(lava_cell.x, lava_cell.y, air, WorldGrid.AIR_QUANTITY)
 	backend.queue_change(lava_change)
 	if not await _complete_tick(backend, 2, PASS_COUNT):
@@ -485,11 +492,13 @@ func _verify_static_sulfur_burn_persists(registry: TerrainRegistry) -> bool:
 		return false
 	backend.commit_if_ready()
 	var quantity_after_first_burn := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var gas_after_first_burn := _terrain_quantity_total(world, sulfur_dioxide)
 	if not await _complete_tick(backend, 3, PASS_COUNT):
 		backend.shutdown()
 		return false
 	backend.commit_if_ready()
 	var quantity_after_second_burn := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var gas_after_second_burn := _terrain_quantity_total(world, sulfur_dioxide)
 	var marker_retained := (
 		world.get_committed_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur
 		and world.get_committed_secondary_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur_dioxide
@@ -498,10 +507,14 @@ func _verify_static_sulfur_burn_persists(registry: TerrainRegistry) -> bool:
 	backend.shutdown()
 	await process_frame
 	return _expect(
-		quantity_after_first_burn < quantity_after_ignition
-		and quantity_after_second_burn < quantity_after_first_burn
+		quantity_after_ignition == 127
+		and quantity_after_first_burn == 126
+		and quantity_after_second_burn == 125
+		and gas_after_ignition == 3
+		and gas_after_first_burn == 74
+		and gas_after_second_burn == 145
 		and marker_retained,
-		"Static Sulfur must keep burning after Lava leaves (quantities %d -> %d -> %d, marker retained %s)." % [quantity_after_ignition, quantity_after_first_burn, quantity_after_second_burn, marker_retained]
+		"Static Sulfur must preserve the authored burn sequence (Sulfur %d -> %d -> %d, SO2 %d -> %d -> %d, marker retained %s)." % [quantity_after_ignition, quantity_after_first_burn, quantity_after_second_burn, gas_after_ignition, gas_after_first_burn, gas_after_second_burn, marker_retained]
 	)
 
 
@@ -536,6 +549,113 @@ func _verify_sulfur_converts_water_one_to_one_before_depleting(registry: Terrain
 		and acid_quantity == (127 - sulfur_quantity) * 10,
 		"Sulfur must convert Water to equal-quantity Acid while consuming one tenth of the Water quantity (sulfur %d, acid %d)." % [sulfur_quantity, acid_quantity]
 	)
+
+
+func _verify_water_lava_reaction_uses_authored_quantities(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var lava := _terrain_id(registry, "Lava")
+	var air := _terrain_id(registry, "Air")
+	var world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	world.set_committed_by_offset(1, 1, water, 127)
+	world.set_committed_by_offset(1, 2, lava, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var result := _terrain_quantity_total(world, air) == 64 and _terrain_quantity_total(world, stone) == 14 * 127 + 127
+	backend.shutdown()
+	await process_frame
+	return _expect(result, "Water/Lava contact must use the authored Air 64 and Stone 127 replacement quantities.")
+
+
+func _verify_erosion_uses_authored_contact_limit(registry: TerrainRegistry) -> bool:
+	if not await _verify_erosion_result(registry, 6, 4, 119, "authored erosion must preserve unreacted Acid across ticks"):
+		return false
+	var tuned_catalog := TerrainCatalog.new()
+	var source_catalog := load("res://config/terrain/catalog.tres") as TerrainCatalog
+	tuned_catalog.definitions = source_catalog.definitions.duplicate()
+	var tuned_reactions: Array = []
+	for reaction_variant in source_catalog.contact_reactions:
+		var reaction := reaction_variant as TerrainContactReaction
+		var copied_reaction := reaction.duplicate(true) as TerrainContactReaction
+		if copied_reaction.simulation_opcode() == TerrainContactReaction.OPCODE_EROSION:
+			copied_reaction.set("maximum_fluid_consumed_per_contact", 1)
+		tuned_reactions.append(copied_reaction)
+	tuned_catalog.contact_reactions = tuned_reactions
+	var tuned_registry := TerrainRegistry.new()
+	if not _expect(tuned_registry.try_configure(tuned_catalog), "The tuned erosion catalog must validate: %s" % [tuned_registry.validation_errors]):
+		return false
+	return await _verify_erosion_result(tuned_registry, 8, 2, 123, "the GPU must obey a lower authored erosion contact maximum")
+
+
+func _verify_erosion_result(
+	registry: TerrainRegistry,
+	expected_acid: int,
+	expected_water: int,
+	expected_sand: int,
+	message: String
+) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var acid := _terrain_id(registry, "Sulfuric Acid")
+	var sand := _terrain_id(registry, "Sand")
+	var water := _terrain_id(registry, "Water")
+	var world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	world.set_committed_by_offset(1, 1, acid, 10)
+	world.set_committed_by_offset(1, 2, sand, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	for tick in range(1, 3):
+		if not await _complete_tick(backend, tick, PASS_COUNT):
+			backend.shutdown()
+			return false
+		backend.commit_if_ready()
+	var actual_acid := _terrain_quantity_total(world, acid)
+	var actual_water := _terrain_quantity_total(world, water)
+	var actual_sand := _terrain_quantity_total(world, sand)
+	var result := (
+		actual_acid == expected_acid
+		and actual_water == expected_water
+		and actual_sand == expected_sand
+		and actual_acid + actual_water == 10
+	)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		result,
+		"%s (Acid %d, Water %d, Sand %d)." % [message, actual_acid, actual_water, actual_sand]
+	)
+
+
+func _verify_gas_absorption_uses_authored_quantities(registry: TerrainRegistry) -> bool:
+	if not await _verify_gas_absorption_result(registry, 2, 0):
+		return false
+	return await _verify_gas_absorption_result(registry, 63, 42)
+
+
+func _verify_gas_absorption_result(registry: TerrainRegistry, gas_quantity: int, expected_acid: int) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var gas := _terrain_id(registry, "Sulfur Dioxide")
+	var water := _terrain_id(registry, "Water")
+	var acid := _terrain_id(registry, "Sulfuric Acid")
+	var world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	world.set_committed_by_offset(1, 1, gas, gas_quantity)
+	world.set_committed_by_offset(1, 2, water, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var actual_acid := _terrain_quantity_total(world, acid)
+	backend.shutdown()
+	await process_frame
+	return _expect(actual_acid == expected_acid, "Gas quantity %d must produce authored Acid quantity %d, got %d." % [gas_quantity, expected_acid, actual_acid])
 
 
 func _verify_single_hex_fluid_quantity_conservation(registry: TerrainRegistry) -> bool:

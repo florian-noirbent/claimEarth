@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="TerrainContactReaction" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="GasAbsorptionReaction" load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://src/terrain/terrain_contact_reaction.gd" id="1_rule"]
+[ext_resource type="Script" path="res://src/terrain/gas_absorption_reaction.gd" id="1_rule"]
 [ext_resource type="Resource" path="res://config/terrain/sulfur_dioxide.tres" id="2_gas"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="3_water"]
 [ext_resource type="Resource" path="res://config/terrain/sulfuric_acid.tres" id="4_acid"]
@@ -9,7 +9,8 @@
 script = ExtResource("1_rule")
 reactant_a = ExtResource("2_gas")
 reactant_b = ExtResource("3_water")
-product_b = ExtResource("4_acid")
-kind = 3
-input_a_units = 189
-input_b_units = 127
+absorbed_product = ExtResource("4_acid")
+minimum_gas_quantity = 3
+maximum_gas_consumed_per_contact = 63
+gas_input_quantity = 189
+product_output_quantity = 127

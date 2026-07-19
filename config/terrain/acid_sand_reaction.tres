@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="TerrainContactReaction" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ErosionReaction" load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://src/terrain/terrain_contact_reaction.gd" id="1_rule"]
+[ext_resource type="Script" path="res://src/terrain/erosion_reaction.gd" id="1_rule"]
 [ext_resource type="Resource" path="res://config/terrain/sulfuric_acid.tres" id="2_acid"]
 [ext_resource type="Resource" path="res://config/terrain/sand.tres" id="3_sand"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="4_water"]
@@ -10,8 +10,8 @@
 script = ExtResource("1_rule")
 reactant_a = ExtResource("2_acid")
 reactant_b = ExtResource("3_sand")
-product_a = ExtResource("4_water")
-product_b = ExtResource("5_air")
-kind = 2
-input_a_units = 1
-input_b_units = 2
+spent_fluid_product = ExtResource("4_water")
+removed_solid_product = ExtResource("5_air")
+solid_quantity_per_fluid_quantity = 2
+minimum_fluid_consumed_per_contact = 1
+maximum_fluid_consumed_per_contact = 2

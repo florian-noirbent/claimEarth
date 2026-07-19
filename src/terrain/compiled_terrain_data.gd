@@ -17,11 +17,21 @@ var density_by_id := PackedByteArray()
 var maximum_quantity_by_id := PackedByteArray()
 var normal_quantity_by_id := PackedByteArray()
 var storage_capacity_by_id := PackedByteArray()
-var reaction_by_pair := PackedByteArray()
+var reaction_opcode_by_pair := PackedByteArray()
 var reaction_product_a_by_pair := PackedByteArray()
 var reaction_product_b_by_pair := PackedByteArray()
-var reaction_generated_by_pair := PackedByteArray()
+var reaction_parameter_0_by_pair := PackedByteArray()
+var reaction_parameter_1_by_pair := PackedByteArray()
+var reaction_parameter_2_by_pair := PackedByteArray()
+var reaction_parameter_3_by_pair := PackedByteArray()
 var persistent_burn_product_by_id := PackedByteArray()
+var persistent_burn_ignition_quantity_by_id := PackedByteArray()
+var persistent_burn_base_consumption_by_id := PackedByteArray()
+var persistent_burn_bonus_consumption_by_id := PackedByteArray()
+var persistent_burn_bonus_frequency_numerator_by_id := PackedByteArray()
+var persistent_burn_bonus_frequency_period_by_id := PackedByteArray()
+var persistent_burn_product_per_consumed_by_id := PackedByteArray()
+var persistent_burn_bonus_product_by_id := PackedByteArray()
 var moving_solid_fill_threshold_by_id := PackedByteArray()
 var can_fall_by_id := PackedByteArray()
 var can_side_down_by_id := PackedByteArray()
@@ -71,6 +81,16 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		result.maximum_quantity_by_id[stable_id] = definition.maximum_quantity
 		result.normal_quantity_by_id[stable_id] = definition.normal_quantity
 		result.storage_capacity_by_id[stable_id] = definition.storage_capacity
+		var burn_behavior := definition.persistent_burn_behavior
+		if burn_behavior != null and burn_behavior.product != null:
+			result.persistent_burn_product_by_id[stable_id] = burn_behavior.product.stable_id
+			result.persistent_burn_ignition_quantity_by_id[stable_id] = burn_behavior.ignition_token_quantity
+			result.persistent_burn_base_consumption_by_id[stable_id] = burn_behavior.base_consumption_per_tick
+			result.persistent_burn_bonus_consumption_by_id[stable_id] = burn_behavior.bonus_consumption
+			result.persistent_burn_bonus_frequency_numerator_by_id[stable_id] = burn_behavior.bonus_frequency_numerator
+			result.persistent_burn_bonus_frequency_period_by_id[stable_id] = burn_behavior.bonus_frequency_period
+			result.persistent_burn_product_per_consumed_by_id[stable_id] = burn_behavior.product_per_consumed_quantity
+			result.persistent_burn_bonus_product_by_id[stable_id] = burn_behavior.bonus_product_quantity
 		result.moving_solid_fill_threshold_by_id[stable_id] = definition.moving_solid_fill_threshold
 		var motion := definition.motion_behavior
 		result.can_fall_by_id[stable_id] = 1 if motion.can_fall else 0
@@ -116,9 +136,7 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 		if reaction.reactant_a == null or reaction.reactant_b == null:
 			continue
 		result._set_reaction(reaction.reactant_a.stable_id, reaction.reactant_b.stable_id, reaction)
-		if reaction.persistent_ignition and reaction.generated_product != null:
-			result.persistent_burn_product_by_id[reaction.reactant_a.stable_id] = reaction.generated_product.stable_id
-		if reaction.kind != TerrainContactReaction.Kind.ACID_SAND:
+		if reaction.is_bidirectional() and reaction.reactant_a.stable_id != reaction.reactant_b.stable_id:
 			result._set_reaction(reaction.reactant_b.stable_id, reaction.reactant_a.stable_id, reaction)
 	return result
 
@@ -222,12 +240,22 @@ func _resize_tables(size: int) -> void:
 	maximum_quantity_by_id.resize(size)
 	normal_quantity_by_id.resize(size)
 	storage_capacity_by_id.resize(size)
-	reaction_by_pair.resize(256)
+	reaction_opcode_by_pair.resize(256)
 	reaction_product_a_by_pair.resize(256)
 	reaction_product_b_by_pair.resize(256)
-	reaction_generated_by_pair.resize(256)
+	reaction_parameter_0_by_pair.resize(256)
+	reaction_parameter_1_by_pair.resize(256)
+	reaction_parameter_2_by_pair.resize(256)
+	reaction_parameter_3_by_pair.resize(256)
 	persistent_burn_product_by_id.resize(size)
 	persistent_burn_product_by_id.fill(NO_BURN_PRODUCT_ID)
+	persistent_burn_ignition_quantity_by_id.resize(size)
+	persistent_burn_base_consumption_by_id.resize(size)
+	persistent_burn_bonus_consumption_by_id.resize(size)
+	persistent_burn_bonus_frequency_numerator_by_id.resize(size)
+	persistent_burn_bonus_frequency_period_by_id.resize(size)
+	persistent_burn_product_per_consumed_by_id.resize(size)
+	persistent_burn_bonus_product_by_id.resize(size)
 	moving_solid_fill_threshold_by_id.resize(size)
 	can_fall_by_id.resize(size)
 	can_side_down_by_id.resize(size)
@@ -273,13 +301,13 @@ func _material_index(material: TerrainMaterial) -> int:
 
 func _set_reaction(a: int, b: int, reaction: TerrainContactReaction) -> void:
 	var index := (a & 15) * 16 + (b & 15)
-	reaction_by_pair[index] = reaction.kind + 1
-	reaction_product_a_by_pair[index] = reaction.product_a.stable_id if reaction.product_a != null else 0
-	reaction_product_b_by_pair[index] = reaction.product_b.stable_id if reaction.product_b != null else 0
-	## Alpha is reaction-kind specific: Sulfur/Water uses its authored water-per-
-	## sulfur ratio, while Sulfur/Lava uses the generated terrain ID.
-	reaction_generated_by_pair[index] = (
-		reaction.input_b_units
-		if reaction.kind == TerrainContactReaction.Kind.SULFUR_WATER
-		else reaction.generated_product.stable_id if reaction.generated_product != null else 0
-	)
+	var first_product := reaction.product_a()
+	var second_product := reaction.product_b()
+	var parameters := reaction.parameter_bytes()
+	reaction_opcode_by_pair[index] = reaction.simulation_opcode()
+	reaction_product_a_by_pair[index] = first_product.stable_id if first_product != null else 0
+	reaction_product_b_by_pair[index] = second_product.stable_id if second_product != null else 0
+	reaction_parameter_0_by_pair[index] = parameters[0]
+	reaction_parameter_1_by_pair[index] = parameters[1]
+	reaction_parameter_2_by_pair[index] = parameters[2]
+	reaction_parameter_3_by_pair[index] = parameters[3]

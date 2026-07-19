@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TerrainPersistentBurnBehavior" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_persistent_burn_behavior.gd" id="1_behavior"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_dioxide.tres" id="2_gas"]
+
+[resource]
+script = ExtResource("1_behavior")
+product = ExtResource("2_gas")
+ignition_token_quantity = 1
+base_consumption_per_tick = 1
+bonus_consumption = 1
+bonus_frequency_numerator = 27
+bonus_frequency_period = 100
+product_per_consumed_quantity = 70
+bonus_product_quantity = 10

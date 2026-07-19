@@ -244,14 +244,18 @@ mutation. The simulation supplies a virtual solid cell for pair neighbors below 
 map, preventing moving terrain from leaking through the bottom edge without
 requiring a generated solid row. A completed six-pass tick publishes only a
 revisioned snapshot commit; the backend does not copy or diff every cell on the CPU.
-Terrain contact reactions are authored through `TerrainContactReaction` resources in
-the terrain catalog and compiled into a packed pair table. Dense gases author their
-normal pressure and packed capacity on their terrain definition, so selection does
-not rely on terrain-name branches.
-Persistent ignition compiles a per-terrain burn-product ID into the rule texture;
-`255` means no burn product. Static burning Sulfur retains one unit of its matching
-secondary Sulfur Dioxide as the ignition token while all non-burning secondary
-materials, including Air ID `0`, may drain completely.
+Terrain contact reactions are typed `TerrainContactReaction` strategies in the
+terrain catalog. Each strategy compiles its opcode, products, direction policy, and
+four meaningful tuning bytes without terrain-name or ID branches. The GPU reaction
+texture contains a 16x16 header plane and a 16x16 parameter plane; reaction shader
+branches read only parameters defined by their opcode. Dense gases continue to
+author normal pressure and packed capacity on their terrain definition.
+
+Persistent burning is an optional terrain behavior compiled into additional rule
+texture rows. It authors the burn-product ID, ignition-token quantity, deterministic
+per-tick consumption schedule, and product yield; `255` means no burn product.
+Static burning Sulfur retains its configured matching secondary Sulfur Dioxide token
+while all non-burning secondary materials, including Air ID `0`, may drain completely.
 
 Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
 affected cells are already known.
