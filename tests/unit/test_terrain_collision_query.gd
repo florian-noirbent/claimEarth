@@ -11,6 +11,30 @@ func test_circle_does_not_overlap_air() -> void:
 	assert_false(query.circle_overlaps_solid(HexMetrics.center_for_offset(2, 2, 16.0), 14.0))
 
 
+func test_out_of_bounds_cells_are_solid_at_every_map_edge() -> void:
+	var query = _query_for_world(WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air")))
+
+	assert_true(query.is_solid_cell(-1, 2))
+	assert_true(query.is_solid_cell(5, 2))
+	assert_true(query.is_solid_cell(2, -1))
+	assert_true(query.is_solid_cell(2, 5))
+	assert_true(query.is_solid_cell(-1, -1))
+
+
+func test_circle_and_polygon_collide_with_virtual_map_edge_cells() -> void:
+	var query = _query_for_world(WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air")))
+	var outside_center := HexMetrics.center_for_offset(-1, 2, 16.0)
+	var chest_polygon := PackedVector2Array([
+		outside_center + Vector2(-12.0, -8.0),
+		outside_center + Vector2(12.0, -8.0),
+		outside_center + Vector2(12.0, 8.0),
+		outside_center + Vector2(-12.0, 8.0),
+	])
+
+	assert_true(query.circle_overlaps_solid(outside_center, 8.0))
+	assert_true(query.convex_polygon_overlaps_solid(chest_polygon))
+
+
 func test_circle_overlaps_solid_static_terrain() -> void:
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
 	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Stone"))

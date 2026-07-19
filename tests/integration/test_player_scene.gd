@@ -182,20 +182,6 @@ func test_player_fluid_drag_averages_partial_fill_and_mixed_body_samples() -> vo
 	assert_almost_eq(player._average_body_fluid_viscosity(), expected, 0.001)
 
 
-func test_player_emits_bounds_exit_when_falling_past_limit() -> void:
-	var scene := load("res://scenes/player/player.tscn") as PackedScene
-	var player := scene.instantiate() as PlayerController
-	player.world_bottom_y = 10.0
-	add_child_autofree(player)
-	await wait_process_frames(1)
-
-	watch_signals(player)
-	player.global_position.y = 20.0
-	await wait_physics_frames(1)
-
-	assert_signal_emitted(player, "bounds_exited")
-
-
 func test_player_hook_attaches_adjusts_rope_and_releases_with_input() -> void:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController

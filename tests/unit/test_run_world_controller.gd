@@ -52,20 +52,17 @@ func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	var presenter := WorldPresenter.new()
 	presenter.presentation_config = load("res://config/presentation/default_world_presentation.tres").duplicate(true) as WorldPresentationConfig
 	var markers := Node2D.new()
-	var boundaries := WorldSideBoundaries.new()
 	add_child_autofree(controller)
 	add_child_autofree(background)
 	add_child_autofree(presenter)
 	add_child_autofree(markers)
-	add_child_autofree(boundaries)
 
 	controller.configure(
 		load("res://config/generation/default_profile.tres"),
 		load("res://scenes/player/player.tscn"),
 		background,
 		presenter,
-		markers,
-		boundaries
+		markers
 	)
 
 	assert_not_null(controller.terrain_registry())

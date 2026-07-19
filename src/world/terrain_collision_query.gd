@@ -28,8 +28,10 @@ func set_ignored_solid_ids(ids: PackedInt32Array) -> void:
 
 
 func is_solid_cell(col: int, row: int) -> bool:
-	if not is_configured() or not world.dimensions.is_in_bounds_offset(col, row):
+	if not is_configured():
 		return false
+	if not world.dimensions.is_in_bounds_offset(col, row):
+		return true
 	if _ignored_solid_ids.has(world.get_committed_by_offset(col, row)):
 		return false
 	return metadata.is_solid(
@@ -81,10 +83,10 @@ func _candidate_cells_for_bounds(bounds: Rect2) -> Array[Vector2i]:
 	var center := HexMetrics.offset_for_world(bounds.get_center(), hex_radius)
 	var half_cols := ceili(bounds.size.x * 0.5 / maxf(hex_radius * 1.5, 1.0)) + 2
 	var half_rows := ceili(bounds.size.y * 0.5 / maxf(hex_radius * sqrt(3.0), 1.0)) + 2
-	var min_col := maxi(0, center.x - half_cols)
-	var max_col := mini(world.dimensions.width - 1, center.x + half_cols)
-	var min_row := maxi(0, center.y - half_rows)
-	var max_row := mini(world.dimensions.depth - 1, center.y + half_rows)
+	var min_col := center.x - half_cols
+	var max_col := center.x + half_cols
+	var min_row := center.y - half_rows
+	var max_row := center.y + half_rows
 	for row in range(min_row, max_row + 1):
 		for col in range(min_col, max_col + 1):
 			cells.append(Vector2i(col, row))
@@ -184,10 +186,10 @@ func _candidate_cells(position: Vector2, radius: float) -> Array[Vector2i]:
 		return cells
 	var center := HexMetrics.offset_for_world(position, hex_radius)
 	var search_radius := ceili((radius + hex_radius) / maxf(hex_radius * 0.75, 1.0)) + 2
-	var min_col := maxi(0, center.x - search_radius)
-	var max_col := mini(world.dimensions.width - 1, center.x + search_radius)
-	var min_row := maxi(0, center.y - search_radius)
-	var max_row := mini(world.dimensions.depth - 1, center.y + search_radius)
+	var min_col := center.x - search_radius
+	var max_col := center.x + search_radius
+	var min_row := center.y - search_radius
+	var max_row := center.y + search_radius
 	for row in range(min_row, max_row + 1):
 		for col in range(min_col, max_col + 1):
 			cells.append(Vector2i(col, row))
