@@ -22,7 +22,6 @@ var _player_scene: PackedScene
 var _world_background: WorldBackground
 var _world_presenter: WorldPresenter
 var _depth_markers: Node2D
-var _side_boundaries: WorldSideBoundaries
 var _terrain_registry: TerrainRegistry = TerrainRegistry.new()
 var _item_registry: ItemRegistry = ItemRegistry.new()
 var _generation_task: WorldGenerationTask = WorldGenerationTask.new()
@@ -36,13 +35,12 @@ var _loading_generation_units := 1
 var _loading_settle_ticks := 0
 
 
-func configure(profile: GenerationProfile, player_scene: PackedScene, world_background: WorldBackground, world_presenter: WorldPresenter, depth_markers: Node2D, side_boundaries: WorldSideBoundaries) -> void:
+func configure(profile: GenerationProfile, player_scene: PackedScene, world_background: WorldBackground, world_presenter: WorldPresenter, depth_markers: Node2D) -> void:
 	_profile = profile
 	_player_scene = player_scene
 	_world_background = world_background
 	_world_presenter = world_presenter
 	_depth_markers = depth_markers
-	_side_boundaries = side_boundaries
 	_generation_task.progress_changed.connect(_on_generation_progressed)
 	_configure_registries()
 
@@ -188,7 +186,6 @@ func _ensure_player() -> void:
 	_player.hazard_status_changed.connect(player_hazard_status_changed.emit)
 	var spawn_col := _generation_result.spawn_rect.position.x + int(_generation_result.spawn_rect.size.x / 2)
 	var spawn_row := _generation_result.spawn_rect.position.y
-	_player.world_bottom_y = HexMetrics.center_for_offset(0, _profile.depth + 6, _world_presenter.hex_radius).y
 	_player.set_spawn_position(HexMetrics.center_for_offset(spawn_col, spawn_row, _world_presenter.hex_radius))
 	_grapple_anchor_query.configure(
 		_generation_result.world,
@@ -220,14 +217,13 @@ func _configure_world_bounds() -> void:
 	var right_edge := HexMetrics.center_for_offset(_profile.width - 1, 0, _world_presenter.hex_radius).x + _world_presenter.hex_radius
 	var map_width := right_edge - left_edge
 	var horizontal_zoom := maxf(0.1, get_viewport().get_visible_rect().size.x) / maxf(1.0, map_width - 16.0)
-	var top_edge := HexMetrics.center_for_offset(0, 0, _world_presenter.hex_radius).y - _world_presenter.hex_radius
-	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y + _world_presenter.hex_radius
+	var bottom_edge := HexMetrics.center_for_offset(0, _profile.depth - 1, _world_presenter.hex_radius).y \
+		+ _world_presenter.hex_radius * sqrt(3.0) * 0.5
 	_world_background.configure_bounds(left_edge, right_edge, 0.0, bottom_edge)
-	_player.camera.configure_bounds(0.0, _player.world_bottom_y)
+	_player.camera.configure_bounds(0.0, INF)
+	_player.camera.configure_world_bottom_edge(bottom_edge)
 	_player.camera.configure_horizontal_lock((left_edge + right_edge) * 0.5, Vector2(horizontal_zoom, horizontal_zoom))
 	_player.camera.configure_upward_recovery_margin(_world_presenter.hex_radius)
-	_player.configure_horizontal_bounds(left_edge, right_edge)
-	_side_boundaries.configure(left_edge, right_edge, top_edge, bottom_edge)
 	_depth_markers.configure_bounds(left_edge, right_edge, _world_presenter.hex_radius)
 
 

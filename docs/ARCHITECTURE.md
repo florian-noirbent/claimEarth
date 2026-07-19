@@ -48,7 +48,7 @@ disposable session:
 | --- | --- | --- |
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
-| `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, bounds, presenter |
+| `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, camera bounds, presenter |
 | `RunSession` | `RunItemController` | Inventory, selection, reward containers, projectiles, explosions, flag flight |
 | `RunSession` | `RunPerkController` | Unique perk pool, selected perks, and compiled immutable modifier snapshot |
 
@@ -168,7 +168,7 @@ direction order, and performance benchmark contract.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
-then tests circular and convex-polygon bodies against nearby solid hex polygons from
+treats every out-of-bounds grid cell as a virtual solid hex, then tests circular and convex-polygon bodies against nearby solid hex polygons from
 `HexMetrics`. Its shape-aware Air queries accept only destinations where the complete
 body is clear. They search by canonical hex distance, then break equal-ring ties by
 world distance, upward position, and left position.
@@ -323,9 +323,8 @@ generated chest visuals without interaction, but does not spawn the player,
 projectiles, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
-spawn air, the default bottom lava band, and distribution tests. Horizontal player
-bounds are invisible runtime constraints; generation does not create stone side
-walls.
+spawn air, the default bottom lava band, and distribution tests. Grid-edge collision
+uses virtual solid cells; generation does not create stone boundary walls.
 
 ## Player, Camera, And Items
 
@@ -376,7 +375,7 @@ to map width, and uses `DescendingCameraModel` for downward-only vertical moveme
 Items are registered through `config/items/catalog.tres`. `ItemDefinition` points to
 an `ItemActionFactory`; factories create polymorphic `ItemAction` implementations.
 `RunItemController` treats all selected items through that contract. `WorldRigidBody2D`
-owns terrain sampling, gravity, collision response, and blast-pulse reception for dynamic item bodies.
+owns terrain sampling, gravity, shared grid-edge collision response, and blast-pulse reception for dynamic item bodies.
 `ItemProjectile` composes that body with item resolution, bounce, fuse, and temporary flare light;
 autonomous objects such as the excavator use the same body directly. The renderer reserves high-frequency light slots for the player and the
 most recently thrown flare; older flares remain visible without displacing the player.

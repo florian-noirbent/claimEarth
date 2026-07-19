@@ -99,8 +99,13 @@ func test_bomb_projectile_bounces_on_solid_terrain_until_fuse_expires() -> void:
 	assert_true(projectile.velocity.y < 0.0)
 
 
-func test_bomb_projectile_bounces_from_a_configured_map_side() -> void:
+func test_bomb_projectile_bounces_from_the_virtual_map_side() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
 	var projectile := ItemProjectile.new()
+	projectile.world = world
+	projectile.terrain_registry = registry
+	projectile.hex_radius = 16.0
 	projectile.configure({
 		"fuse_seconds": 5.0,
 		"bounce_on_impact": true,
@@ -109,13 +114,36 @@ func test_bomb_projectile_bounces_from_a_configured_map_side() -> void:
 		"velocity": Vector2(-120.0, 0.0),
 		"polygon": PackedVector2Array([-4, -4, 4, -4, 4, 4, -4, 4]),
 	})
-	projectile.configure_horizontal_bounds(0.0, 100.0)
-	projectile.global_position = Vector2(5.0, 40.0)
+	projectile.global_position = HexMetrics.center_for_offset(0, 2, projectile.hex_radius)
 
-	projectile.advance_body(0.1)
+	projectile.advance_body(0.2)
 
-	assert_almost_eq(projectile.global_position.x, 0.0, 0.001)
+	assert_eq(projectile.global_position, HexMetrics.center_for_offset(0, 2, projectile.hex_radius))
 	assert_eq(projectile.velocity.x, 60.0)
+
+
+func test_flag_resolves_when_falling_outside_the_bottom_map_edge() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	var projectile := ItemProjectile.new()
+	projectile.world = world
+	projectile.terrain_registry = registry
+	projectile.hex_radius = 16.0
+	projectile.global_position = HexMetrics.center_for_offset(2, 4, projectile.hex_radius)
+	projectile.configure({
+		"fuse_seconds": 5.0,
+		"gravity": 0.0,
+		"velocity": Vector2(0.0, 240.0),
+	})
+	var resolved_kinds: Array[StringName] = []
+	projectile.resolved.connect(func(_projectile: ItemProjectile, _impact_position: Vector2, resolution_kind: StringName) -> void:
+		resolved_kinds.append(resolution_kind)
+	)
+
+	projectile._physics_process(0.2)
+
+	assert_eq(resolved_kinds, [&"impact"])
+	assert_true(projectile.is_queued_for_deletion())
 
 
 func test_buried_bouncing_projectile_resolves_when_fuse_expires() -> void:

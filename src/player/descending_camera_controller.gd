@@ -14,6 +14,7 @@ extends Camera2D
 
 var _model := DescendingCameraModel.new()
 var _shake_strength := 0.0
+var _world_bottom_edge := INF
 
 
 func _ready() -> void:
@@ -33,6 +34,7 @@ func _process(delta: float) -> void:
 		viewport_size.x / maxf(absf(zoom.x), 0.001),
 		viewport_size.y / maxf(absf(zoom.y), 0.001)
 	)
+	_apply_world_bottom_edge(visible_world_size.y)
 	var target_position := _model.update(target.global_position, visible_world_size, delta)
 	if _shake_strength > 0.001:
 		_shake_strength = maxf(0.0, _shake_strength - delta * shake_decay)
@@ -48,6 +50,16 @@ func configure_bounds(min_y_value: float, max_y_value: float) -> void:
 	max_y = max_y_value
 	_model.min_y = min_y_value
 	_model.max_y = max_y_value
+
+
+func configure_world_bottom_edge(bottom_edge: float) -> void:
+	_world_bottom_edge = bottom_edge
+
+
+func _apply_world_bottom_edge(visible_world_height: float) -> void:
+	if is_inf(_world_bottom_edge):
+		return
+	_model.max_y = _world_bottom_edge - maxf(visible_world_height, 0.0) * 0.5
 
 
 func configure_horizontal_lock(fixed_x_value: float, zoom_value: Vector2) -> void:

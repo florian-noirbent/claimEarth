@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://crqfd0y6v3xmq" path="res://src/presentation/world_presenter.gd" id="4_presenter"]
 [ext_resource type="Script" uid="uid://yy5ptlbwykbr" path="res://src/presentation/depth_marker_presenter.gd" id="5_markers"]
 [ext_resource type="Script" uid="uid://utv1nw4blrvy" path="res://src/presentation/gameplay_feedback.gd" id="6_feedback"]
-[ext_resource type="Script" uid="uid://cfg7amhyovnbe" path="res://src/presentation/world_side_boundaries.gd" id="7_boundaries"]
 [ext_resource type="Shader" uid="uid://dh5emhhc7vogy" path="res://src/presentation/world_background.gdshader" id="7_u8yu8"]
 [ext_resource type="Script" uid="uid://c8m7dvhyp5opv" path="res://src/presentation/world_background.gd" id="8_background"]
 [ext_resource type="Resource" path="res://config/terrain/catalog.tres" id="11_terrain_catalog"]
@@ -72,7 +71,3 @@ script = ExtResource("5_markers")
 [node name="GameplayFeedback" type="Node2D" parent="." unique_id=1160356636]
 unique_name_in_owner = true
 script = ExtResource("6_feedback")
-
-[node name="WorldSideBoundaries" type="StaticBody2D" parent="." unique_id=1129353994]
-unique_name_in_owner = true
-script = ExtResource("7_boundaries")

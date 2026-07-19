@@ -25,7 +25,6 @@ signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPuls
 @onready var world_presenter: WorldPresenter = %WorldPresenter
 @onready var depth_markers: DepthMarkerPresenter = %DepthMarkers
 @onready var gameplay_feedback: GameplayFeedback = %GameplayFeedback
-@onready var world_side_boundaries: WorldSideBoundaries = %WorldSideBoundaries
 
 var _configured := false
 
@@ -34,7 +33,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	if _configured:
 		return
 	_configured = true
-	world_controller.configure(profile, player_scene, world_background, world_presenter, depth_markers, world_side_boundaries)
+	world_controller.configure(profile, player_scene, world_background, world_presenter, depth_markers)
 	perk_controller.configure()
 	item_controller.configure_catalog(world_controller.item_registry(), world_presenter.hex_radius)
 	item_controller.configure_perk_controller(perk_controller)

@@ -3,7 +3,6 @@ class_name PlayerController
 extends CharacterBody2D
 
 
-signal bounds_exited
 signal death_requested(cause: StringName)
 signal hazard_status_changed(statuses: Array)
 
@@ -21,7 +20,6 @@ const FLOOR_CONTACT_NORMAL_Y := -0.35
 @export var movement_config: PlayerMovementConfig
 @export var grapple_config: GrappleConfig
 @export var suffocation_hazard_behavior: TerrainHazardBehavior
-@export var world_bottom_y := 100000.0
 @export var step_up_height := 14.0
 @export var support_probe_distance := 8.0
 @export var horizontal_collision_radius := 14.0
@@ -44,9 +42,6 @@ var _terrain_unstuck_solver = TerrainBodyUnstuckSolverScript.new()
 var _hex_radius := 16.0
 var _physics_frame_count := 0
 var _pending_anchor_query: GrappleAnchorQuery
-var _horizontal_bounds_enabled := false
-var _horizontal_min_x := 0.0
-var _horizontal_max_x := 0.0
 var _grounded := false
 var _input_controller: GameplayInputController
 var _owns_input_controller := false
@@ -171,7 +166,6 @@ func _physics_process(delta: float) -> void:
 	global_position = post_grapple_result.position
 	velocity = post_grapple_result.velocity
 	_grounded = _grounded or post_grapple_result.grounded
-	_enforce_horizontal_bounds()
 	var unstuck_result := _apply_terrain_unstuck(delta)
 	_handle_physics_impacts(motion_result, post_grapple_result, unstuck_result)
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
@@ -191,9 +185,6 @@ func _physics_process(delta: float) -> void:
 	)
 	_sample_environment(delta)
 	_update_sand_presentation()
-	if global_position.y > world_bottom_y:
-		death_requested.emit(DeathCauseScript.BOUNDS)
-		bounds_exited.emit()
 
 
 func set_spawn_position(world_position: Vector2) -> void:
@@ -225,13 +216,6 @@ func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, 
 	_apply_runtime_collision_policy()
 	_environment_status.reset()
 	hazard_status_changed.emit([])
-
-
-func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
-	_horizontal_min_x = _snap_min_bound(left_edge + horizontal_collision_radius)
-	_horizontal_max_x = _snap_max_bound(right_edge - horizontal_collision_radius)
-	_horizontal_bounds_enabled = _horizontal_min_x <= _horizontal_max_x
-	_enforce_horizontal_bounds()
 
 
 func is_grapple_attached() -> bool:
@@ -414,19 +398,6 @@ func _sample_environment(delta: float) -> void:
 		death_requested.emit(cause)
 
 
-func _enforce_horizontal_bounds() -> void:
-	if not _horizontal_bounds_enabled:
-		return
-	if global_position.x >= _horizontal_min_x and global_position.x <= _horizontal_max_x:
-		return
-	var clamped_x := clampf(global_position.x, _horizontal_min_x, _horizontal_max_x)
-	global_position.x = clamped_x
-	if global_position.x <= _horizontal_min_x and velocity.x < 0.0:
-		velocity.x = 0.0
-	elif global_position.x >= _horizontal_max_x and velocity.x > 0.0:
-		velocity.x = 0.0
-
-
 func _apply_terrain_unstuck(delta: float) -> TerrainBodyUnstuckResult:
 	var result: TerrainBodyUnstuckResult = _terrain_unstuck_solver.resolve_circle(
 		global_position,
@@ -440,14 +411,6 @@ func _apply_terrain_unstuck(delta: float) -> TerrainBodyUnstuckResult:
 	global_position = result.position
 	velocity = result.velocity
 	return result
-
-
-func _snap_min_bound(value: float) -> float:
-	return ceilf(value * 1000.0) / 1000.0
-
-
-func _snap_max_bound(value: float) -> float:
-	return floorf(value * 1000.0) / 1000.0
 
 
 func _occupied_sample_positions() -> Array[Vector2]:

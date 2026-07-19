@@ -38,8 +38,6 @@ var _explosives: Array[WorldExplosive2D] = []
 var _dynamic_item_order: Array[ItemDefinition] = []
 var _terrain_pulses: Array[DirectionalTerrainPulse] = []
 var _successful_use_counts := {}
-var _world_left_edge := 0.0
-var _world_right_edge := 0.0
 
 
 func configure_catalog(item_registry: ItemRegistry, hex_radius: float) -> void:
@@ -77,8 +75,6 @@ func configure_run(
 	_terrain_registry = terrain_registry
 	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
-	_world_left_edge = HexMetrics.center_for_offset(0, 0, hex_radius).x - hex_radius
-	_world_right_edge = HexMetrics.center_for_offset(world.dimensions.width - 1, 0, hex_radius).x + hex_radius
 	_active_flag_projectile = null
 	_rewards.reset()
 	_terrain_pulses.clear()
@@ -271,7 +267,6 @@ func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector
 	projectile.hex_radius = _hex_radius
 	projectile.global_position = origin
 	projectile.configure(projectile_data)
-	projectile.configure_horizontal_bounds(_world_left_edge, _world_right_edge)
 	_register_explosive(projectile.explosive)
 	projectile.set_physics_process(_is_active)
 	projectile.resolved.connect(_on_projectile_resolved)

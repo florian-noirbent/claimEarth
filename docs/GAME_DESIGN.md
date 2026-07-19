@@ -104,8 +104,8 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 - The default map is 100 columns by 512 rows of flat-top hexes.
 - The bottom 6% depth band is filled with lava. Its upper 1% softly blends into the
-  generated cave while the bottom edge remains completely filled. Horizontal escape
-  is prevented by invisible player bounds.
+  generated cave while the bottom edge remains completely filled. Every edge outside
+  the generated hex grid is solid to players and terrain-aware objects.
 - The camera is horizontally locked to the map and follows downward. If upward
   movement carries the player above the screen, it slowly recovers upward until the
   player has two hexagons of visible space above them.
@@ -197,8 +197,8 @@ physics, projectiles, and input remain frame-responsive.
   player leaves the top of the screen and moves slowly until two hexagons are visible
   above the player.
 
-The player dies when a hazard meter fills, from a high-speed terrain impact, from a
-bomb's lethal radius, or by falling below the world. A full lava hex fills in 0.2
+The player dies when a hazard meter fills, from a high-speed terrain impact, or from a
+bomb's lethal radius. A full lava hex fills in 0.2
 seconds; lava from its 10% activation threshold ramps linearly from 10% to full
 meter-fill speed as terrain fill rises. Suffocation fills while the head has no
 breathable Air: a partially filled head hex samples the hex above it, while a full

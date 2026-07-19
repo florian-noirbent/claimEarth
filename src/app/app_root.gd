@@ -33,10 +33,6 @@ var depth_markers: DepthMarkerPresenter:
 var gameplay_feedback: GameplayFeedback:
 	get:
 		return _session.gameplay_feedback if is_instance_valid(_session) else null
-var world_side_boundaries: WorldSideBoundaries:
-	get:
-		return _session.world_side_boundaries if is_instance_valid(_session) else null
-
 var _run_coordinator := RunCoordinator.new()
 var _session: RunSession
 var _session_change_serial := 0
