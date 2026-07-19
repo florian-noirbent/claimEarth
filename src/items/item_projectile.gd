@@ -40,7 +40,7 @@ func configure(config: Dictionary) -> void:
 func _physics_process(delta: float) -> void:
 	remaining_fuse -= delta
 	var body_result := advance_body(delta)
-	if body_result == &"lava":
+	if not body_result.is_empty() and body_result != &"impact" and body_result != &"grounded":
 		_resolve_at(global_position, body_result)
 		queue_free()
 		return

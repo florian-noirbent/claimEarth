@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_pocku")
 ignores_water = true
-destroyed_by_lava = true
+destructive_terrain_tags = PackedStringArray("lava", "acid")
 throw_distance_hint = 80.0
 gravity = 860.0
 projectile_color = Color(0.97, 0.83, 0.25, 1)

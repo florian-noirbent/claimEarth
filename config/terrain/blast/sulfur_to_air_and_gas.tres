@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TransformBlastReaction" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/transform_blast_reaction.gd" id="1_reaction"]
+[ext_resource type="Resource" path="res://config/terrain/emission/sulfur_blast_emission.tres" id="2_emission"]
+
+[resource]
+script = ExtResource("1_reaction")
+target_terrain_id = 0
+destruction_emission = ExtResource("2_emission")

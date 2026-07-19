@@ -112,7 +112,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 - Initial terrain is deterministic for a given seed.
 - Before the player and generated containers enter the run, loading advances the generated terrain through 50 complete simulation ticks (300 GPU passes). The loading status reports settlement progress, and gameplay begins only after the final committed tick.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
-  layers base cave noise, typed hazard pocket instances for sand/water/lava, a
+  layers base cave noise, typed hazard pocket instances for sand/water/lava/sulfur, a
   noisy surface spawn shaft, item chest chambers, and a bottom lava fill.
 - The player starts at surface depth 0 in a roughly six-cell-wide zig-zag shaft
   with noisy edges and occasional broken segments that winds down to the configured
@@ -130,9 +130,9 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Sand | Solid at half fill or more | Falls and creeps side-down; denser Sand displaces lighter moving terrain into a conserved hidden component that escapes through later pair passes; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
-| Sulfur | Solid | Static yellow mineral. Water slowly converts it and nearby water into sulfuric acid; Lava permanently ignites it, consuming it into sulfur dioxide | None |
-| Sulfuric Acid | Passable | Dense yellow-green liquid that sinks beneath water and consumes sand below it into water | None |
-| Sulfur Dioxide | Passable | Heavy yellow-green gas. One bar is 63 quantity, with four bars maximum; it settles through air and only overpressure rises | None |
+| Sulfur | Solid | Static yellow mineral. Water slowly converts it and nearby water into sulfuric acid; Lava permanently ignites it, consuming it into sulfur dioxide | Becomes air and emits sulfur dioxide |
+| Sulfuric Acid | Passable | Dense yellow-green liquid that sinks beneath water and consumes sand below it into water; contact fills a lethal Acid meter | None |
+| Sulfur Dioxide | Passable | Heavy yellow-green gas. One bar is 63 quantity, with four bars maximum; it settles through air and only overpressure rises. Contact fills a Poison meter and blocks breathing | None |
 
 Terrain cells store a visible primary material and may temporarily retain one
 invisible, less-dense secondary material during displacement. Each component owns
@@ -202,14 +202,17 @@ bomb's lethal radius, or by falling below the world. A full lava hex fills in 0.
 seconds; lava from its 10% activation threshold ramps linearly from 10% to full
 meter-fill speed as terrain fill rises. Suffocation fills while the head has no
 breathable Air: a partially filled head hex samples the hex above it, while a full
-non-Air hex blocks breathing. Hazard meters recover over time after escape, with
-lava recovering in one second and both impact and suffocation recovering from full
-in three. Death never records current depth.
+non-Air hex blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
+fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
+over their respective fill durations; lava recovers in one second and both impact
+and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
+prevents Poison, and adds two seconds to Acid survival; Glass Cannon is immune to
+all terrain hazards and suffocation. Death never records current depth.
 
 ## Items
 
 Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Pickaxes, shovels,
-flares, Water Bottles, and Excavators start at zero and are found in chests. Item
+flares, Water Bottles, Acid Bottles, and Excavators start at zero and are found in chests. Item
 tuning lives under `config/items/`.
 
 - Pickaxe: changes an aimed triangular three-hex wedge of Stone to Dirt or Dirt to
@@ -222,6 +225,8 @@ tuning lives under `config/items/`.
 - Water Bottle: uses the small bomb's ballistic throw, then breaks on a solid impact
   to fill the nearest three Air hexes with Water; it breaks without depositing when
   it hits lava.
+- Acid Bottle: follows the same bottle behavior but fills the nearest three Air
+  hexes with Sulfuric Acid.
 
 ### Item Chests
 
@@ -243,7 +248,8 @@ tuning lives under `config/items/`.
 - Touching a chest pauses player, projectile, hazard, and terrain activity until a
   reward is chosen. The picker cannot be dismissed without choosing.
 - Chests offer two unique rewards drawn from 5 small bombs, 2 large bombs, 120
-  shovel charge, 50 pickaxe charge, 10 flares, 3 Water Bottles, and 1 Excavator.
+  shovel charge, 50 pickaxe charge, 10 flares, 3 Water Bottles, 3 Acid Bottles,
+  and 1 Excavator.
 - Claiming a choice adds its quantity without changing the selected inventory item,
   then removes that chest for the rest of the run.
 - A bomb's lethal core arms a chest for a 0.30-second delayed detonation. An armed
@@ -263,6 +269,12 @@ tuning lives under `config/items/`.
 - Explosions apply a distance-falloff impulse across their blast radius to airborne
   projectile bodies, including bombs and the flag.
 - The player dies when inside the lethal radius.
+- A destroyed full Sulfur hex releases 150 SO₂ bars. Small Boom adds a 45-bar
+  cloud to Small Bombs; Large Boom adds two. Sulfur converts up to ten times its
+  own quantity of Water into equal-quantity Acid before depleting. Gas first fills nearby
+  SO₂ and Air cells, then uses compatible secondary components if needed.
+- Existing SO₂ inside a vaporize core is displaced to the first ring outside that
+  core; its quantity is conserved rather than destroyed.
 
 ### Excavator
 
@@ -273,7 +285,7 @@ tuning lives under `config/items/`.
 ### Flag
 
 - The flag is thrown using projectile physics and does not bounce.
-- It ignores water, is destroyed by lava at 10% fill or more, and sticks on its first valid solid
+- It ignores water, is destroyed by lava or Sulfuric Acid at 10% fill or more, and sticks on its first valid solid
   landing.
 - Throwing it locks further item throws until it resolves.
 - Landing depth, not current player depth, is the score.

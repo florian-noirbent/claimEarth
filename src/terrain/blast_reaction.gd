@@ -6,7 +6,11 @@ extends Resource
 const BlastEffectScript = preload("res://src/terrain/blast_effect.gd")
 
 @export var reaction_name := ""
+## Optional product released only when this terrain is actually destroyed.
+@export var destruction_emission: TerrainEmissionDefinition
 
 
 func resolve():
-	return BlastEffectScript.new()
+	var effect := BlastEffectScript.new()
+	effect.destruction_emission = destruction_emission
+	return effect

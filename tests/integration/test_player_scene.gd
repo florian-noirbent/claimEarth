@@ -513,6 +513,57 @@ func test_suffocation_starts_when_the_head_hex_is_full_non_air() -> void:
 	assert_not_null(player._suffocation_effect_at_head())
 
 
+func test_sulfur_resistance_makes_sulfur_dioxide_breathable_and_non_poisonous() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Sulfur Dioxide"))
+	player.configure_environment(world, registry, 16.0)
+	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+
+	assert_not_null(player._hazard_effect_at(player.global_position))
+	assert_false(player._head_has_breathable_air())
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/sulfur_resistance.tres"]))
+	assert_null(player._hazard_effect_at(player.global_position))
+	assert_true(player._head_has_breathable_air())
+
+
+func test_sulfur_resistance_extends_acid_hazard_duration() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Sulfuric Acid"))
+	player.configure_environment(world, registry, 16.0)
+	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+
+	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 1.5)
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/sulfur_resistance.tres"]))
+	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 3.5)
+
+
+func test_glass_is_immune_to_acid_and_poison() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	add_child_autofree(player)
+	await wait_process_frames(1)
+
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Sulfuric Acid"))
+	player.configure_environment(world, registry, 16.0)
+	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/glass_cannon.tres"]))
+	assert_null(player._hazard_effect_at(player.global_position))
+
+	world.set_committed_by_offset(3, 3, FixtureLoader.terrain_id("Sulfur Dioxide"), 63)
+	assert_null(player._hazard_effect_at(player.global_position))
+
+
 func _player_embedded_in_sand(fill: int, initial_velocity: Vector2, surrounded := true) -> PlayerController:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController

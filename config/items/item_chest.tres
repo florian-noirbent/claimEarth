@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://config/items/flare.tres" id="9_flare"]
 [ext_resource type="Resource" path="res://config/items/water_bottle.tres" id="10_water"]
 [ext_resource type="Resource" path="res://config/items/excavator.tres" id="11_excavator"]
+[ext_resource type="Resource" path="res://config/items/acid_bottle.tres" id="12_acid"]
 
 [sub_resource type="Resource" id="Resource_small"]
 script = ExtResource("2_option")
@@ -46,8 +47,13 @@ quantity = 3
 script = ExtResource("2_option")
 item = ExtResource("11_excavator")
 
+[sub_resource type="Resource" id="Resource_acid"]
+script = ExtResource("2_option")
+item = ExtResource("12_acid")
+quantity = 3
+
 [resource]
 script = ExtResource("1_definition")
 chest_scene = ExtResource("3_scene")
 explosion_definition = ExtResource("6_explosion")
-options = Array[ExtResource("2_option")]([SubResource("Resource_small"), SubResource("Resource_large"), SubResource("Resource_shovel"), SubResource("Resource_pickaxe"), SubResource("Resource_flare"), SubResource("Resource_water"), SubResource("Resource_excavator")])
+options = Array[ExtResource("2_option")]([SubResource("Resource_small"), SubResource("Resource_large"), SubResource("Resource_shovel"), SubResource("Resource_pickaxe"), SubResource("Resource_flare"), SubResource("Resource_water"), SubResource("Resource_excavator"), SubResource("Resource_acid")])

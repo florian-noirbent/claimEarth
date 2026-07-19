@@ -107,6 +107,21 @@ func test_hazard_behaviors_expose_quantity_thresholds() -> void:
 	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().recovery_seconds, 1.0)
 	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(13).fill_rate_multiplier, 0.1, 0.001)
 	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(127).fill_rate_multiplier, 1.0, 0.001)
+	var acid_hazard = FixtureLoader.terrain_definition_named("Sulfuric Acid").hazard_behavior
+	var poison_hazard = FixtureLoader.terrain_definition_named("Sulfur Dioxide").hazard_behavior
+	assert_eq(acid_hazard.resolve().cause, DeathCauseScript.ACID)
+	assert_eq(acid_hazard.resolve().fill_seconds, 1.5)
+	assert_eq(acid_hazard.resolve().recovery_seconds, 1.5)
+	assert_eq(acid_hazard.resolve().minimum_quantity, 13)
+	assert_almost_eq(acid_hazard.resolve_for_quantity(13).fill_rate_multiplier, 0.1, 0.001)
+	assert_almost_eq(acid_hazard.resolve_for_quantity(127).fill_rate_multiplier, 1.0, 0.001)
+	assert_eq(poison_hazard.resolve().cause, DeathCauseScript.POISON)
+	assert_eq(poison_hazard.resolve().fill_seconds, 10.0)
+	assert_eq(poison_hazard.resolve().recovery_seconds, 10.0)
+	assert_eq(poison_hazard.resolve().minimum_quantity, 1)
+	assert_almost_eq(poison_hazard.resolve_for_quantity(1).fill_rate_multiplier, 0.1, 0.001)
+	assert_almost_eq(poison_hazard.resolve_for_quantity(63).fill_rate_multiplier, 1.0, 0.001)
+	assert_almost_eq(poison_hazard.resolve_for_quantity(254).fill_rate_multiplier, 1.0, 0.001)
 
 
 func test_hazard_effect_checks_quantity_threshold() -> void:

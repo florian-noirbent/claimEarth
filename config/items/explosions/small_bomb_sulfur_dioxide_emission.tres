@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TerrainEmissionDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/terrain_emission_definition.gd" id="1_emission"]
+[ext_resource type="Resource" path="res://config/terrain/sulfur_dioxide.tres" id="2_product"]
+
+[resource]
+script = ExtResource("1_emission")
+product = ExtResource("2_product")
+quantity = 2835

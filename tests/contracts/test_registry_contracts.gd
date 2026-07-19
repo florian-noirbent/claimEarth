@@ -41,7 +41,7 @@ func test_item_catalog_loads_all_required_definitions() -> void:
 	var catalog := FixtureLoader.item_catalog()
 	var registry := ItemRegistry.new()
 	assert_true(registry.try_configure(catalog), "\n".join(registry.validation_errors))
-	assert_eq(registry.count(), 8)
+	assert_eq(registry.count(), 9)
 
 	var small_bomb := registry.get_definition(1)
 	assert_eq(small_bomb.starting_inventory, 10)
@@ -52,8 +52,9 @@ func test_item_catalog_loads_all_required_definitions() -> void:
 	var flag := registry.get_definition(3)
 	assert_eq(flag.starting_inventory, 1)
 
-	for stable_id in [4, 5, 6, 7, 8]:
+	for stable_id in [4, 5, 6, 7, 8, 9]:
 		assert_eq(registry.get_definition(stable_id).starting_inventory, 0.0)
+	assert_eq(registry.get_definition(9).display_name, "Acid Bottle")
 
 
 func test_duplicate_stable_ids_fail_validation() -> void:

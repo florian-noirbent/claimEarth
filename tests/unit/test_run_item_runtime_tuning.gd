@@ -71,6 +71,25 @@ func test_explosion_modifiers_preserve_current_radius_and_terrain_policy() -> vo
 	assert_eq(spec.blast_vaporize_chance_for(_terrain_with_tags([]), Vector2i.ZERO), 0.0)
 
 
+func test_boom_perks_add_their_configured_sulfur_dioxide_cloud_counts() -> void:
+	var tuning := RunItemRuntimeTuning.compile(_modifiers([
+		"res://config/perks/small_boom.tres",
+		"res://config/perks/large_boom.tres",
+	]))
+	var small_definition := load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition
+	var large_definition := load("res://config/items/explosions/large_bomb_explosion.tres") as ExplosionDefinition
+	var small_spec := ExplosionRuntimeSpec.from_definition(small_definition)
+	var large_spec := ExplosionRuntimeSpec.from_definition(large_definition)
+
+	tuning.apply_to_explosion(small_spec, _item_with_tags(["small_bomb"]))
+	tuning.apply_to_explosion(large_spec, _item_with_tags(["large_bomb"]))
+
+	assert_eq(small_spec.perk_terrain_emissions.size(), 1)
+	assert_eq(small_spec.perk_terrain_emissions[0].quantity, 2835)
+	assert_eq(large_spec.perk_terrain_emissions.size(), 2)
+	assert_eq(large_spec.perk_terrain_emissions[0].quantity, 2835)
+
+
 func test_tool_dirt_chance_clamps_at_use_boundary() -> void:
 	var builder := PerkModifierBuilder.new()
 	builder.apply_contribution(

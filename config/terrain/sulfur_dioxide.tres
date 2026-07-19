@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_def"]
 [ext_resource type="Resource" path="res://config/terrain/motion/dense_gas_motion.tres" id="2_motion"]
-[ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_hazard"]
+[ext_resource type="Resource" path="res://config/terrain/hazard/poison_hazard.tres" id="3_hazard"]
 [ext_resource type="Resource" path="res://config/terrain/blast/no_blast_reaction.tres" id="4_blast"]
 [ext_resource type="Resource" path="res://config/visual/sulfur_dioxide_style.tres" id="5_style"]
 

@@ -9,6 +9,7 @@ var blast_radius := 0
 var vaporize_radius := 0
 var player_kill_radius := 0
 var blast_impulse := 0.0
+var perk_terrain_emissions: Array[TerrainEmissionDefinition] = []
 
 ## Optional terrain-specific extension point. The callable receives a
 ## TerrainDefinition and returns extra vaporize hexes for that terrain. This is

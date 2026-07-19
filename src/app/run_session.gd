@@ -10,7 +10,7 @@ signal player_hazard_status_changed(statuses: Array)
 signal player_killed(cause: StringName)
 signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
-signal flag_destroyed
+signal flag_destroyed(cause: StringName)
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
 signal reward_choices_requested(title: String, choices: Array)

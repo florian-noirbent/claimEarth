@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="FluidBottleItemActionFactory" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/items/fluid_bottle_item_action_factory.gd" id="1_factory"]
+[ext_resource type="Resource" path="res://config/terrain/sulfuric_acid.tres" id="2_acid"]
+
+[resource]
+script = ExtResource("1_factory")
+deposited_terrain = ExtResource("2_acid")
+throw_distance_hint = 100.0
+gravity = 880.0
+projectile_color = Color(0.63, 0.82, 0.16, 1)
+projectile_outline_color = Color(0.16, 0.25, 0.04, 1)

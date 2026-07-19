@@ -11,6 +11,6 @@ func _init() -> void:
 
 
 func resolve():
-	var effect = BlastEffectScript.new()
+	var effect = super.resolve()
 	effect.replacement_id = target_terrain_id
 	return effect

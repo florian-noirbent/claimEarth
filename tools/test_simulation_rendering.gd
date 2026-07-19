@@ -36,6 +36,8 @@ func _run() -> void:
 		return
 	if not await _verify_static_sulfur_burn_persists(registry):
 		return
+	if not await _verify_sulfur_converts_water_one_to_one_before_depleting(registry):
+		return
 	if not await _verify_sand_displaces_water_without_destroying_it(registry):
 		return
 	if not await _verify_trapped_secondary_creates_pairwise_pressure(registry):
@@ -500,6 +502,39 @@ func _verify_static_sulfur_burn_persists(registry: TerrainRegistry) -> bool:
 		and quantity_after_second_burn < quantity_after_first_burn
 		and marker_retained,
 		"Static Sulfur must keep burning after Lava leaves (quantities %d -> %d -> %d, marker retained %s)." % [quantity_after_ignition, quantity_after_first_burn, quantity_after_second_burn, marker_retained]
+	)
+
+
+func _verify_sulfur_converts_water_one_to_one_before_depleting(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var sulfur := _terrain_id(registry, "Sulfur")
+	var water := _terrain_id(registry, "Water")
+	var acid := _terrain_id(registry, "Sulfuric Acid")
+	var world := WorldGrid.new(WorldDimensions.new(4, 4), air)
+	for col in range(world.dimensions.width):
+		world.set_committed_by_offset(col, world.dimensions.depth - 1, stone)
+	var sulfur_cell := Vector2i(1, 1)
+	var water_cell := Vector2i(1, 2)
+	world.set_committed_by_offset(sulfur_cell.x, sulfur_cell.y, sulfur, 127)
+	world.set_committed_by_offset(water_cell.x, water_cell.y, water, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(backend, 1, PASS_COUNT):
+		backend.shutdown()
+		return false
+	backend.commit_if_ready()
+	var sulfur_quantity := world.get_committed_quantity_by_offset(sulfur_cell.x, sulfur_cell.y)
+	var acid_quantity := world.get_committed_quantity_by_offset(water_cell.x, water_cell.y)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		world.get_committed_by_offset(sulfur_cell.x, sulfur_cell.y) == sulfur
+		and sulfur_quantity < 127
+		and world.get_committed_by_offset(water_cell.x, water_cell.y) == acid
+		and acid_quantity == (127 - sulfur_quantity) * 10,
+		"Sulfur must convert Water to equal-quantity Acid while consuming one tenth of the Water quantity (sulfur %d, acid %d)." % [sulfur_quantity, acid_quantity]
 	)
 
 

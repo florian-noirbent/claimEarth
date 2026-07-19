@@ -116,7 +116,7 @@ func test_relentless_drops_a_lava_proof_flag_through_the_common_projectile_path(
 
 	assert_true(controller.drop_flag_on_player_death())
 	assert_true(controller.is_flag_in_flight())
-	assert_false(controller._active_flag_projectile.destroyed_by_lava)
+	assert_true(controller._active_flag_projectile.destructive_terrain_tags.is_empty())
 	assert_eq(_count_for(controller.inventory_status(), "Flag"), 0)
 
 

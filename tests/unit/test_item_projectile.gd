@@ -199,3 +199,38 @@ func test_lava_sensitive_projectile_resolves_on_lava_at_hazard_fill_threshold() 
 
 	assert_eq(resolved_kinds, [&"lava"])
 	assert_true(projectile.is_queued_for_deletion())
+
+
+func test_destructive_terrain_tags_match_acid_without_requiring_lava_reaction() -> void:
+	var acid := TerrainDefinition.new()
+	acid.perk_tags = PackedStringArray(["acid"])
+	acid.hazard_behavior = FixtureLoader.terrain_definition_named("Lava").hazard_behavior
+	var projectile := ItemProjectile.new()
+	projectile.destructive_terrain_tags = PackedStringArray(["acid"])
+
+	assert_eq(projectile._destructive_terrain_kind(acid, 13), &"acid")
+	assert_eq(projectile._destructive_terrain_kind(acid, 12), &"")
+
+
+func test_flag_resolves_with_acid_when_the_acid_hazard_is_active() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(2, 2, FixtureLoader.terrain_id("Sulfuric Acid"), 13)
+	var definition := load("res://config/items/flag.tres") as ItemDefinition
+	var action := definition.action_factory.create_action(definition) as ItemAction
+	var projectile := ItemProjectile.new()
+	projectile.world = world
+	projectile.terrain_registry = registry
+	projectile.hex_radius = 16.0
+	projectile.global_position = HexMetrics.center_for_offset(2, 2, projectile.hex_radius)
+	projectile.configure(action.create_projectile(projectile.global_position, projectile.global_position + Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO))
+	add_child_autofree(projectile)
+	var resolved_kinds: Array[StringName] = []
+	projectile.resolved.connect(func(_projectile: ItemProjectile, _impact_position: Vector2, resolution_kind: StringName) -> void:
+		resolved_kinds.append(resolution_kind)
+	)
+
+	projectile._physics_process(0.016)
+
+	assert_eq(resolved_kinds, [&"acid"])
+	assert_true(projectile.is_queued_for_deletion())

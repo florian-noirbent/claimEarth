@@ -101,6 +101,18 @@ func test_glass_sand_and_hazard_modifiers_compile_to_typed_policy() -> void:
 	)
 
 
+func test_sulfur_resistance_compiles_to_typed_hazard_policy() -> void:
+	var tuning := PlayerRuntimeTuning.compile(
+		_base_movement,
+		_base_grapple,
+		_modifiers(["res://config/perks/sulfur_resistance.tres"])
+	)
+
+	assert_true(tuning.sulfur_dioxide_breathable)
+	assert_true(tuning.sulfur_dioxide_immune)
+	assert_eq(tuning.acid_duration_seconds_add, 2.0)
+
+
 func test_impact_modes_preserve_existing_threshold_transformations() -> void:
 	var hard_skin := PlayerRuntimeTuning.compile(
 		_base_movement,

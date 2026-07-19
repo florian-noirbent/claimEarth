@@ -12,7 +12,7 @@ func test_inventory_status_tracks_selection_without_exposing_inventory() -> void
 	assert_eq(status.counts.size(), 3)
 
 
-func test_flag_resolution_emits_depth_and_lava_outcome() -> void:
+func test_flag_resolution_emits_depth_and_destructive_terrain_outcome() -> void:
 	var controller := RunItemController.new()
 	add_child_autofree(controller)
 	controller.configure_catalog(_item_registry(), 16.0)
@@ -22,7 +22,9 @@ func test_flag_resolution_emits_depth_and_lava_outcome() -> void:
 	controller.resolve_flag_landing(null, landing_position, null, &"impact")
 	assert_signal_emitted_with_parameters(controller, "flag_planted", [27, landing_position])
 	controller.resolve_flag_landing(null, landing_position, null, &"lava")
-	assert_signal_emitted(controller, "flag_destroyed")
+	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"lava"])
+	controller.resolve_flag_landing(null, landing_position, null, &"acid")
+	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"acid"])
 
 
 func test_flag_landing_above_surface_clamps_depth_to_zero() -> void:

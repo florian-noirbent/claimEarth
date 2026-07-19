@@ -276,4 +276,10 @@ func _set_reaction(a: int, b: int, reaction: TerrainContactReaction) -> void:
 	reaction_by_pair[index] = reaction.kind + 1
 	reaction_product_a_by_pair[index] = reaction.product_a.stable_id if reaction.product_a != null else 0
 	reaction_product_b_by_pair[index] = reaction.product_b.stable_id if reaction.product_b != null else 0
-	reaction_generated_by_pair[index] = reaction.generated_product.stable_id if reaction.generated_product != null else 0
+	## Alpha is reaction-kind specific: Sulfur/Water uses its authored water-per-
+	## sulfur ratio, while Sulfur/Lava uses the generated terrain ID.
+	reaction_generated_by_pair[index] = (
+		reaction.input_b_units
+		if reaction.kind == TerrainContactReaction.Kind.SULFUR_WATER
+		else reaction.generated_product.stable_id if reaction.generated_product != null else 0
+	)

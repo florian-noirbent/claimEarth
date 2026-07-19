@@ -6,7 +6,7 @@ extends Node
 signal player_killed(cause: StringName)
 signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
-signal flag_destroyed
+signal flag_destroyed(cause: StringName)
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
 signal terrain_changed(change_set: TerrainChangeSet)
@@ -59,7 +59,7 @@ func set_perk_modifiers(modifiers: PerkModifierSnapshot) -> void:
 	_rewards.set_tuning(_runtime_tuning)
 	_apply_container_perk_modifiers()
 	if _active_flag_projectile != null and _runtime_tuning.flag_survives_hazards:
-		_active_flag_projectile.destroyed_by_lava = false
+		_active_flag_projectile.destructive_terrain_tags = PackedStringArray()
 
 
 func configure_run(
@@ -243,7 +243,7 @@ func drop_flag_on_player_death() -> bool:
 		return false
 	if is_flag_in_flight():
 		if _has_relentless_flag_survival():
-			_active_flag_projectile.destroyed_by_lava = false
+			_active_flag_projectile.destructive_terrain_tags = PackedStringArray()
 		return true
 	var flag_definition: ItemDefinition
 	for definition in _inventory.definitions():
@@ -262,7 +262,7 @@ func drop_flag_on_player_death() -> bool:
 func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector2, thrower_velocity: Vector2) -> void:
 	var projectile_data: Dictionary = action.create_projectile(origin, aim_position, _trajectory_service, thrower_velocity)
 	if _has_relentless_flag_survival() and action.locks_throwing_until_resolved():
-		projectile_data["destroyed_by_lava"] = false
+		projectile_data["destructive_terrain_tags"] = PackedStringArray()
 	var projectile: ItemProjectile = ItemProjectileScript.new()
 	projectile.action = action
 	projectile.simulation_backend = _simulation_backend
@@ -320,8 +320,8 @@ func _apply_projectile_blast_impulses(spec: ExplosionRuntimeSpec, impact_positio
 func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _projectile: ItemProjectile, resolution_kind: StringName) -> void:
 	_active_flag_projectile = null
 	flag_flight_changed.emit(false)
-	if resolution_kind == &"lava":
-		flag_destroyed.emit()
+	if resolution_kind != &"impact" and resolution_kind != &"fuse":
+		flag_destroyed.emit(resolution_kind)
 	elif resolution_kind == &"impact":
 		var landing_depth := maxi(0, HexMetrics.offset_for_world(impact_position, _hex_radius).y)
 		flag_planted.emit(landing_depth, impact_position)

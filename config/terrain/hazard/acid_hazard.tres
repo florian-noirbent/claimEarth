@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AcidHazardBehavior" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/acid_hazard_behavior.gd" id="1_acid"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_acid.svg" id="2_acid_icon"]
+
+[resource]
+script = ExtResource("1_acid")
+icon = ExtResource("2_acid_icon")
+bar_color = Color(0.63, 0.82, 0.16, 1)
+fill_seconds = 1.5
+recovery_seconds = 1.5
+display_order = 30
+minimum_quantity = 13
+quantity_rate_at_minimum = 0.1
+quantity_rate_at_full = 1.0

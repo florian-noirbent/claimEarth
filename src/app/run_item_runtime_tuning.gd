@@ -85,10 +85,16 @@ func apply_to_explosion(spec: ExplosionRuntimeSpec, source_item: ItemDefinition 
 	spec.player_kill_radius = maxi(0, spec.player_kill_radius + player_kill_radius_add)
 	if source_item != null and source_item.perk_tags.has("small_bomb"):
 		spec.blast_radius += small_bomb_blast_radius_add
+		if small_bomb_emits_sulfur_dioxide and spec.definition != null and spec.definition.perk_terrain_emission != null:
+			spec.perk_terrain_emissions.append(spec.definition.perk_terrain_emission)
 	if source_item != null and source_item.perk_tags.has("large_bomb"):
 		spec.blast_radius += large_bomb_blast_radius_add
 		spec.vaporize_radius += large_bomb_vaporize_radius_add
 		spec.player_kill_radius += large_bomb_player_kill_radius_add
+		if large_bomb_emits_sulfur_dioxide and spec.definition != null and spec.definition.perk_terrain_emission != null:
+			## Large Boom deliberately emits two full clouds.
+			spec.perk_terrain_emissions.append(spec.definition.perk_terrain_emission)
+			spec.perk_terrain_emissions.append(spec.definition.perk_terrain_emission)
 	spec.vaporize_radius = clampi(spec.vaporize_radius, 0, spec.blast_radius)
 	spec.player_kill_radius = clampi(spec.player_kill_radius, 0, spec.blast_radius)
 	if sand_liquid_vaporize_radius_add > 0:

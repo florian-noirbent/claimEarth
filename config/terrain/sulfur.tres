@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://src/terrain/terrain_definition.gd" id="1_def"]
 [ext_resource type="Resource" path="res://config/terrain/motion/stable_motion.tres" id="2_motion"]
 [ext_resource type="Resource" path="res://config/terrain/hazard/no_hazard.tres" id="3_hazard"]
-[ext_resource type="Resource" path="res://config/terrain/blast/no_blast_reaction.tres" id="4_blast"]
+[ext_resource type="Resource" path="res://config/terrain/blast/sulfur_to_air_and_gas.tres" id="4_blast"]
 [ext_resource type="Resource" path="res://config/visual/sulfur_style.tres" id="5_style"]
 
 [resource]

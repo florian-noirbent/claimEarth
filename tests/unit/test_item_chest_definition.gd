@@ -27,6 +27,11 @@ func test_configured_chest_definition_is_valid_and_draws_unique_deterministic_ch
 	assert_eq(excavator_options.size(), 1, "Excavator must be registered exactly once in chest rewards")
 	assert_eq(excavator_options[0].quantity, 1)
 	assert_gt(excavator_options[0].selection_weight, 0.0)
+	var acid_options := definition.options.filter(
+		func(option: ItemChestOption) -> bool: return option.item.stable_id == 9
+	)
+	assert_eq(acid_options.size(), 1, "Acid Bottle must be registered exactly once in chest rewards")
+	assert_eq(acid_options[0].quantity, 3)
 
 	var first := definition.draw_choices(12345)
 	var repeat := definition.draw_choices(12345)

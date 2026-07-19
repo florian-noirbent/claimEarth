@@ -17,9 +17,12 @@ var hard_surface_restitution := 0.0
 var bounce_settle_speed := 0.0
 var sand_passable := false
 var sand_breathable := false
+var sulfur_dioxide_breathable := false
+var sulfur_dioxide_immune := false
 var all_hazards_immune := false
 var lava_duration_seconds_add := 0.0
 var suffocation_duration_seconds_add := 0.0
+var acid_duration_seconds_add := 0.0
 
 
 static func compile(
@@ -87,6 +90,12 @@ static func compile(
 	tuning.sand_breathable = bool(
 		modifiers.hazards.value("sand_breathable", false)
 	)
+	tuning.sulfur_dioxide_breathable = bool(
+		modifiers.hazards.value("sulfur_dioxide_breathable", false)
+	)
+	tuning.sulfur_dioxide_immune = bool(
+		modifiers.hazards.value("sulfur_dioxide_immune", false)
+	)
 	tuning.all_hazards_immune = bool(
 		modifiers.hazards.value("all_hazards_immune", false)
 	)
@@ -95,6 +104,9 @@ static func compile(
 	)
 	tuning.suffocation_duration_seconds_add = float(
 		modifiers.hazards.value("suffocation_duration_seconds_add", 0.0)
+	)
+	tuning.acid_duration_seconds_add = float(
+		modifiers.hazards.value("acid_duration_seconds_add", 0.0)
 	)
 	return tuning
 

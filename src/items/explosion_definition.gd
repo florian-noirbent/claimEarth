@@ -14,6 +14,8 @@ extends Resource
 @export var large_feedback := false
 @export_range(0.0, 10.0, 0.01) var chain_fuse_seconds := 0.3
 @export_range(0.0, 4000.0, 1.0) var blast_impulse := 0.0
+## Optional cloud added only when the matching perk enables it for the source item.
+@export var perk_terrain_emission: TerrainEmissionDefinition
 
 
 func validate() -> PackedStringArray:
@@ -30,6 +32,9 @@ func validate() -> PackedStringArray:
 		errors.append("explosion chain_fuse_seconds must be non-negative")
 	if blast_impulse < 0.0:
 		errors.append("explosion blast_impulse must be non-negative")
+	if perk_terrain_emission != null:
+		for error in perk_terrain_emission.validate():
+			errors.append("explosion perk emission: %s" % error)
 	return errors
 
 

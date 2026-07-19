@@ -448,8 +448,9 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	transition_to(RunPhase.NAME_ENTRY)
 
 
-func _on_flag_destroyed() -> void:
-	_complete_terminal_outcome("The flag melted in lava.", RunPhase.DEATH)
+func _on_flag_destroyed(cause: StringName) -> void:
+	var message := "The flag dissolved in acid." if cause == &"acid" else "The flag melted in lava."
+	_complete_terminal_outcome(message, RunPhase.DEATH)
 
 
 func _on_flag_flight_changed(in_flight: bool) -> void:

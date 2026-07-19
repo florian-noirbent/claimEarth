@@ -6,6 +6,8 @@ extends RefCounted
 const NONE := &"none"
 const LAVA := &"lava"
 const SUFFOCATION := &"suffocation"
+const ACID := &"acid"
+const POISON := &"poison"
 const BOMB := &"bomb"
 const IMPACT := &"impact"
 const BOUNDS := &"bounds"

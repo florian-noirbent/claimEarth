@@ -117,7 +117,10 @@ others.
 The primary component is the denser visible/gameplay material. The optional
 secondary component is an invisible simulation work buffer for displaced lighter
 material. Quantity 127 is visual fullness and 128-255 is overpressure. External
-gameplay writes replace the primary component and clear the secondary component.
+gameplay writes normally replace the primary component and clear the secondary
+component. Resource-authored explosion emissions are the exception: they preserve
+both components while filling a matching product, then use an unused secondary slot
+only when nearby visible capacity is exhausted.
 
 New grids initialize the `B` byte to darkness. The simulation backend lights only
 the surface row during initialization, then owns lighting updates in that byte. It preserves light by
@@ -196,7 +199,7 @@ backend may compile registry data into IDs for its hot loop.
 
 `EnvironmentStatus` owns generic player hazard meters. Terrain hazard behaviors
 resolve fill-aware meter definitions, including their icon, color, fill/recovery
-durations, terrain-fill rate curve, and display order; the player samples those definitions at occupied body
+durations, configurable full-rate terrain quantity, and display order; the player samples those definitions at occupied body
 hexes and forwards meter snapshots through the run controllers to `AppUiController`.
 Suffocation is the one environment-wide rule: the head must resolve to empty Air,
 walking upward through partial cells before evaluating the next full cell. The HUD is
@@ -252,6 +255,14 @@ materials, including Air ID `0`, may drain completely.
 
 Exact `TerrainChangeSet`s remain reserved for bounded gameplay mutations whose
 affected cells are already known.
+
+`BlastReaction` can author a `TerrainEmissionDefinition`. `ExplosionService` records
+those emissions while resolving destruction, applies terrain changes first, then
+deterministically deposits the product through primary and compatible secondary
+capacity. It never creates a matching secondary component under unburning terrain
+whose persistent-burn product would interpret that component as an ignition marker.
+Sulfur Dioxide already present in a vaporize core follows the same preserved-component
+path, beginning at the first hex ring beyond the core rather than being deleted.
 
 Gameplay writes are authoritative. External `TerrainChangeSet`s cancel any
 unfinished six-pass tick, upload the patched packed world texture, and restart

@@ -13,4 +13,4 @@ product_b = ExtResource("4_acid")
 kind = 0
 duration_seconds = 20.0
 input_a_units = 1
-input_b_units = 5
+input_b_units = 10

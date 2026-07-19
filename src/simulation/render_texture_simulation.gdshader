@@ -641,12 +641,28 @@ bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) 
 	}
 	if (kind == 1 && is_vertical_pass()) {
 		int acid = reaction_byte(reaction, 2);
-		if (persistent_burn_product(terrain_id(a)) != NO_BURN_PRODUCT_ID) {
-			next_a = remove_primary_component(a, min(1, fill_amount(a)));
-			next_b = make_cell(acid, fill_amount(b));
+		int sulfur_side = persistent_burn_product(terrain_id(a)) != NO_BURN_PRODUCT_ID ? 0 : 1;
+		vec4 sulfur_cell = sulfur_side == 0 ? a : b;
+		vec4 water_cell = sulfur_side == 0 ? b : a;
+		int water_per_sulfur = max(1, reaction_byte(reaction, 3));
+		int sulfur_fill = fill_amount(sulfur_cell);
+		int water_fill = fill_amount(water_cell);
+		int acid_fill = min(water_fill, sulfur_fill * water_per_sulfur);
+		if (acid_fill <= 0) return false;
+		int sulfur_consumed = int(ceil(float(acid_fill) / float(water_per_sulfur)));
+		vec4 next_sulfur = remove_primary_component(sulfur_cell, sulfur_consumed);
+		vec4 next_water = make_components(
+			acid,
+			acid_fill,
+			terrain_id(water_cell),
+			water_fill - acid_fill
+		);
+		if (sulfur_side == 0) {
+			next_a = next_sulfur;
+			next_b = next_water;
 		} else {
-			next_b = remove_primary_component(b, min(1, fill_amount(b)));
-			next_a = make_cell(acid, fill_amount(a));
+			next_a = next_water;
+			next_b = next_sulfur;
 		}
 		return true;
 	}
@@ -691,7 +707,7 @@ bool resolve_persistent_burn(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 		int extra = (simulation_tick * 27 + fill_amount(a)) % 100 < 27 ? 1 : 0;
 		int consumed = min(fill_amount(a), 1 + extra);
 		int gas = a_burn_product;
-		int produced = consumed * 7 + extra;
+		int produced = (consumed * 7 + extra) * 10;
 		next_a = remove_primary_component(a, consumed);
 		if (fill_amount(next_a) > 0) next_a = add_component(next_a, gas, produced, storage_capacity(gas));
 		else next_a = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(a) + produced));
@@ -700,7 +716,7 @@ bool resolve_persistent_burn(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 		int extra = (simulation_tick * 27 + fill_amount(b)) % 100 < 27 ? 1 : 0;
 		int consumed = min(fill_amount(b), 1 + extra);
 		int gas = b_burn_product;
-		int produced = consumed * 7 + extra;
+		int produced = (consumed * 7 + extra) * 10;
 		next_b = remove_primary_component(b, consumed);
 		if (fill_amount(next_b) > 0) next_b = add_component(next_b, gas, produced, storage_capacity(gas));
 		else next_b = make_cell(gas, min(storage_capacity(gas), secondary_fill_amount(b) + produced));

@@ -520,9 +520,15 @@ func _hazard_effect_at(world_position: Vector2):
 		return null
 	if _runtime_tuning != null and _runtime_tuning.all_hazards_immune:
 		return null
+	if _runtime_tuning != null \
+		and _runtime_tuning.sulfur_dioxide_immune \
+		and definition.perk_tags.has("sulfur_dioxide"):
+		return null
 	var effect = definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
 	if effect != null and _runtime_tuning != null and definition.perk_tags.has("lava"):
 		effect.fill_seconds += _runtime_tuning.lava_duration_seconds_add
+	if effect != null and _runtime_tuning != null and definition.perk_tags.has("acid"):
+		effect.fill_seconds += _runtime_tuning.acid_duration_seconds_add
 	return effect
 
 
@@ -542,6 +548,8 @@ func _head_has_breathable_air() -> bool:
 		if definition == null or definition.is_empty_space:
 			return true
 		if _runtime_tuning != null and definition.perk_tags.has("sand") and _runtime_tuning.sand_breathable:
+			return true
+		if _runtime_tuning != null and definition.perk_tags.has("sulfur_dioxide") and _runtime_tuning.sulfur_dioxide_breathable:
 			return true
 		if _world.get_committed_quantity_by_offset(offset.x, offset.y) >= definition.maximum_quantity:
 			return false

@@ -8,6 +8,6 @@ func _init() -> void:
 
 
 func resolve():
-	var effect = BlastEffectScript.new()
+	var effect = super.resolve()
 	effect.detonate_immediately = true
 	return effect

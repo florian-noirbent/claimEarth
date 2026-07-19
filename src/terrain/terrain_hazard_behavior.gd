@@ -12,6 +12,9 @@ const HazardEffectScript = preload("res://src/terrain/hazard_effect.gd")
 @export_range(0.01, 60.0, 0.01, "or_greater") var recovery_seconds := 1.0
 @export var display_order := 0
 @export_range(0, 255, 1) var minimum_quantity := 1
+## Quantity at which the configured full hazard rate applies.
+## This defaults to the normal visible moving-material fill.
+@export_range(1, 255, 1) var full_rate_quantity := 127
 @export_range(0.01, 1.0, 0.01) var quantity_rate_at_minimum := 1.0
 @export_range(0.01, 1.0, 0.01) var quantity_rate_at_full := 1.0
 
@@ -38,7 +41,7 @@ func configure_meter(effect: HazardEffect) -> void:
 
 
 func quantity_rate_multiplier(quantity: int) -> float:
-	var clamped_quantity := clampi(quantity, minimum_quantity, 127)
-	var range := maxi(1, 127 - minimum_quantity)
+	var clamped_quantity := clampi(quantity, minimum_quantity, full_rate_quantity)
+	var range := maxi(1, full_rate_quantity - minimum_quantity)
 	var progress := float(clamped_quantity - minimum_quantity) / float(range)
 	return lerpf(quantity_rate_at_minimum, quantity_rate_at_full, progress)

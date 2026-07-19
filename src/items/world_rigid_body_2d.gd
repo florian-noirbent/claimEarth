@@ -5,7 +5,16 @@ extends Node2D
 
 var velocity := Vector2.ZERO
 var gravity := 900.0
-var destroyed_by_lava := true
+var destructive_terrain_tags := PackedStringArray(["lava"])
+var destroyed_by_lava: bool:
+	get:
+		return destructive_terrain_tags.has(&"lava")
+	set(value):
+		if value:
+			if not destructive_terrain_tags.has(&"lava"):
+				destructive_terrain_tags.append(&"lava")
+		else:
+			destructive_terrain_tags.erase(&"lava")
 var ignores_water := false
 var bounce_on_impact := false
 var stop_on_impact := false
@@ -34,7 +43,10 @@ func _ready() -> void:
 func configure_body(config: Dictionary) -> void:
 	velocity = config.get("velocity", Vector2.ZERO) as Vector2
 	gravity = float(config.get("gravity", 900.0))
-	destroyed_by_lava = bool(config.get("destroyed_by_lava", true))
+	if config.has("destructive_terrain_tags"):
+		destructive_terrain_tags = config["destructive_terrain_tags"] as PackedStringArray
+	else:
+		destroyed_by_lava = bool(config.get("destroyed_by_lava", true))
 	ignores_water = bool(config.get("ignores_water", false))
 	bounce_on_impact = bool(config.get("bounce_on_impact", false))
 	stop_on_impact = bool(config.get("stop_on_impact", false))
@@ -79,7 +91,7 @@ func configure_horizontal_bounds(left_edge: float, right_edge: float) -> void:
 	_horizontal_bounds_enabled = _horizontal_min_x <= _horizontal_max_x
 
 
-## Advances one body step and returns lava, impact, grounded, or an empty kind.
+## Advances one body step and returns a destructive terrain tag, impact, grounded, or an empty kind.
 func advance_body(delta: float) -> StringName:
 	if delta <= 0.0:
 		return &""
@@ -92,8 +104,9 @@ func advance_body(delta: float) -> StringName:
 	var definition := _sample_terrain(global_position)
 	if definition == null:
 		return &""
-	if destroyed_by_lava and definition.blast_reaction.resolve().detonate_immediately and definition.hazard_behavior.resolve_for_quantity(_sample_quantity(global_position)) != null:
-		return &"lava"
+	var destruction_kind := _destructive_terrain_kind(definition, _sample_quantity(global_position))
+	if not destruction_kind.is_empty():
+		return destruction_kind
 	if definition.is_passable:
 		return &""
 	if stop_on_impact:
@@ -143,6 +156,15 @@ func _sample_quantity(world_position: Vector2) -> int:
 	if not world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		return 0
 	return world.get_committed_quantity_by_offset(offset.x, offset.y)
+
+
+func _destructive_terrain_kind(definition: TerrainDefinition, quantity: int) -> StringName:
+	if definition == null or definition.hazard_behavior.resolve_for_quantity(quantity) == null:
+		return &""
+	for terrain_tag in destructive_terrain_tags:
+		if definition.perk_tags.has(terrain_tag):
+			return terrain_tag
+	return &""
 
 
 func _bounce(previous_position: Vector2, delta: float) -> void:

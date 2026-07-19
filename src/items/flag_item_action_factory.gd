@@ -5,7 +5,7 @@ extends ItemActionFactory
 const FlagItemActionScript = preload("res://src/items/flag_item_action.gd")
 
 @export var ignores_water := true
-@export var destroyed_by_lava := true
+@export var destructive_terrain_tags := PackedStringArray(["lava", "acid"])
 @export var throw_distance_hint := 5.0
 @export var gravity := 850.0
 @export var thrower_velocity_influence := 0.15

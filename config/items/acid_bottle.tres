@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/items/item_definition.gd" id="1_definition"]
+[ext_resource type="Resource" path="res://config/items/factory/acid_bottle_factory.tres" id="2_factory"]
+[ext_resource type="Texture2D" path="res://assets/objects/acid_bottle.svg" id="3_icon"]
+
+[resource]
+script = ExtResource("1_definition")
+stable_id = 9
+display_name = "Acid Bottle"
+description = "Breaks on impact to release Sulfuric Acid into nearby Air."
+icon = ExtResource("3_icon")
+action_factory = ExtResource("2_factory")

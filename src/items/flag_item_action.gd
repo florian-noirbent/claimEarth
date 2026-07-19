@@ -19,7 +19,7 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"color": factory.projectile_color,
 		"outline_color": factory.projectile_outline_color,
 		"polygon": factory.projectile_points,
-		"destroyed_by_lava": factory.destroyed_by_lava,
+		"destructive_terrain_tags": factory.destructive_terrain_tags,
 		"ignores_water": factory.ignores_water,
 	}
 

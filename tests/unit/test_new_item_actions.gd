@@ -40,6 +40,23 @@ func test_water_bottle_fills_nearest_air_hexes() -> void:
 	assert_eq(world.count_committed(FixtureLoader.terrain_id("Water")), 3)
 
 
+func test_acid_bottle_fills_nearest_air_hexes() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Stone"))
+	var origin := Vector2i(3, 3)
+	world.set_committed_by_offset(origin.x, origin.y, FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(4, 3, FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(3, 4, FixtureLoader.terrain_id("Air"))
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(PlayerController.new(), world, registry, 16.0)
+
+	controller.resolve_fluid_bottle_impact(registry.get_definition(FixtureLoader.terrain_id("Sulfuric Acid")), HexMetrics.center_for_offset(origin.x, origin.y, 16.0))
+
+	assert_eq(world.count_committed(FixtureLoader.terrain_id("Sulfuric Acid")), 3)
+
+
 func test_vaporizer_turns_pickaxe_dirt_transformations_into_air_when_configured() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Air"))
