@@ -5,20 +5,29 @@
             "name": "Launch Web Debug Session",
             "type": "node-terminal",
             "request": "launch",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\tools\\run_web_debug.ps1\""
+            "command": "pwsh -NoProfile -File \"${workspaceFolder}/tools/run_web_debug.ps1\"",
+            "windows": {
+                "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/run_web_debug.ps1\""
+            }
         },
         {
             "name": "Launch Phone Web Test (HTTPS + QR)",
             "type": "node-terminal",
             "request": "launch",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\tools\\run_phone_web.ps1\"",
+            "command": "pwsh -NoProfile -File \"${workspaceFolder}/tools/run_phone_web.ps1\"",
+            "windows": {
+                "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/run_phone_web.ps1\""
+            },
             "postDebugTask": "Stop Phone Web Server"
         },
         {
             "name": "Run Godot Editor",
             "type": "node-terminal",
             "request": "launch",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\tools\\run_godot.ps1\""
+            "command": "pwsh -NoProfile -File \"${workspaceFolder}/tools/run_godot.ps1\"",
+            "windows": {
+                "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/run_godot.ps1\""
+            }
         }
     ]
 }

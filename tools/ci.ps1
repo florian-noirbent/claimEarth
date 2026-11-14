@@ -4,17 +4,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-& "$PSScriptRoot\import.ps1"
+& "$PSScriptRoot/import.ps1"
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
-& "$PSScriptRoot\test.ps1"
+& "$PSScriptRoot/test.ps1"
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
-& "$PSScriptRoot\run_smoke.ps1"
+& "$PSScriptRoot/run_smoke.ps1"
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
@@ -23,15 +23,15 @@ if (-not $Milestone) {
 	exit 0
 }
 
-& "$PSScriptRoot\test_performance.ps1"
+& "$PSScriptRoot/test_performance.ps1"
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
-& "$PSScriptRoot\smoke_web.ps1"
+& "$PSScriptRoot/smoke_web.ps1"
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
-& "$PSScriptRoot\smoke_chromium.ps1"
+& "$PSScriptRoot/smoke_chromium.ps1"
 exit $LASTEXITCODE

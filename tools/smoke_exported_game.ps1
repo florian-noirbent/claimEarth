@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
-$godot = & "$PSScriptRoot\resolve_godot.ps1"
-$buildDir = Join-Path $PSScriptRoot "..\build\web"
+$godot = & "$PSScriptRoot/resolve_godot.ps1"
+$buildDir = Join-Path $PSScriptRoot "../build/web"
 $packPath = Join-Path $buildDir "index.pck"
 if (-not (Test-Path -LiteralPath $packPath -PathType Leaf)) {
 	throw "Exported-game smoke failed: build/web/index.pck does not exist. Export the Web build first."

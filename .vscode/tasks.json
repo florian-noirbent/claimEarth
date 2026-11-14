@@ -4,7 +4,10 @@
         {
             "label": "Build Web Release",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -21,7 +24,10 @@
         {
             "label": "Build Web Debug",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -35,7 +41,10 @@
         {
             "label": "Serve Web",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -58,7 +67,10 @@
         {
             "label": "Run Web Debug",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -71,7 +83,10 @@
         {
             "label": "Test Web on Phone (HTTPS + QR)",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -91,7 +106,10 @@
         {
             "label": "Stop Phone Web Server",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -104,7 +122,10 @@
         {
             "label": "Run Smoke Test",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",
@@ -117,7 +138,10 @@
         {
             "label": "Run Godot",
             "type": "shell",
-            "command": "powershell",
+            "command": "pwsh",
+            "windows": {
+                "command": "powershell"
+            },
             "args": [
                 "-NoProfile",
                 "-ExecutionPolicy",

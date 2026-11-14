@@ -20,9 +20,12 @@ history for historical context. Keep documentation focused on the current system
 
 ## Project Constraints
 
-- Godot 4.6.3, typed GDScript, Compatibility renderer.
+- Godot 4.7.2, typed GDScript, Compatibility renderer.
 - Primary release target: itch.io Web on current desktop Chromium and Firefox.
 - Do not add C# runtime code, GDExtension, or a required threaded/compute path.
+- `tools/*.ps1` must run on Windows (PowerShell 5.1 and 7) and macOS (PowerShell 7).
+  Use forward-slash paths and the helpers in `tools/platform.ps1` to find Godot,
+  Python, and Chrome or to start background processes; never hard-code one OS.
 - Keep the default Web export playable without cross-origin isolation.
 - Store visual assets under `assets/ui`, `assets/terrain`, or `assets/objects`
   according to their runtime use.

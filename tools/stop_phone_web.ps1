@@ -3,7 +3,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$sessionPath = Join-Path $PSScriptRoot "..\build\logs\phone-web-session.json"
+$sessionPath = Join-Path $PSScriptRoot "../build/logs/phone-web-session.json"
 if (-not (Test-Path -LiteralPath $sessionPath -PathType Leaf)) {
 	if (-not $Quiet) {
 		Write-Host "No managed phone Web server is running."

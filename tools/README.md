@@ -1,41 +1,62 @@
 # Development Commands
 
-Automation resolves Godot in this order:
+The scripts run on Windows and macOS. On Windows, use Windows PowerShell 5.1 or
+PowerShell 7. On macOS, use PowerShell 7 (`pwsh`). `platform.ps1` holds the shared
+helpers that find tools and start background processes on each system.
 
-1. The `GODOT4` environment variable.
-2. The standard GDScript editor installed at:
+## Prerequisites
 
-```text
-%LOCALAPPDATA%\Programs\Godot_v4.6.3-stable_win64\Godot_v4.6.3-stable_win64_console.exe
-```
+| Tool | Windows | macOS (Homebrew) |
+| --- | --- | --- |
+| Godot 4.7.2 and its export templates | Godot website | `brew install --cask godot` |
+| PowerShell 7 | built in (5.1) or `winget install Microsoft.PowerShell` | `brew install powershell` |
+| Git LFS (art, fonts, audio) | `winget install GitHub.GitLFS` | `brew install git-lfs` |
+| Python 3 (local Web servers) | python.org or `winget install Python.Python.3` | `brew install python` |
+| Google Chrome (browser smoke and debug) | google.com/chrome | google.com/chrome |
+| mkcert (phone HTTPS only) | `winget install FiloSottile.mkcert` | `brew install mkcert` |
 
-3. The Mono console editor installed at
-`C:\Program Files\Godot_v4.6.3-stable_mono_win64`, but it reports a missing .NET SDK
-on the original workstation. Prefer the standard editor or set `GODOT4` explicitly.
+After cloning, run `git lfs install` and `git lfs pull` once. Without them the
+assets are LFS pointer files and the game cannot import them.
 
-From the repository root:
+## How the scripts find tools
+
+- Godot: the `GODOT4` environment variable, then the standard install locations
+  (`%LOCALAPPDATA%\Programs\Godot_v4.7.2-stable_win64\Godot_v4.7.2-stable_win64_console.exe`
+  or the Mono build under `C:\Program Files` on Windows, `/Applications/Godot.app`
+  on macOS), then `godot` or `godot4` on `PATH`. The Mono editor reports a missing
+  .NET SDK on the original workstation, so prefer the standard editor.
+- Python: the `PYTHON` environment variable, then `python`, `py`, or `python3` on
+  Windows and `python3` or `python` on macOS. A candidate counts only if it runs as
+  Python 3, which skips the Windows Store stub and unconfigured version-manager shims.
+- Chrome: the `CHROME_PATH` environment variable, then the standard Chrome install
+  locations, then Chromium.
+
+## Commands
+
+From the repository root (prefix with `pwsh` on macOS, for example
+`pwsh ./tools/test.ps1`):
 
 ```powershell
-.\tools\import.ps1
-.\tools\test.ps1
-.\tools\test_performance.ps1
-.\tools\test_simulation_rendering.ps1
-.\tools\validate_generation_plugin.ps1
-.\tools\benchmark_terrain.ps1
-.\tools\benchmark_world_presenter.ps1 -SaveBaseline
-.\tools\benchmark_world_presenter.ps1 -Compare
-.\tools\run_smoke.ps1
-.\tools\export_web.ps1
-.\tools\smoke_exported_game.ps1
-.\tools\serve_web.ps1
-.\tools\smoke_web.ps1
-.\tools\smoke_chromium.ps1
-.\tools\run_web_debug.ps1
-.\tools\stop_web_debug.ps1
-.\tools\run_phone_web.ps1
-.\tools\stop_phone_web.ps1
-.\tools\ci.ps1
-.\tools\assert_test_failure.ps1
+./tools/import.ps1
+./tools/test.ps1
+./tools/test_performance.ps1
+./tools/test_simulation_rendering.ps1
+./tools/validate_generation_plugin.ps1
+./tools/benchmark_terrain.ps1
+./tools/benchmark_world_presenter.ps1 -SaveBaseline
+./tools/benchmark_world_presenter.ps1 -Compare
+./tools/run_smoke.ps1
+./tools/export_web.ps1
+./tools/smoke_exported_game.ps1
+./tools/serve_web.ps1
+./tools/smoke_web.ps1
+./tools/smoke_chromium.ps1
+./tools/run_web_debug.ps1
+./tools/stop_web_debug.ps1
+./tools/run_phone_web.ps1
+./tools/stop_phone_web.ps1
+./tools/ci.ps1
+./tools/assert_test_failure.ps1
 ```
 
 - `import.ps1` imports resources and verifies the project can open headlessly.
@@ -45,8 +66,9 @@ From the repository root:
   the fixed 60-pass clock, exact equivalence between sequential and six-pass batch
   rendering, alternating-bank texture safety, and stale-callback cancellation.
 - `validate_generation_plugin.ps1` launches the editor with the `World Gen` main screen selected, waits for startup stability, and fails on a native editor crash.
-- `benchmark_terrain.ps1` reports current terrain simulation, chunk drawing, and
-  collision-build timing distributions for sparse, dense, and settled fixtures.
+- `benchmark_terrain.ps1` runs the GPU terrain simulation with a real renderer and
+  reports initial and steady tick timing distributions for settled, fluid, sand,
+  mixed, dense, and generated-world fixtures.
 - `benchmark_world_presenter.ps1` renders deterministic presenter fixtures at
   1280×720 with VSync disabled, saves a five-run native reference under
   `build/benchmarks/world_presenter/baseline`, and compares subsequent five-run
@@ -68,7 +90,7 @@ From the repository root:
 - `run_phone_web.ps1` rebuilds and serves the Web game over trusted LAN HTTPS,
   disables browser caching, and prints the phone URL as an ASCII QR code.
 - `stop_phone_web.ps1` stops the managed phone HTTPS server.
-- `ci.ps1` runs the fast local gate by default. Use `.\tools\ci.ps1 -Milestone` to add performance tests plus web/browser smoke gates.
+- `ci.ps1` runs the fast local gate by default. Use `./tools/ci.ps1 -Milestone` to add performance tests plus web/browser smoke gates.
 - `assert_test_failure.ps1` injects a temporary failing test and verifies the headless
   runner returns a nonzero exit code.
 

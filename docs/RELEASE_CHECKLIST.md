@@ -5,20 +5,20 @@ matrix in `docs/ARCHITECTURE.md`.
 
 ## Web Build
 
-1. Run `.\tools\ci.ps1 -Milestone`.
+1. Run `./tools/ci.ps1 -Milestone`.
 2. Confirm `build\web\export-status.txt` and `build\web\chromium-smoke.png` were generated.
 3. Review `build\web\chromium-smoke.stderr.log` for unexpected runtime/browser errors if the smoke gate fails.
-4. Start a local preview with `.\tools\serve_web.ps1` and open
+4. Start a local preview with `./tools/serve_web.ps1` and open
    `http://127.0.0.1:8936/index.html`.
 
 ## Automation Expectations
 
-- `.\tools\test.ps1` is the default fast gate during development.
-- `.\tools\test_performance.ps1` guards against structural frame-loop regressions.
-- `.\tools\smoke_exported_game.ps1` verifies the exported PCK can start a run
+- `./tools/test.ps1` is the default fast gate during development.
+- `./tools/test_performance.ps1` guards against structural frame-loop regressions.
+- `./tools/smoke_exported_game.ps1` verifies the exported PCK can start a run
   and reach `PLAYING` without missing resources or script parse errors.
-- `.\tools\smoke_web.ps1` verifies the exported game plus shell and payload loading.
-- `.\tools\smoke_chromium.ps1` verifies browser startup, screenshot capture, and console cleanliness.
+- `./tools/smoke_web.ps1` verifies the exported game plus shell and payload loading.
+- `./tools/smoke_chromium.ps1` verifies browser startup, screenshot capture, and console cleanliness.
 
 The Web preset uses Godot's `all_resources` mode with no hand-maintained include,
 exclude, or dependency list. Keep `build/.gdignore` in place so generated output

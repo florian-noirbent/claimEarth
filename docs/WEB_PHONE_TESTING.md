@@ -27,8 +27,8 @@ On the first run, the task installs the pinned `qrcode` helper into ignored
 The equivalent PowerShell commands are:
 
 ```powershell
-.\tools\run_phone_web.ps1
-.\tools\stop_phone_web.ps1
+./tools/run_phone_web.ps1
+./tools/stop_phone_web.ps1
 ```
 
 Use `-Debug` for a debug export, `-SkipExport` to serve the existing build, or
@@ -55,8 +55,10 @@ VPN/app certificate. Chrome may need to be restarted after installing the CA.
 The generated certificate files stay under ignored `build/local-https`; recreate
 them when the LAN address changes or the certificate expires.
 
-If Windows Firewall prompts for Python access, allow it on private networks. Do
-not expose port 8936 to the internet.
+If Windows Firewall or the macOS firewall asks whether Python may accept incoming
+connections, allow it on private networks only. Do not expose port 8936 to the
+internet. On macOS, run the commands above in `pwsh`; `mkcert -install` adds the
+CA to the login keychain and asks for your password.
 
 ## Logs and Troubleshooting
 
@@ -65,9 +67,9 @@ not expose port 8936 to the internet.
 - Server session details and current URL:
   `build/logs/phone-web-session.json`.
 - Exported-game Start regression:
-  `.\tools\smoke_exported_game.ps1`.
+  `./tools/smoke_exported_game.ps1`.
 - Browser presentation smoke:
-  `.\tools\smoke_chromium.ps1`.
+  `./tools/smoke_chromium.ps1`.
 
 If the page opens but Start does nothing, reproduce once on the phone, then
 inspect the phone-server request log to confirm the HTML, PCK, WebAssembly, and
@@ -75,4 +77,4 @@ JavaScript payloads were all requested. The HTTP server log cannot contain
 Godot or JavaScript runtime errors. For an Android-only failure, enable USB
 debugging, connect the phone, open `chrome://inspect/#devices` in desktop Chrome,
 and inspect the phone tab's Console. Reproduce on desktop with
-`.\tools\run_web_debug.ps1` when the failure is not mobile-specific.
+`./tools/run_web_debug.ps1` when the failure is not mobile-specific.

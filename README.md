@@ -4,15 +4,20 @@ Claim Earth is a small Godot arcade game about descending through a generated he
 
 ## Quick Start
 
-Use Godot 4.6.3 with the Compatibility renderer. From the repository root:
+Use Godot 4.7.2 with the Compatibility renderer. The development scripts run on
+Windows and macOS; [`tools/README.md`](tools/README.md) lists the prerequisites
+for each. The art, fonts, and audio are stored in Git LFS, so run `git lfs install`
+and `git lfs pull` once after cloning. From the repository root:
 
 ```powershell
-.\tools\import.ps1
-.\tools\test.ps1
-.\tools\run_smoke.ps1
+./tools/import.ps1
+./tools/test.ps1
+./tools/run_smoke.ps1
 ```
 
-The primary release target is itch.io Web on desktop Chromium and Firefox. Use `.\tools\export_web.ps1` and `.\tools\serve_web.ps1` for local Web builds; opening `build/web/index.html` directly is not a valid Web test.
+On macOS, run each script through PowerShell 7, for example `pwsh ./tools/test.ps1`.
+
+The primary release target is itch.io Web on desktop Chromium and Firefox. Use `./tools/export_web.ps1` and `./tools/serve_web.ps1` for local Web builds; opening `build/web/index.html` directly is not a valid Web test.
 
 For HTTPS testing on a phone, use the VS Code **Test Web on Phone (HTTPS + QR)**
 task or follow [`docs/WEB_PHONE_TESTING.md`](docs/WEB_PHONE_TESTING.md).

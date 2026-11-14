@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$tempDir = Join-Path $PSScriptRoot "..\tests\_temp_failure"
+$tempDir = Join-Path $PSScriptRoot "../tests/unit/temp_intentional_failure"
 $testPath = Join-Path $tempDir "test_intentional_failure.gd"
 
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
@@ -16,7 +16,7 @@ func test_intentional_failure() -> void:
 Set-Content -LiteralPath $testPath -Value $testSource -NoNewline
 
 try {
-	& "$PSScriptRoot\test.ps1"
+	& "$PSScriptRoot/test.ps1"
 	$exitCode = $LASTEXITCODE
 } finally {
 	Remove-Item -LiteralPath $testPath -Force -ErrorAction SilentlyContinue

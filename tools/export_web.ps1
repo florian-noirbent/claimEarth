@@ -3,7 +3,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$godot = & "$PSScriptRoot\resolve_godot.ps1"
+$godot = & "$PSScriptRoot/resolve_godot.ps1"
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $presetPath = Join-Path $projectRoot "export_presets.cfg"
 $presetText = Get-Content -LiteralPath $presetPath -Raw
@@ -16,7 +16,7 @@ if (-not $webPresetMatch.Success) {
 }
 
 $presetName = $webPresetMatch.Groups[1].Value
-$output = Join-Path $projectRoot "build\web\index.html"
+$output = Join-Path $projectRoot "build/web/index.html"
 New-Item -ItemType Directory -Force -Path (Split-Path $output) | Out-Null
 $exportFlag = if ($Debug) { "--export-debug" } else { "--export-release" }
 Write-Host "Exporting Web preset '$presetName' with $godot"
