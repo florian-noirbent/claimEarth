@@ -5,7 +5,7 @@ historical build plan.
 
 ## Runtime Constraints
 
-- Godot 4.6.3 with typed GDScript and the Compatibility renderer.
+- Godot 4.7.2 with typed GDScript and the Compatibility renderer.
 - Single-threaded Web export is the required baseline.
 - No C# runtime, GDExtension, or required compute/thread support.
 - Terrain is a fixed packed grid; scene nodes exist only for active gameplay and

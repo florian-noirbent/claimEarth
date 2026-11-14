@@ -1,10 +1,10 @@
 extends GutTest
 
 
-func test_project_uses_godot_4_6() -> void:
+func test_project_uses_godot_4_7() -> void:
 	var version := Engine.get_version_info()
 	assert_eq(version.major, 4)
-	assert_eq(version.minor, 6)
+	assert_eq(version.minor, 7)
 
 
 func test_main_scene_is_configured() -> void:
