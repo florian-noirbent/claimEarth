@@ -63,6 +63,7 @@ frequency_y = 0.231
 gain = 0.0
 hazard_type = 3
 placement_threshold = 0.804
+label = "Sulfur Hazard"
 pass_seed_key = "hazard_pocket_4"
 min_depth_ratio = 0.3
 allowed_target_ids = PackedInt32Array(1, 2)
@@ -109,7 +110,6 @@ label = "Bottom Lava Fill"
 pass_seed_key = "bottom_lava_fill_8"
 min_depth_ratio = 0.94
 top_blend_distance_ratio = 0.02
-allowed_target_ids = PackedInt32Array(1, 2, 3, 4, 5, 0)
 
 [resource]
 script = ExtResource("1_profile")

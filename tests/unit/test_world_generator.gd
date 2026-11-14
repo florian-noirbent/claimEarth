@@ -76,10 +76,11 @@ func test_default_profile_persists_stable_pass_seed_keys() -> void:
 		"sand_hazard_1",
 		"water_hazard_2",
 		"lava_hazard_3",
-		"spawn_shaft_4",
-		"item_chests_5",
-		"perk_geodes_6",
-		"bottom_lava_fill_6",
+		"hazard_pocket_4",
+		"spawn_shaft_5",
+		"item_chests_6",
+		"perk_geodes_7",
+		"bottom_lava_fill_8",
 	]))
 
 
@@ -155,13 +156,15 @@ func test_default_profile_uses_typed_hazard_pocket_instances_without_showcase_pa
 		if pass_resource.get_pass_type_name() == "Hazard Pocket":
 			hazard_passes.append(pass_resource)
 
-	assert_eq(hazard_passes.size(), 3)
+	assert_eq(hazard_passes.size(), 4)
 	assert_eq(hazard_passes[0].label, "Sand Hazard")
 	assert_eq(hazard_passes[1].label, "Water Hazard")
 	assert_eq(hazard_passes[2].label, "Lava Hazard")
+	assert_eq(hazard_passes[3].label, "Sulfur Hazard")
 	assert_eq(hazard_passes[0].hazard_type, PocketNoisePassScript.HazardType.SAND)
 	assert_eq(hazard_passes[1].hazard_type, PocketNoisePassScript.HazardType.WATER)
 	assert_eq(hazard_passes[2].hazard_type, PocketNoisePassScript.HazardType.LAVA)
+	assert_eq(hazard_passes[3].hazard_type, PocketNoisePassScript.HazardType.SULFUR)
 	assert_eq(PocketNoisePassScript.HazardType.SULFUR, 3)
 
 

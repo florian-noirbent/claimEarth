@@ -331,8 +331,10 @@ func _verify_partial_liquid_air_edge_is_polished(registry: TerrainRegistry) -> b
 	var samples := await _render_partial_fill_samples(registry, water, air, 123, 0.0)
 	var center := samples.center as Color
 	var upper_edge := samples.upper_edge as Color
+	# Translucent water is read back premultiplied from a transparent viewport, so a
+	# darker but more opaque outline only shows once alpha is divided out.
 	return _expect(
-		_brightness(upper_edge) < _brightness(center) - 0.03
+		_straight_brightness(upper_edge) < _straight_brightness(center) - 0.03
 		and upper_edge.a > center.a + 0.2,
 		"A partial Water-Air boundary must retain Water's polished edge outline (center %s, edge %s)." % [center, upper_edge]
 	)
@@ -392,6 +394,12 @@ func _render_partial_fill_samples(
 
 func _brightness(color: Color) -> float:
 	return maxf(color.r, maxf(color.g, color.b))
+
+
+func _straight_brightness(color: Color) -> float:
+	if color.a <= 0.001:
+		return 0.0
+	return _brightness(color) / color.a
 
 
 func _verify_air_pressure_equalizes_across_a_hex_edge(registry: TerrainRegistry) -> bool:

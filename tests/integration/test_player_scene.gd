@@ -506,7 +506,10 @@ func test_sulfur_resistance_makes_sulfur_dioxide_breathable_and_non_poisonous() 
 	await wait_process_frames(1)
 
 	var registry := FixtureLoader.terrain_registry()
-	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Sulfur Dioxide"))
+	var sulfur_dioxide_id := FixtureLoader.terrain_id("Sulfur Dioxide")
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), sulfur_dioxide_id)
+	# Only a full head hex blocks air, and gas holds more than the default fill.
+	world.fill_committed(sulfur_dioxide_id, registry.get_definition(sulfur_dioxide_id).maximum_quantity)
 	player.configure_environment(world, registry, 16.0)
 	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
 
