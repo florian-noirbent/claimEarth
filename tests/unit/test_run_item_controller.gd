@@ -365,11 +365,11 @@ func test_bomb_arms_chest_and_chest_detonation_can_arm_bomb() -> void:
 	first_bomb.explosive.request_immediate_detonation()
 	assert_true(chest.explosive.is_chain_armed())
 	assert_false(chest.touch_area.monitoring)
-	assert_signal_not_emitted(controller, "reward_container_destroyed")
+	assert_signal_not_emitted(controller, "world_object_destroyed")
 	chest.explosive._physics_process(0.31)
 
-	assert_signal_emit_count(controller, "reward_container_destroyed", 1)
-	assert_eq(get_signal_parameters(controller, "reward_container_destroyed"), [&"item_chest"])
+	assert_signal_emit_count(controller, "world_object_destroyed", 1)
+	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"item_chest"])
 	assert_true(second_bomb.explosive.is_chain_armed())
 	assert_true(chest.is_queued_for_deletion())
 
@@ -612,6 +612,8 @@ func test_detonating_barrel_explodes_through_its_explosive_and_leaves_the_grappl
 
 	assert_signal_emit_count(controller, "explosion_resolved", 1)
 	assert_false(first_target.is_valid())
+	assert_signal_emit_count(controller, "world_object_destroyed", 1)
+	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"explosive_barrel"])
 	assert_true(second.explosive.is_chain_armed(), "A barrel blast chains into barrels inside its radius")
 	await wait_process_frames(1)
 	assert_false(is_instance_valid(first))

@@ -126,7 +126,7 @@ func _lifetime_section(data: PlayerStatistics, config: StatisticsPresentationCon
 func _loot_section(data: PlayerStatistics, config: StatisticsPresentationConfig) -> StatisticsSectionViewData:
 	var entries: Array[StatisticsEntryViewData] = []
 	_append_keyed_tiles(entries, config.containers, data.containers_opened, config, "%s opened")
-	_append_keyed_tiles(entries, config.destroyed_containers, data.containers_destroyed, config, "%s destroyed")
+	_append_keyed_tiles(entries, config.destroyed_objects, data.objects_destroyed, config, "%s destroyed")
 	_append_keyed_tiles(entries, config.flag_loss_causes, data.flags_lost_by_cause, config, "Flag lost: %s")
 	var subtitle := "%s flags lost" % format_count(data.total_flags_lost()) if data.total_flags_lost() > 0 else ""
 	return StatisticsSectionViewData.new("Loot & flags", StatisticsSectionViewData.Layout.TILES, entries, subtitle, config.flag_icon)

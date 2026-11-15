@@ -6,6 +6,8 @@ extends GeneratedItemPlacementDefinition
 
 @export var barrel_scene: PackedScene
 @export var explosion_definition: ExplosionDefinition
+## Key under which a detonated barrel is counted in player statistics.
+@export var statistics_key: StringName = &"explosive_barrel"
 ## Terrain perk tags that detonate the barrel when they touch its body.
 @export var detonating_terrain_tags := PackedStringArray(["lava", "acid"])
 ## When enabled, any explosion whose blast radius reaches the barrel arms its chain fuse.
@@ -55,6 +57,8 @@ func validate() -> PackedStringArray:
 	var errors := super.validate()
 	if barrel_scene == null:
 		errors.append("explosive barrel definition requires a barrel scene")
+	if statistics_key.is_empty():
+		errors.append("explosive barrel definition requires a statistics_key")
 	if explosion_definition == null:
 		errors.append("explosive barrel definition requires an explosion definition")
 	else:

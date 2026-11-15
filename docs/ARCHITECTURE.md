@@ -93,8 +93,10 @@ time, streaks, victories) fold in at `end_run()`. A run records at most one deat
 and at most one flag resolution, and both may occur because Relentless drops the
 flag on death.
 
-Data flow: `RunItemController` emits typed `item_used(ItemDefinition)` and
-`reward_claimed(RewardClaim)` outcomes, which `RunSession` forwards. `AppRoot` maps
+Data flow: `RunItemController` emits typed `item_used(ItemDefinition)`,
+`reward_claimed(RewardClaim)`, and `world_object_destroyed(statistics_key)` outcomes,
+which `RunSession` forwards. The last reports a chest, geode, or explosive barrel
+consumed by its own detonation, keyed by its definition's `statistics_key`. `AppRoot` maps
 those and its existing run outcomes to controller calls: `begin_run` when a run
 becomes ready, `record_progress` from `_process` during active play, the first
 unlocked death (including a Relentless death), the planted or destroyed flag, and

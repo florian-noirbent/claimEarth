@@ -21,6 +21,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/hazard_impact.svg" id="19_impact"]
 [ext_resource type="Texture2D" path="res://assets/ui/statistics/bounds.svg" id="20_bounds"]
 [ext_resource type="Texture2D" path="res://assets/objects/chest.png" id="21_chest"]
+[ext_resource type="Texture2D" path="res://assets/objects/explosive_barrel.svg" id="22_barrel"]
 
 [sub_resource type="Resource" id="Death_cooked"]
 script = ExtResource("2_key")
@@ -113,6 +114,13 @@ display_name = "Geodes destroyed"
 description = "Perk geodes shattered by a blast, releasing their pulse instead of a perk."
 icon = ExtResource("12_perk")
 
+[sub_resource type="Resource" id="Destroyed_explosive_barrel"]
+script = ExtResource("2_key")
+key = &"explosive_barrel"
+display_name = "Barrels exploded"
+description = "Explosive barrels set off by lava, acid, a blast, or a hard impact."
+icon = ExtResource("22_barrel")
+
 [resource]
 script = ExtResource("1_config")
 runs_icon = ExtResource("3_runs")
@@ -129,4 +137,4 @@ unknown_icon = ExtResource("13_unknown")
 death_causes = Array[ExtResource("2_key")]([SubResource("Death_cooked"), SubResource("Death_suffocation"), SubResource("Death_acid"), SubResource("Death_poison"), SubResource("Death_bomb"), SubResource("Death_impact"), SubResource("Death_bounds")])
 flag_loss_causes = Array[ExtResource("2_key")]([SubResource("FlagLoss_lava"), SubResource("FlagLoss_acid")])
 containers = Array[ExtResource("2_key")]([SubResource("Container_item_chest"), SubResource("Container_perk_geode")])
-destroyed_containers = Array[ExtResource("2_key")]([SubResource("Destroyed_item_chest"), SubResource("Destroyed_perk_geode")])
+destroyed_objects = Array[ExtResource("2_key")]([SubResource("Destroyed_item_chest"), SubResource("Destroyed_perk_geode"), SubResource("Destroyed_explosive_barrel")])

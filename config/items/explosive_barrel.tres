@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 barrel_scene = ExtResource("2_scene")
 explosion_definition = ExtResource("3_explosion")
+statistics_key = &"explosive_barrel"
 detonating_terrain_tags = PackedStringArray("lava", "acid")
 detonates_in_blast_radius = true
 impact_detonation_speed = 650.0

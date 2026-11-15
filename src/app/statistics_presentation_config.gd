@@ -18,7 +18,7 @@ extends Resource
 @export var death_causes: Array[StatisticKeyPresentation] = []
 @export var flag_loss_causes: Array[StatisticKeyPresentation] = []
 @export var containers: Array[StatisticKeyPresentation] = []
-@export var destroyed_containers: Array[StatisticKeyPresentation] = []
+@export var destroyed_objects: Array[StatisticKeyPresentation] = []
 
 
 func validate() -> PackedStringArray:
@@ -42,7 +42,7 @@ func validate() -> PackedStringArray:
 	_validate_entries("death_causes", death_causes, errors)
 	_validate_entries("flag_loss_causes", flag_loss_causes, errors)
 	_validate_entries("containers", containers, errors)
-	_validate_entries("destroyed_containers", destroyed_containers, errors)
+	_validate_entries("destroyed_objects", destroyed_objects, errors)
 	return errors
 
 

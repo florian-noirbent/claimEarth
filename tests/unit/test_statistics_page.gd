@@ -132,9 +132,10 @@ func test_shipped_presentation_config_is_complete() -> void:
 	assert_eq(config.containers.size(), 2)
 	assert_not_null(config.presentation_for(config.containers, &"item_chest"))
 	assert_not_null(config.presentation_for(config.containers, &"perk_geode"))
-	assert_eq(config.destroyed_containers.size(), 2)
-	assert_not_null(config.presentation_for(config.destroyed_containers, &"item_chest"))
-	assert_not_null(config.presentation_for(config.destroyed_containers, &"perk_geode"))
+	assert_eq(config.destroyed_objects.size(), 3)
+	assert_not_null(config.presentation_for(config.destroyed_objects, &"explosive_barrel"))
+	assert_not_null(config.presentation_for(config.destroyed_objects, &"item_chest"))
+	assert_not_null(config.presentation_for(config.destroyed_objects, &"perk_geode"))
 	assert_null(config.presentation_for(config.death_causes, &"missing"))
 
 
