@@ -27,6 +27,8 @@ var _rewards := RunItemRewards.new()
 var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
+var _compiled_terrain: CompiledTerrainData
+var _chest_sleep_scheduler := ItemChestSleepScheduler.new()
 var _simulation_backend: TerrainSimulationBackend
 var _hex_radius := 8.0
 var _throw_lock_remaining := 0.0
@@ -73,12 +75,14 @@ func configure_run(
 	_player = player
 	_world = world
 	_terrain_registry = terrain_registry
+	_compiled_terrain = CompiledTerrainData.compile(terrain_registry) if terrain_registry != null else null
 	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
 	_active_flag_projectile = null
 	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
+	_chest_sleep_scheduler.clear()
 	_dynamic_item_order.clear()
 	_successful_use_counts.clear()
 	_throw_lock_remaining = 1.0
@@ -98,6 +102,7 @@ func clear_run() -> void:
 	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
+	_chest_sleep_scheduler.clear()
 	for child in get_children():
 		if child is WorldRigidBody2D or child is ItemChest:
 			child.free()
@@ -110,8 +115,6 @@ func set_active(is_active: bool) -> void:
 			child.set_physics_process(is_active)
 		elif child is ItemChest:
 			(child as ItemChest).set_active(is_active, _rewards.pending_chest() == null)
-		elif child is ExcavatorRobot:
-			(child as ExcavatorRobot).set_active(is_active)
 	for explosive in _explosives:
 		if is_instance_valid(explosive):
 			explosive.set_active(is_active)
@@ -163,6 +166,7 @@ func debug_clear_world_items() -> void:
 func advance(delta: float) -> void:
 	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
 	_advance_terrain_pulses(delta)
+	_chest_sleep_scheduler.advance(delta, _visible_world_rect())
 
 
 func select_index(index: int) -> void:
@@ -264,6 +268,7 @@ func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector
 	projectile.simulation_backend = _simulation_backend
 	projectile.world = _world
 	projectile.terrain_registry = _terrain_registry
+	projectile.compiled_terrain = _compiled_terrain
 	projectile.hex_radius = _hex_radius
 	projectile.global_position = origin
 	projectile.configure(projectile_data)
@@ -298,6 +303,7 @@ func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2
 	var change_set := result.terrain_changes
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
+	_chest_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
 	terrain_changed.emit(change_set)
 	explosion_resolved.emit(impact_position, definition.effect_color, spec.blast_radius, definition.large_feedback)
 	_arm_explosives_in(result.destructive_core_cells)
@@ -393,6 +399,7 @@ func resolve_fluid_bottle_impact(deposited_terrain: TerrainDefinition, impact_po
 func spawn_excavator(position: Vector2, factory: ExcavatorItemActionFactory) -> void:
 	var robot := ExcavatorRobot.new()
 	add_child(robot)
+	robot.compiled_terrain = _compiled_terrain
 	robot.configure(self, factory, position, _world, _terrain_registry, _hex_radius)
 	robot.tick_interval_multiplier = _runtime_tuning.excavator_tick_interval_multiplier
 	_register_explosive(robot.explosive)
@@ -427,7 +434,16 @@ func _commit_external_terrain_changes(change_set: TerrainChangeSet) -> void:
 		return
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
+	_chest_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
 	terrain_changed.emit(change_set)
+
+
+## Returns the world rectangle currently shown by the viewport camera.
+func _visible_world_rect() -> Rect2:
+	var viewport := get_viewport()
+	if viewport == null:
+		return Rect2()
+	return viewport.get_canvas_transform().affine_inverse() * viewport.get_visible_rect()
 
 
 func _advance_terrain_pulses(delta: float) -> void:
@@ -441,11 +457,6 @@ func _advance_terrain_pulses(delta: float) -> void:
 		if pulse.is_complete():
 			_terrain_pulses.erase(pulse)
 	_commit_external_terrain_changes(merged)
-
-
-func _aimed_neighbor(aim_position: Vector2) -> Vector2i:
-	var targets := _aimed_tool_targets(aim_position)
-	return targets[0] if not targets.is_empty() else Vector2i(-1, -1)
 
 
 func _aimed_tool_targets(aim_position: Vector2) -> Array[Vector2i]:
@@ -578,8 +589,10 @@ func _spawn_item_chests(chest_spawns: Array[GeneratedItemChestSpawn]) -> void:
 			_is_active,
 			_simulation_backend,
 			_world,
-			_terrain_registry
+			_terrain_registry,
+			_compiled_terrain
 		)
+		_chest_sleep_scheduler.track(chest)
 		_register_explosive(chest.explosive)
 		chest.touched.connect(_on_item_chest_touched)
 		chest.explosion_armed.connect(_on_item_chest_explosion_armed)

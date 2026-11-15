@@ -111,13 +111,159 @@ func test_chest_uses_shared_nearest_air_unstuck_behavior() -> void:
 	assert_lt(chest.global_position.distance_to(target), before)
 
 
-func _configured_chest(world: WorldGrid, registry: TerrainRegistry, anchor: Vector2i) -> ItemChest:
+func test_chest_without_sleep_enabled_keeps_polling_its_support() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := _world_with_floor(9)
+	var chest := await _configured_chest(world, registry, Vector2i(5, 2))
+	for _step in 240:
+		chest._physics_process(1.0 / 60.0)
+
+	assert_true(chest.is_grounded())
+	assert_false(chest.is_sleeping())
+	assert_true(chest.is_physics_processing())
+
+
+func test_sleep_enabled_chest_stops_physics_steps_after_settling() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := _world_with_floor(9)
+	var chest := await _configured_chest(world, registry, Vector2i(5, 2))
+	chest.set_sleep_enabled(true)
+	assert_true(chest.is_physics_processing())
+	chest._physics_process(1.0 / 60.0)
+	assert_false(chest.is_sleeping(), "A falling chest must not sleep")
+
+	_step_until_sleeping(chest)
+
+	assert_true(chest.is_sleeping())
+	assert_true(chest.is_grounded())
+	assert_false(chest.is_physics_processing())
+	assert_eq(chest.fall_velocity, 0.0)
+	assert_true(chest.watched_cells().has_area())
+	assert_false(chest.wake_if_terrain_changed())
+	chest.set_active(false)
+	chest.set_active(true)
+	assert_false(chest.is_physics_processing(), "Resuming a run must not wake resting chests")
+	chest.set_sleep_enabled(false)
+	assert_false(chest.is_sleeping())
+	assert_true(chest.is_physics_processing())
+
+
+func test_sleeping_chest_wakes_when_support_is_removed_and_lands_where_a_polling_chest_does() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var sleeping_world := _world_with_floor(9)
+	var polling_world := _world_with_floor(9)
+	var sleeper := await _configured_chest(sleeping_world, registry, Vector2i(5, 2))
+	var poller := await _configured_chest(polling_world, registry, Vector2i(5, 2))
+	sleeper.set_sleep_enabled(true)
+	_step_until_sleeping(sleeper)
+	for _step in 240:
+		poller._physics_process(1.0 / 60.0)
+	var rest_position := sleeper.global_position
+	assert_eq(poller.global_position, rest_position)
+
+	sleeping_world.set_committed_light_by_offset(5, 9, 200)
+	assert_false(sleeper.wake_if_terrain_changed(), "Light changes must not wake a resting chest")
+	for world: WorldGrid in [sleeping_world, polling_world]:
+		for col in range(12):
+			world.set_committed_by_offset(col, 9, FixtureLoader.terrain_id("Air"))
+			world.set_committed_by_offset(col, 13, FixtureLoader.terrain_id("Stone"))
+	assert_true(sleeper.wake_if_terrain_changed())
+	assert_false(sleeper.is_sleeping())
+	assert_true(sleeper.is_physics_processing())
+	_step_until_sleeping(sleeper)
+	for _step in 240:
+		poller._physics_process(1.0 / 60.0)
+
+	assert_gt(sleeper.global_position.y, rest_position.y + 64.0)
+	assert_almost_eq(sleeper.global_position.x, rest_position.x, 0.001)
+	assert_almost_eq(sleeper.global_position.y, poller.global_position.y, 0.001)
+	assert_almost_eq(sleeper.visual_root.rotation, poller.visual_root.rotation, 0.001)
+	assert_false(sleeper._polygon_overlaps_at(sleeper.global_position, sleeper.visual_root.rotation))
+
+
+func test_tilted_chest_sleeps_and_wakes_when_its_far_support_probe_changes() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(12, 16), FixtureLoader.terrain_id("Air"))
+	var chest := await _configured_chest(world, registry, Vector2i(5, 5))
+	var half_size := chest._body_half_size()
+	var left_cell := HexMetrics.offset_for_world(chest.global_position + Vector2(-half_size.x * 0.72, half_size.y), 16.0)
+	var right_sample := chest.global_position + Vector2(half_size.x * 0.72, half_size.y + 8.0)
+	var right_cell := HexMetrics.offset_for_world(right_sample, 16.0)
+	world.set_committed_by_offset(left_cell.x, left_cell.y, FixtureLoader.terrain_id("Stone"))
+	chest.set_sleep_enabled(true)
+
+	_step_until_sleeping(chest)
+	assert_true(chest.is_sleeping())
+	assert_almost_eq(chest.visual_root.rotation, deg_to_rad(45.0), 0.001)
+	assert_true(chest.watched_cells().has_point(right_cell))
+
+	world.set_committed_by_offset(right_cell.x, right_cell.y, FixtureLoader.terrain_id("Stone"))
+	assert_true(chest.wake_if_terrain_changed())
+
+
+func test_stuck_chest_does_not_repeat_the_unstuck_search_until_surrounding_terrain_changes() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(40, 40), FixtureLoader.terrain_id("Stone"))
+	var query := CountingCollisionQuery.new()
+	var chest := await _configured_chest(world, registry, Vector2i(20, 20), query)
+	chest.set_sleep_enabled(true)
+
+	_step_until_sleeping(chest)
+	var stuck_position := chest.global_position
+	assert_true(chest.is_sleeping())
+	assert_false(chest.is_physics_processing())
+	assert_eq(query.search_count, 2, "One search finds no escape and one confirms the resting state")
+
+	world.set_committed_light_by_offset(21, 20, 180)
+	var outside := chest.watched_cells().end + Vector2i.ONE
+	assert_true(world.dimensions.is_in_bounds_offset(outside.x, outside.y))
+	world.set_committed_by_offset(outside.x, outside.y, FixtureLoader.terrain_id("Air"))
+	assert_false(chest.wake_if_terrain_changed())
+	assert_eq(query.search_count, 2)
+
+	world.set_committed_by_offset(26, 20, FixtureLoader.terrain_id("Air"))
+	assert_true(chest.wake_if_terrain_changed(), "A new Air center inside the search ring must be tried")
+	_step_until_sleeping(chest)
+	assert_eq(query.search_count, 3)
+	assert_eq(chest.global_position, stuck_position, "One open cell cannot hold the chest body")
+	assert_false(chest.wake_if_terrain_changed())
+
+	_set_air_hex_radius(world, HexCoord.from_offset_odd_q(26, 20), 3)
+	assert_true(chest.wake_if_terrain_changed())
+	chest._physics_process(1.0 / 60.0)
+	assert_eq(query.search_count, 4)
+	assert_gt(chest.global_position.x, stuck_position.x)
+	assert_false(chest.is_sleeping())
+
+
+func _configured_chest(
+	world: WorldGrid,
+	registry: TerrainRegistry,
+	anchor: Vector2i,
+	terrain_query: TerrainCollisionQuery = null
+) -> ItemChest:
 	var chest := (load("res://scenes/objects/item_chest.tscn") as PackedScene).instantiate() as ItemChest
 	add_child_autofree(chest)
 	await wait_process_frames(1)
+	if terrain_query != null:
+		chest._terrain_query = terrain_query
 	var definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
 	chest.configure(GeneratedItemChestSpawn.new(anchor, definition, 1), 16.0, true, null, world, registry)
 	return chest
+
+
+func _world_with_floor(floor_row: int) -> WorldGrid:
+	var world := WorldGrid.new(WorldDimensions.new(12, 16), FixtureLoader.terrain_id("Air"))
+	for col in range(12):
+		world.set_committed_by_offset(col, floor_row, FixtureLoader.terrain_id("Stone"))
+	return world
+
+
+func _step_until_sleeping(chest: ItemChest, maximum_steps: int = 600) -> void:
+	for _step in maximum_steps:
+		if chest.is_sleeping():
+			return
+		chest._physics_process(1.0 / 60.0)
 
 
 func _set_air_hex_radius(world: WorldGrid, center: HexCoord, radius: int) -> void:
@@ -128,3 +274,18 @@ func _set_air_hex_radius(world: WorldGrid, center: HexCoord, radius: int) -> voi
 			var cell := center.add(HexCoord.new(delta_q, delta_r)).to_offset_odd_q()
 			if world.dimensions.is_in_bounds_offset(cell.x, cell.y):
 				world.set_committed_by_offset(cell.x, cell.y, FixtureLoader.terrain_id("Air"))
+
+
+class CountingCollisionQuery:
+	extends TerrainCollisionQuery
+
+	var search_count := 0
+
+	func nearest_clear_polygon_air_center(
+		position: Vector2,
+		local_polygon: PackedVector2Array,
+		rotation_value: float,
+		max_ring: int
+	):
+		search_count += 1
+		return super(position, local_polygon, rotation_value, max_ring)

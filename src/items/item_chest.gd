@@ -9,7 +9,6 @@ signal explosion_armed(chest: ItemChest)
 
 const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
 const TerrainBodyUnstuckSolverScript = preload("res://src/world/terrain_body_unstuck_solver.gd")
-const GROUNDED_CHECK_INTERVAL := 0.1
 
 @onready var visual_root: Node2D = %VisualRoot
 @onready var sprite: Sprite2D = %Sprite
@@ -30,6 +29,10 @@ var _active := false
 var _grounded := false
 var _grounded_check_remaining := 0.0
 var _destructible := true
+var _sleep_enabled := false
+var _sleeping := false
+var _stuck := false
+var _terrain_watch := TerrainRegionWatch.new()
 
 
 func _ready() -> void:
@@ -45,7 +48,8 @@ func configure(
 	interactive: bool,
 	simulation_backend: TerrainSimulationBackend = null,
 	world: WorldGrid = null,
-	terrain_registry: TerrainRegistry = null
+	terrain_registry: TerrainRegistry = null,
+	compiled_terrain: CompiledTerrainData = null
 ) -> void:
 	spawn_data = data
 	_hex_radius = hex_radius
@@ -61,22 +65,70 @@ func configure(
 	if explosive != null and data != null and data.definition != null:
 		explosive.configure(data.definition.explosion_definition, _body_polygon, self)
 	_runtime_physics = world != null and terrain_registry != null
+	_sleeping = false
 	if _runtime_physics:
-		_terrain_query.configure(world, CompiledTerrainData.compile(terrain_registry), _hex_radius)
+		_terrain_query.configure(
+			world,
+			compiled_terrain if compiled_terrain != null else CompiledTerrainData.compile(terrain_registry),
+			_hex_radius
+		)
 	set_active(interactive, interactive)
 
 
 func set_active(is_active: bool, interactive_allowed: bool = true) -> void:
 	_active = is_active
-	set_physics_process(is_active and _runtime_physics)
+	set_physics_process(is_active and _runtime_physics and not _sleeping)
 	if explosive != null:
 		explosive.set_active(is_active)
 	set_interactive(is_active and interactive_allowed)
 
 
+## Lets a resting container stop its physics steps; the caller must then deliver terrain wake checks.
+func set_sleep_enabled(enabled: bool) -> void:
+	_sleep_enabled = enabled
+	if not enabled:
+		wake()
+
+
+func is_sleeping() -> bool:
+	return _sleeping
+
+
+## Returns the offset-cell range a sleeping container depends on.
+func watched_cells() -> Rect2i:
+	return _terrain_watch.cells()
+
+
+## Returns how long a sleeping container may wait before its watched terrain is read again.
+func sleep_check_interval(view: Rect2) -> float:
+	var definition := spawn_data.definition
+	var interval := definition.grounded_check_interval_seconds
+	if _stuck:
+		interval = maxf(interval, definition.stuck_check_interval_seconds)
+	if not view.grow(definition.screen_margin_radii * _hex_radius).has_point(global_position):
+		interval = maxf(interval, definition.offscreen_check_interval_seconds)
+	return interval
+
+
+## Resumes physics steps when the terrain a sleeping container depends on changed.
+func wake_if_terrain_changed() -> bool:
+	if not _sleeping or not _terrain_watch.has_changed():
+		return false
+	wake()
+	return true
+
+
+func wake() -> void:
+	if not _sleeping:
+		return
+	_sleeping = false
+	_grounded_check_remaining = 0.0
+	set_physics_process(_active and _runtime_physics)
+
+
 func set_destructible(destructible: bool) -> void:
 	_destructible = destructible
-	if not destructible and explosive != null and explosive.has_method("disarm"):
+	if not destructible and explosive != null:
 		explosive.disarm()
 
 
@@ -121,13 +173,19 @@ func is_grounded() -> bool:
 func _physics_process(delta: float) -> void:
 	if not _active or not _runtime_physics or delta <= 0.0 or spawn_data == null or spawn_data.definition == null:
 		return
+	var definition := spawn_data.definition
 	if _grounded:
 		_grounded_check_remaining = maxf(0.0, _grounded_check_remaining - delta)
 		if _grounded_check_remaining > 0.0:
 			return
-		_grounded_check_remaining = GROUNDED_CHECK_INTERVAL
-	var definition := spawn_data.definition
-	var supported := _polygon_overlaps_at(global_position + Vector2(0.0, 0.75), visual_root.rotation)
+		_grounded_check_remaining = definition.grounded_check_interval_seconds
+	var was_grounded := _grounded
+	var previous_position := global_position
+	var previous_rotation := visual_root.rotation
+	var supported := _polygon_overlaps_at(
+		global_position + Vector2(0.0, definition.support_contact_distance),
+		visual_root.rotation
+	)
 	if not supported:
 		_grounded = false
 		visual_root.rotation = 0.0
@@ -135,10 +193,47 @@ func _physics_process(delta: float) -> void:
 		_sweep_down(fall_velocity * delta)
 	else:
 		_grounded = true
-		_grounded_check_remaining = GROUNDED_CHECK_INTERVAL
+		_grounded_check_remaining = definition.grounded_check_interval_seconds
 		fall_velocity = 0.0
 		_apply_support_tilt()
 	_apply_terrain_unstuck(delta)
+	# A resting check that changes nothing repeats identically until the terrain it read changes.
+	if (
+		_sleep_enabled
+		and was_grounded
+		and _grounded
+		and global_position == previous_position
+		and visual_root.rotation == previous_rotation
+	):
+		_fall_asleep(delta)
+
+
+func _fall_asleep(delta: float) -> void:
+	_sleeping = true
+	_terrain_watch.capture(_terrain_query, _watched_bounds(delta), _stuck)
+	set_physics_process(false)
+
+
+## Returns the world rectangle containing all terrain a resting physics step of this length reads.
+func _watched_bounds(delta: float) -> Rect2:
+	var definition := spawn_data.definition
+	var half_size := _body_half_size()
+	var body := Transform2D(visual_root.rotation, Vector2.ZERO) * Rect2(-half_size, half_size * 2.0)
+	var bounds := Rect2(global_position + body.position, body.size)
+	bounds.size.y += definition.support_contact_distance
+	# The tilt probes and a blocked fall attempt sample straight below the unrotated body.
+	var fall_reach := minf(definition.terminal_fall_speed, definition.gravity * delta) * delta
+	bounds = bounds.merge(Rect2(
+		global_position - half_size,
+		Vector2(half_size.x * 2.0, half_size.y * 2.0 + maxf(ceilf(definition.support_probe_distance), fall_reach))
+	))
+	if _stuck:
+		# The unstuck search tests the body at every Air center inside the search ring.
+		var origin_cell := HexMetrics.offset_for_world(global_position, _hex_radius)
+		var origin := HexMetrics.center_for_offset(origin_cell.x, origin_cell.y, _hex_radius)
+		var reach := Vector2(1.5, sqrt(3.0)) * _hex_radius * float(definition.terrain_unstuck_search_ring)
+		bounds = bounds.merge(Rect2(origin - reach + body.position, reach * 2.0 + body.size))
+	return bounds
 
 
 func _sweep_down(distance: float) -> void:
@@ -163,7 +258,7 @@ func _sweep_down(distance: float) -> void:
 		global_position = lower
 		fall_velocity = 0.0
 		_grounded = true
-		_grounded_check_remaining = GROUNDED_CHECK_INTERVAL
+		_grounded_check_remaining = spawn_data.definition.grounded_check_interval_seconds
 		_apply_support_tilt()
 		return
 
@@ -216,6 +311,7 @@ func _apply_terrain_unstuck(delta: float) -> void:
 	)
 	global_position = result.position
 	fall_velocity = result.velocity.y
+	_stuck = result.overlapping and not result.moved
 	if result.moved:
 		_grounded = false
 		_grounded_check_remaining = 0.0
@@ -256,6 +352,8 @@ func _apply_geometry() -> void:
 		Vector2(half_size.x, half_size.y),
 		Vector2(-half_size.x, half_size.y),
 	])
+
+
 func _on_body_entered(body: Node) -> void:
 	if not _interactive_requested or (explosive != null and explosive.is_chain_armed()) or not body is PlayerController:
 		return
@@ -266,7 +364,7 @@ func _on_body_entered(body: Node) -> void:
 
 func _on_explosion_chain_armed(_source: WorldExplosive2D) -> void:
 	if not _destructible:
-		if explosive != null and explosive.has_method("disarm"):
+		if explosive != null:
 			explosive.disarm()
 		return
 	set_interactive(false)

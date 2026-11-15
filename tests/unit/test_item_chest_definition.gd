@@ -62,6 +62,30 @@ func test_zero_weight_options_are_skipped_and_duplicate_items_fail_validation() 
 	assert_true("\n".join(errors).contains("duplicate item stable_id"))
 
 
+func test_terrain_check_tuning_is_validated() -> void:
+	var definition := _definition().duplicate(true) as ItemChestDefinition
+	definition.support_contact_distance = 0.0
+	assert_true("\n".join(definition.validate()).contains("support_contact_distance must be positive"))
+
+	for property: StringName in [
+		&"grounded_check_interval_seconds",
+		&"offscreen_check_interval_seconds",
+		&"stuck_check_interval_seconds",
+	]:
+		definition = _definition().duplicate(true) as ItemChestDefinition
+		definition.set(property, 0.0)
+		assert_true(
+			"\n".join(definition.validate()).contains("terrain check intervals must be positive"),
+			"%s must be validated" % property
+		)
+
+	definition = _definition().duplicate(true) as ItemChestDefinition
+	definition.screen_margin_radii = -1.0
+	assert_true("\n".join(definition.validate()).contains("screen_margin_radii must not be negative"))
+	definition.screen_margin_radii = 0.0
+	assert_true(definition.validate().is_empty())
+
+
 func test_three_choice_table_draws_without_replacement() -> void:
 	var definition := _definition().duplicate(true) as ItemChestDefinition
 	var flag_option := ItemChestOption.new()

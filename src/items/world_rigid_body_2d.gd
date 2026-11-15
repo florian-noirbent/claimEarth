@@ -23,6 +23,8 @@ var horizontal_bounce_damping := 0.72
 var simulation_backend: TerrainSimulationBackend
 var world: WorldGrid
 var terrain_registry: TerrainRegistry
+## Optional terrain tables shared by the owner; compiled from the registry when unset.
+var compiled_terrain: CompiledTerrainData
 var hex_radius := 16.0
 var _terrain_query = TerrainCollisionQuery.new()
 
@@ -178,4 +180,6 @@ func _is_blocked(world_position: Vector2) -> bool:
 func _ensure_terrain_query() -> void:
 	if world == null or terrain_registry == null or _terrain_query.is_configured():
 		return
-	_terrain_query.configure(world, CompiledTerrainData.compile(terrain_registry), hex_radius)
+	if compiled_terrain == null:
+		compiled_terrain = CompiledTerrainData.compile(terrain_registry)
+	_terrain_query.configure(world, compiled_terrain, hex_radius)

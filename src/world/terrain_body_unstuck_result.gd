@@ -6,6 +6,8 @@ extends RefCounted
 var position := Vector2.ZERO
 var velocity := Vector2.ZERO
 var velocity_change := Vector2.ZERO
+## True when the body overlapped solid terrain, whether or not an escape was found.
+var overlapping := false
 var moved := false
 
 

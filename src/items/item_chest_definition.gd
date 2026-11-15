@@ -21,6 +21,16 @@ enum RewardKind { ITEMS, PERKS }
 @export_range(0.0, 4000.0, 1.0) var gravity := 880.0
 @export_range(0.0, 4000.0, 1.0) var terminal_fall_speed := 720.0
 @export_range(0.0, 64.0, 0.5) var support_probe_distance := 12.0
+## Solid terrain within this distance below the body keeps the container supported.
+@export_range(0.05, 8.0, 0.05) var support_contact_distance := 0.75
+## Seconds between support checks of a resting container.
+@export_range(0.01, 5.0, 0.01) var grounded_check_interval_seconds := 0.1
+## Seconds between terrain checks of a sleeping container outside the camera view.
+@export_range(0.01, 30.0, 0.01) var offscreen_check_interval_seconds := 1.0
+## Seconds between terrain checks of a sleeping container that found no clear Air around it.
+@export_range(0.01, 30.0, 0.01) var stuck_check_interval_seconds := 1.0
+## Distance outside the camera view, in hex radii, that still counts as on screen.
+@export_range(0.0, 64.0, 0.5) var screen_margin_radii := 12.0
 @export_range(0, 32, 1) var terrain_unstuck_search_ring := 8
 @export_range(0.0, 4000.0, 1.0) var terrain_unstuck_push_speed := 900.0
 @export_range(0.0, 90.0, 1.0) var uneven_ground_tilt_degrees := 45.0
@@ -47,6 +57,16 @@ func validate() -> PackedStringArray:
 		errors.append("item chest terminal_fall_speed must be positive")
 	if support_probe_distance <= 0.0:
 		errors.append("item chest support_probe_distance must be positive")
+	if support_contact_distance <= 0.0:
+		errors.append("item chest support_contact_distance must be positive")
+	if (
+		grounded_check_interval_seconds <= 0.0
+		or offscreen_check_interval_seconds <= 0.0
+		or stuck_check_interval_seconds <= 0.0
+	):
+		errors.append("item chest terrain check intervals must be positive")
+	if screen_margin_radii < 0.0:
+		errors.append("item chest screen_margin_radii must not be negative")
 	if terrain_unstuck_search_ring < 0 or terrain_unstuck_push_speed <= 0.0:
 		errors.append("item chest terrain unstuck tuning is invalid")
 	if choice_count < 1 or choice_count > 3:

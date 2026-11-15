@@ -15,6 +15,7 @@ func resolve_circle(
 	var result := TerrainBodyUnstuckResult.new(position, velocity)
 	if query == null or delta <= 0.0 or not query.circle_overlaps_solid(position, radius):
 		return result
+	result.overlapping = true
 	var target_variant = query.nearest_clear_circle_air_center(position, radius, search_ring)
 	return _move_toward_target(result, target_variant, delta, push_speed)
 
@@ -38,6 +39,7 @@ func resolve_polygon(
 		world_polygon.append(transform * point)
 	if not query.convex_polygon_overlaps_solid(world_polygon):
 		return result
+	result.overlapping = true
 	var target_variant = query.nearest_clear_polygon_air_center(
 		position,
 		local_polygon,

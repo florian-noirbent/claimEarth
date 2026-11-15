@@ -241,6 +241,103 @@ func test_chest_to_chest_chain_is_component_driven() -> void:
 	assert_true(second.explosive.is_chain_armed())
 
 
+func test_generated_chests_sleep_until_committed_terrain_changes_remove_their_support() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	var air_id := FixtureLoader.terrain_id("Air")
+	var world := _world_with_floors([10, 20])
+	var definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(null, world, FixtureLoader.terrain_registry(), 16.0, null, [
+		GeneratedItemChestSpawn.new(Vector2i(5, 8), definition, 1),
+		GeneratedItemChestSpawn.new(Vector2i(14, 8), definition, 2),
+	])
+	controller.set_active(true)
+	var chests := _item_chests(controller)
+	var first := chests[0]
+	var second := chests[1]
+	assert_same(first._terrain_query.metadata, second._terrain_query.metadata)
+	_step_until_sleeping(chests)
+	for chest in chests:
+		assert_true(chest.is_sleeping())
+		assert_false(chest.is_physics_processing())
+	controller.advance(0.2)
+	assert_true(first.is_sleeping())
+	assert_true(second.is_sleeping())
+
+	var change_set := TerrainChangeSet.new(world.dimensions)
+	for col in range(0, 10):
+		change_set.add_cell_change(world.set_committed_by_offset(col, 10, air_id))
+	controller._commit_external_terrain_changes(change_set)
+	assert_false(first.is_sleeping(), "Item-caused terrain edits must wake affected chests at once")
+	assert_true(first.is_physics_processing())
+	assert_true(second.is_sleeping())
+
+	for col in range(10, 20):
+		world.set_committed_by_offset(col, 10, air_id)
+	for _tick in 40:
+		controller.advance(0.1)
+	assert_false(second.is_sleeping(), "Simulated terrain changes must wake chests through the scheduled checks")
+	_step_until_sleeping(chests)
+	for chest in chests:
+		assert_true(chest.is_sleeping())
+		assert_gt(chest.global_position.y, HexMetrics.center_for_offset(5, 17, 16.0).y)
+
+
+func test_explosion_wakes_a_sleeping_chest_whose_floor_it_destroys() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	var world := _world_with_floors([10, 20])
+	var definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(null, world, FixtureLoader.terrain_registry(), 16.0, null, [
+		GeneratedItemChestSpawn.new(Vector2i(8, 8), definition, 1),
+	])
+	controller.set_active(true)
+	var chests := _item_chests(controller)
+	var chest := chests[0]
+	chest.set_destructible(false)
+	_step_until_sleeping(chests)
+	assert_true(chest.is_sleeping())
+
+	controller.resolve_explosion(
+		load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition,
+		HexMetrics.center_for_offset(8, 10, 16.0)
+	)
+
+	assert_false(world.get_committed_by_offset(8, 10) == FixtureLoader.terrain_id("Stone"))
+	assert_false(chest.is_sleeping())
+	assert_true(chest.is_physics_processing())
+
+
+func _world_with_floors(floor_rows: Array[int]) -> WorldGrid:
+	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	for row in floor_rows:
+		for col in range(20):
+			world.set_committed_by_offset(col, row, stone_id)
+	return world
+
+
+func _item_chests(controller: RunItemController) -> Array[ItemChest]:
+	var chests: Array[ItemChest] = []
+	for child in controller.get_children():
+		if child is ItemChest:
+			chests.append(child as ItemChest)
+	return chests
+
+
+func _step_until_sleeping(chests: Array[ItemChest]) -> void:
+	for _step in 600:
+		var all_sleeping := true
+		for chest in chests:
+			if not chest.is_sleeping():
+				all_sleeping = false
+				chest._physics_process(1.0 / 60.0)
+		if all_sleeping:
+			return
+
+
 func _item_registry() -> ItemRegistry:
 	var registry := ItemRegistry.new()
 	assert_true(registry.try_configure(load("res://config/items/catalog.tres")))
