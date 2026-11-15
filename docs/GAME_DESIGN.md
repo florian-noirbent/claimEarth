@@ -104,8 +104,10 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 - The default map is 100 columns by 512 rows of flat-top hexes.
 - The bottom 6% depth band is filled with lava. Its upper 1% softly blends into the
-  generated cave while the bottom edge remains completely filled. Every edge outside
-  the generated hex grid is solid to players and terrain-aware objects.
+  generated cave while the bottom edge remains completely filled. The space beside
+  and below the generated hex grid is solid to players and terrain-aware objects.
+  The space above the top row is open sky between the side walls, so the player can
+  climb out of the cave and walk on top of the map.
 - The camera is horizontally locked to the map and follows downward. If upward
   movement carries the player above the screen, it slowly recovers upward until the
   player has two hexagons of visible space above them.
@@ -400,6 +402,14 @@ are stored apart from scores and are never submitted.
   between matching neighboring moving terrain. If a partial moving cell has liquid
   or gas above, its empty portion draws that material; solid terrain above does not
   fill the empty portion.
+- The player is an animated explorer who idles, walks, runs, jumps, falls, crouches
+  on hard landings, swims while afloat in liquid, and digs while burrowing through
+  sand. A knocked-out body goes limp: it tumbles in flight, rolls along the ground
+  with its speed, drops flat once it slows down, and gets up through a crouch. A dark
+  outline keeps the body readable against the cave. With the hook out, the rope leaves
+  from the hand. A standing body reaches for the hook point; a swinging body leans
+  along the rope and holds it overhead on its center line, so the rope does not move
+  when the character turns around. The character faces its direction of travel, or the hook when standing still.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
 - Lighting diffuses through neighboring hexes using the emitting hex's

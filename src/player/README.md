@@ -5,8 +5,12 @@ tuning, and player presentation. `PlayerController` coordinates physics sequenci
 and runtime sampling while consuming grid-backed terrain motion from `src/world`.
 `PlayerRuntimeTuning` compiles authored movement/grapple resources and an immutable
 perk snapshot into typed active policy. `PlayerPresentationController` owns the
-editor-authored body, rope, hook, and sand-outline visuals and is updated directly
+body rig, rope, hook, and sand-outline visuals and is updated directly
 by `PlayerController`; it has no gameplay decisions or independent process loop.
+`PlayerAnimationSelector` picks the animation state and facing from a per-step
+`PlayerAnimationSnapshot`, and `PlayerRig` plays that state, aims the arms, and
+swings the limbs limply while knocked out. The presentation advances the rig's
+animation itself, once per physics step.
 Pure models retain movement, grapple, and camera rules for focused tests.
 
 Tuning lives in resources under `config/player/`. `WorldGrappleAnchorQuery` is the boundary from grapple logic into terrain and into the moving `GrappleTarget` objects listed in a `GrappleTargetRegistry`; a hooked target is pulled by the rope while the player keeps unhooked movement rules, terrain motion and unstuck results provide typed velocity changes for the accumulating impact hazard, and hazard sampling asks terrain hazard behavior for fill-aware effects. Terrain unstucking targets only Air centers where the full player circle fits and re-evaluates that target each physics frame until clear. The greatest qualifying impact per physics frame adds its excess above the configured safe speed to the shared hazard-status model; accumulated knockout/death classification remains player-owned. Fill-weighted viscosity is sampled from packed terrain metadata after movement and grapple acceleration, then exponentially damps full velocity before collision without fabricating an impact.

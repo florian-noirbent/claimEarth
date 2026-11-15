@@ -68,7 +68,7 @@ func test_player_scene_loads_with_camera_and_visual() -> void:
 	assert_eq(player.world_light_source.definition.light_level, 190)
 	assert_eq(player.world_light_source.definition.update_radius, 18)
 	assert_not_null(player.presentation)
-	assert_not_null(player.presentation.body_polygon)
+	assert_not_null(player.presentation.rig)
 	assert_gt(player.movement_config.impact_hazard_minimum_speed, 0.0)
 	assert_lt(player.movement_config.impact_hazard_minimum_speed, player.movement_config.medium_impact_speed)
 	assert_gt(player.movement_config.medium_impact_speed, 0.0)
