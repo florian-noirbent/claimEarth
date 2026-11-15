@@ -93,6 +93,17 @@ From the repository root (prefix with `pwsh` on macOS, for example
 - `ci.ps1` runs the fast local gate by default. Use `./tools/ci.ps1 -Milestone` to add performance tests plus web/browser smoke gates.
 - `assert_test_failure.ps1` injects a temporary failing test and verifies the headless
   runner returns a nonzero exit code.
+- Player art pipeline (Python scripts need Pillow, NumPy, and SciPy):
+  - `slice_player_reference.py` cuts `assets/objects/player/source/reference.png`
+    into the redraw template under `source/template` and `source/parts_sheet.png`.
+  - `extract_player_parts.py` extracts the part textures the game uses from the
+	repainted sheet `source/parts_redraw.png`, which must keep the template sheet's
+	cell layout.
+  - `build_player_rig.gd` generates `scenes/player/player_rig.tscn` from its bone
+	and animation tables: run `./tools/import.ps1`, then
+	`godot --headless --path . --script res://tools/build_player_rig.gd`. The
+	tables are the source of the rig, so scene edits made in the editor are lost
+	on the next run.
 
 The `build/` directory is generated and ignored by Git. Its tracked `.gdignore`
 file also prevents Godot from importing exports, browser profiles, and logs back

@@ -50,6 +50,7 @@ var _ragdoll_spin_direction := 1.0
 var _base_movement_config: PlayerMovementConfig
 var _base_grapple_config: GrappleConfig
 var _runtime_tuning: PlayerRuntimeTuning
+var _animation_frame := PlayerAnimationSnapshot.new()
 
 
 func _ready() -> void:
@@ -171,14 +172,7 @@ func _physics_process(delta: float) -> void:
 	_handle_physics_impacts(motion_result, post_grapple_result, unstuck_result)
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
-	presentation.update_body(
-		_movement_model.current_state,
-		velocity,
-		is_ragdolling(),
-		_ragdoll_spin_direction,
-		movement_config.ragdoll_spin_speed,
-		delta
-	)
+	presentation.update_body(_animation_snapshot(), delta)
 	presentation.update_grapple(
 		_grapple_model.state.is_attached and _grapple_model.state.anchor != null,
 		current_grapple_anchor_position(),
@@ -446,7 +440,7 @@ func _apply_fluid_drag(delta: float) -> void:
 
 func _liquid_submersion_fraction() -> float:
 	var sample_positions := _occupied_sample_positions()
-	if sample_positions.is_empty():
+	if sample_positions.is_empty() or _world == null or _terrain_registry == null:
 		return 0.0
 	var submerged_count := 0
 	for sample_position in sample_positions:
@@ -460,11 +454,23 @@ func _liquid_submersion_fraction() -> float:
 
 
 func _update_sand_presentation() -> void:
-	presentation.set_sand_burrow_visible(
-		_runtime_tuning != null
-			and _runtime_tuning.sand_passable
-			and _body_intersects_perk_tag("sand")
-	)
+	presentation.set_sand_burrow_visible(_is_sand_burrowing())
+
+
+func _is_sand_burrowing() -> bool:
+	return _runtime_tuning != null 		and _runtime_tuning.sand_passable 		and _body_intersects_perk_tag("sand")
+
+
+func _animation_snapshot() -> PlayerAnimationSnapshot:
+	_animation_frame.velocity = velocity
+	_animation_frame.grounded = _is_grounded_for_movement()
+	_animation_frame.ragdolling = is_ragdolling()
+	_animation_frame.ragdoll_spin_direction = _ragdoll_spin_direction
+	_animation_frame.ragdoll_spin_speed = movement_config.ragdoll_spin_speed
+	_animation_frame.swinging = _grapple_model.is_swing_attached()
+	_animation_frame.liquid_submersion = _liquid_submersion_fraction()
+	_animation_frame.sand_burrowing = _is_sand_burrowing()
+	return _animation_frame
 
 
 func _average_body_fluid_viscosity() -> float:

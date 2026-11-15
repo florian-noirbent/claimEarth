@@ -38,12 +38,17 @@ func is_solid_cell(col: int, row: int) -> bool:
 	if not is_configured():
 		return false
 	if not world.dimensions.is_in_bounds_offset(col, row):
-		return true
+		return _is_solid_outside_world(col, row)
 	var index := world.dimensions.offset_to_index(col, row)
 	var cell_id := world.get_committed_by_index(index)
 	if _ignored_solid_ids.has(cell_id):
 		return false
 	return metadata.is_solid(cell_id, world.get_committed_quantity_by_index(index))
+
+
+## Outside the map, the sides and the bottom are solid; the sky above the top row is open.
+func _is_solid_outside_world(col: int, row: int) -> bool:
+	return row >= 0 or col < 0 or col >= world.dimensions.width
 
 
 func circle_overlaps_solid(position: Vector2, radius: float) -> bool:
@@ -108,9 +113,11 @@ func cell_states(cells: Rect2i, include_air: bool = false) -> PackedByteArray:
 	for row in range(cells.position.y, cells.end.y):
 		var row_in_bounds := row >= 0 and row < depth
 		for col in range(cells.position.x, cells.end.x):
-			# Cells outside the world collide like solid terrain, as in is_solid_cell.
+			# Cells outside the world collide as in is_solid_cell.
 			var state := CELL_STATE_SOLID
-			if row_in_bounds and col >= 0 and col < width:
+			if row < 0 and col >= 0 and col < width:
+				state = 0
+			elif row_in_bounds and col >= 0 and col < width:
 				var index := dimensions.offset_to_index(col, row)
 				var cell_id := world.get_committed_by_index(index)
 				if _ignored_solid_ids.has(cell_id) or not metadata.is_solid(

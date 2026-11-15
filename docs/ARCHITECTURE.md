@@ -200,7 +200,7 @@ direction order, and performance benchmark contract.
 
 Terrain collision is gameplay-side grid physics, not presentation. `TerrainCollisionQuery`
 reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables,
-treats every out-of-bounds grid cell as a virtual solid hex, then tests circular and convex-polygon bodies against nearby solid hex polygons from
+treats out-of-bounds grid cells beside and below the map as virtual solid hexes and those above the top row, between the side walls, as open sky, then tests circular and convex-polygon bodies against nearby solid hex polygons from
 `HexMetrics`. Its shape-aware Air queries accept only destinations where the complete
 body is clear. They search by canonical hex distance, then break equal-ring ties by
 world distance, upward position, and left position. Every shape query visits only the
@@ -388,7 +388,7 @@ projectiles, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
 spawn air, the default bottom lava band, and distribution tests. Grid-edge collision
-uses virtual solid cells; generation does not create stone boundary walls.
+uses virtual solid cells at the sides and the bottom; generation does not create stone boundary walls.
 
 ## Player, Camera, And Items
 
@@ -397,9 +397,33 @@ uses virtual solid cells; generation does not create stone boundary walls.
 clamping. `PlayerRuntimeTuning` compiles the immutable perk snapshot against the
 authored movement and grapple resources, producing duplicated active configs and
 typed player, terrain, and hazard policy without exposing modifier keys throughout
-the controller. `PlayerPresentationController` owns the editor-authored body, rope,
-hook, and sand-outline visuals; `PlayerController` updates it synchronously after
-physics and it owns no gameplay decisions or independent processing.
+the controller. `PlayerPresentationController` owns the body rig, rope, hook, and
+sand-outline visuals; `PlayerController` updates it synchronously after physics and
+it owns no gameplay decisions or independent processing.
+
+The body is `PlayerRig`, a cutout skeleton generated into
+`scenes/player/player_rig.tscn` by `tools/build_player_rig.gd`. Bones form the
+hierarchy, while the part sprites sit in one flat list in draw order and follow
+their bones through `RemoteTransform2D`, so draw order never depends on the bone
+tree or on `z_index`. A second flat list behind it draws every part again as a grown
+silhouette through `player_outline.gdshader`, which outlines the whole body without
+an offscreen pass. Each physics step `PlayerController` fills one
+`PlayerAnimationSnapshot`; the pure `PlayerAnimationSelector` turns it into a
+`PlayerAnimationState` and a facing, including the landing crouch timer and the
+short grace that ignores footing lost for a few frames on hex slopes. The rig's
+`AnimationTree` state machine holds one clip per state with a cross-fade between
+every pair and only blends; it never decides a state. The tree runs in manual
+mode: `PlayerPresentationController` advances the rig once per physics step and the
+procedural layers then pose on top of the clips in the same call. Those layers are
+arm aiming at the hook (or, while swinging, holding the hands on the body's center
+line so mirroring the rig leaves the rope start in place), the lean along the rope,
+and the knockout. While knocked
+out, the presentation turns the body (spin in flight, rolling with ground speed,
+lying flat at rest) and `PlayerRig` swings the limp bones as damped pendulums under
+gravity, the body's acceleration, air drag, and spin, inside per-joint limits, then
+eases them back to the clips. To add a state, add its name to
+`PlayerAnimationState`, a clip to the builder's table, and its rule and tests to
+the selector, then regenerate the scene.
 
 The player does not use Godot terrain colliders for movement; terrain collision
 is delegated to the world-level query and motion solver. It combines velocity changes

@@ -2,7 +2,18 @@
 
 Current art is original repository content stored by runtime use:
 
-- `assets/objects/player_body.svg`
+- `assets/objects/player/*.png` — the 16 cutout parts of the player rig (head, torso
+  with scarf, backpack, pelvis, and an upper arm, forearm, hand, thigh, shin, and boot
+  for each side). They are imported with mipmaps because the rig draws them far below
+  their painted size. `tools/extract_player_parts.py` strengthens their saturation
+  and lifts their dark tones so the small on-screen character stays readable, and
+  leaves a transparent margin around each part for the outline shader.
+  `scenes/player/player_rig.tscn` assembles and animates them, thickens the limbs,
+  darkens the far-side (`*_left`) limbs, and outlines the whole body.
+- `assets/objects/player/source/` (ignored by Godot) holds the art sources:
+  `reference.png` is the original character painting, `template/` and
+  `parts_sheet.png` are the redraw template sliced from it, and `parts_redraw.png`
+  is the repainted sheet the part textures are extracted from.
 - `assets/objects/small_bomb.svg`
 - `assets/objects/large_bomb.svg`
 - `assets/objects/flag.svg`
