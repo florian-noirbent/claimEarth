@@ -1,0 +1,223 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/app/statistics_page.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/statistics_section.tscn" id="2_section"]
+[ext_resource type="Texture2D" path="res://assets/objects/flag.svg" id="3_flag"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_page_panel"]
+content_margin_left = 22.0
+content_margin_top = 16.0
+content_margin_right = 14.0
+content_margin_bottom = 16.0
+bg_color = Color(0.08, 0.055, 0.035, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.38, 0.2, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.45, 0.22, 0.1, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 7
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.05, 0.03, 0.02, 0.45)
+shadow_size = 5
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_pressed"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.34, 0.16, 0.07, 1)
+border_width_left = 5
+border_width_top = 7
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu_button_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.58, 0.29, 0.13, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 7
+border_color = Color(0.17, 0.09, 0.04, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.05, 0.03, 0.02, 0.45)
+shadow_size = 5
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_focus"]
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.94, 0.76, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_scroll_track"]
+content_margin_left = 6.0
+content_margin_right = 6.0
+bg_color = Color(0.05, 0.035, 0.025, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_scroll_grabber"]
+bg_color = Color(0.45, 0.22, 0.1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_scroll_grabber_hover"]
+bg_color = Color(0.62, 0.32, 0.14, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tooltip"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.065, 0.04, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.75, 0.19, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="Theme" id="Theme_statistics"]
+TooltipLabel/colors/font_color = Color(0.92, 0.89, 0.85, 1)
+TooltipLabel/font_sizes/font_size = 15
+TooltipPanel/styles/panel = SubResource("StyleBox_tooltip")
+VScrollBar/styles/grabber = SubResource("StyleBox_scroll_grabber")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBox_scroll_grabber_hover")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBox_scroll_grabber_hover")
+VScrollBar/styles/scroll = SubResource("StyleBox_scroll_track")
+VScrollBar/styles/scroll_focus = SubResource("StyleBox_scroll_track")
+
+[node name="StatisticsPage" type="PanelContainer"]
+custom_minimum_size = Vector2(1080, 640)
+theme = SubResource("Theme_statistics")
+theme_override_styles/panel = SubResource("StyleBox_page_panel")
+script = ExtResource("1_script")
+section_scene = ExtResource("2_section")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 30
+text = "Statistics"
+
+[node name="BackButton" type="Button" parent="Layout/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 54)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_colors/font_hover_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_focus_color = Color(1, 0.88, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/focus = SubResource("StyleBox_button_focus")
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Back"
+icon = ExtResource("3_flag")
+expand_icon = true
+
+[node name="Scroll" type="ScrollContainer" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="BodyMargin" type="MarginContainer" parent="Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="Body" type="VBoxContainer" parent="Layout/Scroll/BodyMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="EmptyHint" type="Label" parent="Layout/Scroll/BodyMargin/Body"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Sections" type="VBoxContainer" parent="Layout/Scroll/BodyMargin/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 24

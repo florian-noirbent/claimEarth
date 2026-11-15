@@ -31,9 +31,15 @@ func test_touching_chest_pauses_run_and_selected_reward_is_added_once() -> void:
 	var reward_name := first_card.title_label.text
 	var reward_amount := int(first_card.quantity_label.text.trim_prefix("+"))
 	var before_count := _status_count(before, reward_name)
+	watch_signals(app_root.item_controller)
 
 	first_card.pressed.emit()
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING)
+	assert_signal_emit_count(app_root.item_controller, "reward_claimed", 1)
+	var claim := get_signal_parameters(app_root.item_controller, "reward_claimed")[0] as RewardClaim
+	assert_eq(claim.container_key, &"item_chest")
+	assert_eq(claim.picked_item.display_name, reward_name)
+	assert_eq(claim.picked_quantity, reward_amount)
 	assert_eq(_status_count(app_root.inventory_status_for_test(), reward_name), before_count + reward_amount)
 	await wait_process_frames(1)
 	assert_eq(app_root.item_chest_count_for_test(), 18)
@@ -41,6 +47,7 @@ func test_touching_chest_pauses_run_and_selected_reward_is_added_once() -> void:
 	assert_eq(app_root.simulation_backend().standard_light_level_at(chest_light_cell), 0)
 	first_card.pressed.emit()
 	assert_eq(_status_count(app_root.inventory_status_for_test(), reward_name), before_count + reward_amount)
+	assert_signal_emit_count(app_root.item_controller, "reward_claimed", 1)
 
 
 func test_world_advance_synchronizes_the_player_light_to_the_current_cell() -> void:

@@ -30,6 +30,13 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/reward_picker_card.tscn" id="25_reward_card"]
 [ext_resource type="PackedScene" path="res://scenes/ui/perk_stack.tscn" id="26_perk_stack"]
 [ext_resource type="Resource" path="res://config/generation/default_profile.tres" id="27_generation_profile"]
+[ext_resource type="PackedScene" path="res://scenes/ui/statistics_page.tscn" id="28_statistics_page"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/victory.svg" id="29_statistics_icon"]
+[ext_resource type="Script" path="res://src/statistics/statistics_controller.gd" id="30_statistics"]
+[ext_resource type="Resource" path="res://config/statistics/statistics_rules.tres" id="31_statistics_rules"]
+[ext_resource type="Resource" path="res://config/statistics/statistics_presentation.tres" id="32_statistics_presentation"]
+[ext_resource type="Resource" path="res://config/items/catalog.tres" id="33_item_catalog"]
+[ext_resource type="Resource" path="res://config/perks/catalog.tres" id="34_perk_catalog"]
 
 [sub_resource type="Resource" id="Resource_7rhj7"]
 script = ExtResource("3_hgfhf")
@@ -230,10 +237,18 @@ run_session_scene = ExtResource("2_run_session")
 generation_profile = ExtResource("27_generation_profile")
 player_scene = ExtResource("3_player")
 leaderboard_config = ExtResource("6_leaderboard_config")
+item_catalog = ExtResource("33_item_catalog")
+perk_catalog = ExtResource("34_perk_catalog")
+statistics_presentation = ExtResource("32_statistics_presentation")
 
 [node name="ScoreController" type="Node" parent="." unique_id=397205212]
 unique_name_in_owner = true
 script = ExtResource("9_score")
+
+[node name="StatisticsController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("30_statistics")
+rules = ExtResource("31_statistics_rules")
 
 [node name="AudioDirector" type="Node" parent="." unique_id=1497690768]
 unique_name_in_owner = true
@@ -313,6 +328,7 @@ autowrap_mode = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 92.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -391,6 +407,20 @@ theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Settings"
 icon = ExtResource("23_settings_cog")
+expand_icon = true
+
+[node name="StatisticsButton" type="Button" parent="UiLayer/Center/Content/MenuPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.78, 0.34, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_menu_button")
+theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
+text = "Statistics"
+icon = ExtResource("29_statistics_icon")
 expand_icon = true
 
 [node name="LeaderboardButton" type="Button" parent="UiLayer/Center/Content/MenuPanel" unique_id=831887216]
@@ -618,6 +648,19 @@ theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 text = "Back"
 icon = ExtResource("17_flag")
 expand_icon = true
+
+[node name="StatisticsCenter" type="CenterContainer" parent="UiLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatisticsPage" parent="UiLayer/StatisticsCenter" instance=ExtResource("28_statistics_page")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
 
 [node name="OverlayRoot" type="Control" parent="UiLayer" unique_id=202866097]
 unique_name_in_owner = true

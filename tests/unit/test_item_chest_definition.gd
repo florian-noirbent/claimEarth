@@ -86,6 +86,18 @@ func test_terrain_check_tuning_is_validated() -> void:
 	assert_true(definition.validate().is_empty())
 
 
+func test_statistics_key_is_resource_authored_and_validated() -> void:
+	assert_eq(_definition().statistics_key, &"item_chest")
+	var geode := load("res://config/items/perk_geode.tres") as PerkGeodeDefinition
+	assert_eq(geode.statistics_key, &"perk_geode")
+	assert_true(geode.validate().is_empty())
+	assert_eq(ItemChestDefinition.new().statistics_key, &"item_chest")
+
+	var definition := _definition().duplicate(true) as ItemChestDefinition
+	definition.statistics_key = &""
+	assert_true("\n".join(definition.validate()).contains("requires a statistics_key"))
+
+
 func test_three_choice_table_draws_without_replacement() -> void:
 	var definition := _definition().duplicate(true) as ItemChestDefinition
 	var flag_option := ItemChestOption.new()

@@ -21,6 +21,7 @@ chest_scene = ExtResource("2_scene")
 explosion_definition = ExtResource("3_explosion")
 destruction_pulse = SubResource("Pulse")
 container_tags = PackedStringArray("perk_geode")
+statistics_key = &"perk_geode"
 emits_light = true
 emitted_light_level_override = 140
 reward_kind = 1

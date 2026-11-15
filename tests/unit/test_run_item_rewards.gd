@@ -28,6 +28,13 @@ func test_item_reward_draws_and_applies_one_registered_choice() -> void:
 	assert_null(rewards.pending_chest())
 	assert_not_null(rewards.last_item_reward())
 	assert_gt(inventory.count_for(rewards.last_item_reward()), 0.0)
+	var claim := rewards.last_claim()
+	assert_not_null(claim)
+	assert_eq(claim.container_key, &"item_chest")
+	assert_eq(claim.offered_items.size(), 2)
+	assert_same(claim.picked_item, rewards.last_item_reward())
+	assert_same(claim.offered_items[0], claim.picked_item)
+	assert_gt(claim.picked_quantity, 0)
 	assert_null(rewards.apply(0, inventory))
 
 
@@ -69,6 +76,14 @@ func test_perk_reward_selects_one_drawn_perk() -> void:
 	assert_eq(rewards.request_title(), "Choose a perk")
 	assert_eq(rewards.apply(0, inventory), chest)
 	assert_eq(perks.selected_perks().size(), 1)
+	var claim := rewards.last_claim()
+	assert_eq(claim.container_key, &"perk_geode")
+	assert_false(claim.offered_perks.is_empty())
+	assert_same(claim.picked_perk, perks.selected_perks()[0])
+	assert_same(claim.offered_perks[0], claim.picked_perk)
+	assert_true(claim.offered_items.is_empty())
+	assert_null(claim.picked_item)
+	assert_null(rewards.last_item_reward())
 	perks.free()
 
 
@@ -81,6 +96,7 @@ func test_cancel_and_invalidate_clear_the_pending_transaction() -> void:
 	assert_eq(rewards.begin(chest), RunItemRewards.BeginResult.STARTED)
 	rewards.cancel()
 	assert_null(rewards.pending_chest())
+	assert_null(rewards.last_claim())
 	assert_false(rewards.invalidate())
 	assert_eq(rewards.begin(chest), RunItemRewards.BeginResult.STARTED)
 	assert_true(rewards.invalidate())

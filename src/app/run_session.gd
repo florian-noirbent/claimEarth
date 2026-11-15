@@ -13,8 +13,10 @@ signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed(cause: StringName)
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
+signal item_used(definition: ItemDefinition)
 signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
+signal reward_claimed(claim: RewardClaim)
 signal perks_changed(perks: Array)
 signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition)
 
@@ -50,8 +52,10 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	item_controller.flag_destroyed.connect(flag_destroyed.emit)
 	item_controller.flag_flight_changed.connect(flag_flight_changed.emit)
 	item_controller.item_thrown.connect(item_thrown.emit)
+	item_controller.item_used.connect(item_used.emit)
 	item_controller.reward_choices_requested.connect(reward_choices_requested.emit)
 	item_controller.pending_reward_invalidated.connect(pending_reward_invalidated.emit)
+	item_controller.reward_claimed.connect(reward_claimed.emit)
 	item_controller.terrain_changed.connect(world_controller.refresh_terrain_presentation)
 	item_controller.terrain_pulse_started.connect(terrain_pulse_started.emit)
 	perk_controller.perks_changed.connect(perks_changed.emit)

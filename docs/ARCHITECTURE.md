@@ -26,6 +26,7 @@ src/leaderboard/        Service contract, fake, SimpleBoards adapter
 src/player/             Movement, grapple, hazards, camera
 src/presentation/       Chunk rendering, markers, effects
 src/simulation/         Replaceable terrain simulation backend
+src/statistics/         Lifetime player statistics, rules, and their persistence
 src/terrain/            Terrain definitions and behavior strategies
 src/world/              Packed grid and hex coordinate types
 tests/                  Contracts, unit, integration, performance
@@ -48,6 +49,7 @@ disposable session:
 | --- | --- | --- |
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
+| `AppRoot` | `StatisticsController` | Lifetime statistics, the in-progress run record, and statistics persistence |
 | `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, camera bounds, presenter |
 | `RunSession` | `RunItemController` | Inventory, selection, reward containers, explosive barrels, projectiles, explosions, flag flight |
 | `RunSession` | `RunPerkController` | Unique perk pool, selected perks, and compiled immutable modifier snapshot |
@@ -79,6 +81,34 @@ single phone gesture from producing duplicate gameplay actions.
 `AppRoot` holds the terminal-outcome lock. The first death, planted flag, or destroyed
 flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
+
+## Statistics
+
+`StatisticsController` is a persistent sibling of `ScoreController` with its
+thresholds in `StatisticsRules` (`config/statistics/statistics_rules.tres`). It knows
+nothing about items, perks, or UI: callers pass stable IDs, death and flag-loss causes,
+and container keys, which it stores as string-keyed counters in `PlayerStatistics`.
+Event counters update lifetime totals at once; run aggregates (games played, depth,
+time, streaks, victories) fold in at `end_run()`. A run records at most one death
+and at most one flag resolution, and both may occur because Relentless drops the
+flag on death.
+
+Data flow: `RunItemController` emits typed `item_used(ItemDefinition)` and
+`reward_claimed(RewardClaim)` outcomes, which `RunSession` forwards. `AppRoot` maps
+those and its existing run outcomes to controller calls: `begin_run` when a run
+becomes ready, `record_progress` from `_process` during active play, the first
+unlocked death (including a Relentless death), the planted or destroyed flag, and
+`end_run` on a terminal outcome, at flag plant before name entry, and whenever a
+restart or the menu abandons a run. `end_run` is idempotent. Late outcomes ignored
+by the terminal-outcome lock are not recorded.
+
+The main-menu Statistics button emits `statistics_requested`. `AppRoot` passes a
+statistics snapshot, `ItemCatalog`, `PerkCatalog`, `StatisticsPresentationConfig`,
+and the rules to `StatisticsViewBuilder`, which returns generic
+`StatisticsViewData` sections (tiles, icon grid, or ranked bars). `AppUiController`
+hands that data to `StatisticsPage`, which renders entries without knowing what
+they mean. The builder iterates catalogs and presentation key lists; keys missing
+from the presentation still render with its fallback icon.
 
 `GENERATING` creates a new run session, generates terrain, initializes the GPU
 simulation backend, and commits the configured initial settlement ticks before the
@@ -516,6 +546,13 @@ for Unlimited, defaulting to 30 on the same mobile targets and Unlimited elsewhe
 fixed-rate terrain clock. These preferences remain independent and keep device
 policy out of gameplay ownership.
 
+`StatisticsRepository` stores lifetime statistics in a separate
+`user://claim_earth_statistics.json`, written through a temporary file and only when
+a run ends (or statistics are reset), never per frame. Missing or corrupt data, and
+invalid fields, fall back to empty values. The controller does no disk IO until
+`configure()`; `AppRoot` keeps statistics in memory only in test mode unless a test
+supplies a path through `configure_statistics_path_for_test`.
+
 `LeaderboardService` is the dependency boundary. Production uses
 `SimpleBoardsLeaderboardService`; tests and offline scenarios use
 `FakeLeaderboardService`. Response parsing is isolated in
@@ -575,6 +612,19 @@ branch is required.
 3. Route it in `AppRoot`; add a `RunPhase` only when behavior truly needs a state.
 4. Cover visibility, transition, repeated-entry, and cleanup behavior.
 
+### Add A Statistic
+
+1. Add the field or counter to `PlayerStatistics`, including `to_dictionary` and
+   tolerant `from_dictionary` parsing.
+2. Add a typed `record_*` method to `StatisticsController`; per-frame paths must not
+   allocate, save, or emit.
+3. Emit the source outcome as a typed signal from its owner and route it in `AppRoot`.
+4. Present it in `StatisticsViewBuilder` with generic entries; new death causes,
+   flag-loss causes, and containers only need a `StatisticKeyPresentation` entry in
+   `config/statistics/statistics_presentation.tres`.
+5. Cover the rule in unit tests and the complete workflow in
+   `tests/integration/test_statistics_flow.gd`.
+
 ### Add Or Change Input
 
 1. Extend `GameplayInputController` frames/intents rather than reading `Input` from
@@ -603,6 +653,7 @@ branch is required.
 | Generation | Fixed-seed generation tests plus fast suite |
 | Simulation/rendering/collision | Fast suite and performance suite |
 | Save/leaderboard | Offline fake-service tests plus fast suite |
+| Statistics | Controller/builder unit tests, statistics flow integration test, plus fast suite |
 | Input/touch/gamepad/settings | Input unit/contract tests, run/UI integration tests, plus fast suite |
 | Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 

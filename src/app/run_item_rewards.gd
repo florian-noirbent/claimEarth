@@ -19,6 +19,7 @@ var _pending_perk_choices: Array[PerkDefinition] = []
 var _request_title := ""
 var _request_choices: Array[RewardChoiceViewData] = []
 var _last_item_reward: ItemDefinition
+var _last_claim: RewardClaim
 
 
 func configure(item_registry: ItemRegistry, perk_controller: RunPerkController) -> void:
@@ -37,6 +38,7 @@ func reset() -> void:
 	_request_title = ""
 	_request_choices.clear()
 	_last_item_reward = null
+	_last_claim = null
 
 
 func begin(chest: ItemChest) -> BeginResult:
@@ -91,11 +93,16 @@ func apply(choice_index: int, inventory: ItemInventory) -> ItemChest:
 	if _pending_chest == null:
 		return null
 	_last_item_reward = null
+	_last_claim = null
+	var claim := RewardClaim.new()
+	claim.container_key = _pending_chest.spawn_data.definition.statistics_key
 	if not _pending_perk_choices.is_empty():
 		if choice_index < 0 or choice_index >= _pending_perk_choices.size() or _perk_controller == null:
 			return null
 		if not _perk_controller.select_perk(_pending_perk_choices[choice_index]):
 			return null
+		claim.offered_perks = _pending_perk_choices.duplicate()
+		claim.picked_perk = _pending_perk_choices[choice_index]
 	else:
 		if choice_index < 0 or choice_index >= _pending_choices.size() or inventory == null or _item_registry == null:
 			return null
@@ -106,10 +113,15 @@ func apply(choice_index: int, inventory: ItemInventory) -> ItemChest:
 		if registered_item == null or not inventory.add(registered_item, option.quantity):
 			return null
 		_last_item_reward = registered_item
+		for offered in _pending_choices:
+			claim.offered_items.append(_item_registry.get_definition(offered.item.stable_id))
+		claim.picked_item = registered_item
+		claim.picked_quantity = option.quantity
 	var claimed_chest := _pending_chest
 	var granted_item := _last_item_reward
 	reset()
 	_last_item_reward = granted_item
+	_last_claim = claim
 	return claimed_chest
 
 
@@ -126,6 +138,11 @@ func invalidate() -> bool:
 
 func last_item_reward() -> ItemDefinition:
 	return _last_item_reward
+
+
+## Returns what the most recent successful apply offered and granted, or null.
+func last_claim() -> RewardClaim:
+	return _last_claim
 
 
 func _choice_count(definition: ItemChestDefinition) -> int:

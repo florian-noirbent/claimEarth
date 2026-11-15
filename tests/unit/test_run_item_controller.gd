@@ -72,6 +72,177 @@ func test_generated_chest_requests_choices_and_applies_one_reward_once() -> void
 	assert_eq(controller.item_chest_count(), 0)
 
 
+func test_item_chest_claim_reports_offered_items_pick_quantity_and_container_key() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	var item_registry := _item_registry()
+	var definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
+	controller.configure_catalog(item_registry, 16.0)
+	controller.configure_run(
+		null,
+		WorldGrid.new(WorldDimensions.new(16, 32), FixtureLoader.terrain_id("Air")),
+		FixtureLoader.terrain_registry(),
+		16.0,
+		null,
+		[GeneratedItemChestSpawn.new(Vector2i(5, 10), definition, 77)]
+	)
+	controller.set_active(true)
+	var expected := definition.draw_choices(77, 2)
+	watch_signals(controller)
+	controller._on_item_chest_touched(_item_chests(controller)[0])
+
+	assert_true(controller.apply_pending_reward(1))
+
+	assert_signal_emit_count(controller, "reward_claimed", 1)
+	var claim := get_signal_parameters(controller, "reward_claimed")[0] as RewardClaim
+	assert_eq(claim.container_key, &"item_chest")
+	assert_eq(claim.offered_items.size(), 2)
+	for index in expected.size():
+		assert_same(claim.offered_items[index], item_registry.get_definition(expected[index].item.stable_id))
+	assert_same(claim.picked_item, claim.offered_items[1])
+	assert_eq(claim.picked_quantity, expected[1].quantity)
+	assert_true(claim.offered_perks.is_empty())
+	assert_null(claim.picked_perk)
+
+
+func test_perk_geode_claim_reports_offered_perks_pick_and_container_key() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	var perks := RunPerkController.new()
+	add_child_autofree(perks)
+	assert_true(perks.configure(load("res://config/perks/catalog.tres") as PerkCatalog))
+	var definition := load("res://config/items/perk_geode.tres") as PerkGeodeDefinition
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_perk_controller(perks)
+	controller.configure_run(
+		null,
+		WorldGrid.new(WorldDimensions.new(16, 32), FixtureLoader.terrain_id("Air")),
+		FixtureLoader.terrain_registry(),
+		16.0,
+		null,
+		[],
+		[GeneratedItemChestSpawn.new(Vector2i(5, 10), definition, 41)]
+	)
+	controller.set_active(true)
+	watch_signals(controller)
+	controller._on_item_chest_touched(_item_chests(controller)[0])
+	var offered: Array = get_signal_parameters(controller, "reward_choices_requested")[1]
+
+	assert_true(controller.apply_pending_reward(0))
+
+	assert_signal_emit_count(controller, "reward_claimed", 1)
+	var claim := get_signal_parameters(controller, "reward_claimed")[0] as RewardClaim
+	assert_eq(claim.container_key, &"perk_geode")
+	assert_eq(claim.offered_perks.size(), offered.size())
+	for index in offered.size():
+		assert_eq(claim.offered_perks[index].display_name, (offered[index] as RewardChoiceViewData).title)
+	assert_same(claim.picked_perk, claim.offered_perks[0])
+	assert_eq(perks.selected_perks().size(), 1)
+	assert_same(perks.selected_perks()[0], claim.picked_perk)
+	assert_true(claim.offered_items.is_empty())
+	assert_null(claim.picked_item)
+
+
+func test_reward_claimed_is_not_emitted_for_invalid_choice_or_cancel() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(
+		null,
+		WorldGrid.new(WorldDimensions.new(16, 32), FixtureLoader.terrain_id("Air")),
+		FixtureLoader.terrain_registry(),
+		16.0,
+		null,
+		[GeneratedItemChestSpawn.new(Vector2i(5, 10), load("res://config/items/item_chest.tres") as ItemChestDefinition, 77)]
+	)
+	controller.set_active(true)
+	var chest := _item_chests(controller)[0]
+	watch_signals(controller)
+
+	controller._on_item_chest_touched(chest)
+	assert_false(controller.apply_pending_reward(5))
+	assert_false(controller.apply_pending_reward(-1))
+	controller.cancel_pending_reward()
+	assert_false(controller.apply_pending_reward(0))
+
+	assert_signal_not_emitted(controller, "reward_claimed")
+
+
+func test_item_used_reports_each_successful_projectile_throw_once() -> void:
+	var controller := _throw_controller(FixtureLoader.terrain_id("Air"))
+	var small_bomb := controller._inventory.definitions()[0]
+	watch_signals(controller)
+
+	assert_false(controller.throw_selected(controller._player.global_position + Vector2(100.0, 0.0)), "The run-start throw lock blocks this throw")
+	assert_signal_not_emitted(controller, "item_used")
+	assert_true(controller.throw_selected(controller._player.global_position + Vector2(100.0, 0.0), true))
+
+	assert_signal_emit_count(controller, "item_used", 1)
+	assert_signal_emitted_with_parameters(controller, "item_used", [small_bomb])
+	assert_signal_emit_count(controller, "item_thrown", 1)
+
+
+func test_item_used_reports_the_flag_throw_but_not_the_relentless_drop() -> void:
+	var controller := _throw_controller(FixtureLoader.terrain_id("Air"))
+	var flag := _definition_with_tag(controller._inventory.definitions(), &"flag")
+	controller.select_index(controller._inventory.definitions().find(flag))
+	watch_signals(controller)
+
+	assert_true(controller.throw_selected(controller._player.global_position + Vector2(100.0, 0.0), true))
+	assert_signal_emit_count(controller, "item_used", 1)
+	assert_signal_emitted_with_parameters(controller, "item_used", [flag])
+
+	var relentless := _throw_controller(FixtureLoader.terrain_id("Air"))
+	var modifiers := PerkModifierSnapshot.new()
+	modifiers.flags._set_value("survive_lava_acid_and_drop_on_death", true)
+	relentless.set_perk_modifiers(modifiers)
+	watch_signals(relentless)
+	assert_true(relentless.drop_flag_on_player_death())
+	assert_true(relentless.is_flag_in_flight())
+	assert_signal_not_emitted(relentless, "item_used")
+
+
+func test_item_used_reports_an_immediate_tool_only_when_it_spends_charge() -> void:
+	var controller := _throw_controller(FixtureLoader.terrain_id("Air"))
+	var shovel := _definition_with_tag(controller._inventory.definitions(), &"shovel")
+	var shovel_index := controller._inventory.definitions().find(shovel)
+	controller.debug_grant_item(shovel_index)
+	controller.select_index(shovel_index)
+	watch_signals(controller)
+
+	assert_false(controller.throw_selected(controller._player.global_position + Vector2(0.0, 64.0), true), "A tool without Sand to clear spends no charge")
+	assert_signal_not_emitted(controller, "item_used")
+
+	var digging := _throw_controller(FixtureLoader.terrain_id("Sand"))
+	digging.debug_grant_item(shovel_index)
+	digging.select_index(shovel_index)
+	watch_signals(digging)
+	assert_true(digging.throw_selected(digging._player.global_position + Vector2(0.0, 64.0), true))
+
+	assert_signal_emit_count(digging, "item_used", 1)
+	assert_signal_emitted_with_parameters(digging, "item_used", [shovel])
+	assert_signal_emit_count(digging, "item_thrown", 1)
+
+
+func test_run_session_forwards_item_use_and_reward_claim_outcomes() -> void:
+	var session := (load("res://scenes/app/run_session.tscn") as PackedScene).instantiate() as RunSession
+	add_child_autofree(session)
+	session.configure(
+		load("res://config/generation/default_profile.tres") as GenerationProfile,
+		load("res://scenes/player/player.tscn") as PackedScene
+	)
+	watch_signals(session)
+	var definition := load("res://config/items/small_bomb.tres") as ItemDefinition
+	var claim := RewardClaim.new()
+	claim.container_key = &"item_chest"
+
+	session.item_controller.item_used.emit(definition)
+	session.item_controller.reward_claimed.emit(claim)
+
+	assert_signal_emitted_with_parameters(session, "item_used", [definition])
+	assert_signal_emitted_with_parameters(session, "reward_claimed", [claim])
+
+
 func test_set_active_suspends_projectiles_and_chest_monitoring() -> void:
 	var controller := RunItemController.new()
 	add_child_autofree(controller)
@@ -525,6 +696,28 @@ func _step_until_sleeping(chests: Array[ItemChest]) -> void:
 				chest._physics_process(1.0 / 60.0)
 		if all_sleeping:
 			return
+
+
+func _throw_controller(fill_terrain_id: int) -> RunItemController:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	var player := load("res://scenes/player/player.tscn").instantiate() as PlayerController
+	add_child_autofree(player)
+	player.set_physics_process(false)
+	var world := WorldGrid.new(WorldDimensions.new(20, 30), fill_terrain_id)
+	var player_cell := Vector2i(10, 10)
+	world.set_committed_by_offset(player_cell.x, player_cell.y, FixtureLoader.terrain_id("Air"))
+	player.global_position = HexMetrics.center_for_offset(player_cell.x, player_cell.y, 16.0)
+	controller.configure_catalog(_item_registry(), 16.0)
+	controller.configure_run(player, world, FixtureLoader.terrain_registry(), 16.0)
+	return controller
+
+
+func _definition_with_tag(definitions: Array[ItemDefinition], tag: StringName) -> ItemDefinition:
+	for definition in definitions:
+		if definition.perk_tags.has(tag):
+			return definition
+	return null
 
 
 func _item_registry() -> ItemRegistry:

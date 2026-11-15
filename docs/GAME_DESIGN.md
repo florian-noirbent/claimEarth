@@ -13,8 +13,8 @@ the flag loses it.
 ## Core Loop
 
 1. The menu shows illustrated cave background art, a top-centered title, stylized
-   action buttons, a corner leaderboard owner, and Help and Settings pages for
-   rules, controls, and device preferences.
+   action buttons, a corner leaderboard owner, and Help, Settings, and Statistics
+   pages for rules, controls, device preferences, and lifetime statistics.
 2. Starting creates a randomized deterministic map, settles it for 50 six-pass terrain-simulation ticks while loading, and prepares a fresh inventory.
 3. The player descends by walking, jumping, grappling, and digging with bombs.
 4. Touching generated item chests pauses the run and offers a mandatory choice of supplies. Lootable purple geodes use the same choice flow to offer permanent, unique perks instead; destroying one drives a purple, front-loaded 5-wide pulse 20 hexes downward over 1.6 seconds.
@@ -362,6 +362,29 @@ Speeds below are in world units per second; one hex is 16 units in radius.
 - SimpleBoards provides the global leaderboard and menu owner text.
 - Network failure never removes a valid local personal best.
 - Automated tests always inject `FakeLeaderboardService` and make no real requests.
+
+## Statistics
+
+The main-menu Statistics page shows lifetime totals kept only on this device. They
+are stored apart from scores and are never submitted.
+
+- Every started run counts as a run, including runs abandoned through Restart or
+  Back to Menu. A run counts as a played game once the player reached depth 30.
+- Lifetime tiles: games played, flags planted, victories, best and current flag
+  streak (consecutive played games with a planted flag), time played, deepest depth
+  with the deepest planted flag, total depth traveled (the deepest point of each run,
+  added together), and deaths.
+- A planted flag counts when it lands, whether or not a name is then confirmed. The
+  score itself is still saved only after name entry.
+- A victory is a flag planted in Earth's lava core: at or below 95% of the world
+  depth. Only a flag protected by the Relentless perk survives there. The result
+  screen marks a victory.
+- Relentless can record both a death and the dropped flag's outcome in one run.
+- Loot and flags: chests and geodes opened, and flags lost by cause (lava or acid).
+- Items: times each item was used and how often it was picked from the chest offers
+  that included it. Perks: times each perk was picked out of its geode offers.
+- Causes of death are ranked with their share of all deaths.
+- Totals are written when a run ends. Missing or corrupt statistics read as empty.
 
 ## Presentation
 

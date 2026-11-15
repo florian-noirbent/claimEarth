@@ -20,6 +20,10 @@ Current art is original repository content stored by runtime use:
 - `assets/ui/hazard_suffocation.svg` — original dark-outlined blue bubble icon for the generic suffocation meter.
 - `assets/ui/hazard_lava.svg` — original dark-outlined orange flame with a yellow core, reused by the shared Cooked heat meter for Lava and Steam.
 - `assets/ui/hazard_impact.svg` — white radial collision burst for the accumulating impact meter.
+- `assets/ui/statistics/*.svg` — original statistics page icons: `runs.svg`, `victory.svg`,
+  `streak.svg`, `time.svg`, `depth.svg`, `distance.svg`, `death.svg`, `items.svg`,
+  `bounds.svg` (left-the-map death cause), and `unknown.svg` (fallback for unlisted keys).
+  The victory icon also marks the main-menu Statistics button.
 - `assets/ui/title.png`
 - `assets/ui/menu_background.jpg`
 - `assets/terrain/background.jpg`

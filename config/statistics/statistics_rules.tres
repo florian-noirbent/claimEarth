@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="StatisticsRules" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/statistics/statistics_rules.gd" id="1_strul"]
+
+[resource]
+script = ExtResource("1_strul")
+minimum_game_depth = 30
+victory_depth_ratio = 0.95

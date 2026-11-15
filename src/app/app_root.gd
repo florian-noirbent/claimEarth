@@ -10,9 +10,13 @@ signal gameplay_started
 @export var generation_profile: GenerationProfile
 @export var player_scene: PackedScene
 @export var leaderboard_config: LeaderboardConfig
+@export var item_catalog: ItemCatalog
+@export var perk_catalog: PerkCatalog
+@export var statistics_presentation: StatisticsPresentationConfig
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
+@onready var statistics_controller: StatisticsController = %StatisticsController
 @onready var audio_director: AudioDirector = %AudioDirector
 
 var item_controller: RunItemController:
@@ -40,11 +44,14 @@ var _current_seed := 0
 var _pending_score_depth := -1
 var _terminal_outcome_locked := false
 var _relentless_flag_drop_pending := false
+var _pending_flag_victory := false
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _reward_return_state: StringName = RunPhase.PLAYING
 var _test_mode := false
 var _configured_save_path := ""
 var _configured_settings_path := ""
+var _configured_statistics_path := ""
+var _statistics_view_builder := StatisticsViewBuilder.new()
 var _injected_leaderboard_service: LeaderboardService
 var _input_controller: GameplayInputController
 var _settings_controller: AppSettingsController
@@ -73,6 +80,7 @@ func _ready() -> void:
 	if not _configured_save_path.is_empty():
 		score_controller.configure_save_path(_configured_save_path)
 	score_controller.configure(leaderboard_config, _test_mode, _injected_leaderboard_service)
+	_configure_statistics()
 	_connect_persistent_signals()
 	ui.set_web_fullscreen_available(OS.has_feature("web"))
 	_refresh_fullscreen_state()
@@ -85,10 +93,22 @@ func _ready() -> void:
 		score_controller.retry_pending()
 
 
+## Tests never touch the player's statistics file: test mode without an explicit path keeps
+## statistics in memory only.
+func _configure_statistics() -> void:
+	if not _configured_statistics_path.is_empty():
+		statistics_controller.configure(_configured_statistics_path, true)
+	elif _test_mode:
+		statistics_controller.configure("", false)
+	else:
+		statistics_controller.configure()
+
+
 func _connect_persistent_signals() -> void:
 	_run_coordinator.state_changed.connect(_on_state_changed)
 	ui.start_requested.connect(_on_start_requested)
 	ui.leaderboard_requested.connect(_on_leaderboard_requested)
+	ui.statistics_requested.connect(_on_statistics_requested)
 	ui.menu_requested.connect(_on_menu_requested)
 	ui.pause_requested.connect(_toggle_pause)
 	ui.fullscreen_requested.connect(_toggle_fullscreen)
@@ -127,6 +147,8 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.flag_destroyed.connect(_on_flag_destroyed)
 	session.flag_flight_changed.connect(_on_flag_flight_changed)
 	session.item_thrown.connect(audio_director.play_throw)
+	session.item_used.connect(_on_item_used)
+	session.reward_claimed.connect(_on_reward_claimed)
 	session.reward_choices_requested.connect(_on_reward_choices_requested)
 	session.pending_reward_invalidated.connect(_on_pending_reward_invalidated)
 	session.terrain_pulse_started.connect(_on_terrain_pulse_started)
@@ -155,6 +177,10 @@ func configure_save_path_for_test(save_path: String) -> void:
 
 func configure_settings_path_for_test(settings_path: String) -> void:
 	_configured_settings_path = settings_path
+
+
+func configure_statistics_path_for_test(statistics_path: String) -> void:
+	_configured_statistics_path = statistics_path
 
 
 func set_test_mode(enabled: bool) -> void:
@@ -229,6 +255,18 @@ func _on_start_requested() -> void:
 
 func _on_leaderboard_requested() -> void:
 	transition_to(RunPhase.LEADERBOARD)
+
+
+func _on_statistics_requested() -> void:
+	if _run_coordinator.current_state != RunPhase.MAIN_MENU:
+		return
+	ui.show_statistics(_statistics_view_builder.build(
+		statistics_controller.statistics(),
+		item_catalog,
+		perk_catalog,
+		statistics_presentation,
+		statistics_controller.rules
+	))
 
 
 func _on_menu_requested() -> void:
@@ -313,12 +351,16 @@ func _apply_state(next_state: StringName) -> void:
 	match next_state:
 		RunPhase.MAIN_MENU:
 			_set_session_active(false)
+			statistics_controller.end_run()
 			_enter_main_menu()
 		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.REWARD_PICKER, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
 			_set_session_active(false)
 		RunPhase.GENERATING:
+			# A restart abandons any run still in progress before the next one begins.
+			statistics_controller.end_run()
 			_terminal_outcome_locked = false
 			_relentless_flag_drop_pending = false
+			_pending_flag_victory = false
 			_pending_score_depth = -1
 			generation_started.emit()
 			_start_new_run()
@@ -381,6 +423,8 @@ func _on_run_ready(next_seed: int) -> void:
 	if get_player() != null:
 		get_player().configure_input_controller(_input_controller)
 	if _run_coordinator.current_state == RunPhase.GENERATING:
+		var world := current_world()
+		statistics_controller.begin_run(world.dimensions.depth if world != null else 0)
 		transition_to(RunPhase.PLAYING)
 
 
@@ -400,15 +444,18 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(_session) or get_player() == null:
 		return
 	_session.advance(delta)
-	_refresh_play_status()
+	_refresh_play_status(delta)
 
 
-func _refresh_play_status() -> void:
-	var item_status: Dictionary = item_controller.inventory_status()
-	if String(item_status["selected_name"]).is_empty() or get_player() == null:
-		ui.show_play_status("No items configured", "")
+func _refresh_play_status(delta: float) -> void:
+	if get_player() == null:
 		return
 	var player_depth := HexMetrics.offset_for_world(get_player().global_position, world_presenter.hex_radius).y
+	statistics_controller.record_progress(player_depth, delta)
+	var item_status: Dictionary = item_controller.inventory_status()
+	if String(item_status["selected_name"]).is_empty():
+		ui.show_play_status("No items configured", "")
+		return
 	ui.show_run_status(player_depth, score_controller.personal_best_depth, get_player().is_grapple_attached(), item_status)
 
 
@@ -437,6 +484,9 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
 	_pending_score_depth = depth
+	# Statistics count the planted flag now; the score is saved only after name entry.
+	_pending_flag_victory = statistics_controller.record_flag_planted(depth)
+	statistics_controller.end_run()
 	_cancel_pending_reward()
 	audio_director.play_flag_plant()
 	if gameplay_feedback != null:
@@ -445,6 +495,8 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 
 
 func _on_flag_destroyed(cause: StringName) -> void:
+	if not _terminal_outcome_locked:
+		statistics_controller.record_flag_lost(cause)
 	var message := "The flag dissolved in acid." if cause == &"acid" else "The flag melted in lava."
 	_complete_terminal_outcome(message, RunPhase.DEATH)
 
@@ -459,6 +511,10 @@ func _on_flag_flight_changed(in_flight: bool) -> void:
 
 
 func _on_player_death_requested(cause: StringName) -> void:
+	# Recorded before the Relentless early returns: the death counts even while the dropped
+	# flag keeps the run alive. The controller keeps only the first death of a run.
+	if not _terminal_outcome_locked:
+		statistics_controller.record_death(cause)
 	if _relentless_flag_drop_pending:
 		return
 	if item_controller != null and item_controller.drop_flag_on_player_death():
@@ -475,6 +531,7 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 		return
 	_terminal_outcome_locked = true
 	_relentless_flag_drop_pending = false
+	statistics_controller.end_run()
 	_cancel_pending_reward()
 	ui.show_result(message)
 	transition_to(next_state)
@@ -490,6 +547,8 @@ func _on_confirm_score_requested(player_name: String) -> void:
 	audio_director.play_ui_confirm()
 	_update_depth_markers()
 	var summary := "%s claimed depth %d. Personal best: %d." % [score_controller.last_player_name, _pending_score_depth, score_controller.personal_best_depth]
+	if _pending_flag_victory:
+		summary += "\nVictory! The flag stands in Earth's core."
 	if not bool(confirmation["submitted"]):
 		ui.show_result(summary)
 		transition_to(RunPhase.RESULT)
@@ -558,6 +617,27 @@ func _cancel_pending_reward() -> void:
 func _on_pending_reward_invalidated() -> void:
 	if _run_coordinator.current_state == RunPhase.REWARD_PICKER:
 		transition_to(_reward_return_state)
+
+
+func _on_item_used(definition: ItemDefinition) -> void:
+	if definition != null:
+		statistics_controller.record_item_used(definition.stable_id)
+
+
+func _on_reward_claimed(claim: RewardClaim) -> void:
+	if claim == null:
+		return
+	statistics_controller.record_container_opened(claim.container_key)
+	for offered in claim.offered_items:
+		if offered != null:
+			statistics_controller.record_item_offered(offered.stable_id)
+	if claim.picked_item != null:
+		statistics_controller.record_item_picked(claim.picked_item.stable_id)
+	for offered in claim.offered_perks:
+		if offered != null:
+			statistics_controller.record_perk_offered(offered.stable_id)
+	if claim.picked_perk != null:
+		statistics_controller.record_perk_picked(claim.picked_perk.stable_id)
 
 
 func _on_perks_changed(perks: Array) -> void:

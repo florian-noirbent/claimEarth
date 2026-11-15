@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="StatisticsPresentationConfig" format=3]
+
+[ext_resource type="Script" path="res://src/app/statistics_presentation_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://src/app/statistic_key_presentation.gd" id="2_key"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/runs.svg" id="3_runs"]
+[ext_resource type="Texture2D" path="res://assets/objects/flag.svg" id="4_flag"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/victory.svg" id="5_victory"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/streak.svg" id="6_streak"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/time.svg" id="7_time"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/depth.svg" id="8_depth"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/distance.svg" id="9_distance"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/death.svg" id="10_death"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/items.svg" id="11_items"]
+[ext_resource type="Texture2D" path="res://assets/objects/perk.png" id="12_perk"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/unknown.svg" id="13_unknown"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_lava.svg" id="14_lava"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_suffocation.svg" id="15_suffocation"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_acid.svg" id="16_acid"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_poison.svg" id="17_poison"]
+[ext_resource type="Texture2D" path="res://assets/objects/large_bomb.svg" id="18_bomb"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_impact.svg" id="19_impact"]
+[ext_resource type="Texture2D" path="res://assets/ui/statistics/bounds.svg" id="20_bounds"]
+[ext_resource type="Texture2D" path="res://assets/objects/chest.png" id="21_chest"]
+
+[sub_resource type="Resource" id="Death_cooked"]
+script = ExtResource("2_key")
+key = &"cooked"
+display_name = "Cooked"
+description = "Overheated by lava or scalding steam."
+icon = ExtResource("14_lava")
+
+[sub_resource type="Resource" id="Death_suffocation"]
+script = ExtResource("2_key")
+key = &"suffocation"
+display_name = "Suffocated"
+description = "Ran out of air while buried or under water."
+icon = ExtResource("15_suffocation")
+
+[sub_resource type="Resource" id="Death_acid"]
+script = ExtResource("2_key")
+key = &"acid"
+display_name = "Dissolved"
+description = "Melted away in acid."
+icon = ExtResource("16_acid")
+
+[sub_resource type="Resource" id="Death_poison"]
+script = ExtResource("2_key")
+key = &"poison"
+display_name = "Poisoned"
+description = "Breathed toxic sulfur dioxide gas."
+icon = ExtResource("17_poison")
+
+[sub_resource type="Resource" id="Death_bomb"]
+script = ExtResource("2_key")
+key = &"bomb"
+display_name = "Blown up"
+description = "Caught in an explosion."
+icon = ExtResource("18_bomb")
+
+[sub_resource type="Resource" id="Death_impact"]
+script = ExtResource("2_key")
+key = &"impact"
+display_name = "Crushed by impact"
+description = "Slammed into terrain at high speed."
+icon = ExtResource("19_impact")
+
+[sub_resource type="Resource" id="Death_bounds"]
+script = ExtResource("2_key")
+key = &"bounds"
+display_name = "Left the map"
+description = "Fell or flew out of the world."
+icon = ExtResource("20_bounds")
+
+[sub_resource type="Resource" id="FlagLoss_lava"]
+script = ExtResource("2_key")
+key = &"lava"
+display_name = "Flag melted in lava"
+description = "The thrown flag landed in lava and burned up."
+icon = ExtResource("14_lava")
+
+[sub_resource type="Resource" id="FlagLoss_acid"]
+script = ExtResource("2_key")
+key = &"acid"
+display_name = "Flag dissolved in acid"
+description = "The thrown flag landed in acid and dissolved."
+icon = ExtResource("16_acid")
+
+[sub_resource type="Resource" id="Container_item_chest"]
+script = ExtResource("2_key")
+key = &"item_chest"
+display_name = "Chests opened"
+description = "Item chests broken open for supplies."
+icon = ExtResource("21_chest")
+
+[sub_resource type="Resource" id="Container_perk_geode"]
+script = ExtResource("2_key")
+key = &"perk_geode"
+display_name = "Geodes opened"
+description = "Perk geodes cracked open for a lasting perk."
+icon = ExtResource("12_perk")
+
+[resource]
+script = ExtResource("1_config")
+runs_icon = ExtResource("3_runs")
+flag_icon = ExtResource("4_flag")
+victory_icon = ExtResource("5_victory")
+streak_icon = ExtResource("6_streak")
+time_icon = ExtResource("7_time")
+depth_icon = ExtResource("8_depth")
+distance_icon = ExtResource("9_distance")
+death_icon = ExtResource("10_death")
+item_icon = ExtResource("11_items")
+perk_icon = ExtResource("12_perk")
+unknown_icon = ExtResource("13_unknown")
+death_causes = Array[ExtResource("2_key")]([SubResource("Death_cooked"), SubResource("Death_suffocation"), SubResource("Death_acid"), SubResource("Death_poison"), SubResource("Death_bomb"), SubResource("Death_impact"), SubResource("Death_bounds")])
+flag_loss_causes = Array[ExtResource("2_key")]([SubResource("FlagLoss_lava"), SubResource("FlagLoss_acid")])
+containers = Array[ExtResource("2_key")]([SubResource("Container_item_chest"), SubResource("Container_perk_geode")])

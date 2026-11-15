@@ -56,4 +56,5 @@ quantity = 3
 script = ExtResource("1_definition")
 chest_scene = ExtResource("3_scene")
 explosion_definition = ExtResource("6_explosion")
+statistics_key = &"item_chest"
 options = Array[ExtResource("2_option")]([SubResource("Resource_small"), SubResource("Resource_large"), SubResource("Resource_shovel"), SubResource("Resource_pickaxe"), SubResource("Resource_flare"), SubResource("Resource_water"), SubResource("Resource_excavator"), SubResource("Resource_acid")])

@@ -528,3 +528,118 @@ func test_reward_picker_ignores_pause_and_back_without_dismissing() -> void:
 
 	assert_true(ui.reward_picker_layer.visible)
 	assert_signal_not_emitted(ui, "pause_requested")
+
+
+func test_statistics_button_requests_page_and_page_restores_menu_on_close() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+
+	assert_eq(ui.menu_statistics_button.get_index(), ui.menu_settings_button.get_index() + 1)
+	assert_eq(ui.menu_leaderboard_button.get_index(), ui.menu_statistics_button.get_index() + 1)
+	assert_eq(ui.menu_statistics_button.get_theme_stylebox("normal"), ui.menu_start_button.get_theme_stylebox("normal"))
+	assert_eq(ui.menu_statistics_button.custom_minimum_size, ui.menu_start_button.custom_minimum_size)
+	assert_not_null(ui.menu_statistics_button.icon)
+	await wait_process_frames(1)
+	assert_gte(ui.status_label.get_global_rect().position.y, ui.title_image.get_global_rect().end.y)
+	assert_lte(ui.menu_leaderboard_button.get_global_rect().end.y, get_viewport().get_visible_rect().end.y)
+	watch_signals(ui)
+	ui.menu_statistics_button.pressed.emit()
+	assert_signal_emitted(ui, "statistics_requested")
+	assert_true(ui.statistics_page.visible, "AppRoot answers the request with view data.")
+	ui.statistics_page.back_button.pressed.emit()
+
+	for close_action in ["button", InputActions.PAUSE, InputActions.MENU_BACK]:
+		ui.show_statistics(_statistics_view())
+		await wait_process_frames(1)
+		assert_true(ui.statistics_page.is_visible_in_tree())
+		assert_eq(ui.statistics_page.section_count(), 1)
+		assert_false(ui.menu_panel.visible)
+		assert_false(ui.title_image.visible)
+		assert_false(ui.owner_label.visible)
+		assert_false(ui.status_label.visible)
+		assert_false(ui.help_panel.visible)
+		assert_false(ui.settings_panel.visible)
+		assert_true(ui.statistics_page.back_button.has_focus())
+		assert_true(get_viewport().get_visible_rect().encloses(ui.statistics_page.get_global_rect()))
+		if close_action == "button":
+			ui.statistics_page.back_button.pressed.emit()
+		else:
+			var event := InputEventAction.new()
+			event.action = close_action
+			event.pressed = true
+			ui._unhandled_input(event)
+		assert_false(ui.statistics_page.visible, "Closing with %s" % close_action)
+		assert_true(ui.menu_panel.visible)
+		assert_true(ui.title_image.visible)
+		assert_true(ui.owner_label.visible)
+		assert_true(ui.status_label.visible)
+
+
+func test_statistics_page_does_not_overlap_web_fullscreen_control() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+	ui.set_web_fullscreen_available(true)
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+	ui.show_statistics(_statistics_view())
+	await wait_process_frames(1)
+	assert_false(ui.statistics_page.get_global_rect().intersects(ui.fullscreen_button.get_global_rect()))
+
+
+func test_statistics_page_hides_on_state_change_and_menu_dismissal() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+	var ui := app_root.ui
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+
+	ui.show_statistics(_statistics_view())
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "warning", -1, "")
+	assert_true(ui.statistics_page.visible, "Refreshing the menu keeps the open page.")
+	assert_false(ui.menu_panel.visible)
+	assert_false(ui.title_image.visible)
+	assert_false(ui.warning_label.visible)
+
+	ui.apply_state(RunPhase.GENERATING, 42, "", -1, "")
+	assert_false(ui.statistics_page.visible)
+	assert_true(ui.menu_panel.visible)
+	assert_true(ui.title_image.visible)
+
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+	ui.show_statistics(_statistics_view())
+	ui.dismiss_menu_shell()
+	assert_false(ui.statistics_page.visible)
+	assert_false(ui.title_image.visible)
+
+	ui.apply_state(RunPhase.MAIN_MENU, 42, "", -1, "")
+	ui.show_statistics(_statistics_view())
+	ui.menu_help_button.pressed.emit()
+	assert_false(ui.statistics_page.visible)
+	assert_true(ui.help_panel.visible)
+	ui.help_back_button.pressed.emit()
+	assert_true(ui.menu_panel.visible)
+	ui.menu_settings_button.pressed.emit()
+	assert_true(ui.settings_panel.visible)
+	ui.settings_back_button.pressed.emit()
+	assert_true(ui.menu_panel.visible)
+	assert_false(ui.statistics_page.visible)
+
+
+func _statistics_view() -> StatisticsViewData:
+	var entries: Array[StatisticsEntryViewData] = [
+		StatisticsEntryViewData.new(load("res://assets/objects/flag.svg"), "Flags planted", "3"),
+	]
+	var sections: Array[StatisticsSectionViewData] = [
+		StatisticsSectionViewData.new("Overview", StatisticsSectionViewData.Layout.TILES, entries),
+	]
+	return StatisticsViewData.new(sections)

@@ -9,10 +9,13 @@ signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed(cause: StringName)
 signal flag_flight_changed(in_flight: bool)
 signal item_thrown
+## Emitted once per successful player use or throw, even when a perk preserved the item.
+signal item_used(definition: ItemDefinition)
 signal terrain_changed(change_set: TerrainChangeSet)
 signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition)
 signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
+signal reward_claimed(claim: RewardClaim)
 
 const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
@@ -148,6 +151,7 @@ func apply_pending_reward(choice_index: int) -> bool:
 	if is_instance_valid(claimed_chest):
 		claimed_chest.queue_free()
 	_set_chest_interactivity(_is_active)
+	reward_claimed.emit(_rewards.last_claim())
 	return true
 
 
@@ -257,11 +261,13 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 			return false
 		consume_amount(definition, charge_used, true)
 		item_thrown.emit()
+		item_used.emit(definition)
 		return true
 	if consume_amount(definition, 1.0) < 1.0:
 		return false
 	_spawn_projectile(action, _player.global_position, aim_position, _player.velocity)
 	item_thrown.emit()
+	item_used.emit(definition)
 	return true
 
 

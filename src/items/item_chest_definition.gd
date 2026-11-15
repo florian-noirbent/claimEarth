@@ -9,6 +9,8 @@ enum RewardKind { ITEMS, PERKS }
 @export var explosion_definition: ExplosionDefinition
 @export var destruction_pulse: DirectionalTerrainPulseDefinition
 @export var container_tags := PackedStringArray(["item_chest"])
+## Identifies this container kind in player statistics.
+@export var statistics_key: StringName = &"item_chest"
 @export var emits_light := true
 ## Zero retains the light configured by the reusable container scene.
 @export_range(0, 255, 1) var emitted_light_level_override := 0
@@ -44,6 +46,8 @@ func validate() -> PackedStringArray:
 	var errors := super.validate()
 	if chest_scene == null:
 		errors.append("item chest definition requires a chest scene")
+	if statistics_key.is_empty():
+		errors.append("item chest definition requires a statistics_key")
 	if chamber_radius < 1:
 		errors.append("item chest chamber_radius must be positive")
 	if explosion_definition == null:

@@ -11,6 +11,7 @@ signal reward_selected(index: int)
 signal score_confirmed(player_name: String)
 signal restart_requested
 signal settings_requested
+signal statistics_requested
 signal phone_controls_changed(enabled: bool)
 signal frame_limit_changed(fps: int)
 signal fullscreen_requested
@@ -36,6 +37,7 @@ signal touch_hook_released
 @onready var menu_start_button: Button = %StartButton
 @onready var menu_help_button: Button = %HelpButton
 @onready var menu_settings_button: Button = %SettingsButton
+@onready var menu_statistics_button: Button = %StatisticsButton
 @onready var menu_leaderboard_button: Button = %LeaderboardButton
 @onready var help_panel: PanelContainer = %HelpPanel
 @onready var help_back_button: Button = %HelpBackButton
@@ -44,6 +46,7 @@ signal touch_hook_released
 @onready var frame_limit_slider: HSlider = %FrameLimitSlider
 @onready var frame_limit_value_label: Label = %FrameLimitValueLabel
 @onready var settings_back_button: Button = %SettingsBackButton
+@onready var statistics_page: StatisticsPage = %StatisticsPage
 @onready var overlay_root: Control = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
 @onready var hazard_meter_stack = %HazardMeterStack
@@ -98,9 +101,11 @@ func _ready() -> void:
 	menu_start_button.pressed.connect(start_requested.emit)
 	menu_help_button.pressed.connect(_show_help_page)
 	menu_settings_button.pressed.connect(_show_settings_page)
+	menu_statistics_button.pressed.connect(statistics_requested.emit)
 	menu_leaderboard_button.pressed.connect(leaderboard_requested.emit)
 	help_back_button.pressed.connect(_hide_help_page)
 	settings_back_button.pressed.connect(_hide_settings_page)
+	statistics_page.back_requested.connect(_hide_statistics_page)
 	phone_controls_toggle.toggled.connect(_on_phone_controls_toggled)
 	frame_limit_slider.value_changed.connect(_on_frame_limit_slider_changed)
 	pause_button.pressed.connect(pause_requested.emit)
@@ -132,15 +137,16 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 	if state != RunPhase.MAIN_MENU:
 		_hide_help_page()
 		_hide_settings_page()
+		_hide_statistics_page()
 	menu_art_background.visible = show_menu_shell
 	menu_background.visible = show_menu_shell
 	menu_root.visible = show_menu_shell
-	title_image.visible = show_menu_shell and state != RunPhase.LEADERBOARD
-	owner_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD
-	status_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD
-	warning_label.visible = show_menu_shell and not storage_warning.is_empty()
+	title_image.visible = show_menu_shell and state != RunPhase.LEADERBOARD and not statistics_page.visible
+	owner_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD and not statistics_page.visible
+	status_label.visible = show_menu_shell and state != RunPhase.LEADERBOARD and not statistics_page.visible
+	warning_label.visible = show_menu_shell and not storage_warning.is_empty() and not statistics_page.visible
 	controls_label.visible = false
-	menu_panel.visible = state in [RunPhase.MAIN_MENU, RunPhase.GENERATING] and not help_panel.visible and not settings_panel.visible
+	menu_panel.visible = state in [RunPhase.MAIN_MENU, RunPhase.GENERATING] and not help_panel.visible and not settings_panel.visible and not statistics_page.visible
 	overlay_root.visible = state in [
 		RunPhase.PLAYING,
 		RunPhase.FLAG_IN_FLIGHT,
@@ -198,6 +204,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 func dismiss_menu_shell() -> void:
 	_hide_help_page()
 	_hide_settings_page()
+	_hide_statistics_page()
 	menu_art_background.visible = false
 	menu_background.visible = false
 	menu_root.visible = false
@@ -212,15 +219,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if handle_reward_picker_input(event):
 		get_viewport().set_input_as_handled()
 		return
-	if (help_panel.visible or settings_panel.visible) and (event.is_action_pressed(InputActions.PAUSE) or event.is_action_pressed(InputActions.MENU_BACK)):
+	if (help_panel.visible or settings_panel.visible or statistics_page.visible) and (event.is_action_pressed(InputActions.PAUSE) or event.is_action_pressed(InputActions.MENU_BACK)):
 		if help_panel.visible:
 			_hide_help_page()
-		else:
+		elif settings_panel.visible:
 			_hide_settings_page()
+		else:
+			_hide_statistics_page()
 		get_viewport().set_input_as_handled()
 
 
 func _show_help_page() -> void:
+	_hide_statistics_page()
 	settings_panel.visible = false
 	menu_panel.visible = false
 	status_label.visible = false
@@ -237,6 +247,7 @@ func _hide_help_page() -> void:
 
 
 func _show_settings_page() -> void:
+	_hide_statistics_page()
 	help_panel.visible = false
 	menu_panel.visible = false
 	status_label.visible = false
@@ -250,6 +261,30 @@ func _hide_settings_page() -> void:
 	if not is_node_ready():
 		return
 	settings_panel.visible = false
+	_restore_auxiliary_page_parent()
+
+
+## Shows the main-menu statistics page with presentation data prepared by the app root.
+func show_statistics(view: StatisticsViewData) -> void:
+	help_panel.visible = false
+	settings_panel.visible = false
+	menu_panel.visible = false
+	status_label.visible = false
+	warning_label.visible = false
+	title_image.visible = false
+	owner_label.visible = false
+	statistics_page.show_statistics(view)
+	statistics_page.visible = true
+	statistics_page.focus_default()
+
+
+func _hide_statistics_page() -> void:
+	if not is_node_ready() or not statistics_page.visible:
+		return
+	statistics_page.visible = false
+	if _current_state == RunPhase.MAIN_MENU:
+		title_image.visible = true
+		owner_label.visible = true
 	_restore_auxiliary_page_parent()
 
 
