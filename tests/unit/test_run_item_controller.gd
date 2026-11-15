@@ -361,11 +361,15 @@ func test_bomb_arms_chest_and_chest_detonation_can_arm_bomb() -> void:
 	var first_bomb := _add_bomb(controller, chest.global_position)
 	var second_bomb := _add_bomb(controller, chest.global_position + Vector2(24.0, 0.0))
 
+	watch_signals(controller)
 	first_bomb.explosive.request_immediate_detonation()
 	assert_true(chest.explosive.is_chain_armed())
 	assert_false(chest.touch_area.monitoring)
+	assert_signal_not_emitted(controller, "reward_container_destroyed")
 	chest.explosive._physics_process(0.31)
 
+	assert_signal_emit_count(controller, "reward_container_destroyed", 1)
+	assert_eq(get_signal_parameters(controller, "reward_container_destroyed"), [&"item_chest"])
 	assert_true(second_bomb.explosive.is_chain_armed())
 	assert_true(chest.is_queued_for_deletion())
 

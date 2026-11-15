@@ -94,6 +94,10 @@ func record_container_opened(container_key: StringName) -> void:
 	_increment_run_counter(_data.containers_opened, container_key)
 
 
+func record_container_destroyed(container_key: StringName) -> void:
+	_increment_run_counter(_data.containers_destroyed, container_key)
+
+
 ## At most one death counts per run. A death and a flag resolution may both be recorded in
 ## one run, in either order: the Relentless perk drops the held flag when the player dies
 ## and that flag can still plant or be destroyed afterwards.

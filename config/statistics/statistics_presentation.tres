@@ -99,6 +99,20 @@ display_name = "Geodes opened"
 description = "Perk geodes cracked open for a lasting perk."
 icon = ExtResource("12_perk")
 
+[sub_resource type="Resource" id="Destroyed_item_chest"]
+script = ExtResource("2_key")
+key = &"item_chest"
+display_name = "Chests destroyed"
+description = "Item chests blown up before their supplies were claimed."
+icon = ExtResource("21_chest")
+
+[sub_resource type="Resource" id="Destroyed_perk_geode"]
+script = ExtResource("2_key")
+key = &"perk_geode"
+display_name = "Geodes destroyed"
+description = "Perk geodes shattered by a blast, releasing their pulse instead of a perk."
+icon = ExtResource("12_perk")
+
 [resource]
 script = ExtResource("1_config")
 runs_icon = ExtResource("3_runs")
@@ -115,3 +129,4 @@ unknown_icon = ExtResource("13_unknown")
 death_causes = Array[ExtResource("2_key")]([SubResource("Death_cooked"), SubResource("Death_suffocation"), SubResource("Death_acid"), SubResource("Death_poison"), SubResource("Death_bomb"), SubResource("Death_impact"), SubResource("Death_bounds")])
 flag_loss_causes = Array[ExtResource("2_key")]([SubResource("FlagLoss_lava"), SubResource("FlagLoss_acid")])
 containers = Array[ExtResource("2_key")]([SubResource("Container_item_chest"), SubResource("Container_perk_geode")])
+destroyed_containers = Array[ExtResource("2_key")]([SubResource("Destroyed_item_chest"), SubResource("Destroyed_perk_geode")])

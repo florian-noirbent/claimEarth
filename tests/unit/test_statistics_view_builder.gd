@@ -38,7 +38,7 @@ func test_entry_counts_follow_catalogs_and_presentation_lists() -> void:
 	var view := _build(PlayerStatistics.new())
 
 	assert_eq(view.sections[0].entries.size(), 8, "Lifetime fills two rows of four tiles.")
-	assert_eq(view.sections[1].entries.size(), _presentation.containers.size() + _presentation.flag_loss_causes.size())
+	assert_eq(view.sections[1].entries.size(), _presentation.containers.size() + _presentation.destroyed_containers.size() + _presentation.flag_loss_causes.size())
 	assert_eq(view.sections[2].entries.size(), 9)
 	assert_eq(view.sections[2].entries.size(), _item_catalog.definitions.size())
 	assert_eq(view.sections[3].entries.size(), 15)
@@ -236,7 +236,7 @@ func test_unknown_keys_fall_back_to_the_unknown_icon_and_capitalised_name() -> v
 	assert_true(death.highlighted)
 
 	var loot := view.sections[1].entries
-	assert_eq(loot.size(), _presentation.containers.size() + _presentation.flag_loss_causes.size() + 2)
+	assert_eq(loot.size(), _presentation.containers.size() + _presentation.destroyed_containers.size() + _presentation.flag_loss_causes.size() + 2)
 	assert_eq(loot[0].value_text, "4")
 	assert_eq(loot[0].label, _presentation.containers[0].display_name)
 	var labels := PackedStringArray()
@@ -258,3 +258,16 @@ func test_builder_tolerates_missing_inputs() -> void:
 
 func _build(data: PlayerStatistics) -> StatisticsViewData:
 	return StatisticsViewBuilder.new().build(data, _item_catalog, _perk_catalog, _presentation, _rules)
+
+
+func test_loot_section_lists_destroyed_containers_after_opened_ones() -> void:
+	var data := PlayerStatistics.new()
+	data.containers_opened = {"item_chest": 4}
+	data.containers_destroyed = {"item_chest": 3, "perk_geode": 1}
+
+	var loot := _build(data).sections[1].entries
+	var first_destroyed := _presentation.containers.size()
+	assert_eq(loot[first_destroyed].label, _presentation.destroyed_containers[0].display_name)
+	assert_eq(loot[first_destroyed].value_text, "3")
+	assert_eq(loot[first_destroyed + 1].value_text, "1")
+	assert_false(loot[first_destroyed + 1].dimmed)

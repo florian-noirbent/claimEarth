@@ -380,7 +380,8 @@ are stored apart from scores and are never submitted.
   depth. Only a flag protected by the Relentless perk survives there. The result
   screen marks a victory.
 - Relentless can record both a death and the dropped flag's outcome in one run.
-- Loot and flags: chests and geodes opened, and flags lost by cause (lava or acid).
+- Loot and flags: chests and geodes opened, chests and geodes destroyed by a blast before
+  being claimed, and flags lost by cause (lava or acid).
 - Items: times each item was used and how often it was picked from the chest offers
   that included it. Perks: times each perk was picked out of its geode offers.
 - Causes of death are ranked with their share of all deaths.

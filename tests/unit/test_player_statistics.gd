@@ -156,6 +156,7 @@ func _populated_statistics() -> PlayerStatistics:
 	data.perk_offers = {"2": 3}
 	data.perk_picks = {"2": 1}
 	data.containers_opened = {"item_chest": 6, "perk_geode": 2}
+	data.containers_destroyed = {"item_chest": 3}
 	data.deaths_by_cause = {"cooked": 3, "acid": 2}
 	data.flags_lost_by_cause = {"lava": 2}
 	return data

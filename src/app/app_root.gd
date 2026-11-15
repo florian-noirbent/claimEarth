@@ -149,6 +149,7 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.item_thrown.connect(audio_director.play_throw)
 	session.item_used.connect(_on_item_used)
 	session.reward_claimed.connect(_on_reward_claimed)
+	session.reward_container_destroyed.connect(statistics_controller.record_container_destroyed)
 	session.reward_choices_requested.connect(_on_reward_choices_requested)
 	session.pending_reward_invalidated.connect(_on_pending_reward_invalidated)
 	session.terrain_pulse_started.connect(_on_terrain_pulse_started)

@@ -115,6 +115,7 @@ func test_event_counters_use_stringified_keys() -> void:
 	controller.record_container_opened(&"item_chest")
 	controller.record_container_opened(&"item_chest")
 	controller.record_container_opened(&"perk_geode")
+	controller.record_container_destroyed(&"perk_geode")
 
 	var data := controller.statistics()
 	assert_eq(data.item_uses, {"3": 2})
@@ -123,6 +124,7 @@ func test_event_counters_use_stringified_keys() -> void:
 	assert_eq(data.perk_offers, {"1": 1, "2": 1})
 	assert_eq(data.perk_picks, {"2": 1})
 	assert_eq(data.containers_opened, {"item_chest": 2, "perk_geode": 1})
+	assert_eq(data.containers_destroyed, {"perk_geode": 1})
 	assert_eq(data.total_items_used(), 2)
 	controller.free()
 

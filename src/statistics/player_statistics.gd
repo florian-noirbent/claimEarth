@@ -31,6 +31,7 @@ var perk_offers: Dictionary = {}
 var perk_picks: Dictionary = {}
 ## Container key -> times opened.
 var containers_opened: Dictionary = {}
+var containers_destroyed: Dictionary = {}
 ## Death cause -> deaths.
 var deaths_by_cause: Dictionary = {}
 ## Flag loss cause -> flags lost.
@@ -58,6 +59,7 @@ static func from_dictionary(source: Dictionary) -> PlayerStatistics:
 	data.perk_offers = _read_counter(source, "perk_offers")
 	data.perk_picks = _read_counter(source, "perk_picks")
 	data.containers_opened = _read_counter(source, "containers_opened")
+	data.containers_destroyed = _read_counter(source, "containers_destroyed")
 	data.deaths_by_cause = _read_counter(source, "deaths_by_cause")
 	data.flags_lost_by_cause = _read_counter(source, "flags_lost_by_cause")
 	return data
@@ -84,6 +86,7 @@ func to_dictionary() -> Dictionary:
 		"perk_offers": perk_offers.duplicate(),
 		"perk_picks": perk_picks.duplicate(),
 		"containers_opened": containers_opened.duplicate(),
+		"containers_destroyed": containers_destroyed.duplicate(),
 		"deaths_by_cause": deaths_by_cause.duplicate(),
 		"flags_lost_by_cause": flags_lost_by_cause.duplicate(),
 	}

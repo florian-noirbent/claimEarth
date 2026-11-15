@@ -16,6 +16,7 @@ signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPuls
 signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
 signal reward_claimed(claim: RewardClaim)
+signal reward_container_destroyed(container_key: StringName)
 
 const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
@@ -771,6 +772,8 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 		_invalidate_pending_reward()
 	if explosive_host is ItemChest:
 		var container := explosive_host as ItemChest
+		if container.spawn_data != null and container.spawn_data.definition != null:
+			reward_container_destroyed.emit(container.spawn_data.definition.statistics_key)
 		if container.spawn_data != null and container.spawn_data.definition != null and container.spawn_data.definition.destruction_pulse != null:
 			var origin := HexMetrics.offset_for_world(container.global_position, _hex_radius)
 			var pulse_definition := container.spawn_data.definition.destruction_pulse
