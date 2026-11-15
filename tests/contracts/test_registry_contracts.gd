@@ -5,10 +5,11 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	var catalog := FixtureLoader.terrain_catalog()
 	var registry := TerrainRegistry.new()
 	assert_true(registry.try_configure(catalog), "\n".join(registry.validation_errors))
-	assert_eq(registry.count(), 9)
+	assert_eq(registry.count(), 10)
 	assert_true(registry.has_definition(0))
 	assert_true(registry.has_definition(5))
 	assert_true(registry.has_definition(8))
+	assert_true(registry.has_definition(9))
 	assert_eq(registry.contact_reactions().size(), 5)
 
 	for definition in registry.all_definitions():
@@ -25,6 +26,19 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	assert_eq(metadata.normal_quantity(FixtureLoader.terrain_id("Sulfur Dioxide")), 63)
 	assert_eq(metadata.storage_capacity(FixtureLoader.terrain_id("Sulfur Dioxide")), 254)
 	assert_eq(metadata.motion(FixtureLoader.terrain_id("Sulfur Dioxide")), CompiledTerrainData.MOTION_DENSE_GAS)
+	assert_eq(metadata.motion(FixtureLoader.terrain_id("Steam")), CompiledTerrainData.MOTION_LIGHT_GAS)
+	assert_eq(metadata.normal_quantity(FixtureLoader.terrain_id("Steam")), 63)
+	assert_eq(metadata.storage_capacity(FixtureLoader.terrain_id("Steam")), 254)
+	assert_true(FixtureLoader.terrain_definition_named("Steam").is_breathable)
+	assert_true(metadata.can_side_up(FixtureLoader.terrain_id("Steam")), "Steam must level out under ceilings.")
+	assert_true(metadata.can_side_down(FixtureLoader.terrain_id("Steam")), "Overpressured Steam must be able to descend.")
+	assert_eq(metadata.side_flow_offset(FixtureLoader.terrain_id("Steam")), 32)
+	for definition in registry.all_definitions():
+		assert_eq(
+			metadata.boiling_reactant_by_id[definition.stable_id],
+			1 if definition.display_name == "Water" else 0,
+			"Only Water must compile as a boiling reactant (%s)." % definition.display_name
+		)
 	for terrain_name in ["Air", "Water", "Sand", "Lava"]:
 		assert_eq(
 			metadata.persistent_burn_product_by_id[FixtureLoader.terrain_id(terrain_name)],
@@ -48,7 +62,7 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	_assert_reaction_bytes(metadata, "Sulfur", "Lava", 2, [0, 0], [0, 0, 0, 0])
 	_assert_reaction_bytes(metadata, "Sulfuric Acid", "Sand", 3, [FixtureLoader.terrain_id("Water"), FixtureLoader.terrain_id("Air")], [2, 1, 2, 0])
 	_assert_reaction_bytes(metadata, "Sulfur Dioxide", "Water", 4, [0, FixtureLoader.terrain_id("Sulfuric Acid")], [3, 63, 189, 127])
-	_assert_reaction_bytes(metadata, "Water", "Lava", 5, [FixtureLoader.terrain_id("Air"), FixtureLoader.terrain_id("Stone")], [64, 127, 0, 0])
+	_assert_reaction_bytes(metadata, "Water", "Lava", 6, [FixtureLoader.terrain_id("Steam"), 0], [10, 127, 0, 0])
 
 	var removed_properties := ["kind", "duration_seconds", "input_a_units", "input_b_units", "output_units", "persistent_ignition"]
 	var base_property_names := (TerrainContactReaction.new().get_property_list() as Array).map(

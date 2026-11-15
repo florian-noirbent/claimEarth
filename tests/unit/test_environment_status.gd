@@ -14,12 +14,12 @@ func _effect(cause: StringName, fill_seconds := 1.0, recovery_seconds := 1.0):
 	return effect
 
 
-func test_lava_effect_kills_only_after_its_meter_is_full() -> void:
+func test_cooked_effect_kills_only_after_its_meter_is_full() -> void:
 	var status = EnvironmentStatusScript.new()
-	var effect = _effect(DeathCauseScript.LAVA, 0.2, 1.0)
+	var effect = _effect(DeathCauseScript.COOKED, 0.2, 1.0)
 
 	assert_eq(status.evaluate([effect], 0.19), DeathCauseScript.NONE)
-	assert_eq(status.evaluate([effect], 0.01), DeathCauseScript.LAVA)
+	assert_eq(status.evaluate([effect], 0.01), DeathCauseScript.COOKED)
 
 
 func test_suffocation_requires_exposure_time() -> void:
@@ -68,7 +68,7 @@ func test_instant_hazard_accumulates_holds_for_its_impact_frame_and_recovers() -
 
 func test_duplicate_body_samples_only_fill_one_meter_per_frame() -> void:
 	var status = EnvironmentStatusScript.new()
-	var effect = _effect(DeathCauseScript.LAVA)
+	var effect = _effect(DeathCauseScript.COOKED)
 
 	status.evaluate([effect, effect, effect], 0.25)
 
@@ -78,9 +78,9 @@ func test_duplicate_body_samples_only_fill_one_meter_per_frame() -> void:
 
 func test_higher_terrain_fill_uses_the_fastest_same_hazard_rate() -> void:
 	var status = EnvironmentStatusScript.new()
-	var low_fill = _effect(DeathCauseScript.LAVA)
+	var low_fill = _effect(DeathCauseScript.COOKED)
 	low_fill.fill_rate_multiplier = 0.1
-	var full_fill = _effect(DeathCauseScript.LAVA)
+	var full_fill = _effect(DeathCauseScript.COOKED)
 
 	status.evaluate([low_fill, full_fill], 0.25)
 
@@ -90,13 +90,36 @@ func test_higher_terrain_fill_uses_the_fastest_same_hazard_rate() -> void:
 func test_simultaneous_hazards_keep_independent_meters() -> void:
 	var status = EnvironmentStatusScript.new()
 	var suffocation = _effect(DeathCauseScript.SUFFOCATION)
-	var lava = _effect(DeathCauseScript.LAVA)
+	var lava = _effect(DeathCauseScript.COOKED)
 
 	status.evaluate([suffocation, lava], 0.5)
 
 	assert_eq(status.statuses().size(), 2)
 	assert_almost_eq(status.statuses()[0].level, 0.5, 0.001)
 	assert_almost_eq(status.statuses()[1].level, 0.5, 0.001)
+
+
+func test_same_cause_uses_the_greatest_normalized_fill_rate() -> void:
+	var status = EnvironmentStatusScript.new()
+	var steam = _effect(DeathCauseScript.COOKED, 5.0)
+	var low_fill_lava = _effect(DeathCauseScript.COOKED, 0.2)
+	low_fill_lava.fill_rate_multiplier = 0.1
+
+	status.evaluate([steam, low_fill_lava], 1.0)
+
+	assert_almost_eq(status.level_for(DeathCauseScript.COOKED), 0.5, 0.001)
+
+
+func test_cooked_meter_stays_continuous_when_switching_between_steam_and_lava() -> void:
+	var status = EnvironmentStatusScript.new()
+	var steam = _effect(DeathCauseScript.COOKED, 5.0)
+	var lava = _effect(DeathCauseScript.COOKED, 0.2)
+
+	status.evaluate([steam], 1.0)
+	assert_almost_eq(status.level_for(DeathCauseScript.COOKED), 0.2, 0.001)
+	status.evaluate([lava], 0.1)
+
+	assert_almost_eq(status.level_for(DeathCauseScript.COOKED), 0.7, 0.001)
 
 
 func test_hazard_behaviors_expose_quantity_thresholds() -> void:
@@ -107,6 +130,12 @@ func test_hazard_behaviors_expose_quantity_thresholds() -> void:
 	assert_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve().recovery_seconds, 1.0)
 	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(13).fill_rate_multiplier, 0.1, 0.001)
 	assert_almost_eq(FixtureLoader.terrain_definition_named("Lava").hazard_behavior.resolve_for_quantity(127).fill_rate_multiplier, 1.0, 0.001)
+	var steam_hazard = FixtureLoader.terrain_definition_named("Steam").hazard_behavior
+	assert_eq(steam_hazard.resolve().cause, DeathCauseScript.COOKED)
+	assert_eq(steam_hazard.resolve().fill_seconds, 5.0)
+	assert_eq(steam_hazard.resolve().recovery_seconds, 1.0)
+	assert_almost_eq(steam_hazard.resolve_for_quantity(63).fill_rate_multiplier, 1.0, 0.001)
+	assert_almost_eq(steam_hazard.resolve_for_quantity(254).fill_rate_multiplier, 1.0, 0.001)
 	var acid_hazard = FixtureLoader.terrain_definition_named("Sulfuric Acid").hazard_behavior
 	var poison_hazard = FixtureLoader.terrain_definition_named("Sulfur Dioxide").hazard_behavior
 	assert_eq(acid_hazard.resolve().cause, DeathCauseScript.ACID)

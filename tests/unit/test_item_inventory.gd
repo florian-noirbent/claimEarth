@@ -12,7 +12,7 @@ func test_inventory_uses_starting_counts_and_selection_order() -> void:
 	assert_eq(inventory.count_for(definitions[0]), 10)
 	assert_eq(inventory.count_for(definitions[1]), 2)
 	assert_eq(inventory.count_for(definitions[2]), 1)
-	for index in range(3, 9):
+	for index in range(3, definitions.size()):
 		assert_eq(inventory.count_for(definitions[index]), 0.0)
 	assert_eq(inventory.selected_definition().display_name, "Small Bomb")
 
@@ -47,7 +47,7 @@ func test_reset_restores_starting_counts_and_selection() -> void:
 	assert_eq(inventory.count_for(definitions[0]), 10)
 	assert_eq(inventory.count_for(definitions[1]), 2)
 	assert_eq(inventory.count_for(definitions[2]), 1)
-	for index in range(3, 8):
+	for index in range(3, definitions.size()):
 		assert_eq(inventory.count_for(definitions[index]), 0.0)
 	assert_eq(inventory.selected_definition(), definitions[0])
 

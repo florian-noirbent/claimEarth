@@ -418,7 +418,7 @@ func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() 
 	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
 	ui.show_hazard_statuses([
 		{
-			"cause": &"lava",
+			"cause": &"cooked",
 			"icon": load("res://assets/ui/hazard_lava.svg"),
 			"bar_color": Color(0.94, 0.42, 0.2),
 			"level": 0.6,
@@ -440,19 +440,19 @@ func test_hazard_stack_renders_generic_icon_meters_and_distinguishes_recovery() 
 	assert_true(ui.hazard_meter_stack.visible)
 	assert_eq(ui.hazard_meter_stack.meter_count(), 2)
 	var suffocation_row = ui.hazard_meter_stack.rows.get_child(0)
-	var lava_row = ui.hazard_meter_stack.rows.get_child(1)
+	var cooked_row = ui.hazard_meter_stack.rows.get_child(1)
 	assert_eq(suffocation_row.meter.value, 25.0)
 	assert_eq(suffocation_row.state_indicator.text, "v")
 	assert_false(suffocation_row.forward_sweep.visible)
-	assert_eq(lava_row.meter.value, 60.0)
-	assert_true(lava_row.is_building())
-	assert_true(lava_row.secondary_marker.visible)
-	assert_almost_eq(lava_row.secondary_marker.anchor_left, 0.65, 0.001)
-	assert_true(lava_row.lethal_end_marker.visible)
-	assert_eq(lava_row.state_indicator.text, ">")
-	assert_true(lava_row.forward_sweep.visible)
-	assert_eq(lava_row.mouse_filter, Control.MOUSE_FILTER_IGNORE)
-	assert_not_null(lava_row.icon_rect.texture)
+	assert_eq(cooked_row.meter.value, 60.0)
+	assert_true(cooked_row.is_building())
+	assert_true(cooked_row.secondary_marker.visible)
+	assert_almost_eq(cooked_row.secondary_marker.anchor_left, 0.65, 0.001)
+	assert_true(cooked_row.lethal_end_marker.visible)
+	assert_eq(cooked_row.state_indicator.text, ">")
+	assert_true(cooked_row.forward_sweep.visible)
+	assert_eq(cooked_row.mouse_filter, Control.MOUSE_FILTER_IGNORE)
+	assert_not_null(cooked_row.icon_rect.texture)
 
 	ui.apply_state(RunPhase.PAUSED, 42, "", -1, "")
 	assert_false(ui.hazard_meter_stack.visible)

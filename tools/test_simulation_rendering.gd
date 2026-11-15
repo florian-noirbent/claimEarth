@@ -38,7 +38,17 @@ func _run() -> void:
 		return
 	if not await _verify_sulfur_converts_water_one_to_one_before_depleting(registry):
 		return
-	if not await _verify_water_lava_reaction_uses_authored_quantities(registry):
+	if not await _verify_water_lava_boils_into_steam(registry):
+		return
+	if not await _verify_boiling_detects_every_hex_direction(registry):
+		return
+	if not await _verify_steam_rises_and_stays_conserved(registry):
+		return
+	if not await _verify_steam_vents_through_the_top_edge(registry):
+		return
+	if not await _verify_steam_levels_under_a_flat_ceiling(registry):
+		return
+	if not await _verify_overpressured_steam_spreads_downward(registry):
 		return
 	if not await _verify_erosion_uses_authored_contact_limit(registry):
 		return
@@ -559,11 +569,11 @@ func _verify_sulfur_converts_water_one_to_one_before_depleting(registry: Terrain
 	)
 
 
-func _verify_water_lava_reaction_uses_authored_quantities(registry: TerrainRegistry) -> bool:
+func _verify_water_lava_boils_into_steam(registry: TerrainRegistry) -> bool:
 	var stone := _terrain_id(registry, "Stone")
 	var water := _terrain_id(registry, "Water")
 	var lava := _terrain_id(registry, "Lava")
-	var air := _terrain_id(registry, "Air")
+	var steam := _terrain_id(registry, "Steam")
 	var world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
 	world.set_committed_by_offset(1, 1, water, 127)
 	world.set_committed_by_offset(1, 2, lava, 127)
@@ -574,10 +584,282 @@ func _verify_water_lava_reaction_uses_authored_quantities(registry: TerrainRegis
 		backend.shutdown()
 		return false
 	backend.commit_if_ready()
-	var result := _terrain_quantity_total(world, air) == 64 and _terrain_quantity_total(world, stone) == 14 * 127 + 127
+	var result := (
+		_terrain_quantity_total(world, water) == 126
+		and _terrain_quantity_total(world, steam) == 10
+		and _terrain_quantity_total(world, lava) == 127
+		and _terrain_quantity_total(world, stone) == 14 * 127
+	)
 	backend.shutdown()
 	await process_frame
-	return _expect(result, "Water/Lava contact must use the authored Air 64 and Stone 127 replacement quantities.")
+	if not _expect(result, "One Water quantity must expand into ten Steam while Lava and Stone remain unchanged."):
+		return false
+
+	var blocked_world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	blocked_world.set_committed_components_by_offset(1, 1, water, 127, _terrain_id(registry, "Air"), 64)
+	blocked_world.set_committed_by_offset(1, 2, lava, 127)
+	var blocked_backend := _backend(blocked_world, registry)
+	blocked_backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(blocked_backend, 1, PASS_COUNT):
+		blocked_backend.shutdown()
+		return false
+	blocked_backend.commit_if_ready()
+	var blocked := (
+		_terrain_quantity_total(blocked_world, water) == 127
+		and _terrain_quantity_total(blocked_world, steam) == 0
+		and _terrain_quantity_total(blocked_world, lava) == 127
+	)
+	blocked_backend.shutdown()
+	await process_frame
+	if not _expect(blocked, "Boiling must wait when the Water cell has no free or matching Steam component slot."):
+		return false
+
+	var pressured_world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	pressured_world.set_committed_components_by_offset(1, 1, water, 127, steam, 250)
+	pressured_world.set_committed_by_offset(1, 2, lava, 127)
+	var pressured_backend := _backend(pressured_world, registry)
+	pressured_backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(pressured_backend, 1, PASS_COUNT):
+		pressured_backend.shutdown()
+		return false
+	pressured_backend.commit_if_ready()
+	var pressured := (
+		_terrain_quantity_total(pressured_world, water) == 127
+		and _terrain_quantity_total(pressured_world, steam) == 250
+		and _terrain_quantity_total(pressured_world, lava) == 127
+	)
+	pressured_backend.shutdown()
+	await process_frame
+	return _expect(pressured, "Boiling must wait when fewer than ten units fit in a matching Steam component.")
+
+
+func _verify_steam_rises_and_stays_conserved(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var lava := _terrain_id(registry, "Lava")
+	var steam := _terrain_id(registry, "Steam")
+	var world := WorldGrid.new(WorldDimensions.new(5, 14), stone)
+	# The top row stays Stone: a shaft reaching the open top edge would vent the Steam.
+	for row in range(1, 12):
+		world.set_committed_by_offset(2, row, air, WorldGrid.AIR_QUANTITY)
+	world.set_committed_by_offset(2, 12, water, 127)
+	world.set_committed_by_offset(2, 13, lava, 127)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(backend, 1, 100):
+		backend.shutdown()
+		return false
+	var steam_total := _terrain_quantity_total(world, steam)
+	var water_total := _terrain_quantity_total(world, water)
+	var lava_total := _terrain_quantity_total(world, lava)
+	var rose_above_source := false
+	for row in range(1, 12):
+		rose_above_source = rose_above_source || (
+			world.get_committed_by_offset(2, row) == steam
+			or world.get_committed_secondary_by_offset(2, row) == steam
+		)
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		steam_total == 1270 and water_total == 0 and lava_total == 127 and rose_above_source,
+		"Ten seconds of unblocked boiling must create 1,270 rising Steam without consuming Lava (Steam %d, Water %d, Lava %d, rose %s)." % [steam_total, water_total, lava_total, rose_above_source]
+	)
+
+
+func _verify_steam_vents_through_the_top_edge(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var steam := _terrain_id(registry, "Steam")
+	var world := WorldGrid.new(WorldDimensions.new(3, 4), stone)
+	for row in range(3):
+		world.set_committed_by_offset(1, row, air, WorldGrid.AIR_QUANTITY)
+	world.set_committed_by_offset(1, 3, steam, 254)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(backend, 1, 40):
+		backend.shutdown()
+		return false
+	var steam_total := _terrain_quantity_total(world, steam)
+	var air_total := _terrain_quantity_total(world, air)
+	backend.shutdown()
+	await process_frame
+	if not _expect(
+		steam_total == 0 and air_total == 3 * WorldGrid.AIR_QUANTITY,
+		"Steam in a shaft open to the top edge must leave the map while Air stays (Steam %d, Air %d)." % [steam_total, air_total]
+	):
+		return false
+
+	var bubble_world := WorldGrid.new(WorldDimensions.new(3, 2), stone)
+	bubble_world.set_committed_components_by_offset(1, 0, water, 127, steam, 100)
+	var bubble_backend := _backend(bubble_world, registry)
+	bubble_backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(bubble_backend, 1, 1):
+		bubble_backend.shutdown()
+		return false
+	var bubble_total := _terrain_quantity_total(bubble_world, steam)
+	var water_total := _terrain_quantity_total(bubble_world, water)
+	bubble_backend.shutdown()
+	await process_frame
+	return _expect(
+		bubble_total == 0 and water_total == 127,
+		"Steam bubbling through top-row Water must vent without removing the Water (Steam %d, Water %d)." % [bubble_total, water_total]
+	)
+
+
+func _verify_steam_levels_under_a_flat_ceiling(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var steam := _terrain_id(registry, "Steam")
+	var normal_quantity := registry.get_definition(steam).normal_quantity
+	var world := WorldGrid.new(WorldDimensions.new(11, 6), _terrain_id(registry, "Stone"))
+	for row in range(1, 5):
+		for col in range(1, 10):
+			world.set_committed_by_offset(col, row, air, WorldGrid.AIR_QUANTITY)
+	for row in range(2, 5):
+		world.set_committed_by_offset(5, row, steam, 254)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(backend, 1, 80):
+		backend.shutdown()
+		return false
+	var settled_state := _terrain_state(world)
+	var steam_total := _terrain_quantity_total(world, steam)
+	var ceiling_row_is_full := true
+	for col in range(1, 10):
+		ceiling_row_is_full = ceiling_row_is_full and (
+			world.get_committed_by_offset(col, 1) == steam
+			and world.get_committed_quantity_by_offset(col, 1) == normal_quantity
+		)
+	var lower_rows_are_clear := true
+	for row in range(3, 5):
+		for col in range(1, 10):
+			lower_rows_are_clear = lower_rows_are_clear and world.get_committed_by_offset(col, row) != steam
+	if not await _advance_ticks(backend, 81, 1):
+		backend.shutdown()
+		return false
+	var stayed_settled := _terrain_state(world) == settled_state
+	backend.shutdown()
+	await process_frame
+	return _expect(
+		steam_total == 3 * 254 and ceiling_row_is_full and lower_rows_are_clear and stayed_settled,
+		"A Steam column under a flat ceiling must level into a conserved, resting layer (Steam %d, ceiling row full %s, lower rows clear %s, resting %s)." % [steam_total, ceiling_row_is_full, lower_rows_are_clear, stayed_settled]
+	)
+
+
+func _verify_overpressured_steam_spreads_downward(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var steam := _terrain_id(registry, "Steam")
+	var normal_quantity := registry.get_definition(steam).normal_quantity
+
+	var resting_world := WorldGrid.new(WorldDimensions.new(3, 7), stone)
+	for row in range(2, 6):
+		resting_world.set_committed_by_offset(1, row, air, WorldGrid.AIR_QUANTITY)
+	resting_world.set_committed_by_offset(1, 1, steam, normal_quantity)
+	var resting_backend := _backend(resting_world, registry)
+	resting_backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(resting_backend, 1, 10):
+		resting_backend.shutdown()
+		return false
+	var resting := (
+		resting_world.get_committed_by_offset(1, 1) == steam
+		and resting_world.get_committed_quantity_by_offset(1, 1) == normal_quantity
+	)
+	resting_backend.shutdown()
+	await process_frame
+	if not _expect(resting, "Steam at normal pressure must stay under its ceiling."):
+		return false
+
+	var world := WorldGrid.new(WorldDimensions.new(3, 7), stone)
+	for row in range(2, 6):
+		world.set_committed_by_offset(1, row, air, WorldGrid.AIR_QUANTITY)
+	world.set_committed_by_offset(1, 1, steam, 254)
+	var backend := _backend(world, registry)
+	backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(backend, 1, 40):
+		backend.shutdown()
+		return false
+	var settled_state := _terrain_state(world)
+	var steam_total := _terrain_quantity_total(world, steam)
+	var quantities := PackedInt32Array()
+	for row in range(1, 6):
+		quantities.append(
+			world.get_committed_quantity_by_offset(1, row) if world.get_committed_by_offset(1, row) == steam else 0
+		)
+	if not await _advance_ticks(backend, 41, 1):
+		backend.shutdown()
+		return false
+	var stayed_settled := _terrain_state(world) == settled_state
+	backend.shutdown()
+	await process_frame
+	var spread_evenly := quantities[4] == 0
+	for index in range(4):
+		spread_evenly = spread_evenly and absi(quantities[index] - normal_quantity) <= 2
+	return _expect(
+		steam_total == 254 and spread_evenly and stayed_settled,
+		"Overpressured Steam under a ceiling must push down to normal pressure, keep its quantity, and come to rest (rows %s, Steam %d, resting %s)." % [quantities, steam_total, stayed_settled]
+	)
+
+
+func _verify_boiling_detects_every_hex_direction(registry: TerrainRegistry) -> bool:
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var lava := _terrain_id(registry, "Lava")
+	var steam := _terrain_id(registry, "Steam")
+	var center := HexCoord.from_offset_odd_q(2, 2)
+	for direction in range(6):
+		var world := WorldGrid.new(WorldDimensions.new(5, 5), stone)
+		var lava_offset := center.neighbor(direction).to_offset_odd_q()
+		world.set_committed_by_offset(2, 2, water, 127)
+		world.set_committed_by_offset(lava_offset.x, lava_offset.y, lava, 127)
+		var backend := _backend(world, registry)
+		backend.attach_to(root)
+		await process_frame
+		if not await _complete_tick(backend, 1, PASS_COUNT):
+			backend.shutdown()
+			return false
+		backend.commit_if_ready()
+		var converted_once := (
+			_terrain_quantity_total(world, water) == 126
+			and _terrain_quantity_total(world, steam) == 10
+			and _terrain_quantity_total(world, lava) == 127
+		)
+		backend.shutdown()
+		await process_frame
+		if not _expect(converted_once, "Boiling must detect canonical hex direction %d exactly once per tick." % direction):
+			return false
+
+	var surrounded_world := WorldGrid.new(WorldDimensions.new(5, 5), stone)
+	surrounded_world.set_committed_by_offset(2, 2, water, 127)
+	for direction in range(6):
+		var lava_offset := center.neighbor(direction).to_offset_odd_q()
+		surrounded_world.set_committed_by_offset(lava_offset.x, lava_offset.y, lava, 127)
+	var surrounded_backend := _backend(surrounded_world, registry)
+	surrounded_backend.attach_to(root)
+	await process_frame
+	if not await _complete_tick(surrounded_backend, 1, PASS_COUNT):
+		surrounded_backend.shutdown()
+		return false
+	surrounded_backend.commit_if_ready()
+	var converted_only_once := (
+		_terrain_quantity_total(surrounded_world, water) == 126
+		and _terrain_quantity_total(surrounded_world, steam) == 10
+		and _terrain_quantity_total(surrounded_world, lava) == 6 * 127
+	)
+	surrounded_backend.shutdown()
+	await process_frame
+	if not _expect(converted_only_once, "Several Lava neighbors must still boil a Water cell only once per tick."):
+		return false
+	return true
 
 
 func _verify_erosion_uses_authored_contact_limit(registry: TerrainRegistry) -> bool:
@@ -906,6 +1188,16 @@ func _terrain_quantity_total(world: WorldGrid, terrain_id: int) -> int:
 	return total
 
 
+func _terrain_state(world: WorldGrid) -> PackedInt32Array:
+	var state := PackedInt32Array()
+	for index in range(world.dimensions.cell_count()):
+		state.append(world.get_committed_by_index(index))
+		state.append(world.get_committed_quantity_by_index(index))
+		state.append(world.get_committed_secondary_by_index(index))
+		state.append(world.get_committed_secondary_quantity_by_index(index))
+	return state
+
+
 func _terrain_quantities_respect_storage(world: WorldGrid, terrain_id: int) -> bool:
 	for index in range(world.dimensions.cell_count()):
 		if world.get_committed_by_index(index) == terrain_id and world.get_committed_quantity_by_index(index) > 255:
@@ -1173,6 +1465,14 @@ func _complete_tick(backend: RenderTextureSimulationBackend, expected_revision: 
 	if not _expect(backend.ticks_completed() == expected_revision, "Six completed passes must finish exactly one tick."):
 		return false
 	return _expect(backend.has_commit_ready(), "A completed tick must expose a pending commit.")
+
+
+func _advance_ticks(backend: RenderTextureSimulationBackend, first_revision: int, tick_count: int) -> bool:
+	for revision in range(first_revision, first_revision + tick_count):
+		if not await _complete_tick(backend, revision, PASS_COUNT):
+			return false
+		backend.commit_if_ready()
+	return true
 
 
 func _world_fixture(registry: TerrainRegistry) -> WorldGrid:

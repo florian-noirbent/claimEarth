@@ -2,15 +2,15 @@
 [ext_resource type="Script" path="res://src/perks/perk_definition.gd" id="1"]
 [ext_resource type="Texture2D" path="res://assets/ui/perks/lava_resistance.svg" id="2"]
 [ext_resource type="Script" path="res://src/perks/perk_modifier_effect.gd" id="3"]
-[sub_resource type="Resource" id="Effect_lava"]
+[sub_resource type="Resource" id="Effect_heat"]
 script = ExtResource("3")
 domain = 1
-modifier_key = "lava_duration_seconds_add"
+modifier_key = "heat_duration_seconds_add"
 value = 1.0
 [resource]
 script = ExtResource("1")
 stable_id = 2
-display_name = "Lava Resistance"
-description = "+1s lava exposure delay."
+display_name = "Heat Resistance"
+description = "+1s heat exposure delay."
 icon = ExtResource("2")
-effects = [SubResource("Effect_lava")]
+effects = [SubResource("Effect_heat")]

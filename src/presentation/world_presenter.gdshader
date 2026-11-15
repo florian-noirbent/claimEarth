@@ -274,7 +274,7 @@ vec4 render_moving_material_above_partial_cell(
 	vec2 style_uv = vec2((cell_kind + 0.5) / 256.0, 0.5);
 	vec4 properties = texture(terrain_properties, style_uv);
 	float motion = floor(properties.r * 255.0 + 0.5);
-	if (motion < 1.5 || motion > 4.5) {
+	if (motion < 1.5 || motion > 5.5) {
 		return vec4(0.0);
 	}
 	rendered_kind = cell_kind;

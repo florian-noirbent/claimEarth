@@ -488,8 +488,8 @@ func _hazard_effect_at(world_position: Vector2):
 		and definition.perk_tags.has("sulfur_dioxide"):
 		return null
 	var effect = definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
-	if effect != null and _runtime_tuning != null and definition.perk_tags.has("lava"):
-		effect.fill_seconds += _runtime_tuning.lava_duration_seconds_add
+	if effect != null and _runtime_tuning != null and definition.perk_tags.has("heat"):
+		effect.fill_seconds += _runtime_tuning.heat_duration_seconds_add
 	if effect != null and _runtime_tuning != null and definition.perk_tags.has("acid"):
 		effect.fill_seconds += _runtime_tuning.acid_duration_seconds_add
 	return effect
@@ -508,12 +508,14 @@ func _head_has_breathable_air() -> bool:
 	var offset := HexMetrics.offset_for_world(global_position + Vector2(0.0, -10.0), _hex_radius)
 	while _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
 		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
-		if definition == null or definition.is_empty_space:
+		if definition == null or definition.is_breathable:
 			return true
 		if _runtime_tuning != null and definition.perk_tags.has("sand") and _runtime_tuning.sand_breathable:
 			return true
 		if _runtime_tuning != null and definition.perk_tags.has("sulfur_dioxide") and _runtime_tuning.sulfur_dioxide_breathable:
 			return true
+		if definition.blocks_breathing_at_any_quantity:
+			return false
 		if _world.get_committed_quantity_by_offset(offset.x, offset.y) >= definition.maximum_quantity:
 			return false
 		offset = HexCoord.from_offset_odd_q(offset.x, offset.y).neighbor(2).to_offset_odd_q()

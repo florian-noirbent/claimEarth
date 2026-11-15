@@ -78,13 +78,16 @@ func test_jelly_compiles_typed_liquid_bounce_and_impact_policy() -> void:
 
 
 func test_glass_sand_and_hazard_modifiers_compile_to_typed_policy() -> void:
+	var heat_resistance := load("res://config/perks/heat_resistance.tres") as PerkDefinition
+	assert_eq(heat_resistance.stable_id, 2)
+	assert_eq(heat_resistance.display_name, "Heat Resistance")
 	var tuning := PlayerRuntimeTuning.compile(
 		_base_movement,
 		_base_grapple,
 		_modifiers([
 			"res://config/perks/glass_cannon.tres",
 			"res://config/perks/sand_worm.tres",
-			"res://config/perks/lava_resistance.tres",
+			"res://config/perks/heat_resistance.tres",
 			"res://config/perks/breath_resistance.tres",
 		])
 	)
@@ -93,7 +96,7 @@ func test_glass_sand_and_hazard_modifiers_compile_to_typed_policy() -> void:
 	assert_true(tuning.all_hazards_immune)
 	assert_true(tuning.sand_passable)
 	assert_true(tuning.sand_breathable)
-	assert_eq(tuning.lava_duration_seconds_add, 1.0)
+	assert_eq(tuning.heat_duration_seconds_add, 1.0)
 	assert_eq(tuning.suffocation_duration_seconds_add, 5.0)
 	assert_eq(
 		tuning.movement.lethal_impact_speed,

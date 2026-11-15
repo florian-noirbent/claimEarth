@@ -8,6 +8,7 @@ uniform sampler2D standard_light_sources : filter_nearest, repeat_disable;
 uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
 uniform int simulation_tick = 0;
+uniform int simulation_ticks_per_second = 10;
 uniform ivec2 player_light_offset = ivec2(-1, -1);
 uniform int player_light_level = 0;
 uniform int player_light_update_radius = 0;
@@ -24,15 +25,15 @@ const int PASS_VERTICAL_ODD = 3;
 const int PASS_RIGHT_DOWN_ODD = 4;
 const int PASS_LEFT_DOWN_ODD = 5;
 const int MOTION_STABLE = 0;
-const int MOTION_LIQUID = 2;
 const int MOTION_GAS = 3;
 const int MOTION_DENSE_GAS = 4;
+const int MOTION_LIGHT_GAS = 5;
 const int REACTION_CATALYTIC_LIQUID_CONVERSION = 1;
 const int REACTION_PERSISTENT_IGNITION = 2;
 const int REACTION_EROSION = 3;
 const int REACTION_GAS_ABSORPTION = 4;
 const int REACTION_MUTUAL_REPLACEMENT = 5;
-const int AIR_QUANTITY = 64;
+const int REACTION_BOILING = 6;
 const int FULL_QUANTITY = 127;
 const int MAX_STORED_QUANTITY = 255;
 const int NO_BURN_PRODUCT_ID = 255;
@@ -192,6 +193,10 @@ int persistent_burn_bonus_product(int id) {
 	return rule_byte(id, 6, 1);
 }
 
+bool can_boil(int id) {
+	return rule_byte(id, 6, 2) != 0;
+}
+
 vec4 read_reaction_header(int a, int b) {
 	return texture(reaction_texture, (vec2(float(b & 15), float(a & 15)) + vec2(0.5)) / vec2(16.0, 32.0));
 }
@@ -256,16 +261,12 @@ vec4 make_cell(int cell_id, int quantity) {
 	return make_components(cell_id, quantity, 0, 0);
 }
 
-vec4 air_cell() {
-	return make_cell(air_id(), AIR_QUANTITY);
-}
-
-vec4 vacuum_cell() {
-	return make_cell(air_id(), 0);
-}
-
 bool is_moving(int id) {
 	return motion(id) != MOTION_STABLE;
+}
+
+bool is_light_gas(int id) {
+	return motion(id) == MOTION_LIGHT_GAS;
 }
 
 bool has_secondary(vec4 cell) {
@@ -340,17 +341,18 @@ int pass_parity() {
 	return 1;
 }
 
-ivec2 pair_neighbor(ivec2 owner) {
-	if (pass_kind == PASS_VERTICAL_EVEN || pass_kind == PASS_VERTICAL_ODD) {
-		return hex_neighbor(owner, HEX_DIRECTION_DOWN);
+int pair_direction() {
+	if (is_vertical_pass()) {
+		return HEX_DIRECTION_DOWN;
 	}
 	if (pass_kind == PASS_RIGHT_DOWN_EVEN || pass_kind == PASS_RIGHT_DOWN_ODD) {
-		return hex_neighbor(owner, HEX_DIRECTION_DOWN_RIGHT);
+		return HEX_DIRECTION_DOWN_RIGHT;
 	}
-	if (pass_kind == PASS_LEFT_DOWN_EVEN || pass_kind == PASS_LEFT_DOWN_ODD) {
-		return hex_neighbor(owner, HEX_DIRECTION_DOWN_LEFT);
-	}
-	return owner;
+	return HEX_DIRECTION_DOWN_LEFT;
+}
+
+ivec2 pair_neighbor(ivec2 owner) {
+	return hex_neighbor(owner, pair_direction());
 }
 
 ivec2 pair_owner_for(ivec2 coord) {
@@ -421,44 +423,24 @@ int resolved_light(ivec2 coord, vec4 current, vec4 terrain_result) {
 	return max(source_light, max(persistent_light, propagated_light));
 }
 
-bool component_is_liquid(int component_id, int component_quantity) {
-	return component_quantity > 0 && motion(component_id) == MOTION_LIQUID;
-}
-
-bool liquid_contact(vec4 a, vec4 b) {
-	int a_primary = terrain_id(a);
-	int a_secondary = secondary_terrain_id(a);
-	int b_primary = terrain_id(b);
-	int b_secondary = secondary_terrain_id(b);
-	int a_primary_quantity = fill_amount(a);
-	int a_secondary_quantity = secondary_fill_amount(a);
-	int b_primary_quantity = fill_amount(b);
-	int b_secondary_quantity = secondary_fill_amount(b);
-	if (component_is_liquid(a_primary, a_primary_quantity)) {
-		if (component_is_liquid(b_primary, b_primary_quantity) && a_primary != b_primary) return true;
-		if (component_is_liquid(b_secondary, b_secondary_quantity) && a_primary != b_secondary) return true;
-	}
-	if (component_is_liquid(a_secondary, a_secondary_quantity)) {
-		if (component_is_liquid(b_primary, b_primary_quantity) && a_secondary != b_primary) return true;
-		if (component_is_liquid(b_secondary, b_secondary_quantity) && a_secondary != b_secondary) return true;
-	}
-	bool a_internal_contact = component_is_liquid(a_primary, a_primary_quantity)
-		&& component_is_liquid(a_secondary, a_secondary_quantity)
-		&& a_primary != a_secondary;
-	bool b_internal_contact = component_is_liquid(b_primary, b_primary_quantity)
-		&& component_is_liquid(b_secondary, b_secondary_quantity)
-		&& b_primary != b_secondary;
-	return a_internal_contact || b_internal_contact;
-}
-
 int directional_rate(int component_id, bool vertical, bool moves_down) {
 	if (motion(component_id) == MOTION_GAS) {
 		return MAX_STORED_QUANTITY;
+	}
+	if (is_light_gas(component_id) && moves_down) {
+		return 0;
 	}
 	if (vertical) {
 		return fall_rate(component_id);
 	}
 	return moves_down ? side_down_rate(component_id) : side_up_rate(component_id);
+}
+
+// A displaced gas crosses another medium only against that medium's own travel: it
+// sinks through a rising light gas and bubbles up through everything else. Crossing
+// both ways would let it shuttle between the same cells forever and stall them.
+bool can_cross(int component_id, int medium_id, bool moves_down) {
+	return motion(component_id) != MOTION_GAS || moves_down == is_light_gas(medium_id);
 }
 
 int secondary_transfer_amount(vec4 source, vec4 target, bool vertical, bool moves_down) {
@@ -491,7 +473,9 @@ int secondary_transfer_amount(vec4 source, vec4 target, bool vertical, bool move
 	if (target_secondary_quantity > 0 && target_secondary_id == component_id) {
 		return min(source_quantity, min(rate, MAX_STORED_QUANTITY - target_secondary_quantity));
 	}
-	if (target_secondary_quantity <= 0 && (is_moving(target_primary_id) || is_passable(target_primary_id))) {
+	if (target_secondary_quantity <= 0
+			&& (is_moving(target_primary_id) || is_passable(target_primary_id))
+			&& can_cross(component_id, target_primary_id, moves_down)) {
 		return min(source_quantity, rate);
 	}
 	return 0;
@@ -629,6 +613,15 @@ void transfer_primary(
 	next_target = add_component(target, component_id, amount, FULL_QUANTITY);
 }
 
+// Quantity above which a cell is pressurized and equalizes with same-terrain neighbors.
+int pressure_threshold(int component_id) {
+	int component_motion = motion(component_id);
+	if (component_motion == MOTION_GAS || component_motion == MOTION_DENSE_GAS) {
+		return 0;
+	}
+	return component_motion == MOTION_LIGHT_GAS ? normal_quantity(component_id) : FULL_QUANTITY;
+}
+
 bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 	next_a = a;
 	next_b = b;
@@ -638,7 +631,8 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 	}
 	int a_quantity = fill_amount(a);
 	int b_quantity = fill_amount(b);
-	if (motion(component_id) != MOTION_GAS && motion(component_id) != MOTION_DENSE_GAS && a_quantity <= FULL_QUANTITY && b_quantity <= FULL_QUANTITY) {
+	int threshold = pressure_threshold(component_id);
+	if (a_quantity <= threshold && b_quantity <= threshold) {
 		return false;
 	}
 	int difference = a_quantity - b_quantity;
@@ -656,6 +650,146 @@ bool resolve_same_primary_pressure(vec4 a, vec4 b, out vec4 next_a, out vec4 nex
 		next_a = add_component(a, component_id, amount, MAX_STORED_QUANTITY);
 	}
 	return amount > 0;
+}
+
+int component_fill(vec4 cell, int component_id) {
+	if (terrain_id(cell) == component_id) {
+		return fill_amount(cell);
+	}
+	return secondary_terrain_id(cell) == component_id ? secondary_fill_amount(cell) : 0;
+}
+
+int boiling_steam_capacity(vec4 cell, int steam_id) {
+	bool has_slot = terrain_id(cell) == steam_id
+		|| !has_secondary(cell)
+		|| secondary_terrain_id(cell) == steam_id;
+	return has_slot ? max(0, storage_capacity(steam_id) - component_fill(cell, steam_id)) : 0;
+}
+
+vec4 boil(vec4 cell, int steam_id, vec4 parameters) {
+	int steam_per_water = max(1, reaction_byte(parameters, 0));
+	int steam_per_second = max(1, reaction_byte(parameters, 1));
+	int cadence_denominator = max(1, simulation_ticks_per_second * steam_per_water);
+	// Keep the exact integer cadence periodic so an indefinitely running session
+	// cannot overflow the shader's signed tick arithmetic.
+	int cadence_tick = simulation_tick % cadence_denominator;
+	int water_to_consume = (cadence_tick + 1) * steam_per_second / cadence_denominator
+		- cadence_tick * steam_per_second / cadence_denominator;
+	water_to_consume = min(
+		water_to_consume,
+		min(fill_amount(cell), boiling_steam_capacity(cell, steam_id) / steam_per_water)
+	);
+	if (water_to_consume <= 0) {
+		return cell;
+	}
+	return add_component(
+		remove_primary_component(cell, water_to_consume),
+		steam_id,
+		water_to_consume * steam_per_water,
+		storage_capacity(steam_id)
+	);
+}
+
+vec4 resolve_boiling_at(ivec2 coord, vec4 cell) {
+	int liquid_id = terrain_id(cell);
+	if (fill_amount(cell) <= 0 || !can_boil(liquid_id)) {
+		return cell;
+	}
+	for (int direction = 0; direction < 6; direction++) {
+		ivec2 neighbor_coord = hex_neighbor(coord, direction);
+		if (!in_bounds(neighbor_coord)) {
+			continue;
+		}
+		int heat_id = terrain_id(read_cell(neighbor_coord));
+		vec4 reaction = read_reaction_header(liquid_id, heat_id);
+		if (reaction_byte(reaction, 0) == REACTION_BOILING) {
+			return boil(cell, reaction_byte(reaction, 1), read_reaction_parameters(liquid_id, heat_id));
+		}
+	}
+	return cell;
+}
+
+// Light gases mirror the liquid rules upside down: they rise instead of falling, fill
+// cells from the ceiling down to their normal pressure, and level out across the
+// half-hex stagger between neighboring columns through the side-flow offset.
+int light_gas_capacity(vec4 target, int gas_id) {
+	int target_id = terrain_id(target);
+	bool has_slot = target_id == gas_id
+		|| (has_secondary(target)
+			? secondary_terrain_id(target) == gas_id
+			: is_moving(target_id) || is_passable(target_id));
+	return has_slot ? max(0, normal_quantity(gas_id) - component_fill(target, gas_id)) : 0;
+}
+
+int light_gas_rise_amount(vec4 source, vec4 target) {
+	int gas_id = terrain_id(source);
+	return min(fill_amount(source), min(fall_rate(gas_id), light_gas_capacity(target, gas_id)));
+}
+
+int light_gas_side_up_amount(vec4 source, vec4 target) {
+	int gas_id = terrain_id(source);
+	if (!can_side_up(gas_id)) {
+		return 0;
+	}
+	int equilibrium_distance = fill_amount(source) - component_fill(target, gas_id) + side_flow_offset(gas_id);
+	return min(
+		min(fill_amount(source), side_up_rate(gas_id)),
+		min(light_gas_capacity(target, gas_id), equilibrium_distance / 2)
+	);
+}
+
+bool light_gas_top_blocked(ivec2 coord, vec4 source) {
+	// The row above the map is open sky, never a ceiling.
+	ivec2 above_coord = hex_neighbor(coord, HEX_DIRECTION_UP);
+	return in_bounds(above_coord) && light_gas_rise_amount(source, read_cell(above_coord)) <= 0;
+}
+
+bool light_gas_top_side_blocked(ivec2 coord, vec4 source) {
+	ivec2 top_side_coord = hex_neighbor(coord, hex_opposite_direction(pair_direction()));
+	return !in_bounds(top_side_coord) || light_gas_side_up_amount(source, read_cell(top_side_coord)) <= 0;
+}
+
+int light_gas_ascent_amount(ivec2 coord, vec4 source, vec4 target) {
+	if (is_vertical_pass()) {
+		return light_gas_rise_amount(source, target);
+	}
+	int amount = light_gas_side_up_amount(source, target);
+	return amount > 0 && light_gas_top_blocked(coord, source) ? amount : 0;
+}
+
+// Gas only moves down once every higher exit is blocked and it holds more than the
+// lower cell plus the height between them: a full cell vertically, the side-flow
+// offset diagonally. It must stay primary there, because gas pushed into a denser
+// medium would only bubble straight back.
+int light_gas_descent_amount(ivec2 coord, vec4 source, vec4 target) {
+	int gas_id = terrain_id(source);
+	int target_id = terrain_id(target);
+	bool vertical = is_vertical_pass();
+	if ((!vertical && !can_side_down(gas_id)) || (target_id != gas_id && density(target_id) >= density(gas_id))) {
+		return 0;
+	}
+	int height = vertical ? normal_quantity(gas_id) : side_flow_offset(gas_id);
+	int rate = vertical ? fall_rate(gas_id) : side_down_rate(gas_id);
+	int excess = fill_amount(source) - height - component_fill(target, gas_id);
+	int amount = min(rate, min(light_gas_capacity(target, gas_id), excess / 2));
+	if (amount <= 0 || !light_gas_top_blocked(coord, source)) {
+		return 0;
+	}
+	return vertical || light_gas_top_side_blocked(coord, source) ? amount : 0;
+}
+
+// The top edge of the map is open sky: light gas in the top row keeps rising and
+// leaves the world.
+vec4 vent_light_gas(vec4 cell) {
+	int primary_id = terrain_id(cell);
+	if (is_light_gas(primary_id)) {
+		return remove_primary_component(cell, min(fill_amount(cell), fall_rate(primary_id)));
+	}
+	int secondary_id = secondary_terrain_id(cell);
+	if (has_secondary(cell) && is_light_gas(secondary_id)) {
+		return remove_secondary_component(cell, min(secondary_fill_amount(cell), fall_rate(secondary_id)));
+	}
+	return cell;
 }
 
 bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
@@ -787,6 +921,28 @@ bool bottom_side_blocked(ivec2 coord, vec4 source) {
 	return !in_bounds(bottom_side_coord) || side_down_transfer_amount(source, read_cell(bottom_side_coord)) <= 0;
 }
 
+int downward_transfer_amount(ivec2 coord, vec4 source, vec4 target) {
+	if (is_light_gas(terrain_id(source))) {
+		return light_gas_descent_amount(coord, source, target);
+	}
+	if (is_vertical_pass()) {
+		return fall_transfer_amount(source, target);
+	}
+	int amount = side_down_transfer_amount(source, target);
+	return amount > 0 && direct_bottom_blocked(coord, source) ? amount : 0;
+}
+
+int upward_transfer_amount(ivec2 coord, vec4 source, vec4 target) {
+	if (is_light_gas(terrain_id(source))) {
+		return light_gas_ascent_amount(coord, source, target);
+	}
+	if (is_vertical_pass()) {
+		return 0;
+	}
+	int amount = side_up_transfer_amount(source, target);
+	return amount > 0 && direct_bottom_blocked(coord, source) && bottom_side_blocked(coord, source) ? amount : 0;
+}
+
 void resolve_pair(
 	ivec2 a_coord,
 	ivec2 b_coord,
@@ -795,6 +951,13 @@ void resolve_pair(
 	out vec4 next_a,
 	out vec4 next_b
 ) {
+	// The even vertical pass covers every in-bounds cell exactly once per tick.
+	if (pass_kind == PASS_VERTICAL_EVEN) {
+		a = resolve_boiling_at(a_coord, a);
+		if (in_bounds(b_coord)) {
+			b = resolve_boiling_at(b_coord, b);
+		}
+	}
 	next_a = a;
 	next_b = b;
 	if (resolve_authored_contact(a, b, next_a, next_b)) {
@@ -809,25 +972,14 @@ void resolve_pair(
 	if (resolve_same_primary_pressure(a, b, next_a, next_b)) {
 		return;
 	}
-	if (is_vertical_pass()) {
-		int amount = fall_transfer_amount(a, b);
-		if (amount > 0) {
-			transfer_primary(a, b, amount, next_a, next_b);
-		}
+	int sinking_amount = downward_transfer_amount(a_coord, a, b);
+	if (sinking_amount > 0) {
+		transfer_primary(a, b, sinking_amount, next_a, next_b);
 		return;
 	}
-	if (direct_bottom_blocked(a_coord, a)) {
-		int amount = side_down_transfer_amount(a, b);
-		if (amount > 0) {
-			transfer_primary(a, b, amount, next_a, next_b);
-			return;
-		}
-	}
-	if (direct_bottom_blocked(b_coord, b) && bottom_side_blocked(b_coord, b)) {
-		int amount = side_up_transfer_amount(b, a);
-		if (amount > 0) {
-			transfer_primary(b, a, amount, next_b, next_a);
-		}
+	int rising_amount = upward_transfer_amount(b_coord, b, a);
+	if (rising_amount > 0) {
+		transfer_primary(b, a, rising_amount, next_b, next_a);
 	}
 }
 
@@ -845,7 +997,9 @@ void fragment() {
 		vec4 next_b;
 		resolve_pair(owner, neighbor, a, b, next_a, next_b);
 		result = output_a ? next_a : next_b;
+	} else if (is_vertical_pass() && owner.y < 0) {
+		result = vent_light_gas(current);
 	}
-	result.b = float(resolved_light(coord, current, result)) / 255.0;
+	result.b =float(resolved_light(coord, current, result)) / 255.0;
 	COLOR = result;
 }

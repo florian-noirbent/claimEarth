@@ -19,6 +19,7 @@ is_passable = true
 is_hookable = false
 is_destructible = false
 is_empty_space = true
+is_breathable = true
 light_diffusion_coefficient = 0.95
 debug_color = Color(0, 0, 0, 0)
 visual_style = ExtResource("5_3xqma")

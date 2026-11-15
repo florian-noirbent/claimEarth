@@ -157,11 +157,11 @@ func test_death_locks_out_later_terminal_outcomes() -> void:
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.PLAYING
 	, 1.0)
-	app_root._on_player_death_requested(DeathCauseScript.LAVA)
+	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 	app_root.item_controller.resolve_flag_landing(null, HexMetrics.center_for_offset(5, 40, app_root.world_presenter.hex_radius), null, &"impact")
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
-	assert_string_contains(app_root.ui.result_status.text, "Lava")
+	assert_string_contains(app_root.ui.result_status.text, "Cooked")
 
 
 func test_pause_toggles_from_playing_and_back() -> void:

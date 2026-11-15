@@ -27,7 +27,7 @@ func evaluate(effects: Array, delta: float) -> StringName:
 			continue
 		if effect.fill_seconds <= 0.0 or effect.recovery_seconds <= 0.0:
 			continue
-		if not active_effects.has(effect.cause) or effect.fill_rate_multiplier > active_effects[effect.cause].fill_rate_multiplier:
+		if not active_effects.has(effect.cause) or _normalized_fill_rate(effect) > _normalized_fill_rate(active_effects[effect.cause]):
 			active_effects[effect.cause] = effect
 
 	var death_cause := DeathCauseScript.NONE
@@ -78,6 +78,10 @@ func level_for(cause: StringName) -> float:
 		return 0.0
 	var meter: _HazardMeter = _meters[cause]
 	return meter.level
+
+
+func _normalized_fill_rate(effect) -> float:
+	return effect.fill_rate_multiplier / maxf(effect.fill_seconds, 0.000001)
 
 
 func _meter_for(effect) -> _HazardMeter:

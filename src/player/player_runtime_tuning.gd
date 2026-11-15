@@ -20,7 +20,7 @@ var sand_breathable := false
 var sulfur_dioxide_breathable := false
 var sulfur_dioxide_immune := false
 var all_hazards_immune := false
-var lava_duration_seconds_add := 0.0
+var heat_duration_seconds_add := 0.0
 var suffocation_duration_seconds_add := 0.0
 var acid_duration_seconds_add := 0.0
 
@@ -99,8 +99,8 @@ static func compile(
 	tuning.all_hazards_immune = bool(
 		modifiers.hazards.value("all_hazards_immune", false)
 	)
-	tuning.lava_duration_seconds_add = float(
-		modifiers.hazards.value("lava_duration_seconds_add", 0.0)
+	tuning.heat_duration_seconds_add = float(
+		modifiers.hazards.value("heat_duration_seconds_add", 0.0)
 	)
 	tuning.suffocation_duration_seconds_add = float(
 		modifiers.hazards.value("suffocation_duration_seconds_add", 0.0)

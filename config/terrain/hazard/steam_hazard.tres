@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CookedHazardBehavior" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/cooked_hazard_behavior.gd" id="1_cooked"]
+[ext_resource type="Texture2D" path="res://assets/ui/hazard_lava.svg" id="2_heat_icon"]
+
+[resource]
+script = ExtResource("1_cooked")
+icon = ExtResource("2_heat_icon")
+bar_color = Color(0.941176, 0.415686, 0.196078, 1)
+fill_seconds = 5.0
+recovery_seconds = 1.0
+display_order = 20
+minimum_quantity = 1
+full_rate_quantity = 63
+quantity_rate_at_minimum = 0.02
+quantity_rate_at_full = 1.0

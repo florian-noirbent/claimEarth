@@ -19,6 +19,7 @@ is_solid = false
 is_passable = true
 is_hookable = false
 is_destructible = false
+blocks_breathing_at_any_quantity = true
 light_diffusion_coefficient = 0.92
 debug_color = Color(0.78, 0.9, 0.25, 0.52)
 visual_style = ExtResource("5_style")

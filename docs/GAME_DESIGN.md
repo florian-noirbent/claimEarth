@@ -124,12 +124,13 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 | Terrain | Collision | Motion/hazard | Bomb response |
 | --- | --- | --- | --- |
-| Air | Passable | Pressure-balancing gas; normal pressure is 64 quantity | None |
+| Air | Passable | Pressure-balancing breathable gas; normal pressure is 64 quantity | None |
 | Stone | Solid | Stable | Becomes dirt |
 | Dirt | Solid | Stable | Becomes sand |
 | Sand | Solid at half fill or more | Falls and creeps side-down; denser Sand displaces lighter moving terrain into a conserved hidden component that escapes through later pair passes; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
-| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills its lethal hazard meter from 10% fill, with low-fill lava building the meter more slowly than a full hex | Detonates bombs |
+| Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills the shared Cooked meter from 10% fill, with low-fill lava building it more slowly than a full hex | Detonates bombs |
+| Steam | Passable | Breathable buoyant gas that rises through Air without condensing, levels out under ceilings like an upside-down liquid, and escapes through the open top of the map. Normal pressure is 63 quantity; pressure above it spreads sideways and, once no higher exit remains, downward. Contact slowly fills the shared Cooked meter | None |
 | Sulfur | Solid | Static yellow mineral. Water slowly converts it and nearby water into sulfuric acid; Lava permanently ignites it, consuming it into sulfur dioxide | Becomes air and emits sulfur dioxide |
 | Sulfuric Acid | Passable | Dense yellow-green liquid that sinks beneath water and consumes sand below it into water; contact fills a lethal Acid meter | None |
 | Sulfur Dioxide | Passable | Heavy yellow-green gas. One bar is 63 quantity, with four bars maximum; it settles through air and only overpressure rises. Contact fills a Poison meter and blocks breathing | None |
@@ -142,18 +143,24 @@ gas: 64 quantity is normal atmospheric pressure and 255 is the packed pressure
 ceiling. Pair passes first evacuate displaced secondary material into compatible
 neighbors; when none is available, its quantity pressure-balances into full
 same-material neighbors over later passes. Simulation transfers conserve Air,
-Sand, Water, and Lava quantities. Explicit gameplay mutations and Water/Lava
-contact remain intentional sources, sinks, or reactions. Terrain simulation advances at a
+Sand, Water, Lava, and Steam quantities. Explicit gameplay mutations, authored
+reactions, and Steam venting through the top edge remain intentional sources or
+sinks. Terrain simulation advances at a
 fixed 60 cellular-automata passes per real second, forming ten six-pass ticks per
 second: vertical even, down-right even, down-left even, then the same three odd
 connection pairs. Each pair resolves
 from its two source cells so a cell is not written by multiple pairs in one pass.
 Block density, configured on terrain definitions, resolves fall, component ordering,
-and displacement priority rather than terrain IDs. Water/lava contact creates stone
-whenever both have nonzero quantity in either component. Only the primary component
+and displacement priority rather than terrain IDs. Once per tick, each Water cell
+touching any amount of Lava converts Water to Steam at its resource-configured rate.
+The default converts one Water quantity into ten Steam quantity and averages 127 Steam
+quantity per second; it pauses when the Water cell has no component capacity for the
+expanded Steam. Lava remains unchanged. Only the primary component
 affects rendering, collision, hazards, viscosity, and item contact.
 The out-of-bounds space below the final map row behaves as solid terrain, so fluids
-can settle and spread along the bottom edge without leaving the world.
+can settle and spread along the bottom edge without leaving the world. The space
+above the top map row is open sky: Steam in the top row keeps rising and leaves the
+world, while every other terrain stays inside.
 The renderer uses the completed even phase only to bridge proven
 vertical moving-terrain falls, including sand and liquids, in the final state. High
 frame rates skip simulation work;
@@ -198,15 +205,18 @@ physics, projectiles, and input remain frame-responsive.
   above the player.
 
 The player dies when a hazard meter fills, from a high-speed terrain impact, or from a
-bomb's lethal radius. A full lava hex fills in 0.2
-seconds; lava from its 10% activation threshold ramps linearly from 10% to full
-meter-fill speed as terrain fill rises. Suffocation fills while the head has no
-breathable Air: a partially filled head hex samples the hex above it, while a full
-non-Air hex blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
+bomb's lethal radius. Lava and Steam share the Cooked meter. A full Lava hex fills it in 0.2
+seconds; Lava from its 10% activation threshold ramps linearly from 10% to full
+meter-fill speed as terrain fill rises. Normal-pressure Steam fills it in five seconds
+and higher pressure does not exceed that rate. Suffocation fills while the head has no
+breathable terrain: a partially filled head hex samples the hex above it, while a full
+non-breathable hex blocks breathing. Steam and Air are breathable; any Sulfur Dioxide
+blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
 fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
-over their respective fill durations; lava recovers in one second and both impact
+over their respective fill durations; Cooked recovers in one second and both impact
 and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
-prevents Poison, and adds two seconds to Acid survival; Glass Cannon is immune to
+prevents Poison, and adds two seconds to Acid survival. Heat Resistance adds one second
+to both Lava and Steam Cooked exposure; Glass Cannon is immune to
 all terrain hazards and suffocation. Death never records current depth.
 
 ## Items

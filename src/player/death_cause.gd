@@ -4,7 +4,7 @@ extends RefCounted
 
 
 const NONE := &"none"
-const LAVA := &"lava"
+const COOKED := &"cooked"
 const SUFFOCATION := &"suffocation"
 const ACID := &"acid"
 const POISON := &"poison"

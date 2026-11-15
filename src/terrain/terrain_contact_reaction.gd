@@ -9,6 +9,7 @@ const OPCODE_PERSISTENT_IGNITION := 2
 const OPCODE_EROSION := 3
 const OPCODE_GAS_ABSORPTION := 4
 const OPCODE_MUTUAL_REPLACEMENT := 5
+const OPCODE_BOILING := 6
 
 @export var reactant_a: TerrainDefinition
 @export var reactant_b: TerrainDefinition

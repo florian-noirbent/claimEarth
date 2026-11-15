@@ -188,7 +188,7 @@ passes cannot overwrite authoritative gameplay writes.
 
 `TerrainDefinition` resources contain identity, block density,
 collision/passability, visual style, hookability, and strategy resources for motion,
-hazards, and blast response. The catalog is `config/terrain/catalog.tres`.
+hazards, breathability, and blast response. The catalog is `config/terrain/catalog.tres`.
 Motion resources also provide a non-negative per-second viscosity coefficient. This
 player-drag value is independent of the cellular-automata transfer rates that tune
 how the terrain itself flows.
@@ -201,8 +201,9 @@ backend may compile registry data into IDs for its hot loop.
 resolve fill-aware meter definitions, including their icon, color, fill/recovery
 durations, configurable full-rate terrain quantity, and display order; the player samples those definitions at occupied body
 hexes and forwards meter snapshots through the run controllers to `AppUiController`.
-Suffocation is the one environment-wide rule: the head must resolve to empty Air,
-walking upward through partial cells before evaluating the next full cell. The HUD is
+Suffocation is the one environment-wide rule: the head must resolve to terrain marked
+breathable, walking upward through partial cells before evaluating the next full cell;
+individual terrain may instead block breathing at any quantity. The HUD is
 generic and never branches on a hazard cause. New terrain hazards therefore add a
 behavior resource and authored icon rather than UI logic.
 
@@ -235,7 +236,10 @@ simulation shaders share only canonical hex topology helpers; pair ownership and
 cellular-automata resolution remain simulation-specific. Each pair normalizes its
 two-component outputs by removing empty components, merging matching material,
 promoting a remaining secondary, and ordering different material by density.
-Secondary material first moves into compatible or partial neighbors. When trapped,
+Secondary material first moves into compatible or partial neighbors. A displaced
+pressure-balancing gas crosses a foreign medium only against that medium's own
+travel, down through a light gas and up through anything else, so it cannot cycle
+between the same cells and stall their primary transfers. When trapped,
 it pressure-balances pairwise into full same-material neighbors up to the packed
 255 ceiling. This replaces whole-cell density swaps and preserves lighter liquids
 under falling or landsliding Sand. Pairwise resolution conserves component
@@ -248,8 +252,25 @@ Terrain contact reactions are typed `TerrainContactReaction` strategies in the
 terrain catalog. Each strategy compiles its opcode, products, direction policy, and
 four meaningful tuning bytes without terrain-name or ID branches. The GPU reaction
 texture contains a 16x16 header plane and a 16x16 parameter plane; reaction shader
-branches read only parameters defined by their opcode. Dense gases continue to
-author normal pressure and packed capacity on their terrain definition.
+branches read only parameters defined by their opcode. Dense and light gases author
+normal pressure and packed capacity on their terrain definition. Light gases run the
+liquid rules upside down within the same pair ownership, without an ID-specific
+branch: they rise, fill cells from the ceiling down to normal pressure, and level
+across the half-hex column stagger through their side-flow offset. Above normal
+pressure, matching neighbors equalize pairwise, and a cell pushes gas into a lower
+neighbor only when every higher exit is blocked and it exceeds that neighbor by the
+height between them: a full cell vertically, the side-flow offset diagonally.
+Displaced secondary light gas only rises. The pair above the top row has no in-bounds
+owner, so the odd vertical pass instead removes light gas from top-row cells at its
+vertical rate; no other terrain crosses a map edge.
+
+Boiling is the one once-per-tick proximity reaction. During the even vertical pass,
+each Water cell, flagged as a boiling reactant in the compiled rule texture so other
+terrain skips the scan, checks its six neighbors for the authored boiling opcode, consumes whole
+Water units on a deterministic cadence, and adds the configured expanded Steam product
+to an empty or matching component in that same cell. A Water cell reacts at most once
+per tick regardless of contact-edge count; occupied component capacity applies
+backpressure, and the Lava neighbor is never mutated.
 
 Persistent burning is an optional terrain behavior compiled into additional rule
 texture rows. It authors the burn-product ID, ignition-token quantity, deterministic

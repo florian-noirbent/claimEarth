@@ -17,6 +17,8 @@ extends Resource
 @export var is_hookable := false
 @export var is_destructible := false
 @export var is_empty_space := false
+@export var is_breathable := false
+@export var blocks_breathing_at_any_quantity := false
 @export var is_liquid_contact_product := false
 @export var perk_tags := PackedStringArray()
 @export_range(0.0, 1.0, 0.01) var light_diffusion_coefficient := 0.0

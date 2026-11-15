@@ -7,6 +7,10 @@ const int HEX_DIRECTION_UP_LEFT = 3;
 const int HEX_DIRECTION_DOWN_LEFT = 4;
 const int HEX_DIRECTION_DOWN = 5;
 
+int hex_opposite_direction(int direction) {
+	return (direction + 3) % 6;
+}
+
 ivec2 hex_neighbor(ivec2 cell, int direction) {
 	int parity = cell.x & 1;
 	if (direction == HEX_DIRECTION_DOWN_RIGHT) {

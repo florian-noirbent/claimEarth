@@ -8,6 +8,7 @@ const MOTION_FALLING := 1
 const MOTION_LIQUID := 2
 const MOTION_GAS := 3
 const MOTION_DENSE_GAS := 4
+const MOTION_LIGHT_GAS := 5
 const NO_BURN_PRODUCT_ID := 255
 
 var motion_by_id := PackedByteArray()
@@ -24,6 +25,7 @@ var reaction_parameter_0_by_pair := PackedByteArray()
 var reaction_parameter_1_by_pair := PackedByteArray()
 var reaction_parameter_2_by_pair := PackedByteArray()
 var reaction_parameter_3_by_pair := PackedByteArray()
+var boiling_reactant_by_id := PackedByteArray()
 var persistent_burn_product_by_id := PackedByteArray()
 var persistent_burn_ignition_quantity_by_id := PackedByteArray()
 var persistent_burn_base_consumption_by_id := PackedByteArray()
@@ -73,6 +75,8 @@ static func compile(registry: TerrainRegistry) -> CompiledTerrainData:
 			result.motion_by_id[stable_id] = MOTION_GAS
 		elif motion_name == "dense_gas":
 			result.motion_by_id[stable_id] = MOTION_DENSE_GAS
+		elif motion_name == "light_gas":
+			result.motion_by_id[stable_id] = MOTION_LIGHT_GAS
 		else:
 			result.motion_by_id[stable_id] = MOTION_STABLE
 		result.solid_by_id[stable_id] = 1 if definition.is_solid else 0
@@ -247,6 +251,7 @@ func _resize_tables(size: int) -> void:
 	reaction_parameter_1_by_pair.resize(256)
 	reaction_parameter_2_by_pair.resize(256)
 	reaction_parameter_3_by_pair.resize(256)
+	boiling_reactant_by_id.resize(size)
 	persistent_burn_product_by_id.resize(size)
 	persistent_burn_product_by_id.fill(NO_BURN_PRODUCT_ID)
 	persistent_burn_ignition_quantity_by_id.resize(size)
@@ -311,3 +316,6 @@ func _set_reaction(a: int, b: int, reaction: TerrainContactReaction) -> void:
 	reaction_parameter_1_by_pair[index] = parameters[1]
 	reaction_parameter_2_by_pair[index] = parameters[2]
 	reaction_parameter_3_by_pair[index] = parameters[3]
+	# Boiling scans every neighbor, so the simulation needs to know which terrain to scan for.
+	if reaction.simulation_opcode() == TerrainContactReaction.OPCODE_BOILING:
+		boiling_reactant_by_id[a] = 1

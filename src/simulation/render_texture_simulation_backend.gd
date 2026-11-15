@@ -10,6 +10,7 @@ const PASS_VERTICAL_ODD := 3
 const PASS_RIGHT_DOWN_ODD := 4
 const PASS_LEFT_DOWN_ODD := 5
 const PASS_COUNT := 6
+const SIMULATION_TICKS_PER_SECOND := 10
 const EVEN_PHASE_PASS_COUNT := 3
 const RENDER_BANK_COUNT := 2
 const RENDER_TARGETS_PER_BANK := PASS_COUNT
@@ -350,6 +351,7 @@ func _configure_materials() -> void:
 		material.set_shader_parameter("reaction_texture", _reaction_texture)
 		material.set_shader_parameter("standard_light_sources", _standard_light_texture)
 		material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
+		material.set_shader_parameter("simulation_ticks_per_second", SIMULATION_TICKS_PER_SECOND)
 
 
 func _initialize_standard_light_texture() -> void:
@@ -489,7 +491,7 @@ func _create_rule_texture(metadata: CompiledTerrainData) -> ImageTexture:
 		_write_rule_row(data, id, 3, [metadata.air_id, metadata.stone_id, metadata.light_diffusion(id), metadata.emitted_light(id)])
 		_write_rule_row(data, id, 4, [metadata.normal_quantity(id), metadata.storage_capacity(id), metadata.persistent_burn_product_by_id[id], metadata.persistent_burn_ignition_quantity_by_id[id]])
 		_write_rule_row(data, id, 5, [metadata.persistent_burn_base_consumption_by_id[id], metadata.persistent_burn_bonus_consumption_by_id[id], metadata.persistent_burn_bonus_frequency_numerator_by_id[id], metadata.persistent_burn_bonus_frequency_period_by_id[id]])
-		_write_rule_row(data, id, 6, [metadata.persistent_burn_product_per_consumed_by_id[id], metadata.persistent_burn_bonus_product_by_id[id], 0, 0])
+		_write_rule_row(data, id, 6, [metadata.persistent_burn_product_per_consumed_by_id[id], metadata.persistent_burn_bonus_product_by_id[id], metadata.boiling_reactant_by_id[id], 0])
 	return ImageTexture.create_from_image(Image.create_from_data(256, 7, false, Image.FORMAT_RGBA8, data))
 
 
