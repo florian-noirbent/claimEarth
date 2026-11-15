@@ -252,6 +252,12 @@ tuning lives under `config/items/`.
 - Chests remain non-solid touch triggers. Like the player, a chest embedded by moving
   terrain escapes toward the nearest Air position where its complete rectangular
   body fits instead of remaining buried.
+- A resting chest notices terrain changing under or around it within 0.1 seconds
+  while it is inside the camera view or up to 12 hex radii outside it, and within
+  1 second farther away. A chest enclosed with no fitting Air in range looks again
+  within 1 second of nearby terrain changing. Terrain edited by an item wakes the
+  affected chests immediately. A late reaction only delays when a chest starts to
+  move; it then falls and settles by the same rules as a chest in view.
 - Item chests emit the same light level as Lava (90). Their light uses normal
   terrain diffusion and fades after collection because it is below the permanent
   exploration threshold.

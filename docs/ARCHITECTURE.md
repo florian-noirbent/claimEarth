@@ -171,7 +171,12 @@ reads committed `WorldGrid` cells and `CompiledTerrainData` solidity/fill tables
 treats every out-of-bounds grid cell as a virtual solid hex, then tests circular and convex-polygon bodies against nearby solid hex polygons from
 `HexMetrics`. Its shape-aware Air queries accept only destinations where the complete
 body is clear. They search by canonical hex distance, then break equal-ring ties by
-world distance, upward position, and left position.
+world distance, upward position, and left position. Every shape query visits only the
+offset-cell range whose hexagons can reach the shape. The query also reports that
+range for a world rectangle and one solidity state per cell, optionally flagging Air.
+`TerrainRegionWatch` captures those states for a region and reports when committed
+terrain changes them; it compares the region's packed cell bytes first, so light and
+fluid quantity changes cost one byte comparison and never count as a change.
 `TerrainBodyMotionSolver` resolves circular body movement, floor support, and
 step-up behavior without creating physics-server shapes or chunk collider nodes. Its
 motion result reports the complete collision-caused velocity change. Floor probing
@@ -384,11 +389,28 @@ secondary threshold represents knockout.
 the player's circle and the chest's rectangular footprint. It re-queries the target
 on each physics frame and applies the configured push speed only while the body
 overlaps terrain; if no fitting Air destination is in range, it leaves the body
-unchanged. Its typed result reports position, velocity, and the velocity change caused
-by escape without knowing about player damage. `PlayerController` consumes that fact for impact rules;
+unchanged. Its typed result reports position, velocity, the velocity change caused
+by escape, and whether the body overlapped terrain at all, without knowing about player damage. `PlayerController` consumes the velocity change for impact rules;
 `ItemChest` ignores it and uses a separate swept-rectangle fall path that changes
 only vertical velocity, stops without restitution, and derives a snapped visual tilt
 from left/right terrain support.
+
+A resting `ItemChest` does not poll. Once a grounded support check leaves its position
+and rotation unchanged, a chest with sleep enabled stops its physics steps and captures
+a `TerrainRegionWatch` over every cell that check read: the body, the support contact
+strip, the tilt probes, and, for a chest enclosed in terrain, the whole unstuck search
+region including its Air cells. An identical check would repeat the same result until
+one of those cells changes, so waking on a change and resuming the ordinary fall and
+unstuck steps rests the chest where an always-polling chest would. `RunItemController`
+owns the `ItemChestSleepScheduler` that enables sleep for generated chests and
+delivers the wake checks: on the grounded check interval for chests inside the camera
+view plus a margin, on slower intervals for off-screen and enclosed chests, and
+immediately for chests watching the dirty rectangle of an item-caused terrain change.
+The intervals, the margin, and the support contact distance are `ItemChestDefinition`
+tuning. Simulation commits replace the committed cells without reporting a changed
+region, which is why simulated terrain reaches sleeping chests through the scheduled
+comparison rather than a notification. A chest that no scheduler tracks never sleeps
+and keeps polling its support on the grounded check interval.
 
 `DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
 to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
@@ -419,7 +441,10 @@ change set plus the inclusive lethal-core cells. The lethal radius always vapori
 terrain and is also checked against the player. Bombs and chests compose
 `WorldExplosive2D` with separate validated `ExplosionDefinition` resources.
 `RunItemController` registers those components generically; lethal-cell footprint
-overlap arms a one-shot delayed chain without branches on the host item type.
+overlap arms a one-shot delayed chain without branches on the host item type. The
+component runs physics steps only while that chain fuse burns. `RunItemController`
+compiles `CompiledTerrainData` once per run and shares it with chests, projectiles,
+and excavators.
 Explosion definitions also tune radial impulse strength. `RunItemController` applies
 that impulse through `WorldRigidBody2D`, so bombs, flags, excavators, and future dynamic
 items share the behavior without selection branches. A future jelly perk can expose
