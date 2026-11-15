@@ -27,6 +27,8 @@ signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPuls
 @onready var gameplay_feedback: GameplayFeedback = %GameplayFeedback
 
 var _configured := false
+## Shared by the item controller, which registers barrels, and the player's hook query.
+var _grapple_targets := GrappleTargetRegistry.new()
 
 
 func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
@@ -34,6 +36,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 		return
 	_configured = true
 	world_controller.configure(profile, player_scene, world_background, world_presenter, depth_markers)
+	world_controller.configure_grapple_targets(_grapple_targets)
 	perk_controller.configure()
 	item_controller.configure_catalog(world_controller.item_registry(), world_presenter.hex_radius)
 	item_controller.configure_perk_controller(perk_controller)
@@ -53,6 +56,10 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	item_controller.terrain_pulse_started.connect(terrain_pulse_started.emit)
 	perk_controller.perks_changed.connect(perks_changed.emit)
 	perk_controller.modifiers_changed.connect(_on_perk_modifiers_changed)
+
+
+func grapple_targets() -> GrappleTargetRegistry:
+	return _grapple_targets
 
 
 func start_run(run_seed: int) -> void:
@@ -99,7 +106,9 @@ func _on_run_ready(next_seed: int) -> void:
 		world_presenter.hex_radius,
 		world_controller.simulation_backend(),
 		world_controller.generation_result().item_chest_spawns,
-		world_controller.generation_result().perk_geode_spawns
+		world_controller.generation_result().perk_geode_spawns,
+		world_controller.generation_result().explosive_barrel_spawns,
+		_grapple_targets
 	)
 	player.set_perk_modifiers(perk_controller.modifiers())
 	item_controller.set_perk_modifiers(perk_controller.modifiers())

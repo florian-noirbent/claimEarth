@@ -51,7 +51,7 @@ The touch overlay is designed for landscape fullscreen play:
 
 | Control | Action |
 | --- | --- |
-| Left stick | Move horizontally; when free, push up to jump; while hooked, push up/down to shorten/lengthen the rope |
+| Left stick | Move horizontally; when free, push up to jump; while swinging from terrain, push up/down to shorten/lengthen the rope. While the hook holds a barrel, push up still jumps |
 | Right stick | Drag to aim; release outside its activation threshold to throw or use the selected item |
 | Right ring | Press in a direction to launch the hook, hold to remain attached, and release to detach |
 
@@ -113,7 +113,8 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 - Before the player and generated containers enter the run, loading advances the generated terrain through 50 complete simulation ticks (300 GPU passes). The loading status reports settlement progress, and gameplay begins only after the final committed tick.
 - Generation uses an ordered resource-driven pass stack. The shipped default stack
   layers base cave noise, typed hazard pocket instances for sand/water/lava/sulfur, a
-  noisy surface spawn shaft, item chest chambers, and a bottom lava fill.
+  noisy surface spawn shaft, item chest, geode, and explosive barrel chambers, and a
+  bottom lava fill.
 - The player starts at surface depth 0 in a roughly six-cell-wide zig-zag shaft
   with noisy edges and occasional broken segments that winds down to the configured
   shaft target depth.
@@ -196,7 +197,8 @@ physics, projectiles, and input remain frame-responsive.
   applied over consecutive physics frames until the overlap is cleared. If no such
   Air position is in the configured search range, the player is not pushed through
   terrain.
-- The hook attaches only to hookable terrain within its configured range.
+- The hook attaches to hookable terrain or to an explosive barrel within its
+  configured range, whichever the hook ray reaches first.
 - `A/D` adds tangential momentum while hooked without forcing same-direction
   overspeed back to walk or air speed caps; `W/S` adjusts rope length.
 - The camera remains horizontally fixed and zooms so the map width fills the
@@ -272,6 +274,50 @@ tuning lives under `config/items/`.
   chest cannot be claimed, continues moving and emitting light, then explodes with
   its independently tunable Small Bomb-sized effect and grants no reward.
 
+### Explosive Barrels
+
+Speeds below are in world units per second; one hex is 16 units in radius.
+
+- Explosive barrels are distributed deterministically from 10% through 88% of map
+  depth by the same jittered grid areas as chests: two columns, 40-row areas, a
+  20-row stagger, and a 50% per-area chance, giving 21 opportunities and usually
+  8 to 13 barrels on the default map.
+- An area places its barrel only on an anchor whose cell below and both lower
+  neighbors are solid, with no Lava or Sulfuric Acid within two hexes, so barrels
+  start at rest and never start touching a trigger. An area without such an anchor
+  has no barrel. The barrel carves a radius-one chamber to Air at and above its anchor.
+- Barrels are round bodies 1.2 hex radii in radius. They fall under 880 gravity up to
+  720 units/s, keep 20% of their speed into a surface as a small bounce, roll down
+  slopes steeper than 15 degrees, and slow under ground friction.
+- Barrels are not solid to the player. Walking into one pushes it aside without
+  slowing the player; the barrel takes 90% of the player's horizontal speed, up to
+  260 units/s.
+- The hook can hold a barrel; the rope runs to its center. The player is never swung
+  or held back by a barrel: walking, jumping, and air control work as when unhooked.
+  Whenever the player is farther away than the rope length, the barrel is pulled
+  toward the player at 1600 units/s² up to 420 units/s along the rope, so walking away
+  or shortening the rope reels it in. Touch controls keep push-up as a jump while
+  holding a barrel, so touch players pull a barrel by moving away from it. The hook
+  releases when the barrel explodes.
+- A barrel explodes at once when Lava or Sulfuric Acid touches its body at a fill that
+  makes that terrain hazardous, or when a collision changes its speed by 650 units/s
+  or more: a free fall of about nine hexes, or being blasted into a wall.
+- An explosion arms every barrel whose hex lies within its blast radius, counted in
+  hex steps from the explosion's hex like terrain damage, and a lethal-core overlap
+  arms one too. An armed barrel explodes after a 0.30-second chain fuse, so a barrel
+  explosion reaches other barrels within ten hexes one fuse at a time. Armed barrels
+  keep moving and still explode at once on a trigger.
+- The barrel explosion has its own tuning, currently equal to the Large Bomb: blast
+  radius 10, lethal and player-kill radius 6, and a 1280 impulse with large feedback.
+  It also releases 7620 quantity (about 121 bars) of Sulfur Dioxide at its center,
+  filling the vaporized core with overpressured gas that then rises and spreads.
+- Resting barrels notice terrain changes like chests: within 0.1 seconds in view or
+  up to 12 hex radii outside it, within 1 second farther away, and immediately for
+  terrain edited by an item. A barrel resting in Water or another non-Air fluid checks
+  every 0.1 seconds wherever it is. Pushes, hook pulls, and blasts move a resting
+  barrel at once.
+- Pausing and the reward picker freeze barrels, their chain fuses, and pushing.
+
 ### Bombs
 
 - Bombs follow projectile gravity and bounce until their fuse expires.
@@ -281,9 +327,10 @@ tuning lives under `config/items/`.
 - Lava detonates a bomb immediately; water reduces blast propagation.
 - Bombs and chests share the same explosive behavior. A lethal-core overlap arms
   another explosive for a 0.30-second chain fuse; the wider blast alone cannot start
-  a chain. Armed bombs keep moving, and their natural fuse still wins if it expires first.
+  a chain, except for explosive barrels. Armed bombs keep moving, and their natural
+  fuse still wins if it expires first.
 - Explosions apply a distance-falloff impulse across their blast radius to airborne
-  projectile bodies, including bombs and the flag.
+  projectile bodies, including bombs and the flag, and to explosive barrels.
 - The player dies when inside the lethal radius.
 - A destroyed full Sulfur hex releases 150 SO₂ bars. Small Boom adds a 45-bar
   cloud to Small Bombs; Large Boom adds two. Sulfur converts up to ten times its

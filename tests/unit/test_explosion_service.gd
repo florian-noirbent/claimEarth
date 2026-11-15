@@ -245,3 +245,60 @@ func _component_quantity(world: WorldGrid, terrain_id: int) -> int:
 			if world.get_committed_secondary_by_offset(col, row) == terrain_id:
 				total += world.get_committed_secondary_quantity_by_offset(col, row)
 	return total
+
+
+func test_runtime_spec_always_queues_the_definition_terrain_emission() -> void:
+	var barrel_explosion := load("res://config/items/explosions/explosive_barrel_explosion.tres") as ExplosionDefinition
+	var barrel_spec := ExplosionRuntimeSpec.from_definition(barrel_explosion)
+	assert_eq(barrel_spec.terrain_emissions.size(), 1)
+	assert_same(barrel_spec.terrain_emissions[0], barrel_explosion.terrain_emission)
+	assert_true(barrel_spec.perk_terrain_emissions.is_empty())
+
+	var large_bomb_spec := ExplosionRuntimeSpec.from_definition(load("res://config/items/explosions/large_bomb_explosion.tres") as ExplosionDefinition)
+	assert_true(large_bomb_spec.terrain_emissions.is_empty(), "Perk-only clouds stay behind their perk")
+	assert_true(large_bomb_spec.perk_terrain_emissions.is_empty())
+
+
+func test_definition_emission_deposits_an_overpressured_cloud_at_the_origin() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(31, 31), FixtureLoader.terrain_id("Air"))
+	var origin := Vector2i(15, 15)
+	var definition := load("res://config/items/explosions/explosive_barrel_explosion.tres") as ExplosionDefinition
+	var emission := definition.terrain_emission
+	var sulfur_dioxide_id := emission.product.stable_id
+
+	var result := ExplosionService.new().resolve_spec(
+		world,
+		registry,
+		HexMetrics.center_for_offset(origin.x, origin.y, 16.0),
+		16.0,
+		ExplosionRuntimeSpec.from_definition(definition)
+	)
+
+	assert_false(result.terrain_changes.is_empty())
+	assert_eq(_component_quantity(world, sulfur_dioxide_id), emission.quantity)
+	assert_eq(world.get_committed_by_offset(origin.x, origin.y), sulfur_dioxide_id)
+	assert_gt(world.get_committed_quantity_by_offset(origin.x, origin.y), 127)
+	for cell in _cells_within_radius(origin, 2):
+		assert_eq(world.get_committed_by_offset(cell.x, cell.y), sulfur_dioxide_id)
+		assert_gt(world.get_committed_quantity_by_offset(cell.x, cell.y), 127, "%s must be overpressured" % cell)
+
+
+func test_definition_and_perk_emissions_both_deposit_at_the_origin() -> void:
+	var registry := FixtureLoader.terrain_registry()
+	var world := WorldGrid.new(WorldDimensions.new(31, 31), FixtureLoader.terrain_id("Air"))
+	var origin := Vector2i(15, 15)
+	var definition := (load("res://config/items/explosions/large_bomb_explosion.tres") as ExplosionDefinition).duplicate() as ExplosionDefinition
+	var emission := TerrainEmissionDefinition.new()
+	emission.product = registry.get_definition(FixtureLoader.terrain_id("Sulfur Dioxide"))
+	emission.quantity = 500
+	definition.terrain_emission = emission
+	var spec := ExplosionRuntimeSpec.from_definition(definition)
+	spec.perk_terrain_emissions.append(definition.perk_terrain_emission)
+
+	ExplosionService.new().resolve_spec(world, registry, HexMetrics.center_for_offset(origin.x, origin.y, 16.0), 16.0, spec)
+
+	assert_eq(
+		_component_quantity(world, emission.product.stable_id),
+		emission.quantity + definition.perk_terrain_emission.quantity
+	)

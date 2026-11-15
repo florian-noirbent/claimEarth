@@ -21,12 +21,6 @@
 - replace name list with depth reached histogram of all players
 
 ## map
-### explosive barrel
-- physic enabled object
-- explode like a large_bombs (separate config) when touched by lava, sulfuric_acid or in an explosion blast radius, or with an high impact
-- the player can push barrels
-- the player can attach his hook to barrels and pull them.
-- the barrel generate an overpressured cloud of sulfur_dioxide
 
 ## Juice
 

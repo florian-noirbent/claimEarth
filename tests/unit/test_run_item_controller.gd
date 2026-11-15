@@ -310,6 +310,195 @@ func test_explosion_wakes_a_sleeping_chest_whose_floor_it_destroys() -> void:
 	assert_true(chest.is_physics_processing())
 
 
+func test_generated_barrels_spawn_at_their_anchor_as_registered_world_explosives() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	var definition := load("res://config/items/explosive_barrel.tres") as ExplosiveBarrelDefinition
+	var spawn := GeneratedExplosiveBarrelSpawn.new(Vector2i(6, 12), definition, 99)
+	var registry := GrappleTargetRegistry.new()
+	controller.configure_run(
+		null,
+		_world_with_floors([13, 14]),
+		FixtureLoader.terrain_registry(),
+		16.0,
+		null,
+		[],
+		[],
+		[spawn],
+		registry
+	)
+	controller.set_active(true)
+
+	var barrels := _explosive_barrels(controller)
+	assert_eq(barrels.size(), 1)
+	var barrel := barrels[0]
+	assert_same(barrel.spawn_data, spawn)
+	assert_eq(barrel.global_position, barrel.generated_center_position(spawn.anchor_offset))
+	assert_eq(HexMetrics.offset_for_world(barrel.global_position, 16.0), spawn.anchor_offset)
+	assert_true(barrel.is_active())
+	assert_true(barrel.is_interactive())
+	assert_same(barrel.explosive.definition, definition.explosion_definition)
+	assert_same(barrel.explosive.host(), barrel)
+	assert_true(controller._explosives.has(barrel.explosive))
+	assert_same(controller.grapple_targets(), registry)
+	assert_eq(controller.explosive_barrel_count(), 1)
+	assert_eq(controller.active_projectile_count(), 0, "Generated barrels are not thrown items")
+	assert_eq(registry.targets(), [barrel.grapple_target()] as Array[GrappleTarget])
+	assert_true(barrel.sleep_state().is_enabled(), "The run schedules barrel sleep like chest sleep")
+
+	controller.set_active(false)
+	assert_false(barrel.is_active())
+	controller.set_active(true)
+	assert_true(barrel.is_active())
+
+	controller.debug_clear_world_items()
+	await wait_process_frames(1)
+	assert_true(is_instance_valid(barrel), "Debug item clearing keeps generated barrels")
+	assert_eq(controller.explosive_barrel_count(), 1)
+
+	controller.clear_run()
+	assert_false(is_instance_valid(barrel))
+	assert_eq(_explosive_barrels(controller).size(), 0)
+	assert_eq(controller.explosive_barrel_count(), 0)
+	assert_null(controller.grapple_targets())
+	assert_true(registry.targets().is_empty())
+	assert_false(controller.is_physics_processing())
+
+
+func test_lethal_explosion_core_arms_a_generated_barrel() -> void:
+	var controller := _configured_explosion_controller()
+	var definition := load("res://config/items/explosive_barrel.tres") as ExplosiveBarrelDefinition
+	controller._spawn_explosive_barrels([GeneratedExplosiveBarrelSpawn.new(Vector2i(7, 5), definition, 1)])
+	var barrel := _explosive_barrels(controller)[0]
+	var bomb := _add_bomb(controller, HexMetrics.center_for_offset(5, 5, 16.0))
+
+	assert_true(bomb.explosive.request_immediate_detonation())
+
+	assert_true(barrel.explosive.is_chain_armed())
+
+
+func test_blast_radius_arms_opted_in_barrels_and_leaves_default_explosives_unchanged() -> void:
+	var controller := _configured_explosion_controller()
+	var definition := load("res://config/items/explosive_barrel.tres") as ExplosiveBarrelDefinition
+	var opted_out_definition := definition.duplicate() as ExplosiveBarrelDefinition
+	opted_out_definition.detonates_in_blast_radius = false
+	var origin_cell := Vector2i(5, 5)
+	var origin := HexMetrics.center_for_offset(origin_cell.x, origin_cell.y, 16.0)
+	var origin_hex := HexCoord.from_offset_odd_q(origin_cell.x, origin_cell.y)
+	var inside_blast := origin_hex.add(HexCoord.new(5, 0)).to_offset_odd_q()
+	var beyond_blast := origin_hex.add(HexCoord.new(7, 0)).to_offset_odd_q()
+	var below_blast := origin_hex.add(HexCoord.new(0, 5)).to_offset_odd_q()
+	controller._spawn_explosive_barrels([
+		GeneratedExplosiveBarrelSpawn.new(inside_blast, definition, 1),
+		GeneratedExplosiveBarrelSpawn.new(beyond_blast, definition, 2),
+		GeneratedExplosiveBarrelSpawn.new(below_blast, opted_out_definition, 3),
+	])
+	var barrels := _explosive_barrels(controller)
+	for index in barrels.size():
+		barrels[index].global_position = HexMetrics.center_for_offset(
+			[inside_blast, beyond_blast, below_blast][index].x,
+			[inside_blast, beyond_blast, below_blast][index].y,
+			16.0
+		)
+	var bomb := _add_bomb(controller, HexMetrics.center_for_offset(inside_blast.x, inside_blast.y + 1, 16.0))
+	var chest_definition := load("res://config/items/item_chest.tres") as ItemChestDefinition
+	controller._spawn_item_chests([GeneratedItemChestSpawn.new(origin_hex.add(HexCoord.new(-5, 0)).to_offset_odd_q(), chest_definition, 4)])
+	var chest := _item_chests(controller)[0]
+
+	controller.resolve_explosion(load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition, origin)
+
+	assert_true(barrels[0].explosive.is_chain_armed(), "A barrel inside the blast radius arms its chain fuse")
+	assert_false(barrels[1].explosive.is_chain_armed())
+	assert_false(barrels[2].explosive.is_chain_armed(), "A barrel that opts out arms only from the lethal core")
+	assert_false(bomb.explosive.is_chain_armed(), "Bombs keep lethal-core arming")
+	assert_false(chest.explosive.is_chain_armed(), "Chests keep lethal-core arming")
+
+
+func test_detonating_barrel_explodes_through_its_explosive_and_leaves_the_grapple_registry() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	var registry := GrappleTargetRegistry.new()
+	var definition := load("res://config/items/explosive_barrel.tres") as ExplosiveBarrelDefinition
+	controller.configure_run(null, _world_with_floors([13, 14]), FixtureLoader.terrain_registry(), 16.0, null, [], [], [
+		GeneratedExplosiveBarrelSpawn.new(Vector2i(6, 12), definition, 1),
+		GeneratedExplosiveBarrelSpawn.new(Vector2i(13, 12), definition, 2),
+	], registry)
+	controller.set_active(true)
+	watch_signals(controller)
+	var barrels := _explosive_barrels(controller)
+	var first := barrels[0]
+	var second := barrels[1]
+	var first_target := first.grapple_target()
+	assert_eq(registry.targets().size(), 2)
+
+	assert_true(first.explosive.request_immediate_detonation())
+
+	assert_signal_emit_count(controller, "explosion_resolved", 1)
+	assert_false(first_target.is_valid())
+	assert_true(second.explosive.is_chain_armed(), "A barrel blast chains into barrels inside its radius")
+	await wait_process_frames(1)
+	assert_false(is_instance_valid(first))
+	assert_eq(registry.targets(), [second.grapple_target()] as Array[GrappleTarget])
+	assert_eq(controller.explosive_barrel_count(), 1)
+	second.explosive._physics_process(definition.explosion_definition.chain_fuse_seconds + 0.01)
+	assert_signal_emit_count(controller, "explosion_resolved", 2)
+	await wait_process_frames(1)
+	assert_true(registry.targets().is_empty())
+	assert_false(controller.is_physics_processing(), "Without barrels no push checks run")
+
+
+func test_player_overlap_pushes_barrels_every_physics_step_without_slowing_the_player() -> void:
+	var controller := RunItemController.new()
+	add_child_autofree(controller)
+	controller.configure_catalog(_item_registry(), 16.0)
+	var player := PlayerController.new()
+	autofree(player)
+	var definition := load("res://config/items/explosive_barrel.tres") as ExplosiveBarrelDefinition
+	controller.configure_run(player, _world_with_floors([13, 14]), FixtureLoader.terrain_registry(), 16.0, null, [], [], [
+		GeneratedExplosiveBarrelSpawn.new(Vector2i(6, 12), definition, 1),
+		GeneratedExplosiveBarrelSpawn.new(Vector2i(14, 12), definition, 2),
+	])
+	assert_false(controller.is_physics_processing(), "An inactive run runs no push checks")
+	controller.set_active(true)
+	assert_true(controller.is_physics_processing())
+	var barrels := _explosive_barrels(controller)
+	var near := barrels[0]
+	var far := barrels[1]
+	for barrel in barrels:
+		for _step in 600:
+			if barrel.is_sleeping():
+				break
+			barrel._physics_process(1.0 / 60.0)
+		assert_true(barrel.is_sleeping())
+	var near_rest := near.global_position
+	var far_rest := far.global_position
+	player.global_position = near_rest + Vector2(-20.0, 0.0)
+	player.velocity = Vector2(200.0, -30.0)
+
+	controller._physics_process(1.0 / 60.0)
+
+	assert_eq(player.velocity, Vector2(200.0, -30.0), "Pushing a barrel never slows the player")
+	assert_false(near.is_sleeping())
+	assert_gt(near.global_position.x, near_rest.x)
+	assert_almost_eq(near.velocity.x, 200.0 * definition.push_velocity_ratio, 0.001)
+	assert_true(far.is_sleeping(), "Distant barrels are rejected without waking")
+	assert_eq(far.global_position, far_rest)
+
+	controller.set_active(false)
+	assert_false(controller.is_physics_processing())
+	assert_false(near.is_physics_processing())
+
+
+func _explosive_barrels(controller: RunItemController) -> Array[ExplosiveBarrel]:
+	var barrels: Array[ExplosiveBarrel] = []
+	for child in controller.get_children():
+		if child is ExplosiveBarrel and not child.is_queued_for_deletion():
+			barrels.append(child as ExplosiveBarrel)
+	return barrels
+
+
 func _world_with_floors(floor_rows: Array[int]) -> WorldGrid:
 	var world := WorldGrid.new(WorldDimensions.new(20, 32), FixtureLoader.terrain_id("Air"))
 	var stone_id := FixtureLoader.terrain_id("Stone")

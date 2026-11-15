@@ -49,7 +49,7 @@ disposable session:
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
 | `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, camera bounds, presenter |
-| `RunSession` | `RunItemController` | Inventory, selection, reward containers, projectiles, explosions, flag flight |
+| `RunSession` | `RunItemController` | Inventory, selection, reward containers, explosive barrels, projectiles, explosions, flag flight |
 | `RunSession` | `RunPerkController` | Unique perk pool, selected perks, and compiled immutable modifier snapshot |
 
 Controllers receive dependencies through typed `configure(...)` methods. They do not
@@ -329,23 +329,29 @@ The generic Fill pass exposes its output terrain through the World Gen editor. I
 converts the normalized depth band to a half-open row range before writing cells, so
 a narrow band visits only its selected rows rather than scanning the complete map.
 
-Generation context/results also carry typed `GeneratedItemChestSpawn` records. The
-generic generated-item pass partitions its configured depth band into deterministic
-jittered areas, asks one `GeneratedItemPlacementDefinition` to prepare terrain and
-record a typed spawn, and never scans or shuffles the full map. Columns, area height,
-column stagger, and per-area chance are resource-driven. Exact anchors are reserved
-across item passes, but no minimum separation is imposed. `ItemChestDefinition` is
-the first placement definition: it carves Air at and above the anchor while preserving
-the previously generated terrain below and records the per-chest reward seed. Playable
-sessions hand those records to `RunItemController`; the World Gen preview instantiates
-the same chest scene with interaction disabled. Add another generated-item kind by
-implementing the placement-definition hooks and configuring another pass instance;
-the grid sampler must remain type-agnostic.
+Generation context/results also carry typed `GeneratedItemChestSpawn` and
+`GeneratedExplosiveBarrelSpawn` records. The generic generated-item pass partitions
+its configured depth band into deterministic jittered areas, probes each area's
+candidates in a seeded order, asks one `GeneratedItemPlacementDefinition` whether a
+candidate is acceptable, then lets it prepare terrain and record a typed spawn. It
+never scans or shuffles the full map. Columns, area height, column stagger, and
+per-area chance are resource-driven. Exact anchors and chamber footprints are
+reserved across item passes, but no minimum separation is imposed. Rejecting a
+candidate through `accepts_anchor` consumes no randomness, so kinds that accept every
+anchor keep their anchors. `ItemChestDefinition` carves Air at and above the anchor
+while preserving the previously generated terrain below and records the per-chest
+reward seed. `ExplosiveBarrelDefinition` accepts only anchors with a solid three-cell
+cradle below and no terrain carrying its detonating tags within its clearance, carves
+a smaller chamber the same way, and records the barrel spawn; its pass runs after the
+chest and geode passes with its own seed key, so it leaves their anchors unchanged.
+Playable sessions hand those records to `RunItemController`; the World Gen preview
+instantiates the same chest and barrel scenes with interaction disabled. Add another
+generated-item kind with the recipe below; the grid sampler must remain type-agnostic.
 
 The editor-side tuning surface lives in
 `addons/claim_earth_generation_tools/`. It previews static generated terrain through
 the same `WorldGenerator` and `WorldPresenter` path used at runtime. It also displays
-generated chest visuals without interaction, but does not spawn the player,
+generated chest and barrel visuals without interaction, but does not spawn the player,
 projectiles, or terrain simulation.
 
 Generation changes must retain deterministic hashes, valid registered terrain IDs,
@@ -395,22 +401,46 @@ by escape, and whether the body overlapped terrain at all, without knowing about
 only vertical velocity, stops without restitution, and derives a snapped visual tilt
 from left/right terrain support.
 
-A resting `ItemChest` does not poll. Once a grounded support check leaves its position
-and rotation unchanged, a chest with sleep enabled stops its physics steps and captures
-a `TerrainRegionWatch` over every cell that check read: the body, the support contact
-strip, the tilt probes, and, for a chest enclosed in terrain, the whole unstuck search
-region including its Air cells. An identical check would repeat the same result until
-one of those cells changes, so waking on a change and resuming the ordinary fall and
-unstuck steps rests the chest where an always-polling chest would. `RunItemController`
-owns the `ItemChestSleepScheduler` that enables sleep for generated chests and
-delivers the wake checks: on the grounded check interval for chests inside the camera
-view plus a margin, on slower intervals for off-screen and enclosed chests, and
-immediately for chests watching the dirty rectangle of an item-caused terrain change.
-The intervals, the margin, and the support contact distance are `ItemChestDefinition`
-tuning. Simulation commits replace the committed cells without reporting a changed
-region, which is why simulated terrain reaches sleeping chests through the scheduled
-comparison rather than a notification. A chest that no scheduler tracks never sleeps
-and keeps polling its support on the grounded check interval.
+A resting `ItemChest` or `ExplosiveBarrel` does not poll. Each composes a
+`WorldBodySleep` state that holds its sleep flags, check intervals, and a
+`TerrainRegionWatch`, and emits `woken` so the body resumes its physics steps. Once a
+grounded support check leaves a chest's position and rotation unchanged, a chest with
+sleep enabled stops its physics steps and captures a watch over every cell that check
+read: the body, the support contact strip, the tilt probes, and, for a chest enclosed
+in terrain, the whole unstuck search region including its Air cells. An identical
+check would repeat the same result until one of those cells changes, so waking on a
+change and resuming the ordinary fall and unstuck steps rests the chest where an
+always-polling chest would. A barrel rests when a slow grounded step barely
+accelerated it or terrain encloses it; its watch always flags Air, so lava or acid
+arriving in an empty cell counts as a change. Fluid replacing fluid does not change a
+watch, so a barrel touching a non-Air fluid keeps polling on its grounded interval
+instead of sleeping. Pushes, hook pulls, and blast impulses wake a barrel directly.
+`RunItemController` owns one `WorldBodySleepScheduler` that tracks the sleep state of
+every generated chest and barrel, enables their sleep, and delivers the wake checks:
+on the grounded check interval for bodies inside the camera view plus a margin, on
+slower intervals for off-screen and enclosed bodies, and immediately for bodies
+watching the dirty rectangle of an item-caused terrain change. The intervals, the
+margin, and the support contact distance are `ItemChestDefinition` and
+`ExplosiveBarrelDefinition` tuning. Simulation commits replace the committed cells
+without reporting a changed region, which is why simulated terrain reaches sleeping
+bodies through the scheduled comparison rather than a notification. A body that no
+scheduler tracks never sleeps and keeps polling its support on the grounded check
+interval.
+
+`WorldGrappleAnchorQuery` also tests the hook ray against the circles of the run's
+`GrappleTargetRegistry` and returns whichever comes first: the nearest target contact
+or the first hookable terrain cell. A `GrappleAnchor` that holds a `GrappleTarget`
+follows the target through `current_position()`, and the rope length is measured to
+the target's center. While a target is attached, `GrappleModel` leaves the player's
+velocity and position untouched and calls `pull_toward` on the target whenever the
+player is farther away than the rope length; rope-length input still applies.
+`PlayerController` keeps the swing-only rules (suspended ground snapping, free air
+control under Glass Cannon, and touch rope mapping) for terrain anchors
+(`is_swing_attached()`). An invalid target detaches the hook on the next physics step.
+Player code never learns the target's type: `RunSession` creates one registry per run
+and passes it to `RunWorldController.configure_grapple_targets` for the anchor query
+and to `RunItemController.configure_run`, which registers and unregisters targets as
+their objects enter and leave the run and empties the registry in `clear_run()`.
 
 `DescendingCameraController` is horizontally locked by `RunWorldController`, zoomed
 to map width, and uses `DescendingCameraModel` for downward-only vertical movement.
@@ -420,7 +450,20 @@ an `ItemActionFactory`; factories create polymorphic `ItemAction` implementation
 `RunItemController` treats all selected items through that contract. `WorldRigidBody2D`
 owns terrain sampling, gravity, shared grid-edge collision response, and blast-pulse reception for dynamic item bodies.
 `ItemProjectile` composes that body with item resolution, bounce, fuse, and temporary flare light;
-autonomous objects such as the excavator use the same body directly. The renderer reserves high-frequency light slots for the player and the
+autonomous objects such as the excavator use the same body directly. `ExplosiveBarrel`
+extends the body for terrain sampling and blast-impulse reception but moves as a
+circle through `TerrainBodyMotionSolver`, the player's solver, so it rolls, rests, and
+receives a per-step velocity change. It composes `WorldExplosive2D` like a chest and
+requests immediate detonation when terrain carrying its definition's
+`detonating_terrain_tags` touches its center or rim samples with an active hazard, or
+when a collision's velocity change reaches `impact_detonation_speed`.
+`RunItemController` spawns barrels from their generated spawn records and registers
+their explosives, sleep states, and grapple targets; `ExplosiveBarrelGrappleTarget`
+adapts a barrel through a weak reference. `active_projectile_count()` and debug item
+clearing skip generated barrels. While the run is active and barrels exist, the
+controller runs one physics step that hands every barrel the player's position,
+collision radius, and velocity; an overlapping barrel wakes and moves out
+horizontally with a capped share of that velocity, and the player is never slowed. The renderer reserves high-frequency light slots for the player and the
 most recently thrown flare; older flares remain visible without displacing the player.
 Immediate item actions resolve one aimed neighboring hex and publish their
 terrain changes through `RunItemController`; float tool charges allow a final
@@ -432,22 +475,30 @@ Selection is deterministic and without replacement. `RunItemController` owns act
 chest nodes, pending item choices, and inventory application, while
 `AppUiController` receives generic `RewardChoiceViewData` cards so a future perk
 owner can reuse the picker without item-specific UI branches. Session activation is
-also propagated to projectiles, chest physics and monitoring, and explosive chain
-timers so pause and modal phases freeze all active item workflows.
+also propagated to projectiles, chest and barrel physics, chest monitoring, the
+barrel push step, and explosive chain timers so pause and modal phases freeze all
+active item workflows.
 
 `ExplosionService` traverses hexes, asks each terrain blast strategy for its effect,
 updates committed cells, and returns an `ExplosionResult` containing the terrain
 change set plus the inclusive lethal-core cells. The lethal radius always vaporizes
-terrain and is also checked against the player. Bombs and chests compose
+terrain and is also checked against the player. Bombs, chests, and barrels compose
 `WorldExplosive2D` with separate validated `ExplosionDefinition` resources.
 `RunItemController` registers those components generically; lethal-cell footprint
-overlap arms a one-shot delayed chain without branches on the host item type. The
-component runs physics steps only while that chain fuse burns. `RunItemController`
-compiles `CompiledTerrainData` once per run and shares it with chests, projectiles,
-and excavators.
+overlap arms a one-shot delayed chain without branches on the host item type. An
+explosive configured to arm in the blast radius (barrels opt in through
+`detonates_in_blast_radius`) also arms when its own hex lies within the explosion's
+blast radius in hex steps from the impact hex, the same reach the terrain blast
+propagates. Every arming starts the explosive's chain fuse, so with a positive fuse
+a chain advances one link per fuse instead of recursing within one explosion. The
+component runs physics steps only while that chain fuse burns. Every detonation
+deposits `ExplosionDefinition.terrain_emission` at the explosion origin after terrain
+destruction, while `perk_terrain_emission` stays perk-gated; the barrel uses it for an
+overpressured Sulfur Dioxide cloud. `RunItemController` compiles `CompiledTerrainData`
+once per run and shares it with chests, barrels, projectiles, and excavators.
 Explosion definitions also tune radial impulse strength. `RunItemController` applies
-that impulse through `WorldRigidBody2D`, so bombs, flags, excavators, and future dynamic
-items share the behavior without selection branches. A future jelly perk can expose
+that impulse through `WorldRigidBody2D`, so bombs, flags, excavators, barrels, and
+future dynamic items share the behavior without selection branches. A future jelly perk can expose
 the same receiver behavior from its player-owned perk boundary.
 
 ## Persistence And Leaderboard
@@ -493,6 +544,29 @@ model it as a server secret. Never use the live service from automated tests.
 To add an item to chest rewards, add an `ItemChestOption` to the chest definition
 resource with its quantity and relative selection weight. No picker or controller
 branch is required.
+
+### Add A Generated World Object
+
+1. Subclass `GeneratedItemPlacementDefinition` with validated tuning and implement
+   `accepts_anchor`, `required_edge_clearance`, `prepare_terrain`, and `record_spawn`
+   into a typed spawn list on `GenerationContext` and `WorldGenerationResult`.
+2. Register the definition in `config/generation/item_catalog.tres` and add a
+   `GeneratedItemPass` instance after the existing item passes with its own
+   `pass_seed_key`, so existing anchors stay unchanged.
+3. Spawn and own the runtime nodes in `RunItemController`, registering explosives,
+   sleep states, and grapple targets through their generic contracts, and show them
+   non-interactively in the World Gen preview.
+4. Add fixed-seed generation, preview, and run-workflow tests.
+
+### Add A Grapple Target
+
+1. Implement a `GrappleTarget` adapter for the object (validity, anchor position,
+   radius, `pull_toward`) that reads invalid once the object is freed or spent.
+2. Register it in the run's `GrappleTargetRegistry` from the object's owning
+   controller when it enters the run and unregister it when it leaves; never add
+   target-type checks to player or grapple code.
+3. Cover attachment, pulling, and invalidation with a fake target in grapple tests
+   and with the real object in an integration test.
 
 ### Add A Run Workflow Or Screen
 

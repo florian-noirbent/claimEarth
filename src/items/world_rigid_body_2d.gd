@@ -1,3 +1,4 @@
+@tool
 ## Terrain-aware dynamic world body shared by thrown items and autonomous objects.
 class_name WorldRigidBody2D
 extends Node2D

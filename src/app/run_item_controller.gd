@@ -28,7 +28,7 @@ var _player: PlayerController
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
 var _compiled_terrain: CompiledTerrainData
-var _chest_sleep_scheduler := ItemChestSleepScheduler.new()
+var _sleep_scheduler := WorldBodySleepScheduler.new()
 var _simulation_backend: TerrainSimulationBackend
 var _hex_radius := 8.0
 var _throw_lock_remaining := 0.0
@@ -37,6 +37,8 @@ var _item_registry: ItemRegistry
 var _perk_controller: RunPerkController
 var _is_active := false
 var _explosives: Array[WorldExplosive2D] = []
+var _explosive_barrels: Array[ExplosiveBarrel] = []
+var _grapple_targets: GrappleTargetRegistry
 var _dynamic_item_order: Array[ItemDefinition] = []
 var _terrain_pulses: Array[DirectionalTerrainPulse] = []
 var _successful_use_counts := {}
@@ -69,7 +71,9 @@ func configure_run(
 	hex_radius: float,
 	simulation_backend: TerrainSimulationBackend = null,
 	chest_spawns: Array[GeneratedItemChestSpawn] = [],
-	geode_spawns: Array[GeneratedItemChestSpawn] = []
+	geode_spawns: Array[GeneratedItemChestSpawn] = [],
+	barrel_spawns: Array[GeneratedExplosiveBarrelSpawn] = [],
+	grapple_targets: GrappleTargetRegistry = null
 ) -> void:
 	_inventory.reset()
 	_player = player
@@ -78,17 +82,21 @@ func configure_run(
 	_compiled_terrain = CompiledTerrainData.compile(terrain_registry) if terrain_registry != null else null
 	_simulation_backend = simulation_backend
 	_hex_radius = hex_radius
+	_grapple_targets = grapple_targets
 	_active_flag_projectile = null
 	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
-	_chest_sleep_scheduler.clear()
+	_explosive_barrels.clear()
+	_sleep_scheduler.clear()
 	_dynamic_item_order.clear()
 	_successful_use_counts.clear()
 	_throw_lock_remaining = 1.0
 	_spawn_item_chests(chest_spawns)
 	_spawn_item_chests(geode_spawns)
+	_spawn_explosive_barrels(barrel_spawns)
 	_apply_container_perk_modifiers()
+	_update_physics_processing()
 	flag_flight_changed.emit(false)
 
 
@@ -102,22 +110,30 @@ func clear_run() -> void:
 	_rewards.reset()
 	_terrain_pulses.clear()
 	_explosives.clear()
-	_chest_sleep_scheduler.clear()
+	_explosive_barrels.clear()
+	_sleep_scheduler.clear()
+	if _grapple_targets != null:
+		_grapple_targets.clear()
+	_grapple_targets = null
 	for child in get_children():
 		if child is WorldRigidBody2D or child is ItemChest:
 			child.free()
+	_update_physics_processing()
 
 
 func set_active(is_active: bool) -> void:
 	_is_active = is_active
 	for child in get_children():
-		if child is WorldRigidBody2D:
+		if _is_generated_barrel(child):
+			(child as ExplosiveBarrel).set_active(is_active)
+		elif child is WorldRigidBody2D:
 			child.set_physics_process(is_active)
 		elif child is ItemChest:
 			(child as ItemChest).set_active(is_active, _rewards.pending_chest() == null)
 	for explosive in _explosives:
 		if is_instance_valid(explosive):
 			explosive.set_active(is_active)
+	_update_physics_processing()
 
 
 func apply_pending_reward(choice_index: int) -> bool:
@@ -159,14 +175,26 @@ func debug_grant_item(index: int) -> void:
 	if _inventory.add(definition, 1.0) and _is_dynamic_definition(definition) and not _dynamic_item_order.has(definition): _dynamic_item_order.append(definition)
 func debug_clear_world_items() -> void:
 	for child in get_children():
-		if child is WorldRigidBody2D:
+		if child is WorldRigidBody2D and not _is_generated_barrel(child):
 			child.queue_free()
 
 
 func advance(delta: float) -> void:
 	_throw_lock_remaining = maxf(0.0, _throw_lock_remaining - delta)
 	_advance_terrain_pulses(delta)
-	_chest_sleep_scheduler.advance(delta, _visible_world_rect())
+	_sleep_scheduler.advance(delta, _visible_world_rect())
+
+
+## Pushes overlapping barrels with the player every physics step; the player is not slowed.
+func _physics_process(_delta: float) -> void:
+	if not _is_active or not is_instance_valid(_player):
+		return
+	var player_position := _player.global_position
+	var player_radius := _player.horizontal_collision_radius
+	var player_velocity := _player.velocity
+	for barrel in _explosive_barrels:
+		if is_instance_valid(barrel):
+			barrel.push_from(player_position, player_radius, player_velocity)
 
 
 func select_index(index: int) -> void:
@@ -303,10 +331,10 @@ func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2
 	var change_set := result.terrain_changes
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
-	_chest_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
+	_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
 	terrain_changed.emit(change_set)
 	explosion_resolved.emit(impact_position, definition.effect_color, spec.blast_radius, definition.large_feedback)
-	_arm_explosives_in(result.destructive_core_cells)
+	_arm_explosives_in(result.destructive_core_cells, impact_position, spec.blast_radius)
 
 
 func _apply_projectile_blast_impulses(spec: ExplosionRuntimeSpec, impact_position: Vector2) -> void:
@@ -434,7 +462,7 @@ func _commit_external_terrain_changes(change_set: TerrainChangeSet) -> void:
 		return
 	if _simulation_backend != null:
 		_simulation_backend.notify_external_changes(change_set)
-	_chest_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
+	_sleep_scheduler.notify_terrain_changed(change_set.dirty_rect)
 	terrain_changed.emit(change_set)
 
 
@@ -535,9 +563,22 @@ func inventory_status() -> Dictionary:
 func active_projectile_count() -> int:
 	var count := 0
 	for child in get_children():
-		if child is WorldRigidBody2D:
+		if child is WorldRigidBody2D and not _is_generated_barrel(child):
 			count += 1
 	return count
+
+
+func explosive_barrel_count() -> int:
+	var count := 0
+	for barrel in _explosive_barrels:
+		if is_instance_valid(barrel) and not barrel.is_queued_for_deletion():
+			count += 1
+	return count
+
+
+## Returns the grapple registry shared with the world controller, or null outside a run.
+func grapple_targets() -> GrappleTargetRegistry:
+	return _grapple_targets
 
 
 func is_flag_in_flight() -> bool:
@@ -592,11 +633,55 @@ func _spawn_item_chests(chest_spawns: Array[GeneratedItemChestSpawn]) -> void:
 			_terrain_registry,
 			_compiled_terrain
 		)
-		_chest_sleep_scheduler.track(chest)
+		_sleep_scheduler.track(chest.sleep_state())
 		_register_explosive(chest.explosive)
 		chest.touched.connect(_on_item_chest_touched)
 		chest.explosion_armed.connect(_on_item_chest_explosion_armed)
 	_apply_container_perk_modifiers()
+
+
+## Generated barrels are world objects, not thrown items, so item counts and debug clears skip them.
+func _is_generated_barrel(node: Node) -> bool:
+	return node is ExplosiveBarrel and _explosive_barrels.has(node as ExplosiveBarrel)
+
+
+func _spawn_explosive_barrels(barrel_spawns: Array[GeneratedExplosiveBarrelSpawn]) -> void:
+	for spawn_data in barrel_spawns:
+		if spawn_data == null or spawn_data.definition == null or spawn_data.definition.barrel_scene == null:
+			continue
+		var barrel := spawn_data.definition.barrel_scene.instantiate() as ExplosiveBarrel
+		if barrel == null:
+			continue
+		add_child(barrel)
+		barrel.configure(
+			spawn_data,
+			_hex_radius,
+			true,
+			_simulation_backend,
+			_world,
+			_terrain_registry,
+			_compiled_terrain
+		)
+		barrel.set_active(_is_active)
+		_explosive_barrels.append(barrel)
+		_register_explosive(barrel.explosive)
+		_sleep_scheduler.track(barrel.sleep_state())
+		if _grapple_targets != null:
+			_grapple_targets.register(barrel.grapple_target())
+		barrel.tree_exiting.connect(_on_explosive_barrel_exiting.bind(barrel))
+
+
+func _on_explosive_barrel_exiting(barrel: ExplosiveBarrel) -> void:
+	_explosive_barrels.erase(barrel)
+	_forget_explosive(barrel.explosive)
+	if _grapple_targets != null:
+		_grapple_targets.unregister(barrel.grapple_target())
+	_update_physics_processing()
+
+
+## Only barrels near an active player need the per-step push check.
+func _update_physics_processing() -> void:
+	set_physics_process(_is_active and _player != null and not _explosive_barrels.is_empty())
 
 
 func _on_item_chest_touched(chest: ItemChest) -> void:
@@ -662,10 +747,11 @@ func _forget_explosive(explosive: WorldExplosive2D) -> void:
 		explosive.detonation_requested.disconnect(_on_explosive_detonation_requested)
 
 
-func _arm_explosives_in(lethal_cells: Array[Vector2i]) -> void:
+## Arms explosives the lethal core overlaps, and opted-in explosives anywhere in the blast radius.
+func _arm_explosives_in(lethal_cells: Array[Vector2i], impact_position: Vector2, blast_radius: int) -> void:
 	for explosive in _explosives.duplicate():
-		if is_instance_valid(explosive):
-			explosive.try_arm_from_lethal_cells(lethal_cells, _hex_radius)
+		if is_instance_valid(explosive) and not explosive.try_arm_from_lethal_cells(lethal_cells, _hex_radius):
+			explosive.try_arm_from_blast(impact_position, blast_radius, _hex_radius)
 
 
 func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:

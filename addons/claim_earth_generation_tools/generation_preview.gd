@@ -12,6 +12,7 @@ var _root: Node2D
 var _camera: Camera2D
 var _presenter
 var _item_chest_root: Node2D
+var _explosive_barrel_root: Node2D
 var _background: WorldBackground
 var _status_label := Label.new()
 var _terrain_registry := TerrainRegistry.new()
@@ -164,6 +165,9 @@ func _ensure_runtime() -> void:
 	_item_chest_root = Node2D.new()
 	_item_chest_root.name = "ItemChestPreviewRoot"
 	_root.add_child(_item_chest_root)
+	_explosive_barrel_root = Node2D.new()
+	_explosive_barrel_root.name = "ExplosiveBarrelPreviewRoot"
+	_root.add_child(_explosive_barrel_root)
 	_camera = Camera2D.new()
 	_camera.name = "PreviewCamera"
 	_camera.enabled = true
@@ -181,6 +185,7 @@ func _free_runtime() -> void:
 	_camera = null
 	_presenter = null
 	_item_chest_root = null
+	_explosive_barrel_root = null
 	_background = null
 
 
@@ -209,6 +214,7 @@ func _attempt_preview() -> void:
 	_configure_background_bounds(result.world)
 	_presenter.configure(result.world, _terrain_registry)
 	_show_item_chest_previews(result.item_chest_spawns, _presenter.hex_radius)
+	_show_explosive_barrel_previews(result.explosive_barrel_spawns, _presenter.hex_radius)
 	_has_rendered_once = true
 	_attempt_camera_fit()
 	_set_status("")
@@ -284,3 +290,18 @@ func _show_item_chest_previews(spawns: Array[GeneratedItemChestSpawn], hex_radiu
 			continue
 		_item_chest_root.add_child(chest)
 		chest.configure(spawn_data, hex_radius, false)
+
+
+func _show_explosive_barrel_previews(spawns: Array[GeneratedExplosiveBarrelSpawn], hex_radius: float) -> void:
+	if _explosive_barrel_root == null:
+		return
+	for child in _explosive_barrel_root.get_children():
+		child.free()
+	for spawn_data in spawns:
+		if spawn_data == null or spawn_data.definition == null or spawn_data.definition.barrel_scene == null:
+			continue
+		var barrel := spawn_data.definition.barrel_scene.instantiate() as ExplosiveBarrel
+		if barrel == null:
+			continue
+		_explosive_barrel_root.add_child(barrel)
+		barrel.configure(spawn_data, hex_radius, false)

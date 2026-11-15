@@ -132,6 +132,9 @@ func _reserve_random_anchor(
 			area_rect.position.x + candidate_index % area_rect.size.x,
 			area_rect.position.y + int(candidate_index / area_rect.size.x)
 		)
-		if context.try_reserve_generated_item_area(anchor, item_definition.required_edge_clearance()):
+		if (
+			item_definition.accepts_anchor(context, anchor)
+			and context.try_reserve_generated_item_area(anchor, item_definition.required_edge_clearance())
+		):
 			return anchor
 	return Vector2i(-1, -1)

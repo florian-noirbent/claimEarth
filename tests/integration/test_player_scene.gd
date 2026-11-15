@@ -12,6 +12,42 @@ class FakeAnchorQuery extends GrappleAnchorQuery:
 		return true
 
 
+class FakeGrappleTarget extends GrappleTarget:
+	var valid := true
+	var center := Vector2(64, -24)
+	var pulls: Array[Dictionary] = []
+
+	func is_valid() -> bool:
+		return valid
+
+	func anchor_position() -> Vector2:
+		return center
+
+	func radius() -> float:
+		return 8.0
+
+	func pull_toward(point: Vector2, overshoot: float, delta: float) -> void:
+		pulls.append({"point": point, "overshoot": overshoot, "delta": delta})
+
+
+class FakeTargetAnchorQuery extends GrappleAnchorQuery:
+	var target := FakeGrappleTarget.new()
+
+	func find_anchor(_origin: Vector2, _target: Vector2) -> GrappleAnchor:
+		return GrappleAnchor.new(Vector2i(-1, -1), target.center + Vector2.LEFT * target.radius(), target)
+
+	func is_anchor_valid(anchor: GrappleAnchor) -> bool:
+		return anchor != null and anchor.target != null and anchor.target.is_valid()
+
+
+class RecordingInputController extends GameplayInputController:
+	var attached_flags: Array[bool] = []
+
+	func sample_player_input(player_position: Vector2, grapple_attached: bool) -> GrappleInputFrame:
+		attached_flags.append(grapple_attached)
+		return super.sample_player_input(player_position, grapple_attached)
+
+
 class MissingAnchorQuery extends GrappleAnchorQuery:
 	func find_anchor(_origin: Vector2, _target: Vector2) -> GrappleAnchor:
 		return null
@@ -282,6 +318,88 @@ func test_acrobat_and_glass_preserve_attached_swing_control() -> void:
 	assert_gt(player.velocity.x, 0.0)
 	Input.action_release(InputActions.HOOK)
 	await wait_physics_frames(1)
+
+
+func test_hooked_target_is_pulled_while_player_falls_unconstrained() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	var query := FakeTargetAnchorQuery.new()
+	var input_controller := RecordingInputController.new()
+	player.configure_grapple_anchor_query(query)
+	player.configure_input_controller(input_controller)
+	add_child_autofree(player)
+	add_child_autofree(input_controller)
+	await wait_process_frames(1)
+	_place_player_in_open_air(player)
+	query.target.center = player.global_position + Vector2(64, -24)
+
+	ScenarioDriverScript.set_mouse_world_position(player, query.target.center)
+	Input.action_press(InputActions.HOOK)
+	await wait_physics_frames(1)
+	assert_true(player.is_grapple_attached())
+	assert_true(player.is_grapple_target_attached())
+	var rope_length := player.current_rope_length()
+
+	await wait_physics_frames(30)
+
+	var rope_distance := player.global_position.distance_to(query.target.center)
+	assert_gt(rope_distance, rope_length + 10.0, "The rope never holds the player back from a target")
+	assert_gt(player.velocity.y, 0.0, "The player keeps falling under ordinary gravity")
+	assert_false(query.target.pulls.is_empty())
+	var last_pull: Dictionary = query.target.pulls.back()
+	assert_almost_eq(
+		float(last_pull["overshoot"]),
+		(last_pull["point"] as Vector2).distance_to(query.target.center) - rope_length,
+		0.001
+	)
+	assert_false(input_controller.attached_flags.has(true), "Touch input keeps jump controls while holding a target")
+
+	query.target.center += Vector2(30, 10)
+	await wait_physics_frames(1)
+
+	assert_eq(player.current_grapple_anchor_position(), query.target.center)
+	assert_true(player.presentation.rope_line.visible)
+	var expected_rope_end := player.presentation.to_local(query.target.center)
+	assert_almost_eq(player.presentation.rope_line.points[1].x, expected_rope_end.x, 0.001)
+	assert_almost_eq(player.presentation.rope_line.points[1].y, expected_rope_end.y, 0.001)
+
+	query.target.valid = false
+	await wait_physics_frames(1)
+	assert_false(player.is_grapple_attached())
+	Input.action_release(InputActions.HOOK)
+	await wait_physics_frames(1)
+
+
+func test_glass_keeps_free_air_control_disabled_while_holding_a_target() -> void:
+	var scene := load("res://scenes/player/player.tscn") as PackedScene
+	var player := scene.instantiate() as PlayerController
+	var query := FakeTargetAnchorQuery.new()
+	player.configure_grapple_anchor_query(query)
+	add_child_autofree(player)
+	await wait_process_frames(1)
+	_place_player_in_open_air(player)
+	query.target.center = player.global_position + Vector2(64, -24)
+	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/glass_cannon.tres"]))
+	ScenarioDriverScript.set_mouse_world_position(player, query.target.center)
+	Input.action_press(InputActions.HOOK)
+	await wait_physics_frames(1)
+	assert_true(player.is_grapple_target_attached())
+
+	Input.action_press(InputActions.MOVE_RIGHT)
+	await wait_physics_frames(3)
+	Input.action_release(InputActions.MOVE_RIGHT)
+
+	assert_almost_eq(player.velocity.x, 0.0, 0.001)
+	Input.action_release(InputActions.HOOK)
+	await wait_physics_frames(1)
+
+
+func _place_player_in_open_air(player: PlayerController) -> void:
+	var world := WorldGrid.new(WorldDimensions.new(40, 60), FixtureLoader.terrain_id("Air"))
+	player.configure_environment(world, FixtureLoader.terrain_registry(), 16.0)
+	player.set_spawn_position(HexMetrics.center_for_offset(20, 12, 16.0))
+	player.velocity = Vector2.ZERO
+	player._movement_model.velocity = Vector2.ZERO
 
 
 func test_player_hook_launch_animation_plays_without_anchor() -> void:

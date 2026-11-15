@@ -128,13 +128,16 @@ func resolve_spec(
 			continue
 		_enqueue_neighbors(queue, cell, propagated_strength)
 
+	var origin_emissions: Array[TerrainEmissionDefinition] = []
+	origin_emissions.append_array(spec.terrain_emissions)
+	origin_emissions.append_array(spec.perk_terrain_emissions)
 	_apply_terrain_emissions(
 		world,
 		terrain_registry,
 		metadata,
 		change_set,
 		terrain_emissions,
-		spec.perk_terrain_emissions,
+		origin_emissions,
 		origin,
 		sulfur_dioxide_id,
 		displaced_sulfur_dioxide_quantity,
@@ -154,7 +157,7 @@ func _apply_terrain_emissions(
 	metadata: CompiledTerrainData,
 	change_set: TerrainChangeSet,
 	terrain_emissions: Array[Dictionary],
-	perk_emissions: Array[TerrainEmissionDefinition],
+	origin_emissions: Array[TerrainEmissionDefinition],
 	origin: Vector2i,
 	sulfur_dioxide_id: int,
 	displaced_sulfur_dioxide_quantity: int,
@@ -192,7 +195,7 @@ func _apply_terrain_emissions(
 		if int(entry["secondary_id"]) == product_id:
 			quantity += int(entry["secondary_quantity"])
 		_deposit_emission(world, terrain_registry, metadata, change_set, entry["cell"] as Vector2i, emission.product, quantity)
-	for emission in perk_emissions:
+	for emission in origin_emissions:
 		if emission != null:
 			_deposit_emission(world, terrain_registry, metadata, change_set, origin, emission.product, emission.quantity)
 

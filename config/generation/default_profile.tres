@@ -9,6 +9,7 @@
 [ext_resource type="Resource" uid="uid://bxwt8166bt34x" path="res://config/items/item_chest.tres" id="7_chest_definition"]
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="8_lava"]
 [ext_resource type="Resource" path="res://config/items/perk_geode.tres" id="9_geode_definition"]
+[ext_resource type="Resource" path="res://config/items/explosive_barrel.tres" id="10_barrel_definition"]
 
 [sub_resource type="Resource" id="Resource_fr6de"]
 script = ExtResource("2_base")
@@ -103,6 +104,18 @@ min_depth_ratio = 0.05
 max_depth_ratio = 0.9
 allowed_target_ids = PackedInt32Array()
 
+[sub_resource type="Resource" id="Resource_b7x3k"]
+script = ExtResource("6_item_pass")
+item_definition = ExtResource("10_barrel_definition")
+column_vertical_offset_rows = 20
+area_height_rows = 40
+area_spawn_chance = 0.5
+label = "Explosive Barrels"
+pass_seed_key = "explosive_barrels_9"
+min_depth_ratio = 0.1
+max_depth_ratio = 0.88
+allowed_target_ids = PackedInt32Array()
+
 [sub_resource type="Resource" id="Resource_2uer4"]
 script = ExtResource("5_fill")
 fill_terrain = ExtResource("8_lava")
@@ -114,4 +127,4 @@ top_blend_distance_ratio = 0.02
 [resource]
 script = ExtResource("1_profile")
 initial_settle_ticks = 50
-passes = [SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_5hsgh"), SubResource("Resource_tpxme"), SubResource("Resource_u4642"), SubResource("Resource_2uer4")]
+passes = [SubResource("Resource_fr6de"), SubResource("Resource_22l3w"), SubResource("Resource_6usxm"), SubResource("Resource_7afvr"), SubResource("Resource_yasd3"), SubResource("Resource_5hsgh"), SubResource("Resource_tpxme"), SubResource("Resource_u4642"), SubResource("Resource_b7x3k"), SubResource("Resource_2uer4")]

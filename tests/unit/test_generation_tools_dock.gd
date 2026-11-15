@@ -7,6 +7,7 @@ const GenerationPassCatalogEntryScript = preload("res://src/generation/generatio
 const BaseNoisePassScript = preload("res://src/generation/base_noise_pass.gd")
 const PocketNoisePassScript = preload("res://src/generation/pocket_noise_pass.gd")
 const FillPassScript = preload("res://src/generation/fill_pass.gd")
+const GeneratedItemPassScript = preload("res://src/generation/generated_item_pass.gd")
 
 
 class PreviewStub extends Control:
@@ -400,6 +401,33 @@ func test_generation_tools_dock_fill_pass_selects_any_registered_terrain() -> vo
 	var fill_terrain := dock.selected_pass_for_test().get("fill_terrain") as TerrainDefinition
 	assert_not_null(fill_terrain)
 	assert_eq(fill_terrain.display_name, "Lava")
+
+
+func test_generation_tools_dock_generated_item_pass_lists_catalog_items_including_barrel() -> void:
+	var dock = GenerationToolsDockScript.new()
+	add_child_autofree(dock)
+	dock.set_pass_catalog_for_test(_catalog([
+		_catalog_entry("Generated Item", GeneratedItemPassScript),
+	]))
+	dock.set_profile_for_test(GenerationProfile.new())
+	dock.add_pass_for_test(GeneratedItemPassScript)
+	_pass_toggle_button(dock, 0).pressed.emit()
+	await wait_process_frames(1)
+
+	var row := _pass_property_row(dock, 0, "item_definition")
+	assert_not_null(row)
+	var picker := row.find_child("GeneratedItemOptionButton", true, false) as OptionButton
+	assert_not_null(picker)
+	var labels := PackedStringArray()
+	for index in range(picker.item_count):
+		labels.append(picker.get_item_text(index))
+	assert_eq(labels, PackedStringArray(["Item Chest", "Perk Geode", "Explosive Barrel"]))
+	var barrel_index := labels.find("Explosive Barrel")
+	picker.select(barrel_index)
+	picker.item_selected.emit(picker.get_item_id(barrel_index))
+
+	var selected: Variant = dock.selected_pass_for_test().get("item_definition")
+	assert_true(selected is ExplosiveBarrelDefinition)
 
 
 func test_generation_tools_dock_revert_restores_last_saved_profile_values() -> void:

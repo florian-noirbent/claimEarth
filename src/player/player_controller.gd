@@ -146,7 +146,8 @@ func _physics_process(delta: float) -> void:
 		presentation.start_hook_launch(_hook_launch_target(input_frame.aim_position))
 	elif input_frame.hook_released:
 		presentation.cancel_hook_launch()
-	var attached_before_constraint: bool = _grapple_model.state.is_attached
+	# Holding a pullable target keeps ordinary ground snapping; only a swing suspends it.
+	var swinging_before_constraint: bool = _grapple_model.is_swing_attached()
 	var motion_result = _terrain_motion_solver.move_circle(
 		global_position,
 		velocity,
@@ -154,7 +155,7 @@ func _physics_process(delta: float) -> void:
 		horizontal_collision_radius,
 		step_up_height,
 		support_probe_distance,
-		grounded_for_input and not attached_before_constraint
+		grounded_for_input and not swinging_before_constraint
 	)
 	global_position = motion_result.position
 	velocity = motion_result.velocity
@@ -222,14 +223,17 @@ func is_grapple_attached() -> bool:
 	return _grapple_model.state.is_attached
 
 
+## True while the hook holds a moving target, which the rope pulls instead of swinging the player.
+func is_grapple_target_attached() -> bool:
+	return _grapple_model.is_target_attached()
+
+
 func physics_frame_count() -> int:
 	return _physics_frame_count
 
 
 func current_grapple_anchor_position() -> Vector2:
-	if not _grapple_model.state.is_attached or _grapple_model.state.anchor == null:
-		return Vector2.ZERO
-	return _grapple_model.state.anchor.position
+	return _grapple_model.current_anchor_position()
 
 
 func current_rope_length() -> float:
@@ -245,7 +249,8 @@ func ragdoll_remaining() -> float:
 
 
 func _create_input_frame():
-	return _input_controller.sample_player_input(global_position, _grapple_model.state.is_attached)
+	# Touch controls map vertical movement to the rope only while swinging; holding a target keeps touch jumps.
+	return _input_controller.sample_player_input(global_position, _grapple_model.is_swing_attached())
 
 
 func _is_grounded_for_movement() -> bool:
@@ -265,7 +270,7 @@ func _is_horizontal_air_control_enabled() -> bool:
 		return true
 	if not _runtime_tuning.free_air_control_disabled:
 		return true
-	return _grapple_model != null and _grapple_model.state.is_attached
+	return _grapple_model != null and _grapple_model.is_swing_attached()
 
 
 func _advance_ragdoll(delta: float) -> void:
@@ -372,7 +377,7 @@ func _downward_floor_impact_speed(result: TerrainBodyMotionResult) -> float:
 
 func _hook_launch_target(aim_position: Vector2) -> Vector2:
 	if _grapple_model.state.is_attached and _grapple_model.state.anchor != null:
-		return _grapple_model.state.anchor.position
+		return _grapple_model.current_anchor_position()
 
 	var aim_delta := aim_position - global_position
 	var aim_distance := aim_delta.length()

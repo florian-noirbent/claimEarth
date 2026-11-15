@@ -10,6 +10,7 @@ var world: WorldGrid
 var spawn_rect := Rect2i()
 var item_chest_spawns: Array[GeneratedItemChestSpawn] = []
 var perk_geode_spawns: Array[GeneratedItemChestSpawn] = []
+var explosive_barrel_spawns: Array[GeneratedExplosiveBarrelSpawn] = []
 var _generated_item_anchor_indices := {}
 
 

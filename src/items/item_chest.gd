@@ -29,15 +29,14 @@ var _active := false
 var _grounded := false
 var _grounded_check_remaining := 0.0
 var _destructible := true
-var _sleep_enabled := false
-var _sleeping := false
 var _stuck := false
-var _terrain_watch := TerrainRegionWatch.new()
+var _sleep := WorldBodySleep.new()
 
 
 func _ready() -> void:
 	touch_area.body_entered.connect(_on_body_entered)
 	explosive.chain_armed.connect(_on_explosion_chain_armed)
+	_sleep.woken.connect(_on_sleep_woken)
 	_apply_geometry()
 	set_physics_process(false)
 
@@ -65,7 +64,14 @@ func configure(
 	if explosive != null and data != null and data.definition != null:
 		explosive.configure(data.definition.explosion_definition, _body_polygon, self)
 	_runtime_physics = world != null and terrain_registry != null
-	_sleeping = false
+	if data != null and data.definition != null:
+		_sleep.configure(
+			self,
+			data.definition.grounded_check_interval_seconds,
+			data.definition.offscreen_check_interval_seconds,
+			data.definition.stuck_check_interval_seconds,
+			data.definition.screen_margin_radii * _hex_radius
+		)
 	if _runtime_physics:
 		_terrain_query.configure(
 			world,
@@ -77,7 +83,7 @@ func configure(
 
 func set_active(is_active: bool, interactive_allowed: bool = true) -> void:
 	_active = is_active
-	set_physics_process(is_active and _runtime_physics and not _sleeping)
+	set_physics_process(is_active and _runtime_physics and not _sleep.is_sleeping())
 	if explosive != null:
 		explosive.set_active(is_active)
 	set_interactive(is_active and interactive_allowed)
@@ -85,45 +91,35 @@ func set_active(is_active: bool, interactive_allowed: bool = true) -> void:
 
 ## Lets a resting container stop its physics steps; the caller must then deliver terrain wake checks.
 func set_sleep_enabled(enabled: bool) -> void:
-	_sleep_enabled = enabled
-	if not enabled:
-		wake()
+	_sleep.set_enabled(enabled)
+
+
+## Returns the sleep state a WorldBodySleepScheduler tracks for this container.
+func sleep_state() -> WorldBodySleep:
+	return _sleep
 
 
 func is_sleeping() -> bool:
-	return _sleeping
+	return _sleep.is_sleeping()
 
 
 ## Returns the offset-cell range a sleeping container depends on.
 func watched_cells() -> Rect2i:
-	return _terrain_watch.cells()
+	return _sleep.watched_cells()
 
 
 ## Returns how long a sleeping container may wait before its watched terrain is read again.
 func sleep_check_interval(view: Rect2) -> float:
-	var definition := spawn_data.definition
-	var interval := definition.grounded_check_interval_seconds
-	if _stuck:
-		interval = maxf(interval, definition.stuck_check_interval_seconds)
-	if not view.grow(definition.screen_margin_radii * _hex_radius).has_point(global_position):
-		interval = maxf(interval, definition.offscreen_check_interval_seconds)
-	return interval
+	return _sleep.sleep_check_interval(view)
 
 
 ## Resumes physics steps when the terrain a sleeping container depends on changed.
 func wake_if_terrain_changed() -> bool:
-	if not _sleeping or not _terrain_watch.has_changed():
-		return false
-	wake()
-	return true
+	return _sleep.wake_if_terrain_changed()
 
 
 func wake() -> void:
-	if not _sleeping:
-		return
-	_sleeping = false
-	_grounded_check_remaining = 0.0
-	set_physics_process(_active and _runtime_physics)
+	_sleep.wake()
 
 
 func set_destructible(destructible: bool) -> void:
@@ -199,7 +195,7 @@ func _physics_process(delta: float) -> void:
 	_apply_terrain_unstuck(delta)
 	# A resting check that changes nothing repeats identically until the terrain it read changes.
 	if (
-		_sleep_enabled
+		_sleep.is_enabled()
 		and was_grounded
 		and _grounded
 		and global_position == previous_position
@@ -209,9 +205,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _fall_asleep(delta: float) -> void:
-	_sleeping = true
-	_terrain_watch.capture(_terrain_query, _watched_bounds(delta), _stuck)
+	_sleep.fall_asleep(_terrain_query, _watched_bounds(delta), _stuck, _stuck)
 	set_physics_process(false)
+
+
+func _on_sleep_woken() -> void:
+	_grounded_check_remaining = 0.0
+	set_physics_process(_active and _runtime_physics)
 
 
 ## Returns the world rectangle containing all terrain a resting physics step of this length reads.

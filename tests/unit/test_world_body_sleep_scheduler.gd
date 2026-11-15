@@ -16,8 +16,8 @@ func before_all() -> void:
 func test_tracked_chest_sleeps_and_is_woken_by_the_next_due_check() -> void:
 	var world := _world_with_floors()
 	var chest := await _resting_chest(world)
-	var scheduler := ItemChestSleepScheduler.new()
-	scheduler.track(chest)
+	var scheduler := WorldBodySleepScheduler.new()
+	scheduler.track(chest.sleep_state())
 	_step_until_sleeping(chest)
 	var view := _view_around(chest)
 
@@ -40,10 +40,10 @@ func test_offscreen_chest_wakes_later_and_rests_where_the_visible_chest_does() -
 	var hidden_world := _world_with_floors()
 	var visible_chest := await _resting_chest(visible_world)
 	var hidden_chest := await _resting_chest(hidden_world)
-	var visible_scheduler := ItemChestSleepScheduler.new()
-	var hidden_scheduler := ItemChestSleepScheduler.new()
-	visible_scheduler.track(visible_chest)
-	hidden_scheduler.track(hidden_chest)
+	var visible_scheduler := WorldBodySleepScheduler.new()
+	var hidden_scheduler := WorldBodySleepScheduler.new()
+	visible_scheduler.track(visible_chest.sleep_state())
+	hidden_scheduler.track(hidden_chest.sleep_state())
 	_step_until_sleeping(visible_chest)
 	_step_until_sleeping(hidden_chest)
 	var rest_position := visible_chest.global_position
@@ -115,8 +115,8 @@ func test_check_interval_follows_view_margin_and_stuck_state() -> void:
 func test_terrain_change_notification_checks_watching_chests_at_once() -> void:
 	var world := _world_with_floors()
 	var chest := await _resting_chest(world)
-	var scheduler := ItemChestSleepScheduler.new()
-	scheduler.track(chest)
+	var scheduler := WorldBodySleepScheduler.new()
+	scheduler.track(chest.sleep_state())
 	_step_until_sleeping(chest)
 	var hidden_view := Rect2(chest.global_position + Vector2(4000.0, 4000.0), Vector2(640.0, 360.0))
 	scheduler.advance(0.1, hidden_view)
@@ -135,10 +135,10 @@ func test_removed_chests_are_dropped_from_the_schedule() -> void:
 	var world := _world_with_floors()
 	var freed_chest := await _resting_chest(world)
 	var queued_chest := await _resting_chest(world)
-	var scheduler := ItemChestSleepScheduler.new()
-	scheduler.track(freed_chest)
-	scheduler.track(queued_chest)
-	scheduler.track(queued_chest)
+	var scheduler := WorldBodySleepScheduler.new()
+	scheduler.track(freed_chest.sleep_state())
+	scheduler.track(queued_chest.sleep_state())
+	scheduler.track(queued_chest.sleep_state())
 	assert_eq(scheduler.tracked_count(), 2)
 
 	freed_chest.free()
@@ -149,6 +149,74 @@ func test_removed_chests_are_dropped_from_the_schedule() -> void:
 
 	scheduler.track(null)
 	assert_eq(scheduler.tracked_count(), 0)
+
+
+func test_one_scheduler_sleeps_and_wakes_chests_and_barrels_together() -> void:
+	var world := _world_with_floors()
+	var chest := await _resting_chest(world)
+	var barrel := await _configured_barrel(world, Vector2i(9, 2))
+	var scheduler := WorldBodySleepScheduler.new()
+	scheduler.track(chest.sleep_state())
+	scheduler.track(barrel.sleep_state())
+	scheduler.track(barrel.sleep_state())
+	assert_eq(scheduler.tracked_count(), 2)
+	_step_until_sleeping(chest)
+	for _step in 600:
+		if barrel.is_sleeping():
+			break
+		barrel._physics_process(STEP)
+	assert_true(chest.is_sleeping())
+	assert_true(barrel.is_sleeping())
+	assert_false(barrel.is_physics_processing())
+	var view := _view_around(chest)
+	scheduler.advance(0.1, view)
+	assert_true(barrel.is_sleeping(), "Unchanged terrain must not wake the barrel")
+
+	_remove_upper_floor(world)
+	scheduler.advance(0.1, view)
+	assert_false(chest.is_sleeping())
+	assert_false(barrel.is_sleeping())
+	assert_true(barrel.is_physics_processing())
+
+	barrel.free()
+	scheduler.advance(0.1, view)
+	assert_eq(scheduler.tracked_count(), 1)
+
+
+func test_barrel_check_interval_follows_its_own_definition() -> void:
+	var barrel := await _configured_barrel(_world_with_floors(), Vector2i(5, 2))
+	barrel.set_sleep_enabled(true)
+	for _step in 600:
+		if barrel.is_sleeping():
+			break
+		barrel._physics_process(STEP)
+	var definition := barrel.barrel_definition()
+	var margin := definition.screen_margin_radii * HEX_RADIUS
+	var position := barrel.global_position
+
+	assert_eq(
+		barrel.sleep_state().sleep_check_interval(Rect2(position - Vector2(10.0, 10.0), Vector2(20.0, 20.0))),
+		definition.grounded_check_interval_seconds
+	)
+	assert_eq(
+		barrel.sleep_state().sleep_check_interval(Rect2(position + Vector2(margin + 1.0, 0.0), Vector2(320.0, 180.0))),
+		definition.offscreen_check_interval_seconds
+	)
+
+
+func _configured_barrel(world: WorldGrid, anchor: Vector2i) -> ExplosiveBarrel:
+	var barrel := (load("res://scenes/objects/explosive_barrel.tscn") as PackedScene).instantiate() as ExplosiveBarrel
+	add_child_autofree(barrel)
+	await wait_process_frames(1)
+	barrel.configure(
+		GeneratedExplosiveBarrelSpawn.new(anchor, load("res://config/items/explosive_barrel.tres"), 1),
+		HEX_RADIUS,
+		true,
+		null,
+		world,
+		FixtureLoader.terrain_registry()
+	)
+	return barrel
 
 
 func _resting_chest(world: WorldGrid) -> ItemChest:

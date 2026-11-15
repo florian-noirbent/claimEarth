@@ -100,6 +100,11 @@ func reset_simulation_clock() -> void:
 	_simulation_clock.reset()
 
 
+## Lets the hook attach to moving targets owned elsewhere; persists across runs and player restarts.
+func configure_grapple_targets(grapple_targets: GrappleTargetRegistry) -> void:
+	_grapple_anchor_query.configure_targets(grapple_targets)
+
+
 func player() -> PlayerController:
 	return _player
 

@@ -9,6 +9,8 @@ var blast_radius := 0
 var vaporize_radius := 0
 var player_kill_radius := 0
 var blast_impulse := 0.0
+## Clouds every detonation of the definition releases at its origin.
+var terrain_emissions: Array[TerrainEmissionDefinition] = []
 var perk_terrain_emissions: Array[TerrainEmissionDefinition] = []
 
 ## Optional terrain-specific extension point. The callable receives a
@@ -32,6 +34,8 @@ static func from_definition(source: ExplosionDefinition) -> ExplosionRuntimeSpec
 	result.vaporize_radius = source.effective_vaporize_radius()
 	result.player_kill_radius = source.effective_player_kill_radius()
 	result.blast_impulse = source.blast_impulse
+	if source.terrain_emission != null:
+		result.terrain_emissions.append(source.terrain_emission)
 	return result
 
 

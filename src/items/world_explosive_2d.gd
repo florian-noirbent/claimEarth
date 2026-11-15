@@ -19,6 +19,7 @@ var _state := State.UNARMED
 var _chain_fuse_remaining := 0.0
 var _active := true
 var _host: Node
+var _arms_in_blast_radius := false
 
 
 func _ready() -> void:
@@ -28,11 +29,13 @@ func _ready() -> void:
 func configure(
 	definition_value: ExplosionDefinition,
 	local_footprint: PackedVector2Array = PackedVector2Array(),
-	host_value: Node = null
+	host_value: Node = null,
+	arms_in_blast_radius_value: bool = false
 ) -> void:
 	definition = definition_value
 	_local_footprint = local_footprint.duplicate()
 	_host = host_value
+	_arms_in_blast_radius = arms_in_blast_radius_value
 	_state = State.UNARMED
 	_chain_fuse_remaining = 0.0
 	_update_processing()
@@ -46,6 +49,29 @@ func set_active(is_active: bool) -> void:
 func try_arm_from_lethal_cells(lethal_cells: Array[Vector2i], hex_radius: float) -> bool:
 	if _state != State.UNARMED or definition == null or not _overlaps_any_cell(lethal_cells, hex_radius):
 		return false
+	return _arm_chain()
+
+
+## Arms an explosive configured to arm anywhere in a blast whose radius, in hex steps from the
+## impact cell like the terrain blast, reaches the cell under its position.
+func try_arm_from_blast(impact_position: Vector2, blast_radius: int, hex_radius: float) -> bool:
+	if not _arms_in_blast_radius or _state != State.UNARMED or definition == null:
+		return false
+	var impact_cell := HexMetrics.offset_for_world(impact_position, hex_radius)
+	var own_cell := HexMetrics.offset_for_world(global_position, hex_radius)
+	var distance := HexCoord.from_offset_odd_q(impact_cell.x, impact_cell.y).distance_to(
+		HexCoord.from_offset_odd_q(own_cell.x, own_cell.y)
+	)
+	if distance > blast_radius:
+		return false
+	return _arm_chain()
+
+
+func arms_in_blast_radius() -> bool:
+	return _arms_in_blast_radius
+
+
+func _arm_chain() -> bool:
 	_state = State.CHAIN_ARMED
 	_chain_fuse_remaining = definition.chain_fuse_seconds
 	_update_processing()

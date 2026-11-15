@@ -12,6 +12,12 @@ func required_edge_clearance() -> int:
 	return 0
 
 
+## Lets a kind skip an unsuitable candidate anchor; the pass then probes the next candidate
+## in its deterministic order. Must only read the context.
+func accepts_anchor(_context: GenerationContext, _anchor: Vector2i) -> bool:
+	return true
+
+
 func prepare_terrain(_context: GenerationContext, _anchor: Vector2i) -> bool:
 	return true
 

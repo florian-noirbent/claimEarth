@@ -43,6 +43,19 @@ class FakeSettlementBackend extends TerrainSimulationBackend:
 		return presentation_texture()
 
 
+class FakeGrappleTarget extends GrappleTarget:
+	var center := Vector2.ZERO
+
+	func is_valid() -> bool:
+		return true
+
+	func anchor_position() -> Vector2:
+		return center
+
+	func radius() -> float:
+		return 6.0
+
+
 func test_configure_exposes_valid_registries_and_empty_read_models() -> void:
 	var controller := RunWorldController.new()
 	controller.terrain_catalog = load("res://config/terrain/catalog.tres")
@@ -124,6 +137,35 @@ func test_non_positive_initial_settlement_ticks_bypass_backend_advancement() -> 
 	assert_eq(backend.commits, 0)
 	assert_eq(backend.scheduled_passes, 0)
 	assert_not_null(session.world_controller.player())
+
+
+func test_grapple_targets_reach_the_player_hook_across_restarts_and_reconfiguration() -> void:
+	var session := _configured_session(-5)
+	var backend := FakeSettlementBackend.new()
+	backend.controller = session.world_controller
+	session.world_controller._simulation_backend = backend
+
+	await session.world_controller.start_run(SeedUtils.seed_from_text("grapple-targets-first"))
+	assert_true(_hook_hits_registered_target(session.world_controller, session.grapple_targets()))
+
+	await session.world_controller.start_run(SeedUtils.seed_from_text("grapple-targets-second"))
+	assert_true(_hook_hits_registered_target(session.world_controller, session.grapple_targets()))
+
+	var replacement := GrappleTargetRegistry.new()
+	session.world_controller.configure_grapple_targets(replacement)
+	assert_true(_hook_hits_registered_target(session.world_controller, replacement))
+
+
+func _hook_hits_registered_target(controller: RunWorldController, targets: GrappleTargetRegistry) -> bool:
+	var player := controller.player()
+	assert_not_null(player)
+	var target := FakeGrappleTarget.new()
+	target.center = player.global_position + Vector2.RIGHT * 20.0
+	targets.register(target)
+	var query: GrappleAnchorQuery = player._grapple_model._anchor_query
+	var anchor := query.find_anchor(player.global_position, player.global_position + Vector2.RIGHT * 100.0)
+	targets.unregister(target)
+	return anchor != null and anchor.target == target
 
 
 func _configured_session(initial_settle_ticks: int) -> RunSession:

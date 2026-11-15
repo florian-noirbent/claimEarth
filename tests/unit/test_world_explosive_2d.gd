@@ -69,3 +69,35 @@ func test_pausing_freezes_chain_fuse_and_definition_validation_rejects_bad_radii
 
 	definition.lethal_radius = definition.blast_radius + 1
 	assert_false(definition.validate().is_empty())
+
+
+func test_blast_radius_arming_is_opt_in_and_measured_in_hex_steps() -> void:
+	var definition := load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition
+	var default_explosive := WorldExplosive2D.new()
+	add_child_autofree(default_explosive)
+	default_explosive.configure(definition)
+	assert_false(default_explosive.arms_in_blast_radius())
+	assert_false(
+		default_explosive.try_arm_from_blast(Vector2.ZERO, 5, 16.0),
+		"Explosives that did not opt in arm only from the lethal core"
+	)
+
+	var opted_in := WorldExplosive2D.new()
+	add_child_autofree(opted_in)
+	opted_in.configure(definition, PackedVector2Array(), null, true)
+	watch_signals(opted_in)
+	var origin_cell := Vector2i(5, 5)
+	var origin := HexMetrics.center_for_offset(origin_cell.x, origin_cell.y, 16.0)
+	var outside := HexCoord.from_offset_odd_q(origin_cell.x, origin_cell.y).add(HexCoord.new(6, 0)).to_offset_odd_q()
+	var inside := HexCoord.from_offset_odd_q(origin_cell.x, origin_cell.y).add(HexCoord.new(5, 0)).to_offset_odd_q()
+	opted_in.global_position = HexMetrics.center_for_offset(outside.x, outside.y, 16.0)
+	assert_false(opted_in.try_arm_from_blast(origin, 5, 16.0))
+	opted_in.global_position = HexMetrics.center_for_offset(inside.x, inside.y, 16.0)
+	assert_true(opted_in.try_arm_from_blast(origin, 5, 16.0))
+	assert_true(opted_in.is_chain_armed())
+	assert_almost_eq(opted_in.chain_fuse_remaining(), definition.chain_fuse_seconds, 0.0001)
+	assert_signal_emit_count(opted_in, "chain_armed", 1)
+	assert_false(opted_in.try_arm_from_blast(origin, 5, 16.0), "An armed explosive arms once")
+
+	opted_in.configure(definition)
+	assert_false(opted_in.arms_in_blast_radius(), "Reconfiguring resets the opt-in")

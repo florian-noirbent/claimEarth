@@ -46,7 +46,8 @@ func test_default_generation_places_deterministic_stratified_chests_and_carves_c
 		baseline.world,
 		result.item_chest_spawns + result.perk_geode_spawns,
 		3,
-		air_id
+		air_id,
+		_barrel_chamber_offsets(result.explosive_barrel_spawns)
 	)
 
 	for row in range(profile.depth - 2, profile.depth):
@@ -147,6 +148,21 @@ func _spawn_signature(spawns: Array[GeneratedItemChestSpawn]) -> PackedStringArr
 	return result
 
 
+## Generated barrels carve their own smaller chambers in the same comparison window.
+func _barrel_chamber_offsets(spawns: Array[GeneratedExplosiveBarrelSpawn]) -> Dictionary:
+	var carved_offsets := {}
+	for spawn in spawns:
+		var radius := spawn.definition.chamber_radius
+		var center := HexCoord.from_offset_odd_q(spawn.anchor_offset.x, spawn.anchor_offset.y)
+		var center_y := center.to_world_position(1.0).y
+		for delta_q in range(-radius, radius + 1):
+			for delta_r in range(maxi(-radius, -delta_q - radius), mini(radius, -delta_q + radius) + 1):
+				var cell := center.add(HexCoord.new(delta_q, delta_r))
+				if cell.to_world_position(1.0).y <= center_y + 0.0001:
+					carved_offsets[cell.to_offset_odd_q()] = true
+	return carved_offsets
+
+
 func _chamber_is_in_bounds(world: WorldGrid, anchor: Vector2i, radius: int) -> bool:
 	var center := HexCoord.from_offset_odd_q(anchor.x, anchor.y)
 	for delta_q in range(-radius, radius + 1):
@@ -164,9 +180,10 @@ func _assert_chambers_only_carve_their_upper_halves(
 	baseline: WorldGrid,
 	spawns: Array[GeneratedItemChestSpawn],
 	radius: int,
-	air_id: int
+	air_id: int,
+	other_carved_offsets: Dictionary = {}
 ) -> void:
-	var carved_offsets := {}
+	var carved_offsets := other_carved_offsets.duplicate()
 	for spawn in spawns:
 		var center := HexCoord.from_offset_odd_q(spawn.anchor_offset.x, spawn.anchor_offset.y)
 		var center_y := center.to_world_position(1.0).y

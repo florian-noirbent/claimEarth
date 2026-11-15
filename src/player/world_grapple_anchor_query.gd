@@ -1,10 +1,11 @@
-## Queries hookable terrain from committed world data for grapple attachment.
+## Queries hookable terrain and registered grapple targets for grapple attachment.
 class_name WorldGrappleAnchorQuery
 extends GrappleAnchorQuery
 
 
 var _world: WorldGrid
 var _terrain_registry: TerrainRegistry
+var _grapple_targets: GrappleTargetRegistry
 var _hex_radius := 16.0
 var _probe_step := 8.0
 var _corners := PackedVector2Array()
@@ -23,6 +24,11 @@ func configure(
 	_corners = HexMetrics.corners(hex_radius)
 
 
+## Moving targets in this registry are hit by the hook ray alongside terrain; null disables them.
+func configure_targets(grapple_targets: GrappleTargetRegistry) -> void:
+	_grapple_targets = grapple_targets
+
+
 func find_anchor(origin: Vector2, target: Vector2) -> GrappleAnchor:
 	if _world == null or _terrain_registry == null:
 		return null
@@ -33,7 +39,30 @@ func find_anchor(origin: Vector2, target: Vector2) -> GrappleAnchor:
 		return null
 
 	var direction := delta / distance
+	var target_anchor := _nearest_target_anchor(origin, direction, distance)
+	# Terrain only needs probing up to the nearest target, and blocks it when hit first.
 	var probe_distance := distance
+	if target_anchor != null:
+		probe_distance = origin.distance_to(target_anchor.position)
+	var terrain_anchor := _first_terrain_anchor(origin, direction, probe_distance)
+	if terrain_anchor == null:
+		return target_anchor
+	if target_anchor != null and origin.distance_to(terrain_anchor.position) > probe_distance:
+		return target_anchor
+	return terrain_anchor
+
+
+func is_anchor_valid(anchor: GrappleAnchor) -> bool:
+	if anchor == null:
+		return false
+	if anchor.is_target():
+		return anchor.target.is_valid()
+	if _world == null or _terrain_registry == null:
+		return false
+	return _is_hookable_cell(anchor.cell)
+
+
+func _first_terrain_anchor(origin: Vector2, direction: Vector2, probe_distance: float) -> GrappleAnchor:
 	var previous_position := origin
 	var travel := _probe_step
 	while travel <= probe_distance:
@@ -53,10 +82,45 @@ func find_anchor(origin: Vector2, target: Vector2) -> GrappleAnchor:
 	)
 
 
-func is_anchor_valid(anchor: GrappleAnchor) -> bool:
-	if anchor == null or _world == null or _terrain_registry == null:
-		return false
-	return _is_hookable_cell(anchor.cell)
+## Closed-form ray/circle test against each valid target; returns the nearest contact.
+func _nearest_target_anchor(origin: Vector2, direction: Vector2, distance: float) -> GrappleAnchor:
+	if _grapple_targets == null:
+		return null
+	var best_target: GrappleTarget
+	var best_travel := INF
+	for candidate in _grapple_targets.targets():
+		if candidate == null or not candidate.is_valid():
+			continue
+		var travel := _ray_circle_travel(origin, direction, distance, candidate.anchor_position(), candidate.radius())
+		if travel < best_travel:
+			best_travel = travel
+			best_target = candidate
+	if best_target == null:
+		return null
+	return GrappleAnchor.new(Vector2i(-1, -1), origin + direction * best_travel, best_target)
+
+
+## Returns the travel along a unit ray where it enters the circle, or INF when it misses within distance.
+func _ray_circle_travel(
+	origin: Vector2,
+	direction: Vector2,
+	distance: float,
+	center: Vector2,
+	circle_radius: float
+) -> float:
+	if circle_radius <= 0.0:
+		return INF
+	var to_center := center - origin
+	var along := direction.dot(to_center)
+	var outside := to_center.length_squared() - circle_radius * circle_radius
+	if outside <= 0.0:
+		# Starting inside the circle hits it only when aiming toward its center.
+		return 0.0 if along > 0.0 else INF
+	var discriminant := along * along - outside
+	if along <= 0.0 or discriminant < 0.0:
+		return INF
+	var travel := along - sqrt(discriminant)
+	return travel if travel <= distance else INF
 
 
 func _anchor_for_cell(cell: Vector2i, segment_start: Vector2, segment_end: Vector2) -> GrappleAnchor:

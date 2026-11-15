@@ -48,3 +48,30 @@ func test_long_idle_run_keeps_scene_sizes_bounded_and_player_physics_active() ->
 
 	GameplayAssertionsScript.assert_no_scene_leaks(self, app_root.world_presenter, 15)
 	assert_gte(app_root.get_player().physics_frame_count() - start_physics_frames, 250)
+
+
+func test_resting_generated_barrels_run_no_physics_steps() -> void:
+	var scene := load("res://scenes/app/main.tscn") as PackedScene
+	var app_root := scene.instantiate() as AppRoot
+	app_root.configure_save_path_for_test("user://gut_perf_runtime.json")
+	app_root.set_test_mode(true)
+	add_child_autofree(app_root)
+	await wait_process_frames(1)
+
+	app_root.start_run_for_test(SeedUtils.seed_from_text("perf-barrels"))
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.PLAYING and app_root.get_player() != null
+	, 1.0)
+	await ScenarioDriverScript.wait_physics_frames(30)
+
+	var barrel_count := 0
+	for child in app_root.item_controller.get_children():
+		var barrel := child as ExplosiveBarrel
+		if barrel == null:
+			continue
+		barrel_count += 1
+		assert_true(barrel.is_sleeping(), "A resting generated barrel sleeps")
+		assert_false(barrel.is_physics_processing(), "A sleeping barrel runs no physics steps")
+		assert_false(barrel.explosive.is_physics_processing(), "An unarmed explosive runs no physics steps")
+	assert_gt(barrel_count, 0)
+	assert_eq(app_root.item_controller.explosive_barrel_count(), barrel_count)

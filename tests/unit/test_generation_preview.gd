@@ -290,3 +290,35 @@ func test_preview_rebuilds_non_interactive_item_chests() -> void:
 	preview.request_preview(_default_profile(), 24680)
 	await wait_process_frames(3)
 	assert_eq(preview._item_chest_root.get_child_count(), 19)
+
+
+func test_preview_rebuilds_non_interactive_explosive_barrels() -> void:
+	var host := Control.new()
+	host.custom_minimum_size = Vector2(1200, 800)
+	host.size = Vector2(1200, 800)
+	add_child_autofree(host)
+	var preview = GenerationPreviewScript.new()
+	preview.size = Vector2(900, 700)
+	host.add_child(preview)
+	await wait_process_frames(1)
+
+	var expected := WorldGenerator.new().generate(_default_profile(), FixtureLoader.terrain_registry(), 24680)
+	assert_gt(expected.explosive_barrel_spawns.size(), 0)
+	preview.request_preview(_default_profile(), 24680)
+	preview.activate()
+	await wait_process_frames(3)
+	assert_not_null(preview._explosive_barrel_root)
+	assert_eq(preview._explosive_barrel_root.get_child_count(), expected.explosive_barrel_spawns.size())
+	for child in preview._explosive_barrel_root.get_children():
+		assert_true(child is ExplosiveBarrel)
+		var barrel := child as ExplosiveBarrel
+		assert_false(barrel.is_active())
+		assert_false(barrel.is_physics_processing())
+		assert_false(barrel.explosive.is_physics_processing())
+		assert_true(barrel.sprite.visible)
+		assert_false(barrel.body.visible, "The shared body's debug polygon must not cover the sprite")
+		assert_false(barrel.outline.visible)
+
+	preview.request_preview(_default_profile(), 24680)
+	await wait_process_frames(3)
+	assert_eq(preview._explosive_barrel_root.get_child_count(), expected.explosive_barrel_spawns.size())
