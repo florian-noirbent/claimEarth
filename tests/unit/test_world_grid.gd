@@ -12,6 +12,47 @@ func test_grid_initializes_packed_cell_buffer_and_texture() -> void:
 	assert_eq(grid.texture().get_height(), 2)
 
 
+func test_initial_fill_matches_cell_by_cell_writes() -> void:
+	# 35 cells: the buffer is not a power-of-two multiple of one cell.
+	var dimensions := WorldDimensions.new(7, 5)
+	for cell_id: int in [0, 3, 15, 20]:
+		var filled := WorldGrid.new(dimensions, cell_id)
+		var written := WorldGrid.new(dimensions, 1 if cell_id == 0 else 0)
+		for index in range(dimensions.cell_count()):
+			written.set_committed_by_index(index, cell_id)
+
+		assert_eq(filled.cell_bytes.size(), dimensions.cell_count() * WorldGrid.BYTES_PER_CELL)
+		assert_eq(filled.copy_rgba_bytes(), written.copy_rgba_bytes(), "terrain id %d" % cell_id)
+		assert_eq(filled.cell_image.get_data(), filled.cell_bytes)
+
+
+func test_fill_committed_overwrites_every_cell_component_and_refreshes_the_texture() -> void:
+	var dimensions := WorldDimensions.new(7, 5)
+	var grid := WorldGrid.new(dimensions, 2)
+	grid.set_committed_components_by_offset(6, 4, 4, 255, 5, 200)
+	grid.set_committed_light_by_offset(0, 0, 180)
+	grid.set_committed_light_by_offset(6, 4, 90)
+	var revision := grid.texture_revision
+
+	grid.fill_committed(6, 63)
+
+	var expected := PackedByteArray()
+	for index in range(dimensions.cell_count()):
+		expected.append_array(PackedByteArray([6, 63, 0, 0]))
+	assert_eq(grid.cell_bytes, expected)
+	assert_eq(grid.cell_image.get_data(), expected)
+	assert_eq(grid.texture_revision, revision + 1)
+
+	grid.fill_committed(0)
+	assert_eq(grid.get_committed_quantity_by_offset(3, 2), WorldGrid.AIR_QUANTITY)
+	grid.fill_committed(3)
+	assert_eq(grid.get_committed_quantity_by_offset(3, 2), WorldGrid.DEFAULT_QUANTITY)
+	grid.fill_committed(20, 300)
+	assert_eq(grid.get_committed_by_offset(6, 4), WorldGrid.PRIMARY_HEX_ID_MASK)
+	assert_eq(grid.get_committed_quantity_by_offset(6, 4), 255)
+	assert_eq(grid.cell_bytes.size(), dimensions.cell_count() * WorldGrid.BYTES_PER_CELL)
+
+
 func test_committed_writes_update_packed_snapshot() -> void:
 	var grid := WorldGrid.new(WorldDimensions.new(2, 2), 1)
 	grid.set_committed_by_offset(1, 1, 4, 128)

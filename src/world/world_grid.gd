@@ -25,9 +25,7 @@ var texture_revision := 0
 func _init(dimensions_value: WorldDimensions, default_cell_id: int = 0) -> void:
 	dimensions = dimensions_value
 	cell_bytes = PackedByteArray()
-	cell_bytes.resize(dimensions.cell_count() * BYTES_PER_CELL)
-	for index in range(dimensions.cell_count()):
-		_write_cell_bytes(index, default_cell_id, _default_quantity_for_cell(default_cell_id))
+	_fill_cell_bytes(default_cell_id, _default_quantity_for_cell(default_cell_id))
 	_rebuild_texture()
 
 
@@ -156,9 +154,7 @@ func set_committed_light_by_offset(col: int, row: int, light: int) -> void:
 
 
 func fill_committed(cell_id: int, quantity: int = -1) -> void:
-	var resolved_quantity := _resolved_quantity(cell_id, quantity)
-	for index in range(dimensions.cell_count()):
-		_write_cell_bytes(index, cell_id, resolved_quantity)
+	_fill_cell_bytes(cell_id, _resolved_quantity(cell_id, quantity))
 	_rebuild_texture()
 
 
@@ -272,6 +268,17 @@ func _write_cell_bytes(
 	cell_bytes[offset + CELL_QUANTITY] = clampi(quantity, 0, 255)
 	cell_bytes[offset + CELL_LIGHT] = DEFAULT_LIGHTING
 	cell_bytes[offset + CELL_SECONDARY_QUANTITY] = resolved_secondary_quantity
+
+
+## Writes one cell and doubles it across the buffer, so a uniform fill costs a few
+## packed-array copies instead of one script call per cell.
+func _fill_cell_bytes(cell_id: int, quantity: int) -> void:
+	var byte_count := dimensions.cell_count() * BYTES_PER_CELL
+	cell_bytes.resize(BYTES_PER_CELL)
+	_write_cell_bytes(0, cell_id, quantity)
+	while cell_bytes.size() < byte_count:
+		var copied_byte_count := mini(cell_bytes.size(), byte_count - cell_bytes.size())
+		cell_bytes.append_array(cell_bytes.slice(0, copied_byte_count))
 
 
 func _rebuild_texture() -> void:
