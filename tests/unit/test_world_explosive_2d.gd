@@ -35,6 +35,28 @@ func test_only_cells_intersecting_the_configured_footprint_arm() -> void:
 	assert_true(explosive.try_arm_from_lethal_cells([Vector2i.ZERO], 16.0))
 
 
+func test_physics_steps_run_only_while_an_active_chain_fuse_burns() -> void:
+	var explosive := WorldExplosive2D.new()
+	add_child_autofree(explosive)
+	assert_false(explosive.is_physics_processing(), "An unarmed explosive must not step after entering the tree")
+	var definition := load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition
+	explosive.configure(definition)
+	assert_false(explosive.is_physics_processing())
+
+	assert_true(explosive.try_arm_from_lethal_cells([Vector2i.ZERO], 16.0))
+	assert_true(explosive.is_physics_processing())
+	explosive.set_active(false)
+	assert_false(explosive.is_physics_processing())
+	explosive.set_active(true)
+	assert_true(explosive.is_physics_processing())
+	explosive.disarm()
+	assert_false(explosive.is_physics_processing())
+
+	assert_true(explosive.try_arm_from_lethal_cells([Vector2i.ZERO], 16.0))
+	assert_true(explosive.request_immediate_detonation())
+	assert_false(explosive.is_physics_processing())
+
+
 func test_pausing_freezes_chain_fuse_and_definition_validation_rejects_bad_radii() -> void:
 	var explosive := WorldExplosive2D.new()
 	add_child_autofree(explosive)

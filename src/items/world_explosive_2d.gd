@@ -21,6 +21,10 @@ var _active := true
 var _host: Node
 
 
+func _ready() -> void:
+	_update_processing()
+
+
 func configure(
 	definition_value: ExplosionDefinition,
 	local_footprint: PackedVector2Array = PackedVector2Array(),
@@ -31,12 +35,12 @@ func configure(
 	_host = host_value
 	_state = State.UNARMED
 	_chain_fuse_remaining = 0.0
-	set_physics_process(_active)
+	_update_processing()
 
 
 func set_active(is_active: bool) -> void:
 	_active = is_active
-	set_physics_process(is_active)
+	_update_processing()
 
 
 func try_arm_from_lethal_cells(lethal_cells: Array[Vector2i], hex_radius: float) -> bool:
@@ -44,14 +48,11 @@ func try_arm_from_lethal_cells(lethal_cells: Array[Vector2i], hex_radius: float)
 		return false
 	_state = State.CHAIN_ARMED
 	_chain_fuse_remaining = definition.chain_fuse_seconds
+	_update_processing()
 	chain_armed.emit(self)
 	if _chain_fuse_remaining <= 0.0:
 		request_immediate_detonation()
 	return true
-
-
-func try_arm_from_destructive_core_cells(cells: Array[Vector2i], hex_radius: float) -> bool:
-	return try_arm_from_lethal_cells(cells, hex_radius)
 
 
 func request_immediate_detonation() -> bool:
@@ -59,6 +60,7 @@ func request_immediate_detonation() -> bool:
 		return false
 	_state = State.CONSUMED
 	_chain_fuse_remaining = 0.0
+	_update_processing()
 	detonation_requested.emit(self)
 	return true
 
@@ -71,6 +73,7 @@ func disarm() -> void:
 	if _state == State.CHAIN_ARMED:
 		_state = State.UNARMED
 		_chain_fuse_remaining = 0.0
+		_update_processing()
 
 
 func is_consumed() -> bool:
@@ -91,6 +94,11 @@ func _physics_process(delta: float) -> void:
 	_chain_fuse_remaining = maxf(0.0, _chain_fuse_remaining - delta)
 	if _chain_fuse_remaining <= 0.0:
 		request_immediate_detonation()
+
+
+## Only a running chain fuse needs physics steps.
+func _update_processing() -> void:
+	set_physics_process(_active and _state == State.CHAIN_ARMED)
 
 
 func _overlaps_any_cell(cells: Array[Vector2i], hex_radius: float) -> bool:
