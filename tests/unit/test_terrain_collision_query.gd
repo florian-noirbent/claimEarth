@@ -13,14 +13,32 @@ func test_circle_does_not_overlap_air() -> void:
 	assert_false(query.circle_overlaps_solid(HexMetrics.center_for_offset(2, 2, 16.0), 14.0))
 
 
-func test_out_of_bounds_cells_are_solid_at_every_map_edge() -> void:
+func test_out_of_bounds_cells_are_solid_at_the_sides_and_bottom_and_open_above() -> void:
 	var query = _query_for_world(WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air")))
 
 	assert_true(query.is_solid_cell(-1, 2))
 	assert_true(query.is_solid_cell(5, 2))
-	assert_true(query.is_solid_cell(2, -1))
 	assert_true(query.is_solid_cell(2, 5))
-	assert_true(query.is_solid_cell(-1, -1))
+	assert_false(query.is_solid_cell(2, -1), "The sky above the top row is open")
+	assert_false(query.is_solid_cell(4, -30))
+	assert_true(query.is_solid_cell(-1, -1), "The side walls continue above the map")
+	assert_true(query.is_solid_cell(5, -30))
+
+
+func test_body_stands_on_the_top_row_and_stays_between_the_side_walls_above_it() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Stone"))
+	var query = _query_for_world(world)
+	var solver = TerrainBodyMotionSolverScript.new()
+	solver.configure(query)
+	var above_top := HexMetrics.center_for_offset(2, -2, 16.0)
+
+	assert_false(query.circle_overlaps_solid(above_top, 14.0))
+	var landed = solver.move_circle(above_top, Vector2(0.0, 600.0), 0.5, 14.0, 14.0, 8.0, false)
+	assert_true(landed.grounded)
+	assert_lt(landed.position.y, HexMetrics.center_for_offset(2, 0, 16.0).y)
+
+	var pushed = solver.move_circle(above_top, Vector2(-2000.0, 0.0), 0.5, 14.0, 14.0, 8.0, false)
+	assert_gt(pushed.position.x, HexMetrics.center_for_offset(0, -2, 16.0).x - 16.0)
 
 
 func test_circle_and_polygon_collide_with_virtual_map_edge_cells() -> void:
@@ -293,8 +311,8 @@ func test_cell_states_flag_solid_air_and_virtual_edge_cells() -> void:
 	assert_eq(query.cell_states(Rect2i(0, 0, 0, 0)), PackedByteArray())
 	assert_eq(
 		query.cell_states(Rect2i(0, -1, 2, 5)),
-		PackedByteArray([solid, solid, 0, solid, 0, 0, 0, 0, solid, solid]),
-		"Rows above and below the world are virtual solid cells"
+		PackedByteArray([0, 0, 0, solid, 0, 0, 0, 0, solid, solid]),
+		"The row above the world is open sky and the row below is virtual solid cells"
 	)
 
 	query.set_ignored_solid_ids(PackedInt32Array([FixtureLoader.terrain_id("Stone")]))
