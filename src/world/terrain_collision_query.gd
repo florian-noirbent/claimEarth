@@ -3,10 +3,16 @@ class_name TerrainCollisionQuery
 extends RefCounted
 
 
+## Slack added to candidate ranges so a cell exactly on a range edge is never skipped.
+const CANDIDATE_MARGIN := 0.01
+const CELL_STATE_SOLID := 1
+const CELL_STATE_AIR := 2
+
 var world: WorldGrid
 var metadata: CompiledTerrainData
 var hex_radius := 16.0
 var _corners := PackedVector2Array()
+var _hex_polygon := PackedVector2Array()
 var _ignored_solid_ids := {}
 
 
@@ -15,6 +21,7 @@ func configure(world_value: WorldGrid, metadata_value: CompiledTerrainData, hex_
 	metadata = metadata_value
 	hex_radius = hex_radius_value
 	_corners = HexMetrics.corners(hex_radius)
+	_hex_polygon = _corners.duplicate()
 
 
 func is_configured() -> bool:
@@ -32,12 +39,11 @@ func is_solid_cell(col: int, row: int) -> bool:
 		return false
 	if not world.dimensions.is_in_bounds_offset(col, row):
 		return true
-	if _ignored_solid_ids.has(world.get_committed_by_offset(col, row)):
+	var index := world.dimensions.offset_to_index(col, row)
+	var cell_id := world.get_committed_by_index(index)
+	if _ignored_solid_ids.has(cell_id):
 		return false
-	return metadata.is_solid(
-		world.get_committed_by_offset(col, row),
-		world.get_committed_quantity_by_offset(col, row)
-	)
+	return metadata.is_solid(cell_id, world.get_committed_quantity_by_index(index))
 
 
 func circle_overlaps_solid(position: Vector2, radius: float) -> bool:
@@ -64,45 +70,77 @@ func convex_polygon_overlaps_solid(polygon: PackedVector2Array) -> bool:
 	if not is_configured() or polygon.size() < 3:
 		return false
 	var bounds := _polygon_bounds(polygon)
-	for cell in _candidate_cells_for_bounds(bounds):
-		if not is_solid_cell(cell.x, cell.y):
-			continue
-		var hex_polygon := PackedVector2Array()
-		var cell_center := HexMetrics.center_for_offset(cell.x, cell.y, hex_radius)
-		for corner in _corners:
-			hex_polygon.append(cell_center + corner)
-		if _convex_polygons_overlap(polygon, hex_polygon):
-			return true
+	var reach := _hex_half_extent()
+	var minimum := bounds.position - reach
+	var maximum := bounds.end + reach
+	var cells := _cells_with_center_in(minimum, maximum)
+	for row in range(cells.position.y, cells.end.y):
+		for col in range(cells.position.x, cells.end.x):
+			var cell_center := HexMetrics.center_for_offset(col, row, hex_radius)
+			if cell_center.y < minimum.y or cell_center.y > maximum.y:
+				continue
+			if not is_solid_cell(col, row):
+				continue
+			for index in _corners.size():
+				_hex_polygon[index] = cell_center + _corners[index]
+			if _convex_polygons_overlap(polygon, _hex_polygon):
+				return true
 	return false
 
 
-func _candidate_cells_for_bounds(bounds: Rect2) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	if world == null:
-		return cells
-	var center := HexMetrics.offset_for_world(bounds.get_center(), hex_radius)
-	var half_cols := ceili(bounds.size.x * 0.5 / maxf(hex_radius * 1.5, 1.0)) + 2
-	var half_rows := ceili(bounds.size.y * 0.5 / maxf(hex_radius * sqrt(3.0), 1.0)) + 2
-	var min_col := center.x - half_cols
-	var max_col := center.x + half_cols
-	var min_row := center.y - half_rows
-	var max_row := center.y + half_rows
-	for row in range(min_row, max_row + 1):
-		for col in range(min_col, max_col + 1):
-			cells.append(Vector2i(col, row))
-	return cells
+## Returns the offset-cell range containing every cell whose hexagon can touch the world rectangle.
+func cells_touching_rect(rect: Rect2) -> Rect2i:
+	var reach := _hex_half_extent()
+	return _cells_with_center_in(rect.position - reach, rect.end + reach)
+
+
+## Returns one byte per cell of the range, row by row, flagging solid cells and optionally Air cells.
+func cell_states(cells: Rect2i, include_air: bool = false) -> PackedByteArray:
+	var states := PackedByteArray()
+	if not is_configured():
+		return states
+	states.resize(maxi(0, cells.size.x) * maxi(0, cells.size.y))
+	var dimensions := world.dimensions
+	var width := dimensions.width
+	var depth := dimensions.depth
+	var air_id := metadata.air_id
+	var state_index := 0
+	for row in range(cells.position.y, cells.end.y):
+		var row_in_bounds := row >= 0 and row < depth
+		for col in range(cells.position.x, cells.end.x):
+			# Cells outside the world collide like solid terrain, as in is_solid_cell.
+			var state := CELL_STATE_SOLID
+			if row_in_bounds and col >= 0 and col < width:
+				var index := dimensions.offset_to_index(col, row)
+				var cell_id := world.get_committed_by_index(index)
+				if _ignored_solid_ids.has(cell_id) or not metadata.is_solid(
+					cell_id,
+					world.get_committed_quantity_by_index(index)
+				):
+					state = 0
+				if include_air and cell_id == air_id:
+					state |= CELL_STATE_AIR
+			states[state_index] = state
+			state_index += 1
+	return states
 
 
 func circle_contacts(position: Vector2, radius: float) -> Array[Dictionary]:
 	var contacts: Array[Dictionary] = []
 	if not is_configured():
 		return contacts
-	for cell in _candidate_cells(position, radius):
-		if not is_solid_cell(cell.x, cell.y):
-			continue
-		var contact := _circle_hex_contact(position, radius, cell)
-		if bool(contact.get("colliding", false)):
-			contacts.append(contact)
+	var reach := radius + hex_radius + CANDIDATE_MARGIN
+	var reach_squared := reach * reach
+	var cells := _cells_with_center_in(position - Vector2(reach, reach), position + Vector2(reach, reach))
+	for row in range(cells.position.y, cells.end.y):
+		for col in range(cells.position.x, cells.end.x):
+			if position.distance_squared_to(HexMetrics.center_for_offset(col, row, hex_radius)) > reach_squared:
+				continue
+			if not is_solid_cell(col, row):
+				continue
+			var contact := _circle_hex_contact(position, radius, Vector2i(col, row))
+			if bool(contact.get("colliding", false)):
+				contacts.append(contact)
 	return contacts
 
 
@@ -180,20 +218,19 @@ func _clearance_candidate_precedes(candidate: Vector2, current: Vector2, origin:
 	return candidate.x < current.x
 
 
-func _candidate_cells(position: Vector2, radius: float) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	if world == null:
-		return cells
-	var center := HexMetrics.offset_for_world(position, hex_radius)
-	var search_radius := ceili((radius + hex_radius) / maxf(hex_radius * 0.75, 1.0)) + 2
-	var min_col := center.x - search_radius
-	var max_col := center.x + search_radius
-	var min_row := center.y - search_radius
-	var max_row := center.y + search_radius
-	for row in range(min_row, max_row + 1):
-		for col in range(min_col, max_col + 1):
-			cells.append(Vector2i(col, row))
-	return cells
+func _hex_half_extent() -> Vector2:
+	return Vector2(hex_radius + CANDIDATE_MARGIN, hex_radius * sqrt(3.0) * 0.5 + CANDIDATE_MARGIN)
+
+
+## Returns the offset-cell range containing every cell whose center lies inside the rectangle.
+func _cells_with_center_in(minimum: Vector2, maximum: Vector2) -> Rect2i:
+	var column_width := maxf(hex_radius * 1.5, 0.001)
+	var row_height := maxf(hex_radius * sqrt(3.0), 0.001)
+	var min_col := ceili(minimum.x / column_width)
+	var max_col := floori(maximum.x / column_width)
+	var min_row := ceili(minimum.y / row_height - 0.5)
+	var max_row := floori(maximum.y / row_height)
+	return Rect2i(min_col, min_row, max_col - min_col + 1, max_row - min_row + 1)
 
 
 func _circle_hex_contact(position: Vector2, radius: float, cell: Vector2i) -> Dictionary:

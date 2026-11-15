@@ -228,13 +228,12 @@ func copy_rgba_bytes() -> PackedByteArray:
 
 func copy_rgba_region(region: Rect2i) -> PackedByteArray:
 	var result := PackedByteArray()
+	if region.size.x <= 0:
+		return result
+	var row_byte_count := region.size.x * BYTES_PER_CELL
 	for row in range(region.position.y, region.end.y):
-		for col in range(region.position.x, region.end.x):
-			var offset := _byte_offset(dimensions.offset_to_index(col, row))
-			result.append(cell_bytes[offset + CELL_HEX_IDS])
-			result.append(cell_bytes[offset + CELL_QUANTITY])
-			result.append(cell_bytes[offset + CELL_LIGHT])
-			result.append(cell_bytes[offset + CELL_SECONDARY_QUANTITY])
+		var row_start := _byte_offset(dimensions.offset_to_index(region.position.x, row))
+		result.append_array(cell_bytes.slice(row_start, row_start + row_byte_count))
 	return result
 
 

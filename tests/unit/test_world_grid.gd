@@ -60,6 +60,23 @@ func test_copy_committed_region_returns_row_major_bytes() -> void:
 	assert_eq(grid.copy_rgba_region(Rect2i(1, 0, 1, 1)), PackedByteArray([1, 64, 0, 0]))
 
 
+func test_copy_rgba_region_returns_whole_cells_row_by_row() -> void:
+	var grid := WorldGrid.new(WorldDimensions.new(3, 3), 0)
+	grid.set_committed_by_offset(1, 1, 3, 192)
+	grid.set_committed_components_by_offset(2, 1, 4, 127, 5, 73)
+	grid.set_committed_light_by_offset(2, 2, 180)
+
+	assert_eq(grid.copy_rgba_region(Rect2i(1, 1, 2, 2)), PackedByteArray([
+		3, 192, 0, 0,
+		0x54, 127, 0, 73,
+		0, 64, 0, 0,
+		0, 64, 180, 0,
+	]))
+	assert_eq(grid.copy_rgba_region(Rect2i(0, 0, 3, 3)), grid.copy_rgba_bytes())
+	assert_true(grid.copy_rgba_region(Rect2i(1, 1, 0, 2)).is_empty())
+	assert_true(grid.copy_rgba_region(Rect2i(1, 1, 2, 0)).is_empty())
+
+
 func test_terrain_write_preserves_location_lighting() -> void:
 	var grid := WorldGrid.new(WorldDimensions.new(1, 1), 0)
 	grid.set_committed_light_by_offset(0, 0, 180)

@@ -3,6 +3,8 @@ extends GutTest
 
 const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_query.gd")
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
+## Rows and columns beyond every map edge that the brute-force references scan.
+const REFERENCE_BORDER_CELLS := 5
 
 
 func test_circle_does_not_overlap_air() -> void:
@@ -212,9 +214,172 @@ func test_step_up_is_skipped_when_not_allowed() -> void:
 	assert_gt(blocked.position.y, stepped.position.y)
 
 
-func _query_for_world(world: WorldGrid):
+func test_circle_contacts_match_brute_force_reference_inside_and_around_the_map() -> void:
+	for hex_radius: float in [8.0, 16.0]:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 20260511
+		var world := _seeded_world(rng)
+		var query = _query_for_world(world, hex_radius)
+		var mismatches := PackedStringArray()
+		for _sample in 250:
+			var position := _seeded_position(rng, world, hex_radius)
+			var radius := rng.randf_range(0.1, 2.5) * hex_radius
+			var expected := _brute_force_circle_contacts(query, position, radius)
+			if query.circle_contacts(position, radius) != expected:
+				mismatches.append("%s r=%s" % [position, radius])
+
+		assert_eq(mismatches, PackedStringArray(), "hex radius %s" % hex_radius)
+
+
+func test_polygon_overlap_matches_brute_force_reference_inside_and_around_the_map() -> void:
+	for hex_radius: float in [8.0, 16.0]:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 20260512
+		var world := _seeded_world(rng)
+		var query = _query_for_world(world, hex_radius)
+		var mismatches := PackedStringArray()
+		var overlap_count := 0
+		for sample in 200:
+			var polygon := _seeded_polygon(rng, world, hex_radius, sample % 2 == 0)
+			var expected := _brute_force_polygon_overlap(query, polygon)
+			overlap_count += 1 if expected else 0
+			if query.convex_polygon_overlaps_solid(polygon) != expected:
+				mismatches.append(str(polygon))
+
+		assert_eq(mismatches, PackedStringArray(), "hex radius %s" % hex_radius)
+		assert_between(overlap_count, 20, 180, "The sample must exercise both outcomes")
+
+
+func test_cells_touching_rect_covers_every_cell_overlapping_the_rectangle() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260513
+	var world := WorldGrid.new(WorldDimensions.new(10, 8), FixtureLoader.terrain_id("Air"))
+	var query = _query_for_world(world)
+	var corners := HexMetrics.corners(16.0)
+	for _sample in 40:
+		var rect := Rect2(
+			_seeded_position(rng, world, 16.0),
+			Vector2(rng.randf_range(0.0, 48.0), rng.randf_range(0.0, 48.0))
+		)
+		var rect_polygon := PackedVector2Array([
+			rect.position,
+			Vector2(rect.end.x, rect.position.y),
+			rect.end,
+			Vector2(rect.position.x, rect.end.y),
+		])
+		var cells: Rect2i = query.cells_touching_rect(rect)
+		for row in range(-REFERENCE_BORDER_CELLS, world.dimensions.depth + REFERENCE_BORDER_CELLS):
+			for col in range(-REFERENCE_BORDER_CELLS, world.dimensions.width + REFERENCE_BORDER_CELLS):
+				var hex_polygon := PackedVector2Array()
+				for corner in corners:
+					hex_polygon.append(HexMetrics.center_for_offset(col, row, 16.0) + corner)
+				if query._convex_polygons_overlap(rect_polygon, hex_polygon) and not cells.has_point(Vector2i(col, row)):
+					fail_test("Cell (%d, %d) overlaps %s but is outside %s" % [col, row, rect, cells])
+					return
+	pass_test("Every overlapping cell is inside the reported range")
+
+
+func test_cell_states_flag_solid_air_and_virtual_edge_cells() -> void:
+	var world := WorldGrid.new(WorldDimensions.new(4, 3), FixtureLoader.terrain_id("Air"))
+	world.set_committed_by_offset(1, 0, FixtureLoader.terrain_id("Stone"))
+	world.set_committed_by_offset(2, 0, FixtureLoader.terrain_id("Water"))
+	var query = _query_for_world(world)
+	var cells := Rect2i(-1, 0, 4, 1)
+	var solid: int = TerrainCollisionQueryScript.CELL_STATE_SOLID
+	var air: int = TerrainCollisionQueryScript.CELL_STATE_AIR
+
+	assert_eq(query.cell_states(cells), PackedByteArray([solid, 0, solid, 0]))
+	assert_eq(query.cell_states(cells, true), PackedByteArray([solid, air, solid, 0]))
+	assert_eq(query.cell_states(Rect2i(0, 0, 0, 0)), PackedByteArray())
+	assert_eq(
+		query.cell_states(Rect2i(0, -1, 2, 5)),
+		PackedByteArray([solid, solid, 0, solid, 0, 0, 0, 0, solid, solid]),
+		"Rows above and below the world are virtual solid cells"
+	)
+
+	query.set_ignored_solid_ids(PackedInt32Array([FixtureLoader.terrain_id("Stone")]))
+	assert_eq(query.cell_states(cells, true), PackedByteArray([solid, air, 0, 0]))
+
+
+func _seeded_world(rng: RandomNumberGenerator) -> WorldGrid:
+	var world := WorldGrid.new(WorldDimensions.new(10, 8), FixtureLoader.terrain_id("Air"))
+	var stone_id := FixtureLoader.terrain_id("Stone")
+	var water_id := FixtureLoader.terrain_id("Water")
+	for row in world.dimensions.depth:
+		for col in world.dimensions.width:
+			var roll := rng.randf()
+			if roll < 0.3:
+				world.set_committed_by_offset(col, row, stone_id)
+			elif roll < 0.4:
+				world.set_committed_by_offset(col, row, water_id)
+	return world
+
+
+## Samples positions inside the map and up to three hexes beyond every edge, including negative coordinates.
+func _seeded_position(rng: RandomNumberGenerator, world: WorldGrid, hex_radius: float) -> Vector2:
+	var far_corner := HexMetrics.center_for_offset(world.dimensions.width - 1, world.dimensions.depth - 1, hex_radius)
+	var slack := hex_radius * 3.0
+	return Vector2(
+		rng.randf_range(-slack, far_corner.x + slack),
+		rng.randf_range(-slack, far_corner.y + slack)
+	)
+
+
+func _seeded_polygon(
+	rng: RandomNumberGenerator,
+	world: WorldGrid,
+	hex_radius: float,
+	rectangle: bool
+) -> PackedVector2Array:
+	var center := _seeded_position(rng, world, hex_radius)
+	var polygon := PackedVector2Array()
+	if rectangle:
+		var half_size := Vector2(rng.randf_range(0.1, 2.0), rng.randf_range(0.1, 2.0)) * hex_radius
+		var transform := Transform2D(rng.randf_range(-PI, PI), center)
+		for corner in [Vector2(-1.0, -1.0), Vector2(1.0, -1.0), Vector2(1.0, 1.0), Vector2(-1.0, 1.0)]:
+			polygon.append(transform * (corner * half_size))
+	else:
+		var start_angle := rng.randf_range(-PI, PI)
+		for corner_index in 3:
+			var angle := start_angle + TAU * float(corner_index) / 3.0 + rng.randf_range(-0.5, 0.5)
+			polygon.append(center + Vector2.from_angle(angle) * rng.randf_range(0.1, 2.0) * hex_radius)
+	return polygon
+
+
+## Tests every cell of the map and its border row by row, without any candidate range.
+func _brute_force_circle_contacts(query, position: Vector2, radius: float) -> Array[Dictionary]:
+	var contacts: Array[Dictionary] = []
+	var dimensions: WorldDimensions = query.world.dimensions
+	for row in range(-REFERENCE_BORDER_CELLS, dimensions.depth + REFERENCE_BORDER_CELLS):
+		for col in range(-REFERENCE_BORDER_CELLS, dimensions.width + REFERENCE_BORDER_CELLS):
+			if not query.is_solid_cell(col, row):
+				continue
+			var contact: Dictionary = query._circle_hex_contact(position, radius, Vector2i(col, row))
+			if bool(contact.get("colliding", false)):
+				contacts.append(contact)
+	return contacts
+
+
+## Tests every cell of the map and its border, using the axial hex path for cell centers.
+func _brute_force_polygon_overlap(query, polygon: PackedVector2Array) -> bool:
+	var dimensions: WorldDimensions = query.world.dimensions
+	var corners := HexMetrics.corners(query.hex_radius)
+	for row in range(-REFERENCE_BORDER_CELLS, dimensions.depth + REFERENCE_BORDER_CELLS):
+		for col in range(-REFERENCE_BORDER_CELLS, dimensions.width + REFERENCE_BORDER_CELLS):
+			if not query.is_solid_cell(col, row):
+				continue
+			var center := HexCoord.from_offset_odd_q(col, row).to_world_position(query.hex_radius)
+			var hex_polygon := PackedVector2Array()
+			for corner in corners:
+				hex_polygon.append(center + corner)
+			if query._convex_polygons_overlap(polygon, hex_polygon):
+				return true
+	return false
+
+
+func _query_for_world(world: WorldGrid, hex_radius: float = 16.0):
 	var query = TerrainCollisionQueryScript.new()
-	query.configure(world, CompiledTerrainData.compile(FixtureLoader.terrain_registry()), 16.0)
+	query.configure(world, CompiledTerrainData.compile(FixtureLoader.terrain_registry()), hex_radius)
 	return query
 
 

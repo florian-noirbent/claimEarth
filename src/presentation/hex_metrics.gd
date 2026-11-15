@@ -16,8 +16,7 @@ static func corners(radius: float = 16.0) -> PackedVector2Array:
 
 
 static func center_for_offset(col: int, row: int, radius: float = 16.0) -> Vector2:
-	var axial := HexCoord.from_offset_odd_q(col, row)
-	return axial.to_world_position(radius)
+	return Vector2(radius * 1.5 * float(col), radius * sqrt(3.0) * (float(row) + 0.5 * float(col & 1)))
 
 
 static func offset_for_world(world_position: Vector2, radius: float = 16.0) -> Vector2i:

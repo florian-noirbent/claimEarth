@@ -38,6 +38,18 @@ func test_world_position_uses_flat_top_spacing() -> void:
 	assert_almost_eq(right.x, 1.5, 0.001)
 
 
+func test_hex_metrics_center_matches_axial_world_position_for_negative_and_positive_cells() -> void:
+	for radius in [1.0, 8.0, 16.0]:
+		for col in range(-9, 10):
+			for row in range(-9, 10):
+				var expected := HexCoord.from_offset_odd_q(col, row).to_world_position(radius)
+				if HexMetrics.center_for_offset(col, row, radius) != expected:
+					fail_test("Cell (%d, %d) at radius %s is not at %s" % [col, row, radius, expected])
+					return
+	assert_eq(HexMetrics.center_for_offset(-3, 2, 16.0), Vector2(-72.0, 16.0 * sqrt(3.0) * 2.5))
+	assert_eq(HexMetrics.center_for_offset(-2, -1, 16.0), Vector2(-48.0, -16.0 * sqrt(3.0)))
+
+
 func test_hex_metrics_world_round_trip_matches_offset_coordinates() -> void:
 	var center := HexMetrics.center_for_offset(4, 5, 16.0)
 	assert_eq(HexMetrics.offset_for_world(center, 16.0), Vector2i(4, 5))
