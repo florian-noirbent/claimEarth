@@ -35,6 +35,7 @@ signal player_sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
 signal player_hazard_warning(cause: StringName, level: float, color: Color)
 signal item_selected(definition: ItemDefinition)
 signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
+signal projectile_spawned(projectile: ItemProjectile, definition: ItemDefinition)
 signal projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition)
 signal projectile_resolved(world_position: Vector2, definition: ItemDefinition, resolution_kind: StringName)
 signal fluid_bottle_burst(world_position: Vector2, color: Color)
@@ -98,6 +99,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	world_controller.player_hazard_warning.connect(player_hazard_warning.emit)
 	item_controller.item_selected.connect(item_selected.emit)
 	item_controller.tool_used.connect(tool_used.emit)
+	item_controller.projectile_spawned.connect(projectile_spawned.emit)
 	item_controller.projectile_bounced.connect(projectile_bounced.emit)
 	item_controller.projectile_resolved.connect(projectile_resolved.emit)
 	item_controller.fluid_bottle_burst.connect(fluid_bottle_burst.emit)
@@ -120,6 +122,8 @@ func start_run(run_seed: int) -> void:
 func set_active(is_active: bool) -> void:
 	world_controller.set_active(is_active)
 	item_controller.set_active(is_active)
+	if gameplay_feedback != null:
+		gameplay_feedback.set_active(is_active)
 
 
 func apply_pending_reward(choice_index: int) -> bool:

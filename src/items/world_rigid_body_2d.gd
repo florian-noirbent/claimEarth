@@ -38,8 +38,17 @@ var _terrain_query = TerrainCollisionQuery.new()
 var body: Polygon2D
 var outline: Line2D
 var sprite: Sprite2D
-## Mirrors the sprite when the body heads left, so an upright icon never flies upside down.
+## Mirrors the sprite across the flight axis when the body heads left, so an icon with an up
+## side never flies upside down.
 var sprite_mirrors_with_heading := false
+## Speed in px/s below which the sprite keeps the orientation it had in flight, so an item
+## that settles into small bounces lies still instead of flipping with each one. 0 disables it.
+var sprite_settle_speed := 0.0
+## Sprite rotation of a body heading right.
+var _sprite_rest_rotation := 0.0
+var _sprite_heading := 1.0
+## Body rotation the sprite is shown at; differs from the body's own only while settled.
+var _sprite_flight_rotation := 0.0
 var _pending_polygon := PackedVector2Array([-6, -6, 6, -6, 6, 6, -6, 6])
 var _pending_color := Color.WHITE
 var _pending_outline_color := Color(0.1, 0.05, 0.02, 1.0)
@@ -75,8 +84,18 @@ func configure_body(config: Dictionary) -> void:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		sprite.z_index = 10
 		sprite_mirrors_with_heading = bool(config.get("visual_mirror_with_heading", false))
+		sprite_settle_speed = float(config.get("visual_settle_speed", 0.0))
+		_sprite_rest_rotation = sprite.rotation
 		add_child(sprite)
 	_ensure_visuals()
+
+
+## World position of a point given in texture px from the sprite's center. It follows the
+## sprite's scale, rotation, and mirroring; without a sprite the point is in body space.
+func visual_point(texture_offset: Vector2) -> Vector2:
+	if sprite == null:
+		return global_transform * texture_offset
+	return sprite.global_transform * (sprite.offset + texture_offset)
 
 
 func visual_polygon() -> PackedVector2Array:
@@ -105,7 +124,7 @@ func advance_body(delta: float) -> StringName:
 	velocity.y += gravity * delta
 	if velocity.length_squared() > 1.0:
 		rotation = velocity.angle()
-		_mirror_sprite_with_heading()
+		_orient_sprite()
 	var previous_position := global_position
 	global_position += velocity * delta
 	_ensure_terrain_query()
@@ -149,10 +168,22 @@ func _ensure_visuals() -> void:
 	outline.visible = sprite == null
 
 
-func _mirror_sprite_with_heading() -> void:
-	if sprite == null or not sprite_mirrors_with_heading or is_zero_approx(velocity.x):
+## Keeps the sprite's look in step with the body: mirrored for a left heading, and held at
+## its flight orientation while the body is slower than the settle speed.
+func _orient_sprite() -> void:
+	if sprite == null:
 		return
-	sprite.scale.x = absf(sprite.scale.x) * signf(velocity.x)
+	var settled := sprite_settle_speed > 0.0 and velocity.length() < sprite_settle_speed
+	if not settled:
+		_sprite_flight_rotation = rotation
+		if sprite_mirrors_with_heading and not is_zero_approx(velocity.x):
+			_sprite_heading = signf(velocity.x)
+	# The body turns with its velocity, which puts a left-bound sprite on its head. Flipping
+	# the sprite across the flight axis stands it up again as its own mirror image.
+	sprite.scale.y = absf(sprite.scale.y) * _sprite_heading
+	sprite.rotation = _sprite_rest_rotation * _sprite_heading
+	if sprite_settle_speed > 0.0:
+		sprite.rotation += _sprite_flight_rotation - rotation
 
 
 func _sample_terrain(world_position: Vector2) -> TerrainDefinition:
@@ -195,6 +226,7 @@ func _bounce(previous_position: Vector2, delta: float) -> void:
 	else:
 		velocity.y = -absf(velocity.y) * bounce_damping
 	rotation = velocity.angle() if velocity.length_squared() > 1.0 else rotation
+	_orient_sprite()
 	bounced.emit(impact_speed)
 
 

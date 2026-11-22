@@ -108,12 +108,15 @@ never decide how a moment sounds or looks:
 | Owner | Facts |
 | --- | --- |
 | `PlayerController` | `jumped`, `landed`, `hard_impact`, `knocked_out`, `hook_launched`, `hook_attached`, `hook_missed`, `hook_released`, `liquid_entered`, `liquid_exited`, `sand_burrow_changed`, `hazard_warning` |
-| `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
+| `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `projectile_spawned`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
 | `AppUiController` | `ui_feedback_requested(kind)` for hover and press on every button, including toolbar slots and reward cards |
 | `AppRoot` | Run-state moments: run start, pause and resume, game over, score confirmed, player death, flag outcomes, victory, reward picker shown |
 
 Facts carry world positions, speeds in px/s, definitions, and resource-declared keys
 (`ItemDefinition.feedback_key`, container and barrel `statistics_key`).
+`projectile_spawned(projectile, definition)` is the one fact that carries a node: the
+thrown `ItemProjectile`, already in the tree. A sink may read it while it lives but
+must not own it, reparent it, or keep it alive.
 `RunWorldController` relays player facts as `player_*` signals and `RunSession`
 relays every fact unchanged. `HazardWarningTracker` rate-limits `hazard_warning`
 with the level and interval exported on `PlayerController`.
@@ -139,7 +142,8 @@ data:
 | --- | --- |
 | `EffectEmitter` | One particle layer: shape (disc, glow, ring or arc, streak, chunk, shard, star), blend (normal or additive), count, delays, lifetime, placement, motion (ballistic or orbit), size, and a color gradient over its life |
 | `EffectRecipe` | The emitter layers of one effect in draw order, plus the camera shake the moment asks for (`config/presentation/effects/*.tres`) |
-| `GameplayEffectLibrary` | One recipe per moment, keyed dictionaries for moments that vary by death cause, resolution kind, object key, or container key, and the speed thresholds (`config/presentation/gameplay_effects.tres`) |
+| `AttachedEffect` | A recipe that keeps playing on a moving body: the interval between plays, the attach point in texture px from the sprite's center, what the recipe is aimed along (nothing, outward through the attach point, or the body's velocity), and the scale it plays at |
+| `GameplayEffectLibrary` | One recipe per moment, keyed dictionaries for moments that vary by death cause, resolution kind, object key, or container key, one `AttachedEffect` per thrown item's feedback key, and the speed thresholds (`config/presentation/gameplay_effects.tres`) |
 | `WorldEffects` | Child node of `GameplayFeedback` in `run_session.tscn`: holds the library and plays recipes into two shared `EffectBatch` layers |
 | `EffectBatch` | Fixed ring of packed particle slots simulated and drawn by one canvas item with immediate-mode `_draw` |
 
@@ -162,6 +166,25 @@ Rules that keep effects cheap and safe:
   not add light to the terrain lighting simulation.
 - Anchored emitters (knockout stars, hazard pulse) follow the node the run camera
   follows.
+- Attached effects (fuse spark, flare glow, flag trail, bottle glint) are not nodes on
+  the projectile. `GameplayFeedback.show_projectile_effect` looks up the item's
+  `AttachedEffect` in `projectile_effect_by_key` and remembers the projectile's
+  instance id; each frame it plays the recipe that is due into the shared layers at
+  `WorldRigidBody2D.visual_point(attach_offset)`, which follows the sprite's scale,
+  rotation, and mirroring. A projectile that is freed or queued for deletion drops
+  out on the next frame, particles already spawned end by lifetime, and the particle
+  budget applies as to any other effect. A new item gets an attached effect by adding
+  an entry under its feedback key; items without one fly bare.
+- `RunSession.set_active` forwards to `GameplayFeedback.set_active`, the same call that
+  suspends the player, projectiles, and world objects. While the session is inactive
+  the feedback node's process mode is disabled, which stops the effect layers, the
+  attached effects, the directional pulse, and tweens bound to its children, and the
+  camera holds its shake (`DescendingCameraController.set_shake_suspended`): offset,
+  roll, and zoom stay where they were, like the frozen world, and decay on when the
+  session resumes. `spawn_death`, `spawn_flag_planted`, and `spawn_flag_destroyed` mark
+  the run as ended; from then on an inactive session no longer suspends feedback, so
+  the final effects, the planted flag's pop, and the shake play out behind the result
+  screens.
 - A planted flag stays in the world as a sprite owned by `GameplayFeedback`.
 
 To add or change an effect, edit or add an `EffectRecipe` resource, reference it
@@ -666,6 +689,13 @@ Items are registered through `config/items/catalog.tres`. `ItemDefinition` point
 an `ItemActionFactory`; factories create polymorphic `ItemAction` implementations.
 `RunItemController` treats all selected items through that contract. `WorldRigidBody2D`
 owns terrain sampling, gravity, shared grid-edge collision response, and blast-pulse reception for dynamic item bodies.
+The body turns with its velocity. Two body config keys, set from exported factory
+fields, keep an icon readable without touching the body itself:
+`visual_mirror_with_heading` (`projectile_sprite_mirrors_with_heading`) flips the
+sprite across the flight axis while the body heads left, and `visual_settle_speed`
+(`projectile_sprite_settle_speed`, bombs and flares) holds the sprite at its flight
+orientation while the body is slower than that speed. Both change the sprite only;
+the body's rotation and collision footprint are the same with or without them.
 `ItemProjectile` composes that body with item resolution, bounce, fuse, and temporary flare light;
 autonomous objects such as the excavator use the same body directly. `ExplosiveBarrel`
 extends the body for terrain sampling and blast-impulse reception but moves as a

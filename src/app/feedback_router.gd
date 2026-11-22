@@ -32,6 +32,7 @@ func attach(session: RunSession) -> void:
 	session.item_thrown.connect(_on_item_thrown)
 	session.tool_used.connect(_on_tool_used)
 	session.item_selected.connect(_audio.play_item_select)
+	session.projectile_spawned.connect(_on_projectile_spawned)
 	session.projectile_bounced.connect(_on_projectile_bounced)
 	session.projectile_resolved.connect(_on_projectile_resolved)
 	session.fluid_bottle_burst.connect(_on_fluid_bottle_burst)
@@ -175,6 +176,10 @@ func _on_item_thrown(definition: ItemDefinition, origin: Vector2, direction: Vec
 func _on_tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2) -> void:
 	_audio.play_tool_use(definition)
 	_visuals.spawn_tool_swing(origin, direction, definition)
+
+
+func _on_projectile_spawned(projectile: ItemProjectile, definition: ItemDefinition) -> void:
+	_visuals.show_projectile_effect(projectile, definition)
 
 
 func _on_projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition) -> void:

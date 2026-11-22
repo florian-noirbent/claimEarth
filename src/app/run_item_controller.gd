@@ -21,6 +21,8 @@ signal world_object_destroyed(container_key: StringName, world_position: Vector2
 ## Feedback facts: world positions, speeds in px/s. No gameplay rule depends on them.
 signal item_selected(definition: ItemDefinition)
 signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
+## Feedback fact: a thrown item entered the world. The projectile is freed when it resolves.
+signal projectile_spawned(projectile: ItemProjectile, definition: ItemDefinition)
 signal projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition)
 signal projectile_resolved(world_position: Vector2, definition: ItemDefinition, resolution_kind: StringName)
 signal fluid_bottle_burst(world_position: Vector2, color: Color)
@@ -327,6 +329,7 @@ func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector
 	projectile.resolved.connect(_on_projectile_resolved)
 	projectile.bounced.connect(_on_projectile_bounced.bind(projectile))
 	add_child(projectile)
+	projectile_spawned.emit(projectile, action.definition)
 	if action.locks_throwing_until_resolved():
 		_active_flag_projectile = projectile
 		flag_flight_changed.emit(true)

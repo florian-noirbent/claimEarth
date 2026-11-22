@@ -193,6 +193,165 @@ func test_flag_landing_leaves_one_planted_flag() -> void:
 	assert_true(marker.is_queued_for_deletion(), "A new throw removes the old flag")
 
 
+func test_every_thrown_catalog_item_with_an_attached_effect_has_valid_tuning() -> void:
+	var library := _library()
+	assert_eq(library.validate(), PackedStringArray())
+	for key: StringName in [&"small_bomb", &"large_bomb", &"flare", &"flag", &"fluid_bottle"]:
+		assert_true(library.projectile_effect_by_key.has(key), String(key))
+	var broken := AttachedEffect.new()
+	assert_gt(broken.validate().size(), 0, "An attached effect needs a recipe")
+
+
+func test_attached_effect_plays_at_the_attach_point_until_the_projectile_is_freed() -> void:
+	var feedback := _feedback()
+	var projectile := _projectile("small_bomb")
+	var effect: AttachedEffect = _library().projectile_effect_by_key[&"small_bomb"]
+	projectile.velocity = Vector2(-200.0, 0.0)
+	projectile.advance_body(STEP)
+
+	feedback.show_projectile_effect(projectile, _item("small_bomb"))
+	assert_eq(feedback.attached_effect_count(), 1)
+	assert_eq(feedback.effects().live_particle_count(), 0, "The first play waits for the next frame")
+	feedback._process(STEP)
+
+	var fuse_tip := projectile.visual_point(effect.attach_offset)
+	assert_lt(fuse_tip.x, projectile.global_position.x, "The fuse tip leads a mirrored left throw")
+	assert_lt(fuse_tip.y, projectile.global_position.y)
+	var first := feedback.effects().live_particle_count()
+	assert_eq(first, effect.recipe.emitters.size())
+	for layer: EffectBatch in feedback.effects().get_children():
+		for slot in layer.used_count():
+			assert_almost_eq(layer._position[slot], fuse_tip, Vector2(0.001, 0.001))
+
+	feedback._process(effect.interval_seconds * 0.4)
+	assert_eq(feedback.effects().live_particle_count(), first, "Plays are spaced by the interval")
+	feedback._process(effect.interval_seconds)
+	assert_gt(feedback.effects().live_particle_count(), first)
+
+	projectile.queue_free()
+	var before_end := feedback.effects().live_particle_count()
+	feedback._process(effect.interval_seconds * 2.0)
+	assert_eq(feedback.attached_effect_count(), 0, "A resolved projectile drops its effect at once")
+	assert_eq(feedback.effects().live_particle_count(), before_end)
+	await wait_process_frames(2)
+	feedback._process(1.0)
+	assert_false(is_instance_valid(projectile), "The effect never keeps the projectile alive")
+
+
+func test_attached_effect_survives_a_projectile_freed_without_notice() -> void:
+	var feedback := _feedback()
+	var projectile := _projectile("flare")
+	feedback.show_projectile_effect(projectile, _item("flare"))
+	feedback.show_projectile_effect(null, _item("flare"))
+	feedback.show_projectile_effect(_projectile("flare"), null)
+	feedback.show_projectile_effect(_projectile("pickaxe"), _item("pickaxe"))
+	assert_eq(feedback.attached_effect_count(), 1, "Only a live projectile of an item with an entry carries an effect")
+
+	projectile.free()
+	feedback._process(STEP)
+
+	assert_eq(feedback.attached_effect_count(), 0)
+	assert_eq(feedback.effects().live_particle_count(), 0)
+
+
+func test_attached_effects_stay_inside_the_particle_budget() -> void:
+	var feedback := _feedback()
+	var item := _item("small_bomb")
+	for index in 40:
+		var projectile := _projectile("small_bomb")
+		projectile.global_position = Vector2(index * 30.0, 0.0)
+		feedback.show_projectile_effect(projectile, item)
+
+	for _frame in 240:
+		feedback._process(STEP)
+		feedback.effects().advance(STEP)
+
+	assert_lte(feedback.effects().live_particle_count(), feedback.effects().particle_capacity())
+	assert_eq(feedback.get_child_count(), 1, "Attached effects add no nodes")
+
+
+func test_suspended_session_freezes_effects_attached_effects_and_shake_until_it_resumes() -> void:
+	var feedback := _feedback()
+	var camera := _camera()
+	feedback.set_camera(camera)
+	var projectile := _projectile("flare")
+	feedback.show_projectile_effect(projectile, _item("flare"))
+	feedback.spawn_knockout_stars(HERE, 3.0)
+	feedback.spawn_explosion(Vector2(40.0, 0.0), Color.ORANGE, 160.0, true)
+	await wait_process_frames(3)
+	var layer := feedback.effects().get_child(1) as EffectBatch
+
+	feedback.set_active(false)
+	assert_true(feedback.is_suspended())
+	await wait_process_frames(1)
+	var particles := feedback.effects().live_particle_count()
+	var ages := layer._age.duplicate()
+	var positions := layer._position.duplicate()
+	var trauma := camera.shake_trauma()
+	var camera_position := camera.global_position
+	var camera_rotation := camera.global_rotation
+	assert_gt(trauma, 0.0)
+	assert_ne(camera_position, Vector2.ZERO, "The view is displaced by the shake")
+	await wait_process_frames(12)
+
+	assert_eq(feedback.effects().live_particle_count(), particles, "No particle ends and no attached effect plays")
+	assert_eq(layer._age, ages)
+	assert_eq(layer._position, positions)
+	assert_eq(camera.shake_trauma(), trauma)
+	assert_eq(camera.global_position, camera_position, "The shaken view holds still")
+	assert_eq(camera.global_rotation, camera_rotation)
+
+	feedback.set_active(true)
+	assert_false(feedback.is_suspended())
+	await wait_process_frames(6)
+
+	assert_ne(layer._age, ages, "Effects go on from where they stopped")
+	assert_lt(camera.shake_trauma(), trauma)
+	assert_gt(camera.shake_trauma(), 0.0, "The shake decays on instead of restarting or snapping back")
+
+
+func test_run_ending_moments_keep_feedback_running_while_the_session_is_inactive() -> void:
+	var moments: Array[Callable] = [
+		func(feedback: GameplayFeedback) -> void: feedback.spawn_death(HERE, DeathCause.BOMB),
+		func(feedback: GameplayFeedback) -> void: feedback.spawn_flag_planted(HERE),
+		func(feedback: GameplayFeedback) -> void: feedback.spawn_flag_destroyed(HERE, &"lava"),
+	]
+	for moment in moments:
+		var feedback := _feedback()
+		var camera := _camera()
+		feedback.set_camera(camera)
+		feedback.set_active(false)
+		assert_true(feedback.is_suspended())
+
+		moment.call(feedback)
+		feedback.request_shake(12.0, Vector2.ZERO)
+		var trauma := camera.shake_trauma()
+		var layer := feedback.effects().get_child(1) as EffectBatch
+		var ages := layer._age.duplicate()
+		feedback.set_active(false)
+		await wait_process_frames(4)
+
+		assert_false(feedback.is_suspended(), "The run is over; its last effects play out")
+		assert_ne(layer._age, ages)
+		assert_lt(camera.shake_trauma(), trauma)
+
+
+func test_camera_handed_over_while_suspended_is_suspended_too() -> void:
+	var feedback := _feedback()
+	var camera := _camera()
+	feedback.set_active(false)
+
+	feedback.set_camera(camera)
+	camera.apply_shake(12.0)
+	var trauma := camera.shake_trauma()
+	await wait_process_frames(3)
+	assert_eq(camera.shake_trauma(), trauma)
+
+	feedback.set_camera(null)
+	await wait_process_frames(3)
+	assert_lt(camera.shake_trauma(), trauma, "A camera that is handed back shakes on by itself")
+
+
 func test_freeing_feedback_mid_effect_is_safe() -> void:
 	var feedback := GameplayFeedback.new()
 	var effects := WorldEffects.new()
@@ -224,3 +383,33 @@ func _feedback() -> GameplayFeedback:
 	add_child_autofree(feedback)
 	effects.set_seed(5)
 	return feedback
+
+
+func _item(item_name: String) -> ItemDefinition:
+	return load("res://config/items/%s.tres" % item_name) as ItemDefinition
+
+
+func _camera() -> DescendingCameraController:
+	var target := Node2D.new()
+	add_child_autofree(target)
+	var camera := DescendingCameraController.new()
+	camera.target = target
+	add_child_autofree(camera)
+	return camera
+
+
+## A projectile showing the named item's icon the way a throw configures it.
+func _projectile(item_name: String) -> ItemProjectile:
+	var item := _item(item_name)
+	var projectile := ItemProjectile.new()
+	projectile.configure({
+		"gravity": 0.0,
+		"fuse_seconds": 60.0,
+		"visual_texture": item.icon,
+		"visual_scale": 0.3,
+		"visual_mirror_with_heading": true,
+	})
+	projectile.global_position = HERE
+	add_child_autofree(projectile)
+	projectile.set_physics_process(false)
+	return projectile

@@ -14,6 +14,7 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"polygon": factory.projectile_points,
 		"destroyed_by_lava": true,
 		"visual_texture": definition.icon,
+		"visual_mirror_with_heading": factory.projectile_sprite_mirrors_with_heading,
 	}
 
 

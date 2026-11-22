@@ -2,7 +2,7 @@ extends GutTest
 
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
 
-const SUFFIXES := ["run", "throw", "explosion", "death", "flag", "reward", "player"]
+const SUFFIXES := ["run", "throw", "explosion", "death", "flag", "reward", "player", "projectile", "suspend"]
 
 
 ## Records the routed moments this test asserts instead of playing them.
@@ -69,6 +69,10 @@ class RecordingGameplayFeedback extends GameplayFeedback:
 		calls.append([&"shake", intensity, world_position])
 		super.request_shake(intensity, world_position)
 
+	func show_projectile_effect(projectile: WorldRigidBody2D, item: ItemDefinition) -> void:
+		calls.append([&"projectile_effect", projectile, item])
+		super.show_projectile_effect(projectile, item)
+
 	func spawn_knockout_stars(world_position: Vector2, duration_seconds: float) -> void:
 		calls.append([&"knockout_stars", world_position, duration_seconds])
 
@@ -121,6 +125,60 @@ func test_throw_and_selection_reach_the_audio_sink_with_the_item() -> void:
 
 	assert_eq(audio.named(&"item_select"), [[&"item_select", definitions[1]]] as Array[Array])
 	assert_eq(audio.named(&"throw"), [[&"throw", definitions[1]]] as Array[Array])
+
+
+func test_thrown_projectile_reaches_the_visual_sink_and_carries_its_effect_until_it_is_freed() -> void:
+	var app_root := await _started_app("projectile")
+	var visuals := app_root.gameplay_feedback as RecordingGameplayFeedback
+	var session := app_root._session
+	var small_bomb := app_root.item_controller._inventory.definitions()[0]
+	watch_signals(session)
+
+	assert_true(app_root.throw_selected_item_for_test(app_root.get_player().global_position + Vector2(80.0, -40.0), true))
+
+	var spawned := visuals.named(&"projectile_effect")
+	assert_eq(spawned.size(), 1)
+	var projectile := spawned[0][1] as ItemProjectile
+	assert_eq(spawned[0][2], small_bomb)
+	assert_eq(get_signal_parameters(session, "projectile_spawned"), [projectile, small_bomb])
+	assert_eq(visuals.attached_effect_count(), 1)
+	await wait_process_frames(3)
+	assert_gt(visuals.effects().live_particle_count(), 0, "The fuse spark plays on the flying bomb")
+
+	projectile.free()
+	await wait_process_frames(2)
+	assert_eq(visuals.attached_effect_count(), 0)
+
+
+func test_pause_and_reward_picker_freeze_feedback_and_a_death_releases_it() -> void:
+	var app_root := await _started_app("suspend")
+	var visuals := app_root.gameplay_feedback as RecordingGameplayFeedback
+	var camera := app_root.get_player().camera
+	assert_false(visuals.is_suspended())
+	assert_true(app_root.throw_selected_item_for_test(app_root.get_player().global_position + Vector2(80.0, -40.0), true))
+	visuals.request_shake(12.0, app_root.get_player().global_position)
+	await wait_process_frames(3)
+
+	app_root.transition_to(RunPhase.PAUSED)
+	assert_true(visuals.is_suspended())
+	var particles := visuals.effects().live_particle_count()
+	var trauma := camera.shake_trauma()
+	await wait_process_frames(10)
+	assert_eq(visuals.effects().live_particle_count(), particles, "Paused effects neither end nor spawn")
+	assert_eq(camera.shake_trauma(), trauma)
+
+	app_root.transition_to(RunPhase.PLAYING)
+	assert_false(visuals.is_suspended())
+	await wait_process_frames(4)
+	assert_lt(camera.shake_trauma(), trauma)
+
+	app_root.transition_to(RunPhase.REWARD_PICKER)
+	assert_true(visuals.is_suspended(), "The reward picker freezes feedback like the rest of the world")
+	app_root.transition_to(RunPhase.PLAYING)
+
+	app_root._on_player_death_requested(DeathCauseScript.COOKED)
+	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
+	assert_false(visuals.is_suspended(), "The death effect plays out behind the game over screen")
 
 
 func test_explosion_reaches_both_sinks_in_world_units_and_shakes_through_the_seam() -> void:

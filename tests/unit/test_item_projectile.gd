@@ -60,21 +60,82 @@ func test_bombs_and_flag_use_their_icons_as_projectile_sprites() -> void:
 
 
 func test_flag_sprite_stays_banner_up_when_flying_left() -> void:
-	var definition := load("res://config/items/flag.tres") as ItemDefinition
-	var action := definition.action_factory.create_action(definition) as ItemAction
-	var projectile := ItemProjectile.new()
-	var projectile_data := action.create_projectile(Vector2.ZERO, Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO)
-	projectile_data["gravity"] = 0.0
-	projectile.configure(projectile_data)
-	add_child_autofree(projectile)
+	var projectile := _flying_projectile("flag")
+	# The banner hangs on the icon's right side, and the icon's top trails the flight.
+	var banner_side := Vector2(40.0, 0.0)
 
-	projectile.velocity = Vector2(120.0, 0.0)
-	projectile.advance_body(1.0 / 60.0)
-	assert_gt(projectile.sprite.scale.x, 0.0)
+	_fly(projectile, Vector2(120.0, 0.0))
+	assert_lt(projectile.visual_point(banner_side).y, projectile.visual_point(Vector2.ZERO).y)
 
-	projectile.velocity = Vector2(-120.0, 0.0)
-	projectile.advance_body(1.0 / 60.0)
-	assert_lt(projectile.sprite.scale.x, 0.0, "A left-bound flag mirrors so its banner stays above the pole")
+	_fly(projectile, Vector2(-120.0, 0.0))
+	assert_lt(
+		projectile.visual_point(banner_side).y,
+		projectile.visual_point(Vector2.ZERO).y,
+		"A left-bound flag mirrors so its banner stays above the pole"
+	)
+
+
+func test_every_thrown_item_flies_left_as_the_mirror_image_of_flying_right() -> void:
+	for item_name: String in ["small_bomb", "large_bomb", "flare", "water_bottle", "acid_bottle", "excavator", "flag"]:
+		var projectile := _flying_projectile(item_name)
+		var probes: Array[Vector2] = [Vector2(0.0, -20.0), Vector2(20.0, 0.0), Vector2(13.0, -7.0)]
+
+		for flight: Vector2 in [Vector2(120.0, 0.0), Vector2(90.0, -90.0), Vector2(60.0, 140.0)]:
+			_fly(projectile, flight)
+			var heading_right: Array[Vector2] = []
+			for probe in probes:
+				heading_right.append(projectile.visual_point(probe) - projectile.global_position)
+			_fly(projectile, Vector2(-flight.x, flight.y))
+			for index in probes.size():
+				var heading_left := projectile.visual_point(probes[index]) - projectile.global_position
+				assert_almost_eq(
+					heading_left,
+					heading_right[index] * Vector2(-1.0, 1.0),
+					Vector2(0.001, 0.001),
+					"%s thrown left is the mirror image of thrown right" % item_name
+				)
+
+
+func test_upright_icons_keep_their_top_up_in_level_flight_either_way() -> void:
+	for item_name: String in ["small_bomb", "large_bomb", "flare", "water_bottle", "acid_bottle", "excavator"]:
+		var projectile := _flying_projectile(item_name)
+		for flight: Vector2 in [Vector2(120.0, 0.0), Vector2(-120.0, 0.0)]:
+			_fly(projectile, flight)
+			assert_lt(projectile.visual_point(Vector2(0.0, -20.0)).y, projectile.global_position.y, "%s %s" % [item_name, flight])
+
+
+func test_settled_bomb_keeps_its_flight_orientation_through_small_bounces() -> void:
+	var projectile := _flying_projectile("small_bomb")
+	assert_gt(projectile.sprite_settle_speed, 0.0)
+	_fly(projectile, Vector2(200.0, 100.0))
+	var fuse_tip := projectile.visual_point(Vector2(35.0, -35.0)) - projectile.global_position
+
+	for slow: Vector2 in [Vector2(2.0, -40.0), Vector2(1.0, 40.0), Vector2(-0.5, -40.0)]:
+		_fly(projectile, slow)
+		assert_almost_eq(projectile.rotation, slow.angle(), 0.0001, "The body itself still turns with its velocity")
+		assert_almost_eq(
+			projectile.visual_point(Vector2(35.0, -35.0)) - projectile.global_position, fuse_tip, Vector2(0.001, 0.001),
+			"The icon lies still"
+		)
+
+	_fly(projectile, Vector2(-200.0, 100.0))
+	assert_almost_eq(
+		projectile.visual_point(Vector2(35.0, -35.0)) - projectile.global_position, fuse_tip * Vector2(-1.0, 1.0), Vector2(0.001, 0.001),
+		"A fast body turns its icon again"
+	)
+
+
+func test_body_without_a_settle_speed_shows_its_sprite_at_the_body_rotation() -> void:
+	var body := WorldRigidBody2D.new()
+	body.configure_body({"gravity": 0.0, "visual_texture": load("res://assets/objects/flare.svg") as Texture2D})
+	add_child_autofree(body)
+
+	body.velocity = Vector2(-3.0, 30.0)
+	body.advance_body(1.0 / 60.0)
+
+	assert_eq(body.sprite.rotation, 0.0)
+	assert_gt(body.sprite.scale.y, 0.0, "Mirroring is opt-in")
+	assert_eq(body.visual_point(Vector2.ZERO), body.global_position)
 
 
 func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> void:
@@ -305,3 +366,23 @@ func test_flag_resolves_with_acid_when_the_acid_hazard_is_active() -> void:
 
 	assert_eq(resolved_kinds, [&"acid"])
 	assert_true(projectile.is_queued_for_deletion())
+
+
+## A projectile of the named catalog item, configured as a throw would and without gravity.
+func _flying_projectile(item_name: String) -> ItemProjectile:
+	var definition := load("res://config/items/%s.tres" % item_name) as ItemDefinition
+	var action := definition.action_factory.create_action(definition) as ItemAction
+	var projectile := ItemProjectile.new()
+	var projectile_data := action.create_projectile(Vector2.ZERO, Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO)
+	projectile_data["gravity"] = 0.0
+	projectile_data.erase("explosion_definition")
+	projectile_data.erase("light_definition")
+	projectile.configure(projectile_data)
+	add_child_autofree(projectile)
+	projectile.set_physics_process(false)
+	return projectile
+
+
+func _fly(projectile: ItemProjectile, flight_velocity: Vector2) -> void:
+	projectile.velocity = flight_velocity
+	projectile.advance_body(1.0 / 60.0)

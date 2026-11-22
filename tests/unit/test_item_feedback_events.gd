@@ -17,6 +17,20 @@ func test_projectile_throw_reports_definition_origin_and_aim_direction() -> void
 	assert_signal_not_emitted(controller, "tool_used")
 
 
+func test_thrown_projectile_is_reported_with_its_definition() -> void:
+	var controller := _throw_controller(FixtureLoader.terrain_id("Air"))
+	var small_bomb := controller._inventory.definitions()[0]
+	watch_signals(controller)
+
+	assert_true(controller.throw_selected(controller._player.global_position + Vector2(100.0, 0.0), true))
+
+	var projectiles := _projectiles(controller)
+	assert_eq(projectiles.size(), 1)
+	assert_signal_emit_count(controller, "projectile_spawned", 1)
+	assert_eq(get_signal_parameters(controller, "projectile_spawned"), [projectiles[0], small_bomb])
+	assert_true(projectiles[0].is_inside_tree(), "The projectile is in the world when it is reported")
+
+
 func test_immediate_tool_reports_tool_use_only_when_it_changes_terrain() -> void:
 	var idle := _throw_controller(FixtureLoader.terrain_id("Air"))
 	var shovel := _definition_with_tag(idle._inventory.definitions(), &"shovel")
@@ -35,6 +49,7 @@ func test_immediate_tool_reports_tool_use_only_when_it_changes_terrain() -> void
 	assert_true(digging.throw_selected(origin + Vector2(0.0, 64.0), true))
 
 	assert_eq(get_signal_parameters(digging, "tool_used"), [shovel, origin, Vector2.DOWN])
+	assert_signal_not_emitted(digging, "projectile_spawned")
 	assert_signal_not_emitted(digging, "item_thrown")
 
 

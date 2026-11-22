@@ -14,6 +14,8 @@ const FluidBottleItemActionScript = preload("res://src/items/fluid_bottle_item_a
 @export var projectile_color := Color(0.25, 0.62, 0.95, 1.0)
 @export var projectile_outline_color := Color(0.04, 0.12, 0.25, 1.0)
 @export var projectile_points := PackedVector2Array([-5, -8, 5, -8, 6, 6, 0, 9, -6, 6])
+## Mirrors the flying icon when it heads left, so its up side stays on top.
+@export var projectile_sprite_mirrors_with_heading := true
 
 
 func _init() -> void:

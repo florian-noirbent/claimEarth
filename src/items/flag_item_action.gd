@@ -23,7 +23,7 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"visual_scale": factory.projectile_sprite_scale,
 		"visual_rotation_degrees": factory.projectile_sprite_rotation_degrees,
 		"visual_offset": factory.projectile_sprite_offset,
-		"visual_mirror_with_heading": true,
+		"visual_mirror_with_heading": factory.projectile_sprite_mirrors_with_heading,
 		"destructive_terrain_tags": factory.destructive_terrain_tags,
 		"ignores_water": factory.ignores_water,
 	}
