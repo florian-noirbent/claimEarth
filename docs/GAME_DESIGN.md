@@ -141,15 +141,16 @@ standing still. A Relentless death that drops the flag has no beat because the r
 continues.
 
 Every death has its own cartoon sequence, and every one but suffocation takes the
-explorer apart. The sixteen body parts come off the body,
+explorer apart. The sixteen body parts come off the body at about their own size,
 fly, bounce off the hex terrain, slow down in liquids, and come to rest before the
 result panel opens; they stay where they fell behind it. The camera does not follow
 them. A held rope lets go and falls back. The remains are drawn over terrain, lava,
 and acid and are not darkened by the cave, so they read everywhere.
 
 - Bomb: the body bursts at once. The parts are thrown away from the blast, spinning,
-  scorched with glowing embers and an ember-orange outline, trailing smoke and blood,
-  in a big red splash; the helmet and boots bounce the farthest.
+  lightly singed with an ember-orange outline that fades, trailing smoke and blood,
+  in a big red splash; limbs, helmet, and backpack stay recognisable, and the helmet
+  and boots bounce the farthest.
 - Impact: the body is squashed flat against the surface it hit for an instant, then
   bursts into a wide blood splash along that surface with stars and bone bits. The
   parts scatter along the surface and the helmet and boots bounce away.

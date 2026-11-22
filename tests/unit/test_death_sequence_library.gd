@@ -72,6 +72,7 @@ func test_every_requested_effect_part_and_pose_exists() -> void:
 			assert_true(PlayerAnimationState.ALL.has(sequence.pose), "Pose %s is an animation state" % sequence.pose)
 		if sequence.loose_pose != &"":
 			assert_true(PlayerAnimationState.ALL.has(sequence.loose_pose), "Pose %s is an animation state" % sequence.loose_pose)
+		assert_lte(sequence.gib_scale, 1.25, "Loose parts keep close to their size on the body")
 		assert_lte(sequence.burst_at + sequence.detach_stagger, 0.75, "Every sequence leaves time to settle")
 
 
