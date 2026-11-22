@@ -1,7 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect x="12" y="4" width="40" height="8" rx="3" fill="#8A4A22" stroke="#1A140F" stroke-width="4"/>
-  <rect x="12" y="52" width="40" height="8" rx="3" fill="#8A4A22" stroke="#1A140F" stroke-width="4"/>
-  <path d="M18 12H46C46 22 38 27 35 32C38 37 46 42 46 52H18C18 42 26 37 29 32C26 27 18 22 18 12Z" fill="#CFE8F2" stroke="#1A140F" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M24 19H40C38 23 34 26 32 28C30 26 26 23 24 19Z" fill="#E8B04A"/>
-  <path d="M32 34V44M22 50C24 45 28 43 32 43C36 43 40 45 42 50Z" fill="#E8B04A" stroke="#E8B04A" stroke-width="2" stroke-linejoin="round"/>
+<defs>
+<linearGradient id="cap" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="13"><stop offset="0" stop-color="#e0a362"/><stop offset="0.5" stop-color="#a9652f"/><stop offset="1" stop-color="#643616"/></linearGradient>
+<linearGradient id="cap2" gradientUnits="userSpaceOnUse" x1="0" y1="51" x2="0" y2="61"><stop offset="0" stop-color="#e0a362"/><stop offset="0.5" stop-color="#a9652f"/><stop offset="1" stop-color="#643616"/></linearGradient>
+<linearGradient id="glass" gradientUnits="userSpaceOnUse" x1="16" y1="12" x2="48" y2="52"><stop offset="0" stop-color="#f4fcff"/><stop offset="1" stop-color="#a9d4e6"/></linearGradient>
+<linearGradient id="sand" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="52"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#e09a24"/></linearGradient>
+</defs>
+<path d="M18 12H46C46 22 38 27 35 32C38 37 46 42 46 52H18C18 42 26 37 29 32C26 27 18 22 18 12Z" fill="url(#glass)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M23.5 19H40.5C38.5 23.5 34.5 26 32 28.5C29.5 26 25.5 23.5 23.5 19Z" fill="url(#sand)"/>
+<path d="M32 30V44" stroke="#f0b53a" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M21 50.5C23 44.5 27.5 42 32 42C36.5 42 41 44.5 43 50.5Z" fill="url(#sand)"/>
+<path d="M22.5 16C22.8 19 24 21.5 25.5 23.5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+<rect x="11" y="3" width="42" height="10" rx="3.5" fill="url(#cap)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<rect x="11" y="51" width="42" height="10" rx="3.5" fill="url(#cap2)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M15 6.5H40" stroke="#ffe0b0" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
 </svg>

@@ -1,4 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <path d="M34 12h10v104H34z" fill="#2b1d12"/>
-  <path d="M44 18c14 0 24 12 38 12 6 0 12-2 16-6v46c-4 4-10 6-16 6-14 0-24-12-38-12V18z" fill="#f0d452" stroke="#2b1d12" stroke-width="8" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+<defs>
+<linearGradient id="pole" gradientUnits="userSpaceOnUse" x1="31" y1="0" x2="46" y2="0"><stop offset="0" stop-color="#f6c283"/><stop offset="0.5" stop-color="#bd783c"/><stop offset="1" stop-color="#74431d"/></linearGradient>
+<linearGradient id="cloth" gradientUnits="userSpaceOnUse" x1="44" y1="14" x2="96" y2="92"><stop offset="0" stop-color="#fff59c"/><stop offset="0.45" stop-color="#fbcb2f"/><stop offset="1" stop-color="#e08a12"/></linearGradient>
+<linearGradient id="ball" gradientUnits="userSpaceOnUse" x1="30" y1="4" x2="48" y2="22"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#cf8214"/></linearGradient>
+<linearGradient id="tip" gradientUnits="userSpaceOnUse" x1="33" y1="108" x2="46" y2="124"><stop offset="0" stop-color="#f4f8fa"/><stop offset="0.35" stop-color="#b4c0c9"/><stop offset="0.75" stop-color="#6f7c88"/><stop offset="1" stop-color="#3c444e"/></linearGradient>
+</defs>
+<path d="M31 108H45L38 125Z" fill="url(#tip)" stroke="#1a0f0a" stroke-width="6" stroke-linejoin="round"/>
+<rect x="31" y="14" width="14" height="98" rx="4" fill="url(#pole)" stroke="#1a0f0a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M45 24C61 12 75 36 93 29C101 26 107 22 113 18V72C105 78 99 82 91 84C73 88 61 64 45 76Z" fill="url(#cloth)" stroke="#1a0f0a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M68 23C76 28 84 32 93 29V84C84 86 76 80 68 73Z" fill="#b8560a" opacity="0.3"/>
+<path d="M49 27C55 23 61 23 67 27V68C61 64 55 65 49 69Z" fill="#fffbe0" opacity="0.45"/>
+<path d="M97 31C103 28 107 26 109.5 24V70C105 73 101 76 97 78Z" fill="#fffbe0" opacity="0.3"/>
+<circle cx="80" cy="54" r="11" fill="#e2452f" stroke="#1a0f0a" stroke-width="4"/>
+<circle cx="77" cy="50.5" r="3.5" fill="#ffb199" opacity="0.8"/>
+<circle cx="38" cy="13" r="9" fill="url(#ball)" stroke="#1a0f0a" stroke-width="6"/>
+<circle cx="35.5" cy="10.5" r="2.6" fill="#fffbe0"/>
 </svg>

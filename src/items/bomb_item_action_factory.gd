@@ -14,6 +14,8 @@ const BombItemActionScript = preload("res://src/items/bomb_item_action.gd")
 @export var projectile_color := Color(0.92, 0.48, 0.18, 1)
 @export var projectile_outline_color := Color(0.16, 0.08, 0.04, 1)
 @export var projectile_points := PackedVector2Array([-7, -7, 7, -7, 7, 7, -7, 7])
+## World scale of the item icon drawn as the projectile.
+@export_range(0.01, 2.0, 0.01) var projectile_sprite_scale := 0.3
 
 
 func _init() -> void:

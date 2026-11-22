@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect x="20" y="4" width="24" height="56" rx="4" fill="#F2C14E" stroke="#1A140F" stroke-width="4"/>
-  <path d="M20 14H32M20 24H28M20 34H32M20 44H28M20 54H32" stroke="#1A140F" stroke-width="3" stroke-linecap="round"/>
-  <path d="M50 10V48M43 41L50 50L57 41" fill="none" stroke="#43C8E0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<defs>
+<linearGradient id="rule" gradientUnits="userSpaceOnUse" x1="14" y1="0" x2="38" y2="0"><stop offset="0" stop-color="#fff0a0"/><stop offset="0.5" stop-color="#f6c53a"/><stop offset="1" stop-color="#cf8a1a"/></linearGradient>
+<linearGradient id="go" gradientUnits="userSpaceOnUse" x1="0" y1="6" x2="0" y2="58"><stop offset="0" stop-color="#9af0ff"/><stop offset="1" stop-color="#1fa4cf"/></linearGradient>
+</defs>
+<rect x="12" y="4" width="26" height="56" rx="5" fill="url(#rule)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M14 14H27M14 23H22M14 32H27M14 41H22M14 50H27" stroke="#1a0f0a" stroke-width="3.2" stroke-linecap="round"/>
+<path d="M32.5 9V54" stroke="#9c5a0c" stroke-width="3" stroke-linecap="round" opacity="0.35"/>
+<path d="M46.5 6H55.5V39H61.5L51 55L40.5 39H46.5Z" fill="url(#go)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M49.5 10V36" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
 </svg>

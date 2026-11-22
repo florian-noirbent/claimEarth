@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <rect x="18" y="28" width="52" height="52" rx="14" fill="#9b4f2d" stroke="#2b1d12" stroke-width="8"/>
-  <path d="M58 24l10-10 10 10" fill="none" stroke="#2b1d12" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M68 14c6-8 14-10 18-8" fill="none" stroke="#ffd85a" stroke-width="6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+<defs>
+<linearGradient id="red" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="22" y2="0"><stop offset="0" stop-color="#ff8466"/><stop offset="0.4" stop-color="#e03a2a"/><stop offset="1" stop-color="#8d1818"/></linearGradient>
+<linearGradient id="paper" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="10"><stop offset="0" stop-color="#fff0c4"/><stop offset="1" stop-color="#d9b683"/></linearGradient>
+<linearGradient id="strap" gradientUnits="userSpaceOnUse" x1="0" y1="48" x2="0" y2="66"><stop offset="0" stop-color="#77604f"/><stop offset="0.3" stop-color="#3f2f27"/><stop offset="1" stop-color="#22160f"/></linearGradient>
+<linearGradient id="buckle" gradientUnits="userSpaceOnUse" x1="40" y1="48" x2="56" y2="66"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#cf8214"/></linearGradient>
+</defs>
+<path d="M48 27C49 18 56 13 66 12" fill="none" stroke="#1a0f0a" stroke-width="10" stroke-linecap="round"/>
+<path d="M48 27C49 18 56 13 66 12" fill="none" stroke="#d9b683" stroke-width="4.5" stroke-linecap="round"/>
+<g transform="translate(14 32)"><rect x="0" y="0" width="22" height="54" rx="5.5" fill="url(#red)" stroke="#1a0f0a" stroke-width="6" stroke-linejoin="round"/><path d="M3 5.5a2.5 2.5 0 0 1 2.5-2.5h11a2.5 2.5 0 0 1 2.5 2.5V10H3Z" fill="url(#paper)"/><rect x="4.5" y="13" width="4" height="34" rx="2" fill="#ffd0bd" opacity="0.6"/></g><g transform="translate(58 32)"><rect x="0" y="0" width="22" height="54" rx="5.5" fill="url(#red)" stroke="#1a0f0a" stroke-width="6" stroke-linejoin="round"/><path d="M3 5.5a2.5 2.5 0 0 1 2.5-2.5h11a2.5 2.5 0 0 1 2.5 2.5V10H3Z" fill="url(#paper)"/><rect x="4.5" y="13" width="4" height="34" rx="2" fill="#ffd0bd" opacity="0.6"/></g><g transform="translate(37 26)"><rect x="0" y="0" width="22" height="60" rx="5.5" fill="url(#red)" stroke="#1a0f0a" stroke-width="6" stroke-linejoin="round"/><path d="M3 5.5a2.5 2.5 0 0 1 2.5-2.5h11a2.5 2.5 0 0 1 2.5 2.5V10H3Z" fill="url(#paper)"/><rect x="4.5" y="13" width="4" height="40" rx="2" fill="#ffd0bd" opacity="0.6"/></g>
+<rect x="9" y="49" width="78" height="16" rx="4" fill="url(#strap)" stroke="#1a0f0a" stroke-width="5" stroke-linejoin="round"/>
+<rect x="40" y="47" width="16" height="20" rx="3" fill="url(#buckle)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<circle cx="70" cy="12" r="11.0" fill="#ff7a1a" opacity="0.38"/><path d="M59.0 12H81.0M70 1.0V23.0" stroke="#ffd23e" stroke-width="3.2" stroke-linecap="round"/><circle cx="70" cy="12" r="6.8" fill="#ffc52e"/><circle cx="70" cy="12" r="3.6" fill="#fffbe0"/>
 </svg>

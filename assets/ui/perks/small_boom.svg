@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#8b3b1d" stroke="#ffd08a" stroke-width="4"/><path d="m32 10 5 14 14-5-7 13 13 7-15 2 1 14-11-10-11 10 1-14-15-2 13-7-7-13 14 5Z" fill="#ffbf27"/><circle cx="32" cy="33" r="8" fill="#fff5ad"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#fff0c0"/><stop offset="1" stop-color="#f0b86a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#e08a3a"/><stop offset="0.55" stop-color="#9c4a18"/><stop offset="1" stop-color="#4a1f08"/></radialGradient>
+<radialGradient id="blast" gradientUnits="userSpaceOnUse" cx="32" cy="32" r="21"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.55" stop-color="#ffd83e"/><stop offset="1" stop-color="#ffa51e"/></radialGradient>
+<radialGradient id="ball" gradientUnits="userSpaceOnUse" cx="29.5" cy="30.5" r="11"><stop offset="0" stop-color="#ffd067"/><stop offset="0.5" stop-color="#f5852a"/><stop offset="1" stop-color="#a83c0e"/></radialGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M32.0 12.0L37.0 20.0L46.1 17.9L44.0 27.0L52.0 32.0L44.0 37.0L46.1 46.1L37.0 44.0L32.0 52.0L27.0 44.0L17.9 46.1L20.0 37.0L12.0 32.0L20.0 27.0L17.9 17.9L27.0 20.0Z" fill="url(#blast)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M36 28L39.5 24" stroke="#1a0f0a" stroke-width="4" stroke-linecap="round"/>
+<circle cx="32" cy="33.5" r="7.5" fill="url(#ball)" stroke="#1a0f0a" stroke-width="2.4"/>
+<circle cx="29.5" cy="31" r="1.8" fill="#fff6d8" opacity="0.85"/>
+</svg>

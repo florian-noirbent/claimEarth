@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path d="M28 16h9l5 34H23z" fill="#d84735" stroke="#3b1d16" stroke-width="3"/><path d="M27 16c0-9 11-12 12 0" fill="#ffd05a" stroke="#3b1d16" stroke-width="3"/><path d="M29 25h6v16h-6z" fill="#ffd05a"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="tube" gradientUnits="userSpaceOnUse" x1="24" y1="0" x2="40" y2="0"><stop offset="0" stop-color="#ff9acb"/><stop offset="0.4" stop-color="#ec2d85"/><stop offset="1" stop-color="#8a0f4d"/></linearGradient>
+<radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="32" cy="13" r="17"><stop offset="0" stop-color="#ffb347" stop-opacity="0.75"/><stop offset="0.6" stop-color="#ff6a1e" stop-opacity="0.35"/><stop offset="1" stop-color="#ff6a1e" stop-opacity="0"/></radialGradient>
+<linearGradient id="flame" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="24"><stop offset="0" stop-color="#ff5a1e"/><stop offset="0.45" stop-color="#ffb52e"/><stop offset="1" stop-color="#fff4a8"/></linearGradient>
+<linearGradient id="cap" gradientUnits="userSpaceOnUse" x1="24" y1="0" x2="40" y2="0"><stop offset="0" stop-color="#7a5a86"/><stop offset="1" stop-color="#2b1a33"/></linearGradient>
+</defs>
+<circle cx="32" cy="13" r="17" fill="url(#glow)"/>
+<rect x="24" y="24" width="16" height="35" rx="4" fill="url(#tube)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<rect x="24" y="35" width="16" height="7" fill="#ffe6f1"/>
+<path d="M24 35H40M24 42H40" stroke="#1a0f0a" stroke-width="2"/>
+<path d="M24 52H40V55C40 57.2 38.2 59 36 59H28C25.8 59 24 57.2 24 55Z" fill="url(#cap)"/>
+<rect x="27" y="27" width="3" height="6" rx="1.5" fill="#ffffff" opacity="0.7"/>
+<rect x="24" y="24" width="16" height="35" rx="4" fill="none" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M32 2C38 8 42 13 40 19C39 23 36 25 32 25C28 25 25 23 24 19C22 13 26 8 32 2Z" fill="url(#flame)" stroke="#1a0f0a" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M32 13C35 16 36 18 35 20.5C34.5 22 33.5 22.5 32 22.5C30.5 22.5 29.5 22 29 20.5C28 18 29 16 32 13Z" fill="#fffbe0"/>
+<circle cx="45" cy="9" r="2" fill="#ffd23e"/>
+<circle cx="19" cy="14" r="1.7" fill="#ffd23e"/>
+</svg>

@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#762015" stroke="#ffd09d" stroke-width="4"/><path d="m32 7 6 17 18-7-9 16 15 9-18 2 2 16-14-12-14 12 2-16-18-2 15-9-9-16 18 7Z" fill="#ff812b"/><circle cx="32" cy="34" r="10" fill="#fff0aa"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#ffe0c0"/><stop offset="1" stop-color="#f09a6a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#d0452a"/><stop offset="0.55" stop-color="#8a1f16"/><stop offset="1" stop-color="#420c0a"/></radialGradient>
+<radialGradient id="blast" gradientUnits="userSpaceOnUse" cx="32" cy="32" r="22"><stop offset="0" stop-color="#fff6c0"/><stop offset="0.5" stop-color="#ffc02e"/><stop offset="1" stop-color="#ff6a1e"/></radialGradient>
+<linearGradient id="red" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="6" y2="0"><stop offset="0" stop-color="#ff8466"/><stop offset="1" stop-color="#a81f1a"/></linearGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M32.0 10.5L36.6 17.7L44.6 14.6L44.1 23.2L52.4 25.4L47.0 32.0L52.4 38.6L44.1 40.8L44.6 49.4L36.6 46.3L32.0 53.5L27.4 46.3L19.4 49.4L19.9 40.8L11.6 38.6L17.0 32.0L11.6 25.4L19.9 23.2L19.4 14.6L27.4 17.7Z" fill="url(#blast)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<g transform="translate(22.5 25.5)"><rect width="6" height="15" rx="1.8" fill="url(#red)" stroke="#1a0f0a" stroke-width="2.2"/></g>
+<g transform="translate(35.5 25.5)"><rect width="6" height="15" rx="1.8" fill="url(#red)" stroke="#1a0f0a" stroke-width="2.2"/></g>
+<g transform="translate(29 23.5)"><rect width="6" height="17" rx="1.8" fill="url(#red)" stroke="#1a0f0a" stroke-width="2.2"/></g>
+<rect x="21" y="31" width="22" height="5" rx="1.5" fill="#4a372d" stroke="#1a0f0a" stroke-width="1.8"/>
+</svg>

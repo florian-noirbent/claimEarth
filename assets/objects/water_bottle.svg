@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path d="M26 9h12v9l8 11v19c0 6-5 9-14 9s-14-3-14-9V29l8-11z" fill="#49a8ec" stroke="#173b62" stroke-width="3"/><path d="M26 9h12v7H26z" fill="#d9efff" stroke="#173b62" stroke-width="3"/><path d="M21 38h22v11c0 3-4 5-11 5s-11-2-11-5z" fill="#206fae"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="glass" gradientUnits="userSpaceOnUse" x1="12" y1="14" x2="50" y2="58"><stop offset="0" stop-color="#f2fcff"/><stop offset="1" stop-color="#a9dcf5"/></linearGradient>
+<linearGradient id="water" gradientUnits="userSpaceOnUse" x1="14" y1="34" x2="48" y2="60"><stop offset="0" stop-color="#62c4ff"/><stop offset="0.5" stop-color="#2389ea"/><stop offset="1" stop-color="#134fae"/></linearGradient>
+<linearGradient id="cork" gradientUnits="userSpaceOnUse" x1="24" y1="0" x2="40" y2="0"><stop offset="0" stop-color="#f3cf94"/><stop offset="1" stop-color="#a8713a"/></linearGradient>
+</defs>
+<rect x="25" y="4" width="14" height="11" rx="3" fill="url(#cork)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M26 20C16 24 11 32 11 41C11 52 20 59 32 59C44 59 53 52 53 41C53 32 48 24 38 20V13H26Z" fill="url(#glass)"/>
+<path d="M12.2 36C18 32.5 24 39 32 36C40 33 46 39.5 51.8 36C52.6 37.7 53 39.4 53 41C53 52 44 59 32 59C20 59 11 52 11 41C11 39.4 11.4 37.7 12.2 36Z" fill="url(#water)"/>
+<path d="M50 44A19 17 0 0 1 20 56A24 22 0 0 0 50 44Z" fill="#0a2f78" opacity="0.4"/>
+<path d="M26 20C16 24 11 32 11 41C11 52 20 59 32 59C44 59 53 52 53 41C53 32 48 24 38 20V13H26Z" fill="none" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M17.5 41C17.5 34 21 29 26 26" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" opacity="0.85"/>
+<circle cx="19.5" cy="47.5" r="1.9" fill="#ffffff" opacity="0.8"/>
+<path d="M24 19.5H40" stroke="#1a0f0a" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

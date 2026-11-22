@@ -1,8 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <path d="M22 12h52c5 12 7 24 7 36s-2 24-7 36H22c-5-12-7-24-7-36s2-24 7-36z" fill="#c2412b" stroke="#2b1d12" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M19 30h58M19 66h58" fill="none" stroke="#2b1d12" stroke-width="6" stroke-linecap="round"/>
-  <path d="M48 34l15 26H33z" fill="#ffd85a" stroke="#2b1d12" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M48 41v9" fill="none" stroke="#2b1d12" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="48" cy="55" r="2.4" fill="#2b1d12"/>
-  <path d="M30 17v8M30 71v8" fill="none" stroke="#e8735a" stroke-width="4" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+<defs>
+<linearGradient id="drum" gradientUnits="userSpaceOnUse" x1="12" y1="0" x2="84" y2="0"><stop offset="0" stop-color="#ff9a6e"/><stop offset="0.22" stop-color="#f04a2c"/><stop offset="0.62" stop-color="#b9221c"/><stop offset="1" stop-color="#6b1012"/></linearGradient>
+<linearGradient id="hoop" gradientUnits="userSpaceOnUse" x1="12" y1="0" x2="84" y2="0"><stop offset="0" stop-color="#e6edf1"/><stop offset="0.3" stop-color="#8d99a4"/><stop offset="1" stop-color="#353b43"/></linearGradient>
+<linearGradient id="plate" gradientUnits="userSpaceOnUse" x1="34" y1="36" x2="62" y2="62"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#cf8214"/></linearGradient>
+</defs>
+<path d="M25 9H71C79 20 84 34 84 48C84 62 79 76 71 87H25C17 76 12 62 12 48C12 34 17 20 25 9Z" fill="url(#drum)" stroke="#1a0f0a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M25 9H71C72.5 11 73.8 13 75 15H21C22.2 13 23.5 11 25 9Z" fill="#ffd0b0" opacity="0.35"/>
+<path d="M21 81H75C73.8 83 72.5 85 71 87H25C23.5 85 22.2 83 21 81Z" fill="#3a0606" opacity="0.45"/>
+<path d="M17 23H79C80.3 26 81.4 29 82.2 32H13.8C14.6 29 15.7 26 17 23Z" fill="url(#hoop)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M13.8 64H82.2C81.4 67 80.3 70 79 73H17C15.7 70 14.6 67 13.8 64Z" fill="url(#hoop)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M20.5 38C19.8 44 19.8 52 20.5 58" fill="none" stroke="#ffe0cf" stroke-width="4.5" stroke-linecap="round" opacity="0.55"/>
+<path d="M48 33.5L63.5 60H32.5Z" fill="url(#plate)" stroke="#1a0f0a" stroke-width="4.5" stroke-linejoin="round"/>
+<path d="M48 42V50" stroke="#1a0f0a" stroke-width="4.5" stroke-linecap="round"/>
+<circle cx="48" cy="55.2" r="2.5" fill="#1a0f0a"/>
 </svg>

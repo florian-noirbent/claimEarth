@@ -1,5 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <path d="M33 5C36 18 50 24 50 40C50 52 42 59 32 59C21 59 14 52 14 41C14 31 20 25 26 19C27 28 30 31 33 34C36 27 37 18 33 5Z" fill="#F06A32" stroke="#1A140F" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M32 33C38 39 41 44 41 48C41 54 37 57 32 57C26 57 23 54 23 48C23 43 27 39 31 35Z" fill="#FFD85A" stroke="#1A140F" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M27 49L31 53L38 44" fill="none" stroke="#1A140F" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<defs>
+<linearGradient id="fire" gradientUnits="userSpaceOnUse" x1="0" y1="4" x2="0" y2="60"><stop offset="0" stop-color="#ff4a1c"/><stop offset="0.5" stop-color="#f56a24"/><stop offset="1" stop-color="#ff9a2e"/></linearGradient>
+<linearGradient id="core" gradientUnits="userSpaceOnUse" x1="0" y1="30" x2="0" y2="58"><stop offset="0" stop-color="#ffc23a"/><stop offset="1" stop-color="#fff4a8"/></linearGradient>
+</defs>
+<path d="M33 4C36 18 51 24 51 40C51 52 43 60 32 60C21 60 13 52 13 41C13 31 19 25 26 18C27 27 30 31 33 34C36 27 37 17 33 4Z" fill="url(#fire)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M18.5 42C18.5 35 21 31 24 27" fill="none" stroke="#ffc18a" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+<path d="M32 31C39 38 43 43 43 48C43 54 38 58 32 58C26 58 21 54 21 48C21 43 26 38 31 33Z" fill="url(#core)" stroke="#1a0f0a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M26.5 47.5L31 52L38.5 42.5" fill="none" stroke="#1a0f0a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#86501b" stroke="#ffe0a0" stroke-width="4"/><path d="M15 39h28l7 8H20Z" fill="#ef9a2f" stroke="#fff0a8" stroke-width="3"/><path d="M25 39V24h14v15M39 26l11-8" fill="none" stroke="#ffe9af" stroke-width="4"/><circle cx="25" cy="50" r="5" fill="#39343b"/><circle cx="43" cy="50" r="5" fill="#39343b"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#fff0c0"/><stop offset="1" stop-color="#e0a85a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#d99a4a"/><stop offset="0.55" stop-color="#96581c"/><stop offset="1" stop-color="#4f2a0a"/></radialGradient>
+<linearGradient id="hull" gradientUnits="userSpaceOnUse" x1="0" y1="14" x2="0" y2="32"><stop offset="0" stop-color="#ffe07a"/><stop offset="1" stop-color="#f08a1c"/></linearGradient>
+<linearGradient id="bit" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="44" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#aab6c0"/><stop offset="1" stop-color="#4a545e"/></linearGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M21 31H43L32 54Z" fill="url(#bit)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M24.5 38L39 34.5M28 45L36 43" stroke="#1a0f0a" stroke-width="2.4" stroke-linecap="round"/>
+<rect x="17" y="13" width="30" height="19" rx="5" fill="url(#hull)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="22" y="17.5" width="12" height="8" rx="2" fill="#bdf2ff" stroke="#1a0f0a" stroke-width="2.4"/>
+<path d="M39 18V27" stroke="#1a0f0a" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

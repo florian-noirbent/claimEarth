@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <path d="M24 14V10C24 7 26 5 29 5H35C38 5 40 7 40 10V14" fill="none" stroke="#1A140F" stroke-width="4" stroke-linecap="round"/>
-  <path d="M12 26C12 19 17 14 24 14H40C47 14 52 19 52 26V54C52 57 50 59 47 59H17C14 59 12 57 12 54Z" fill="#B0652E" stroke="#1A140F" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M12 30C20 34 44 34 52 30" fill="none" stroke="#1A140F" stroke-width="4" stroke-linecap="round"/>
-  <rect x="20" y="38" width="24" height="15" rx="3" fill="#D88A44" stroke="#1A140F" stroke-width="4"/>
-  <rect x="29" y="34" width="6" height="8" rx="1.5" fill="#FFD85A" stroke="#1A140F" stroke-width="2.5"/>
+<defs>
+<linearGradient id="pack" gradientUnits="userSpaceOnUse" x1="12" y1="14" x2="52" y2="60"><stop offset="0" stop-color="#d99a5a"/><stop offset="0.5" stop-color="#a8652e"/><stop offset="1" stop-color="#663716"/></linearGradient>
+<linearGradient id="pocket" gradientUnits="userSpaceOnUse" x1="0" y1="38" x2="0" y2="54"><stop offset="0" stop-color="#e8ad6a"/><stop offset="1" stop-color="#b0702f"/></linearGradient>
+<linearGradient id="clasp" gradientUnits="userSpaceOnUse" x1="0" y1="32" x2="0" y2="43"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#cf8214"/></linearGradient>
+</defs>
+<path d="M24 15V10C24 7.2 26.2 5 29 5H35C37.8 5 40 7.2 40 10V15" fill="none" stroke="#1a0f0a" stroke-width="8" stroke-linecap="round"/>
+<path d="M24 15V10C24 7.2 26.2 5 29 5H35C37.8 5 40 7.2 40 10V15" fill="none" stroke="#8a5226" stroke-width="3" stroke-linecap="round"/>
+<path d="M11 26C11 19 17 14 24 14H40C47 14 53 19 53 26V54C53 57.3 50.3 60 47 60H17C13.7 60 11 57.3 11 54Z" fill="url(#pack)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M16.5 27C16.5 22.5 19.5 19.5 24 19" fill="none" stroke="#ffe0b0" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+<path d="M11 28C19 34 45 34 53 28" fill="none" stroke="#1a0f0a" stroke-width="4" stroke-linecap="round"/>
+<rect x="19" y="39" width="26" height="15" rx="3.5" fill="url(#pocket)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<rect x="28" y="32" width="8" height="11" rx="2" fill="url(#clasp)" stroke="#1a0f0a" stroke-width="3" stroke-linejoin="round"/>
 </svg>

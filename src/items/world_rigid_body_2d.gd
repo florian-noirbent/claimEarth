@@ -4,6 +4,9 @@ class_name WorldRigidBody2D
 extends Node2D
 
 
+## Sprite scale used when a body config names a texture without its own `visual_scale`.
+const DEFAULT_VISUAL_SCALE := 0.45
+
 var velocity := Vector2.ZERO
 var gravity := 900.0
 var destructive_terrain_tags := PackedStringArray(["lava"])
@@ -32,6 +35,8 @@ var _terrain_query = TerrainCollisionQuery.new()
 var body: Polygon2D
 var outline: Line2D
 var sprite: Sprite2D
+## Mirrors the sprite when the body heads left, so an upright icon never flies upside down.
+var sprite_mirrors_with_heading := false
 var _pending_polygon := PackedVector2Array([-6, -6, 6, -6, 6, 6, -6, 6])
 var _pending_color := Color.WHITE
 var _pending_outline_color := Color(0.1, 0.05, 0.02, 1.0)
@@ -60,8 +65,13 @@ func configure_body(config: Dictionary) -> void:
 	if visual_texture != null and sprite == null:
 		sprite = Sprite2D.new()
 		sprite.texture = visual_texture
-		sprite.scale = Vector2(0.45, 0.45)
+		sprite.scale = Vector2.ONE * float(config.get("visual_scale", DEFAULT_VISUAL_SCALE))
+		sprite.rotation = deg_to_rad(float(config.get("visual_rotation_degrees", 0.0)))
+		sprite.offset = config.get("visual_offset", Vector2.ZERO) as Vector2
+		# World sprites are drawn far below their texture size; mipmaps keep them stable in motion.
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		sprite.z_index = 10
+		sprite_mirrors_with_heading = bool(config.get("visual_mirror_with_heading", false))
 		add_child(sprite)
 	_ensure_visuals()
 
@@ -92,6 +102,7 @@ func advance_body(delta: float) -> StringName:
 	velocity.y += gravity * delta
 	if velocity.length_squared() > 1.0:
 		rotation = velocity.angle()
+		_mirror_sprite_with_heading()
 	var previous_position := global_position
 	global_position += velocity * delta
 	_ensure_terrain_query()
@@ -130,6 +141,15 @@ func _ensure_visuals() -> void:
 		outline_points.append(outline_points[0])
 	outline.points = outline_points
 	outline.default_color = _pending_outline_color
+	# The polygon is the fallback look; a body with a sprite shows only the sprite.
+	body.visible = sprite == null
+	outline.visible = sprite == null
+
+
+func _mirror_sprite_with_heading() -> void:
+	if sprite == null or not sprite_mirrors_with_heading or is_zero_approx(velocity.x):
+		return
+	sprite.scale.x = absf(sprite.scale.x) * signf(velocity.x)
 
 
 func _sample_terrain(world_position: Vector2) -> TerrainDefinition:

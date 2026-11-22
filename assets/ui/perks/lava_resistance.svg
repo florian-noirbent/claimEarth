@@ -1,1 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#872b13" stroke="#ffe7b0" stroke-width="4"/><path d="M33 9c5 13-4 13 4 22 3-8 11-10 9-1 7 14-2 25-14 25S12 46 19 31c3 7 9 5 8-3 0-8 5-12 6-19Z" fill="#ffbd31"/><path d="M33 34c6 7 1 14-3 14-5 0-7-6 3-14Z" fill="#fff4ad"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#fff0c8"/><stop offset="1" stop-color="#f0a86a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#d0522a"/><stop offset="0.55" stop-color="#8f2a12"/><stop offset="1" stop-color="#420f06"/></radialGradient>
+<linearGradient id="shield" gradientUnits="userSpaceOnUse" x1="16" y1="10" x2="48" y2="54"><stop offset="0" stop-color="#e6f4ff"/><stop offset="0.5" stop-color="#9ac0dc"/><stop offset="1" stop-color="#4a6a88"/></linearGradient>
+<linearGradient id="fire" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="46"><stop offset="0" stop-color="#ff4a1c"/><stop offset="1" stop-color="#ffa52e"/></linearGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M32 10L49 17V31C49 43 42 50 32 55C22 50 15 43 15 31V17Z" fill="url(#shield)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M33 18C35 27 43 30 43 38.5C43 45 38 48.5 32 48.5C26 48.5 21 45 21 39C21 33.5 25 30 28.5 26C29 30.5 31 32.5 33 34C34.5 30 35 25 33 18Z" fill="url(#fire)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M32 36C35 39 37 41 37 43.5C37 46 35 47 32 47C29 47 27.5 46 27.5 43.5C27.5 41 29.5 39 32 36Z" fill="#fff4a8"/>
+</svg>

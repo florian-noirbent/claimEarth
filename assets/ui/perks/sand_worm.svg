@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#856329" stroke="#ffeca6" stroke-width="4"/><path d="M13 42c4-20 15-28 28-22 11 5 10 20 1 24-8 4-15-5-10-11 5-6 13 1 7 6" fill="none" stroke="#f3cb62" stroke-width="9" stroke-linecap="round"/><circle cx="39" cy="38" r="2" fill="#3e2c13"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#fff6c0"/><stop offset="1" stop-color="#e6c46a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#d6ac52"/><stop offset="0.55" stop-color="#8f6a26"/><stop offset="1" stop-color="#463010"/></radialGradient>
+<linearGradient id="worm" gradientUnits="userSpaceOnUse" x1="14" y1="14" x2="48" y2="50"><stop offset="0" stop-color="#fff0b0"/><stop offset="0.5" stop-color="#f0c860"/><stop offset="1" stop-color="#b0802a"/></linearGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M17 50C17 28 23 17 34 17C43 17 48 23 48 30C48 37 43 41 38 41" fill="none" stroke="#1a0f0a" stroke-width="15" stroke-linecap="round"/>
+<path d="M17 50C17 28 23 17 34 17C43 17 48 23 48 30C48 37 43 41 38 41" fill="none" stroke="url(#worm)" stroke-width="9.5" stroke-linecap="round"/>
+<path d="M14 36L22.5 37.5M17 27L24.5 30.5M24 19L29 25M35 14.5V22M45.5 19L40.5 24.5" stroke="#8a601c" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+<circle cx="41" cy="37" r="2.2" fill="#1a0f0a"/>
+<path d="M9 50C13 46 17 52 22 49C26 47 28 51 30 50" fill="none" stroke="#1a0f0a" stroke-width="6" stroke-linecap="round"/>
+<path d="M9 50C13 46 17 52 22 49C26 47 28 51 30 50" fill="none" stroke="#fff0b0" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

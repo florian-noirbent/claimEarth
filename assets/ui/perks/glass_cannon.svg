@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#305b78" stroke="#c5f3ff" stroke-width="4"/><path d="M16 39h22l7-12 8 5-8 14H16Z" fill="#91dff2" stroke="#effdff" stroke-width="3"/><path d="m27 39 5-15 4 15m-10 5 7-10 5 10" fill="none" stroke="#31556b" stroke-width="2"/><path d="M46 24 53 12" stroke="#ffdb70" stroke-width="4" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#e8fbff"/><stop offset="1" stop-color="#86c8e0"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#6aa6c8"/><stop offset="0.55" stop-color="#2f6184"/><stop offset="1" stop-color="#143048"/></radialGradient>
+<linearGradient id="ice" gradientUnits="userSpaceOnUse" x1="14" y1="14" x2="50" y2="44"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#a6ecff"/><stop offset="1" stop-color="#4ab4dc"/></linearGradient>
+<linearGradient id="wheel" gradientUnits="userSpaceOnUse" x1="20" y1="36" x2="40" y2="54"><stop offset="0" stop-color="#e0a362"/><stop offset="0.5" stop-color="#a9652f"/><stop offset="1" stop-color="#643616"/></linearGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<path d="M13 34L41 15L50 27L22 46Z" fill="url(#ice)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M39 13L53 28" stroke="#1a0f0a" stroke-width="7" stroke-linecap="round"/>
+<path d="M39 13L53 28" stroke="#d8f8ff" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M28 28L32 33L30 38M34 24L36 29" fill="none" stroke="#1f5a7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19 33L33 23.5" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+<circle cx="29" cy="44" r="8" fill="url(#wheel)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="29" cy="44" r="2.4" fill="#1a0f0a"/>
+</svg>

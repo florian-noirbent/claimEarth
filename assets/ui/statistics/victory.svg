@@ -1,7 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <path d="M18 14H8V20C8 28 14 32 20 32M46 14H56V20C56 28 50 32 44 32" fill="none" stroke="#1A140F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M16 8H48V24C48 34 41 40 32 40C23 40 16 34 16 24Z" fill="#F5C030" stroke="#1A140F" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M22 13V24C22 29 25 33 29 34" fill="none" stroke="#FFE88A" stroke-width="3" stroke-linecap="round"/>
-  <path d="M28 40H36V48H28Z" fill="#D99A1C" stroke="#1A140F" stroke-width="4" stroke-linejoin="round"/>
-  <rect x="18" y="48" width="28" height="9" rx="2" fill="#8A4A22" stroke="#1A140F" stroke-width="4"/>
+<defs>
+<linearGradient id="cup" gradientUnits="userSpaceOnUse" x1="16" y1="6" x2="48" y2="40"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#c97a12"/></linearGradient>
+<linearGradient id="stem" gradientUnits="userSpaceOnUse" x1="0" y1="38" x2="0" y2="50"><stop offset="0" stop-color="#e0a524"/><stop offset="1" stop-color="#a8660f"/></linearGradient>
+<linearGradient id="plinth" gradientUnits="userSpaceOnUse" x1="0" y1="47" x2="0" y2="60"><stop offset="0" stop-color="#e0a362"/><stop offset="0.5" stop-color="#a9652f"/><stop offset="1" stop-color="#643616"/></linearGradient>
+</defs>
+<path d="M17 13H8V19C8 27 14 31 20 31M47 13H56V19C56 27 50 31 44 31" fill="none" stroke="#1a0f0a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 13H8V19C8 27 14 31 20 31M47 13H56V19C56 27 50 31 44 31" fill="none" stroke="#f0b52a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27 38H37V49H27Z" fill="url(#stem)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M15 6H49V23C49 34 41.5 40.5 32 40.5C22.5 40.5 15 34 15 23Z" fill="url(#cup)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M45.5 22C45.5 31 40 36.5 32 37C39 33 42 27 42 10H45.5Z" fill="#8a4a08" opacity="0.35"/>
+<path d="M21 11V23C21 27.5 23 31 26.5 33" fill="none" stroke="#fffbe0" stroke-width="3.2" stroke-linecap="round" opacity="0.9"/>
+<path d="M32 14L34.3 19L39.5 19.5L35.6 23L36.8 28.2L32 25.5L27.2 28.2L28.4 23L24.5 19.5L29.7 19Z" fill="#fffbe0" opacity="0.85"/>
+<rect x="17" y="48" width="30" height="11" rx="3" fill="url(#plinth)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
 </svg>

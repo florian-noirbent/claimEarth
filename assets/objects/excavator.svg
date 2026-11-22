@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><!-- Original industrial walking-drill icon. --><g stroke="#251c16" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 36 9 55H4l8-25M28 42 26 58h-5l1-18M44 36l10 19h5l-9-26" fill="none" stroke-width="4"/><path d="M13 31h38l-5 13H18z" fill="#d7861b"/><path d="M18 31 23 15h19l7 16" fill="#f2a52c"/><path d="M27 18h11v10H27z" fill="#75c4cc" stroke-width="2"/><path d="M21 27h24" fill="none" stroke="#ffe18a" stroke-width="2"/><path d="M43 16 49 9l4 4-5 7" fill="#7a858d"/><path d="M47 27h8l3 9-8 2z" fill="#ef9e21"/><path d="M32 42v12l-5 6h10z" fill="#697883"/><path d="M32 43v15" fill="none" stroke="#b9c4c7" stroke-width="2"/><path d="M27 52h10M26 56h12" fill="none" stroke="#f8d15a" stroke-width="2"/><path d="M30 60 34 60 35 63 29 63z" fill="#c9d0cd" stroke-width="2"/><path d="M15 38 9 42M49 38l7 4" fill="none" stroke="#9aa7a8" stroke-width="2"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="hull" gradientUnits="userSpaceOnUse" x1="14" y1="12" x2="46" y2="40"><stop offset="0" stop-color="#ffe07a"/><stop offset="0.45" stop-color="#f6a224"/><stop offset="1" stop-color="#b3560c"/></linearGradient>
+<linearGradient id="glassx" gradientUnits="userSpaceOnUse" x1="22" y1="19" x2="36" y2="31"><stop offset="0" stop-color="#e2fbff"/><stop offset="1" stop-color="#3aa9cc"/></linearGradient>
+<linearGradient id="bit" gradientUnits="userSpaceOnUse" x1="22" y1="0" x2="42" y2="0"><stop offset="0" stop-color="#f4f8fa"/><stop offset="0.45" stop-color="#a5b2bc"/><stop offset="1" stop-color="#48525c"/></linearGradient>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="0" y1="35" x2="0" y2="43"><stop offset="0" stop-color="#77838e"/><stop offset="1" stop-color="#2e353d"/></linearGradient>
+</defs>
+<path d="M17 33L7 43L8.5 57M47 33L57 43L55.5 57" fill="none" stroke="#1a0f0a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 33L7 43L8.5 57M47 33L57 43L55.5 57" fill="none" stroke="#b4c0c9" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4 58H13M51 58H60" stroke="#1a0f0a" stroke-width="7" stroke-linecap="round"/>
+<path d="M20 40H44L32 61.5Z" fill="url(#bit)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M24 47L39.5 43.5M27.5 54L36 51.5" stroke="#1a0f0a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M37 9L44 3" stroke="#1a0f0a" stroke-width="5" stroke-linecap="round"/>
+<circle cx="45" cy="3.5" r="2.6" fill="#ff4a3a" stroke="#1a0f0a" stroke-width="1.6"/>
+<path d="M17 12H42C47.5 12 51 15.5 51 21V36H13V16C13 13.8 14.8 12 17 12Z" fill="url(#hull)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+<path d="M39 32H51V36H39Z" fill="#8a3f08" opacity="0.5"/>
+<path d="M41 14.5L47.5 22M45.5 14.5L49 18.5" stroke="#1a0f0a" stroke-width="2.4" stroke-linecap="round" opacity="0.75"/>
+<rect x="19" y="17.5" width="17" height="12" rx="3" fill="url(#glassx)" stroke="#1a0f0a" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M22.5 26L27 20.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.9"/>
+<path d="M17 14.8H30" stroke="#fff6c8" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+<rect x="19" y="34.5" width="26" height="7.5" rx="2.5" fill="url(#ring)" stroke="#1a0f0a" stroke-width="4" stroke-linejoin="round"/>
+</svg>

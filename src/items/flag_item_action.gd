@@ -19,6 +19,11 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"color": factory.projectile_color,
 		"outline_color": factory.projectile_outline_color,
 		"polygon": factory.projectile_points,
+		"visual_texture": definition.icon,
+		"visual_scale": factory.projectile_sprite_scale,
+		"visual_rotation_degrees": factory.projectile_sprite_rotation_degrees,
+		"visual_offset": factory.projectile_sprite_offset,
+		"visual_mirror_with_heading": true,
 		"destructive_terrain_tags": factory.destructive_terrain_tags,
 		"ignores_water": factory.ignores_water,
 	}

@@ -227,7 +227,8 @@ all terrain hazards and suffocation. Death never records current depth.
 
 Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Pickaxes, shovels,
 flares, Water Bottles, Acid Bottles, and Excavators start at zero and are found in chests. Item
-tuning lives under `config/items/`.
+tuning lives under `config/items/`. A thrown item appears in the world as its toolbar
+icon and turns to follow its flight; the flag flies pole tip first with its banner up.
 
 - Pickaxe: changes an aimed triangular three-hex wedge of Stone to Dirt or Dirt to
   Sand. Its charge follows target fill, capped at three per use; a final partial

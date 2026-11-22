@@ -12,3 +12,4 @@ gravity = 920.0
 projectile_color = Color(0.72, 0.31, 0.18, 1)
 projectile_outline_color = Color(0.16, 0.06, 0.03, 1)
 projectile_points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
+projectile_sprite_scale = 0.36

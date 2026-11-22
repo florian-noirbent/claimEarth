@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#75501a" stroke="#ffe096" stroke-width="4"/><path d="M13 28h38v24H13Z" fill="#c98a28" stroke="#fff0a8" stroke-width="3"/><path d="M12 24h40v8H12ZM29 31h6v9h-6z" fill="#ffcf55"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="58"><stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#e6b84a"/></linearGradient>
+<radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="25" cy="22" r="40"><stop offset="0" stop-color="#c9963a"/><stop offset="0.55" stop-color="#84591a"/><stop offset="1" stop-color="#3f2808"/></radialGradient>
+<linearGradient id="box" gradientUnits="userSpaceOnUse" x1="0" y1="30" x2="0" y2="52"><stop offset="0" stop-color="#e0a362"/><stop offset="0.5" stop-color="#a9652f"/><stop offset="1" stop-color="#643616"/></linearGradient>
+<linearGradient id="lid" gradientUnits="userSpaceOnUse" x1="0" y1="14" x2="0" y2="31"><stop offset="0" stop-color="#f0b06a"/><stop offset="1" stop-color="#a8642c"/></linearGradient>
+<linearGradient id="lock" gradientUnits="userSpaceOnUse" x1="0" y1="27" x2="0" y2="39"><stop offset="0" stop-color="#fff3a6"/><stop offset="0.45" stop-color="#f8c734"/><stop offset="1" stop-color="#cf8214"/></linearGradient>
+<radialGradient id="shine" gradientUnits="userSpaceOnUse" cx="32" cy="30" r="16"><stop offset="0" stop-color="#fff6a0" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6a0" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="32" cy="32" r="30.5" fill="#1a0f0a"/><circle cx="32" cy="32" r="27.5" fill="url(#ring)"/><circle cx="32" cy="32" r="23" fill="url(#disc)" stroke="#1a0f0a" stroke-width="2"/><path d="M12.5 26A20.5 20.5 0 0 1 28 11.8" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.4"/>
+<circle cx="32" cy="27" r="16" fill="url(#shine)"/>
+<path d="M13 31H51V48C51 50.2 49.2 52 47 52H17C14.8 52 13 50.2 13 48Z" fill="url(#box)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M13 31C13 21 20 15 32 15C44 15 51 21 51 31Z" fill="url(#lid)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M18 26C19.5 21.5 23 19.5 27 18.5" fill="none" stroke="#fff0d0" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>
+<path d="M20 16.5V52M44 16.5V52" stroke="#1a0f0a" stroke-width="2.4" opacity="0.7"/>
+<rect x="27.5" y="26.5" width="9" height="12" rx="2.2" fill="url(#lock)" stroke="#1a0f0a" stroke-width="2.6" stroke-linejoin="round"/>
+<circle cx="32" cy="32" r="1.6" fill="#1a0f0a"/>
+</svg>

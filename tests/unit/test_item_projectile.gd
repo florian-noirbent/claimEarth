@@ -34,6 +34,49 @@ func test_water_bottle_action_uses_its_icon_as_a_projectile_sprite() -> void:
 	assert_eq(projectile_data.get("visual_texture"), definition.icon)
 
 
+func test_sprite_replaces_the_fallback_polygon() -> void:
+	var projectile := ItemProjectile.new()
+	projectile.configure({
+		"visual_texture": load("res://assets/objects/flare.svg") as Texture2D,
+		"visual_scale": 0.3,
+		"fuse_seconds": 5.0,
+	})
+	add_child_autofree(projectile)
+	await wait_process_frames(1)
+
+	assert_almost_eq(projectile.sprite.scale.x, 0.3, 0.0001)
+	assert_false(projectile.body.visible, "The fallback polygon must not show under the sprite")
+	assert_false(projectile.outline.visible)
+
+
+func test_bombs_and_flag_use_their_icons_as_projectile_sprites() -> void:
+	for item_name: String in ["small_bomb", "large_bomb", "flag"]:
+		var definition := load("res://config/items/%s.tres" % item_name) as ItemDefinition
+		var action := definition.action_factory.create_action(definition) as ItemAction
+		var projectile_data := action.create_projectile(Vector2.ZERO, Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO)
+
+		assert_eq(projectile_data.get("visual_texture"), definition.icon, item_name)
+		assert_gt(float(projectile_data.get("visual_scale", 0.0)), 0.0, item_name)
+
+
+func test_flag_sprite_stays_banner_up_when_flying_left() -> void:
+	var definition := load("res://config/items/flag.tres") as ItemDefinition
+	var action := definition.action_factory.create_action(definition) as ItemAction
+	var projectile := ItemProjectile.new()
+	var projectile_data := action.create_projectile(Vector2.ZERO, Vector2.RIGHT, ItemTrajectoryService.new(), Vector2.ZERO)
+	projectile_data["gravity"] = 0.0
+	projectile.configure(projectile_data)
+	add_child_autofree(projectile)
+
+	projectile.velocity = Vector2(120.0, 0.0)
+	projectile.advance_body(1.0 / 60.0)
+	assert_gt(projectile.sprite.scale.x, 0.0)
+
+	projectile.velocity = Vector2(-120.0, 0.0)
+	projectile.advance_body(1.0 / 60.0)
+	assert_lt(projectile.sprite.scale.x, 0.0, "A left-bound flag mirrors so its banner stays above the pole")
+
+
 func test_projectile_can_sample_world_terrain_after_pre_tree_configuration() -> void:
 	var registry := FixtureLoader.terrain_registry()
 	var world := WorldGrid.new(WorldDimensions.new(5, 5), FixtureLoader.terrain_id("Air"))
