@@ -20,6 +20,7 @@ scenes/app/run_session.tscn Disposable gameplay composition
 scenes/player/          Player scene
 scenes/ui/              Reusable editor-authored UI components
 src/app/                Run state, preferences, input, and top-level controllers
+src/audio/              Sound synthesis toolkit, sound recipes, voice pool, audio director
 src/generation/         Deterministic generation passes
 src/items/              Definitions, actions, projectiles, explosions
 src/leaderboard/        Service contract, fake, SimpleBoards adapter
@@ -192,6 +193,52 @@ To add a feedback moment:
 3. Connect the fact in `FeedbackRouter.attach` and call both sinks from one handler.
 4. Test the fact on its owner and, for a new routing rule, in
    `tests/integration/test_feedback_flow.gd`.
+
+### Audio
+
+Every sound is synthesized in code; the project ships no audio files. `src/audio`
+is layered so that only the top layer knows about the game:
+
+| Script | Role |
+| --- | --- |
+| `AudioSynth` | Pure static toolkit on `PackedFloat32Array` mono buffers: oscillators with pitch glides and vibrato, two-operator FM, seeded white/pink noise and crackle, decay/ADSR/point envelopes, one-pole and swept biquad filters, tremolo, ring modulation, tanh saturation, comb and cave-tail reflections, layering, normalization, and 16-bit PCM/`AudioStreamWAV` output |
+| `SfxRecipes` | One recipe per sound id built from `AudioSynth`. A recipe is a pure function of the mix rate, removes DC, fades both edges, and normalizes to `RENDER_PEAK` |
+| `SfxBank` | Renders a sound once into an `AudioStreamWAV` and keeps it; renders on first use, or ahead of use through a budgeted `prewarm_step` |
+| `SfxVoicePool` | A fixed set of `AudioStreamPlayer` voices on one bus; a busy pool steals the oldest voice of the lowest priority and drops a sound that every voice outranks |
+| `AudioTuning`, `SfxCueTuning` | `config/audio/audio_tuning.tres`: mix rate, voice counts, per-sound volume, random pitch/volume variation, minimum interval and priority, the sound chosen for each resource-declared key, and the raw-fact thresholds |
+| `AudioDirector` | Turns each `play_*` moment into zero or one sound: filters it (a running step is not a landing), scales volume and pitch from the fact, applies rate limit, variation, distance, and crowd ducking, and emits `cue_played` |
+
+`AudioDirector` renders the tuned sounds a few per frame after startup
+(`prewarm_budget_msec`), in the order of `AudioTuning.cues`, and skips that when the
+audio driver is the headless dummy. Playback uses plain `AudioStreamPlayer` voices
+with pre-rendered streams, which the Web export plays as samples without threads or
+cross-origin isolation; a sound never generates samples while it plays.
+
+`default_bus_layout.tres` defines `Music`, `SFX`, and `UI` under `Master`. Effects
+play on `SFX`, interface sounds on `UI`, and `Music` is reserved. `Master` carries a
+hard limiter, but bus effects do not run in the Web export's sample playback, so the
+mix keeps its own headroom: recipes peak below full scale, cue volumes are negative,
+and a sound entering a crowded pool is turned down (`crowd_duck_db_per_voice`).
+`AudioTuning.set_gain_db` moves the whole set at once. `AudioDirector.set_bus_volume`,
+`bus_volume`, `set_bus_muted`, and `is_bus_muted` are the volume interface for
+settings; nothing persists them yet.
+
+Sounds with a world position fade with their distance from the screen centre of the
+viewport's current `Camera2D`; there are no positional audio nodes. Variation uses a
+seedable generator (`set_variation_seed`) and rate limits and voice lifetimes use an
+injectable clock (`set_clock`), so tests are deterministic.
+
+To add or change a sound:
+
+1. Add a recipe function to `SfxRecipes` and register its id in `_table`.
+2. Add an `SfxCueTuning` for the id to `config/audio/audio_tuning.tres`.
+   `AudioTuning.validate` rejects tuning or a mapping without a recipe, and
+   `tests/unit/test_audio_director.gd` requires tuning for every recipe.
+3. Play it from the `AudioDirector` moment, or map a resource key to it in the keyed
+   dictionaries of `AudioTuning`. Never branch on item or object identity in code.
+4. Render it to a WAV from a scratch script (`SfxRecipes.render`,
+   `AudioSynth.to_stream`, `save_to_wav`) to audition it and to check peak, loudness,
+   and spectrum against the rest of the set.
 
 ## Statistics
 
@@ -801,6 +848,7 @@ branch is required.
 | Statistics | Controller/builder unit tests, statistics flow integration test, plus fast suite |
 | Feedback facts and routing | Owner signal tests, feedback flow integration test, plus fast suite |
 | World effects and camera shake | Effect library validation, effect budget and feedback unit tests, shake model tests, fast suite, and performance suite |
+| Audio synthesis, mix, playback | `AudioSynth`, `SfxRecipes`, `SfxVoicePool`, and `AudioDirector` unit tests, plus fast suite; analyse rendered WAVs for a new or changed recipe |
 | Input/touch/gamepad/settings | Input unit/contract tests, run/UI integration tests, plus fast suite |
 | Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 

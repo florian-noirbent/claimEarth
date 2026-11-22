@@ -68,7 +68,12 @@ Current art is original repository content stored by runtime use:
   translucent shapes. Each icon keeps its square canvas (64, 96, or 128 units) and is
   checked at 14 to 32 pixels on dark, grey, and sky backgrounds.
 - Gameplay effects are generated procedurally by `GameplayFeedback`.
-- Audio cues are synthesized at runtime by `AudioDirector`.
+- There are no audio files. Every sound effect is synthesized from code by
+  `SfxRecipes` on the `AudioSynth` toolkit, rendered once at 32 kHz mono 16-bit, and
+  mixed by `config/audio/audio_tuning.tres`. The set aims for a warm, punchy cave
+  character: sine sub thumps with pitch drops, filtered noise, FM metal and bells,
+  soft saturation, and short comb reflections for space. Music has its own `Music`
+  bus and no content yet.
 
 The menu background is a diffusion-model generated PNG created with ComfyUI using
 `zavychromaxl_v80.safetensors`. It depicts a stylized underground cave scene with

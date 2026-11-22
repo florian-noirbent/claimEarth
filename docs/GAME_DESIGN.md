@@ -462,6 +462,17 @@ are stored apart from scores and are never submitted.
 - The Statistics page reveals its sections top to bottom; whole-number values count up
   and bars grow to their share.
 - A held touch stick brightens, and the hook ring thickens while the hook is held.
+- Every feedback moment has a synthesized sound effect; there is no music yet.
+  Explosions are the loudest sounds and grow lower and louder with their blast
+  radius; a large blast is longer and deeper than a small one. Interface sounds are
+  the quietest. Landings sound only after real air time or a fast fall and get
+  heavier with impact speed, so running across hex steps is silent. Slow bounces,
+  gentle barrel bumps, and slow wading are silent too. The hook has its own launch,
+  bite (duller on a barrel), miss, release, and torn-off sounds. Each death cause has
+  its own sting over a shared falling motif, and the hazard warning rises in pitch and
+  doubles its pulse as the meter fills. Chests, geodes, and barrels break and open with
+  wood, crystal, and metal sounds. Repeated sounds vary slightly in pitch and volume,
+  and sounds far from the screen centre are quieter.
 - Lighting diffuses through neighboring hexes using the emitting hex's
   terrain-specific coefficient. The surface row starts fully lit.
   Lava emits light and the player emits a stronger moving light. Light at or above
