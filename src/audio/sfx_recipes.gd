@@ -336,12 +336,15 @@ static func _hard_impact(rate: int) -> PackedFloat32Array:
 
 
 static func _knockout(rate: int) -> PackedFloat32Array:
-	# A short, dull grunt under the impact thump: no ringing or wobble, since it repeats often.
-	var mix := S.silence(_frames(0.3, rate))
-	var grunt := _sweep(rate, 0.24, TRIANGLE, 210.0, 105.0, 0.7, 0.012, 0.2)
-	S.low_pass(grunt, rate, 650.0)
-	mix = _layer(mix, grunt, rate, 1.0)
-	mix = _layer(mix, _noise(rate, 0.16, 58, BAND, 700.0, 300.0, 0.7, 0.01, 0.14, true), rate, 0.35)
+	# A soft falling "ooh" just after the impact thump and above its pitch, so it is
+	# heard under the thump; no ringing or wobble, since it repeats often.
+	var lead_in := 0.1
+	var mix := S.silence(_frames(lead_in + 0.34, rate))
+	var groan := S.tone(_frames(0.32, rate), rate, TRIANGLE, 440.0, 250.0, 0.8)
+	S.env_points(groan, rate, PackedVector2Array([Vector2(0.0, 0.0), Vector2(0.03, 1.0), Vector2(0.14, 0.6), Vector2(0.32, 0.0)]))
+	S.low_pass(groan, rate, 1500.0)
+	mix = _layer(mix, groan, rate, 1.0, lead_in)
+	mix = _layer(mix, _noise(rate, 0.14, 58, BAND, 900.0, 500.0, 0.7, 0.02, 0.11, true), rate, 0.25, lead_in)
 	return _finish(mix, rate, 0.004, 0.03)
 
 
