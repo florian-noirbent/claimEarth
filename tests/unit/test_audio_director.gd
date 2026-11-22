@@ -113,6 +113,26 @@ func test_slow_bounces_and_barrel_bumps_are_silent_and_rolling_is_rate_limited()
 	assert_between(_played.size(), 3, 5)
 
 
+func test_a_pile_of_landing_body_parts_is_thinned_out_and_slow_ones_are_silent() -> void:
+	_director.play_gib_impact(Vector2.ZERO, 60.0)
+	assert_eq(_played, [], "A part that barely touches down makes no sound")
+
+	# Sixteen parts landing over a third of a second.
+	for part in range(16):
+		_director.play_gib_impact(Vector2.ZERO, 500.0)
+		_now_msec += 20
+
+	assert_between(_played.size(), 3, 6)
+	for id in _ids():
+		assert_eq(id, &"gib_splat")
+	_played.clear()
+	_now_msec += 1000
+	_director.play_gib_impact(Vector2.ZERO, 200.0)
+	_now_msec += 1000
+	_director.play_gib_impact(Vector2.ZERO, 900.0)
+	assert_lt(float(_played[0][1]), float(_played[1][1]) - 3.0, "A harder landing is louder")
+
+
 func test_polyphony_cap_holds_under_a_burst_and_ducks_the_crowd() -> void:
 	var tuning := load(TUNING_PATH) as AudioTuning
 	for id in SfxRecipes.ids():
@@ -405,6 +425,7 @@ func _call_every_moment(director: AudioDirector) -> void:
 		director.play_hook_release.bind(false),
 		director.play_splash.bind(300.0, true),
 		director.play_splash.bind(300.0, false),
+		director.play_gib_impact.bind(Vector2.ZERO, 500.0),
 		director.play_sand_burrow.bind(true),
 		director.play_sand_burrow.bind(false),
 		director.play_hazard_warning.bind(DeathCauseScript.ACID, 0.7),

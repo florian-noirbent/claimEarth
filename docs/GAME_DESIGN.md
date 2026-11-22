@@ -132,13 +132,41 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 
 When the player dies, the run is decided at that moment: statistics record the death,
 no score is saved, and input, pause, the hook, and item use stop. For two seconds the
-explorer stays where it died while terrain, thrown items, explosions, effects, and
-the camera keep running and the depth, perk, and hazard readouts stay on screen; the
-toolbar, pause button, and touch controls leave at once. Nothing that happens in the
-beat changes the outcome. The red result panel and the game-over sound follow. A
+death plays out where it happened while terrain, thrown items, explosions, effects,
+and the camera keep running and the depth, perk, and hazard readouts stay on screen;
+the toolbar, pause button, and touch controls leave at once. Nothing that happens in
+the beat changes the outcome. The red result panel and the game-over sound follow. A
 destroyed flag ends the run the same way after 0.8 seconds, with the explorer
 standing still. A Relentless death that drops the flag has no beat because the run
 continues.
+
+Every death takes the explorer apart in its own cartoon way. The sixteen body parts
+come off the body, fly, bounce off the hex terrain, slow down in liquids, and come to
+rest before the result panel opens; they stay where they fell behind it. The camera
+does not follow them. A held rope lets go and falls back. The remains are drawn over
+terrain, lava, and acid and are not darkened by the cave, so they read everywhere.
+
+- Bomb: the body bursts at once. The parts are thrown away from the blast, spinning,
+  scorched with glowing embers and an ember-orange outline, trailing smoke and blood,
+  in a big red splash; the helmet and boots bounce the farthest.
+- Impact: the body is squashed flat against the surface it hit for an instant, then
+  bursts into a wide blood splash along that surface with stars and bone bits. The
+  parts scatter along the surface and the helmet and boots bounce away.
+- Cooked in Lava: the body flashes white-hot, stands in flames, chars to black, and
+  crumbles from the feet up; the parts burn away behind a glowing edge into ash and
+  rising embers. Only the charred helmet is left, sizzling, and it bobs in lava.
+- Cooked in Steam: the body turns scalded red and blisters, then pops in a white
+  burst of vapor; the red parts drop and keep steaming.
+- Acid: the body turns green and sags, dripping. Its parts drop from the feet up and
+  melt away from the top down behind a bright green edge into a bubbling puddle; the
+  helmet plops down last and stays.
+- Poison: the body turns a sickly green and swells like a balloon, leaking gas, then
+  pops into a green cloud with bubbles; the parts drift down slowly.
+- Suffocation: no blood. The body turns blue-purple, clutches its throat and
+  shudders while bubbles rise, lets out one last big bubble, and falls apart in a
+  heap like a puppet with cut strings.
+
+A death by any other cause bursts like the bomb death without the scorching.
 
 ## World
 
@@ -491,7 +519,9 @@ are stored apart from scores and are never submitted.
   knocked-out explorer for as long as the knockout lasts, hook launch streaks, sparks
   and chips where the hook bites (a ring on a moving target), splashes in the
   liquid's color, sand bursts, a pulse in the hazard's meter color while a hazard
-  warns, and a death burst with a cause-specific addition.
+  warns, and a white flash at every death, followed by the effects of that death's
+  sequence: blood, smoke, flames, ash, gas, drips, bubbles, trails behind flying body
+  parts, and a splat with a short-lived stain where a part hits terrain.
 - Item and world moments have world effects: a throw whoosh, a tool swing arc with
   chips, bounce sparks, a burn-out fizzle, glass and liquid from a broken bottle,
   closing red rings on a lit chain fuse, planks, crystal, or metal from a destroyed
@@ -522,7 +552,8 @@ are stored apart from scores and are never submitted.
   heavier with impact speed, so running across hex steps is silent. Slow bounces,
   gentle barrel bumps, and slow wading are silent too. The hook has its own launch,
   bite (duller on a barrel), miss, release, and torn-off sounds. Each death cause has
-  its own sting over a shared falling motif, and the hazard warning rises in pitch and
+  its own sting over a shared falling motif, loose body parts land with a soft wet
+  splat that gets louder with their speed, and the hazard warning rises in pitch and
   doubles its pulse as the meter fills. Chests, geodes, and barrels break and open with
   wood, crystal, and metal sounds. Repeated sounds vary slightly in pitch and volume,
   and sounds far from the screen centre are quieter. A refused item use plays a

@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_e07oe"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_5rhdr"]
+
+[sub_resource type="Resource" id="Resource_ivk2g"]
+script = ExtResource("1_e07oe")
+effect_key = &"bomb_burst"
+aim = 1
+
+[sub_resource type="Resource" id="Resource_o6fuy"]
+script = ExtResource("1_e07oe")
+effect_key = &"blood_spurt"
+anchor = 1
+aim = 2
+
+[sub_resource type="Resource" id="Resource_0vjc0"]
+script = ExtResource("1_e07oe")
+effect_key = &"blood_spurt"
+at = 0.1
+plays = 6
+anchor = 3
+aim = 3
+
+[sub_resource type="Resource" id="Resource_77vc6"]
+script = ExtResource("1_e07oe")
+effect_key = &"smolder"
+at = 0.55
+plays = 3
+interval = 0.14
+anchor = 1
+
+[sub_resource type="Curve" id="Curve_vn55f"]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, -0.6, 1, 1, Vector2(0.5, 0.7), -0.6, -0.9, 1, 1, Vector2(1, 0.25), -0.9, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_c5sjh"]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, -25.0, 1, 1, Vector2(0.04, 0), -25.0, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_np3ro"]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, -0.24999996, 1, 1, Vector2(0.6, 0.85), -0.24999996, -0.8750001, 1, 1, Vector2(1, 0.5), -0.8750001, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_qnyux"]
+bake_resolution = 200
+_data = [Vector2(0, 0.3), 0.0, 0.79999995, 1, 1, Vector2(0.25, 0.5), 0.79999995, 0.13333336, 1, 1, Vector2(1, 0.6), 0.13333336, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_5rhdr")
+inherit_velocity = 0.6
+radial_speed_min = 180.0
+radial_speed_max = 430.0
+push_speed_min = 240.0
+push_speed_max = 540.0
+push_spread_degrees = 50.0
+lift_speed_min = 140.0
+lift_speed_max = 320.0
+spin_degrees_min = 900.0
+spin_degrees_max = 1800.0
+gib_scale = 1.9
+featured_parts = Array[StringName]([&"Head", &"Boot", &"BootLeft"])
+featured_speed_scale = 1.15
+featured_restitution = 0.72
+gravity = 1700.0
+spin_drag = 0.4
+restitution = 0.45
+friction = 0.25
+flash = SubResource("Curve_c5sjh")
+flash_color = Color(1, 0.95, 0.8, 1)
+scorch = SubResource("Curve_qnyux")
+scorch_color = Color(0.2, 0.1, 0.07, 1)
+ember = SubResource("Curve_vn55f")
+outline_glow = SubResource("Curve_np3ro")
+outline_glow_color = Color(1, 0.4, 0.08, 1)
+cues = Array[ExtResource("1_e07oe")]([SubResource("Resource_ivk2g"), SubResource("Resource_o6fuy"), SubResource("Resource_0vjc0"), SubResource("Resource_77vc6")])
+trail_effect_key = &"smoke_blood_trail"
+trail_interval_seconds = 0.035
+splat_effect_key = &"blood_splat"

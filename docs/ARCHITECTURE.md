@@ -113,11 +113,21 @@ discards whatever the still-running world reports. The countdown runs only in th
 phase, so a restart or a return to the menu cancels it. `AppRoot.death_beat_seconds`
 and `flag_lost_beat_seconds` are exported; zero skips the phase.
 
-`PlayerController.begin_death(cause, duration_seconds)` is the seam for a death
-animation. `AppRoot` calls it through `RunSession.begin_player_death` exactly once,
-when a death is final (never for a Relentless flag drop), with the length of the beat;
-it emits `death_began`. Today it only stops the player's physics for good, and the
-node stays in the scene, visible and in place, until the session is disposed.
+`PlayerController.begin_death(cause, duration_seconds, context)` is the seam of the
+death sequence. `AppRoot` calls it through `RunSession.begin_player_death` exactly
+once, when a death is final (never for a Relentless flag drop), with the length of the
+beat. It stops the player's physics for good, releases the hook, starts the death
+sequence of that cause (see Player, Camera, And Items), and emits `death_began`. The
+node stays in the scene at its death position until the session is disposed, so a
+restart or a return to the menu frees a half-played sequence with it. A zero beat
+still starts the sequence; it then plays behind the result panel.
+
+`DeathContext` carries the facts a reporter knows about a death and decides nothing
+about its look. `RunItemController.player_killed(cause, source_position)` reports the
+blast center and `AppRoot` wraps it with `DeathContext.from_source`; a death the
+player requests itself arrives without one. `PlayerController` completes the context
+at the seam with its velocity, the surface normal and incoming velocity of a lethal
+impact, and the perk tags of the terrain at the body.
 
 ## Feedback
 
@@ -126,7 +136,7 @@ never decide how a moment sounds or looks:
 
 | Owner | Facts |
 | --- | --- |
-| `PlayerController` | `jumped`, `landed`, `hard_impact`, `knocked_out`, `hook_launched`, `hook_attached`, `hook_missed`, `hook_released`, `liquid_entered`, `liquid_exited`, `sand_burrow_changed`, `hazard_warning` |
+| `PlayerController` | `jumped`, `landed`, `hard_impact`, `knocked_out`, `hook_launched`, `hook_attached`, `hook_missed`, `hook_released`, `liquid_entered`, `liquid_exited`, `sand_burrow_changed`, `hazard_warning`, `death_cue`, `gib_landed` |
 | `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `use_refused`, `projectile_spawned`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
 | `AppUiController` | `ui_feedback_requested(kind)` for hover and press on every button, including toolbar slots and reward cards |
 | `AppRoot` | Run-state moments: run start, pause and resume, game over, score confirmed, player death, flag outcomes, victory, reward picker shown |
@@ -136,6 +146,12 @@ Facts carry world positions, speeds in px/s, definitions, and resource-declared 
 `projectile_spawned(projectile, definition)` is the one fact that carries a node: the
 thrown `ItemProjectile`, already in the tree. A sink may read it while it lives but
 must not own it, reparent it, or keep it alive.
+`death_cue(key, world_position, direction, strength)` and
+`gib_landed(key, world_position, normal, impact_speed)` come from the player's death
+sequence while it plays: a cue asks for the effect a `DeathSequence` declares under
+`key`, and a landing reports a loose body part hitting terrain. The sequence decides
+when and where; `GameplayFeedback` decides what the key looks like and
+`AudioDirector` how a landing sounds.
 `RunWorldController` relays player facts as `player_*` signals and `RunSession`
 relays every fact unchanged. `HazardWarningTracker` rate-limits `hazard_warning`
 with the level and interval exported on `PlayerController`. `use_refused(reason,
@@ -166,7 +182,7 @@ data:
 | `EffectEmitter` | One particle layer: shape (disc, glow, ring or arc, streak, chunk, shard, star), blend (normal or additive), count, delays, lifetime, placement, motion (ballistic or orbit), size, and a color gradient over its life |
 | `EffectRecipe` | The emitter layers of one effect in draw order, plus the camera shake the moment asks for (`config/presentation/effects/*.tres`) |
 | `AttachedEffect` | A recipe that keeps playing on a moving body: the interval between plays, the attach point in texture px from the sprite's center, what the recipe is aimed along (nothing, outward through the attach point, or the body's velocity), and the scale it plays at |
-| `GameplayEffectLibrary` | One recipe per moment, keyed dictionaries for moments that vary by death cause, resolution kind, object key, or container key, one `AttachedEffect` per thrown item's feedback key, and the speed thresholds (`config/presentation/gameplay_effects.tres`) |
+| `GameplayEffectLibrary` | One recipe per moment, keyed dictionaries for moments that vary by resolution kind, object key, or container key, `death_cue_by_key` for every effect a death sequence asks for, one `AttachedEffect` per thrown item's feedback key, and the speed thresholds (`config/presentation/gameplay_effects.tres`) |
 | `WorldEffects` | Child node of `GameplayFeedback` in `run_session.tscn`: holds the library and plays recipes into two shared `EffectBatch` layers |
 | `EffectBatch` | Fixed ring of packed particle slots simulated and drawn by one canvas item with immediate-mode `_draw` |
 
@@ -209,6 +225,13 @@ Rules that keep effects cheap and safe:
   the final effects, the planted flag's pop, and the shake play out behind the result
   screens.
 - A planted flag stays in the world as a sprite owned by `GameplayFeedback`.
+- Death effects are ordinary recipes in the shared layers. `spawn_death` plays the
+  flash every death shares; `spawn_death_cue` plays the recipe stored under a cue's
+  key at the position, direction, and strength the death sequence reports, and
+  `spawn_gib_splat` plays one where a body part lands, scaled by its speed
+  (`gib_splat_min_speed`, `gib_splat_full_speed`). Trails, drips, and stains are
+  short-lived particles, so the particle budget thins a crowded death and nothing
+  persists on the terrain. A key without an entry shows nothing.
 
 To add or change an effect, edit or add an `EffectRecipe` resource, reference it
 from the library, and play it from the moment's `GameplayFeedback` method. A new
@@ -617,9 +640,11 @@ uses virtual solid cells at the sides and the bottom; generation does not create
 clamping. `PlayerRuntimeTuning` compiles the immutable perk snapshot against the
 authored movement and grapple resources, producing duplicated active configs and
 typed player, terrain, and hazard policy without exposing modifier keys throughout
-the controller. `PlayerPresentationController` owns the body rig, rope, hook, and
-sand-burrow look; `PlayerController` updates it synchronously after physics and
-it owns no gameplay decisions or independent processing.
+the controller. `PlayerPresentationController` owns the body rig, rope, hook,
+sand-burrow look, and the death sequence. While the player lives, `PlayerController`
+updates it synchronously after physics and it has no processing of its own; it owns
+no gameplay decisions. The one exception is the death sequence, which steps itself
+because the dead player's physics no longer runs (see below).
 
 The body is `PlayerRig`, a cutout skeleton generated into
 `scenes/player/player_rig.tscn` by `tools/build_player_rig.gd`. Bones form the
@@ -645,13 +670,63 @@ line so mirroring the rig leaves the rope start in place), the lean along the ro
 and the knockout. The presentation steps `GrappleRopeVisual` in the same call: it
 receives only whether the hook is attached and where, and derives the launch
 flight, the bite, the fall back after a miss, and the whip back after a release
-from those facts and the step time. While knocked
+from those facts and the step time. `let_go` drops a rope that is out for good; the
+death sequence then steps it until it is stowed. While knocked
 out, the presentation turns the body (spin in flight, rolling with ground speed,
 lying flat at rest) and `PlayerRig` swings the limp bones as damped pendulums under
 gravity, the body's acceleration, air drag, and spin, inside per-joint limits, then
 eases them back to the clips. To add a state, add its name to
 `PlayerAnimationState`, a clip to the builder's table, and its rule and tests to
-the selector, then regenerate the scene.
+the selector, then regenerate the scene. The `death_*` states are poses a death
+sequence holds on the whole body; the selector never picks them.
+
+#### Death Sequence
+
+`PlayerPresentationController.begin_death` hands the rig, the rope, and the player's
+`TerrainCollisionQuery` to its `PlayerDeathAnimator` child (`Death` in
+`player_presentation.tscn`). From then on the animator's own `_physics_process`
+advances the sequence once per physics step and nothing calls `update_body` or
+`update_grapple` again. Random choices come from a generator seeded by the cause and
+the death position, so equal deaths play out identically; `set_seed` overrides it.
+
+| Type | Role |
+| --- | --- |
+| `DeathSequence` | One resource per cause under `config/player/death/`: when the body bursts and in what order parts come off, the pose, squash, and shake of the whole body before that, the impulses and the physics of the loose parts, the look curves, the cues, and the trail and splat effect keys. Times are shares of the beat and curves run over it, so a sequence fits any beat length |
+| `DeathCue` | One timed request for a world effect: key, time, repeats, anchor (body, every part, featured parts, a random part), and aim |
+| `DeathSequenceLibrary` | `config/player/death/death_sequences.tres`: sequences keyed by `DeathCause` value, the default for causes without an entry (nothing reports `bounds` any more, so it plays the default), the rope release time, and the settling that ends every sequence at rest |
+| `GibSimulation` | Pure packed state for the loose parts: one circle per part with gravity, air drag, restitution, Coulomb friction, rolling, viscosity drag and buoyancy in liquids, and sleep. It queries terrain through `TerrainCollisionQuery.circle_contacts`, substeps so a part never travels more than 0.8 of its radius between contact checks, leaves a part enclosed by terrain where it is, rechecks the support of sleeping parts every few steps, and stops a part that leaves `maximum_distance` |
+| `PlayerDeathAnimator` | Plays one sequence: steps the rig while parts still hang on it, frees parts into the simulation, places both sprites of a part on its gib, drives the part shaders, steps the released rope, and emits `cue_requested` and `gib_landed` |
+| `player_gib.gdshader`, `player_gib_outline.gdshader` | Per-part canvas shaders sharing `player_gib.gdshaderinc`: flash, tint, scorch with embers, noise dissolve with a glowing rim (in patches or from the world top down), melting drips, and swelling about the part's center. The outline shader grows the silhouette as `player_outline.gdshader` does and melts, swells, and dissolves with its part. They use plain texture samples and hash noise, so they run on WebGL2 |
+
+Ownership follows the feedback seam. The dismemberment (which part goes where, how it
+looks) belongs to the player presentation; world particles and camera shake belong to
+`GameplayFeedback`; sound belongs to `AudioDirector`. The animator never calls a sink:
+its signals leave through `PlayerPresentationController` and `PlayerController` as the
+`death_cue` and `gib_landed` facts.
+
+At the start every part gets its own two `ShaderMaterial`s (painted sprite and
+silhouette, sharing one noise seed); the rig's shared outline material and the
+material-less part sprites are only used while the player lives. Parts are freed with
+`PlayerRig.release_part`, which cuts the `RemoteTransform2D` followers of both
+sprites; the sprites stay in their flat draw-order lists, so no node is added or
+moved. `PlayerRig.set_raised_above_terrain` puts the whole rig on the burrow draw
+layer, above terrain and liquids and below world effects. A lookup picks the sequence
+by cause, then a variant when the body touched terrain with a tag listed in
+`variant_by_terrain_tag` (Steam for the cooked death); the code never names a cause.
+
+`DeathSequenceLibrary.settle_from` fades restitution out and air drag in over the
+last part of the beat, so parts are at rest when the result panel opens. The animator
+stops stepping once the beat is over and every part sleeps, or after
+`settle_grace_seconds`. `RunSession.set_active` forwards
+`GameplayFeedback.is_suspended()` to `PlayerController.set_death_suspended`, so the
+sequence holds its frame exactly when the effects it asks for do, and like them plays
+on behind the result panel once the run has ended.
+
+To add a death cause: add its `DeathCause` value, save a `DeathSequence` under
+`config/player/death/`, and add it to `death_sequences.tres` under that value. New
+effects need a recipe under `config/presentation/effects/` and an entry in
+`death_cue_by_key`; `tests/unit/test_death_sequence_library.gd` fails for a key
+without a recipe. A cause without a sequence plays the default.
 
 The player does not use Godot terrain colliders for movement; terrain collision
 is delegated to the world-level query and motion solver. It combines velocity changes

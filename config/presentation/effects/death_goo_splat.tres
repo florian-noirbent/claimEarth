@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_x7npv"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_2tl2c"]
+
+[sub_resource type="Gradient" id="Gradient_xqqcu"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.55, 1, 0.2, 1, 0.42, 0.6, 0.12, 1, 0.42, 0.6, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_jgl70"]
+script = ExtResource("1_x7npv")
+count = 4
+count_scales_with_intensity = true
+lifetime_max = 0.5
+spawn_radius = 6.0
+relative_to_direction = true
+direction_degrees = 0.0
+spread_degrees = 140.0
+speed_min = 60.0
+speed_max = 220.0
+gravity = 900.0
+drag = 0.7
+size_start = 5.5
+size_end = 2.2
+size_jitter = 0.5
+colors = SubResource("Gradient_xqqcu")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_cunlv"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.66, 0.86, 0.2, 0.95, 0.495, 0.645, 0.15, 0.9, 0.462, 0.602, 0.14, 0)
+
+[sub_resource type="Resource" id="Resource_dsbwy"]
+script = ExtResource("1_x7npv")
+lifetime_min = 1.5
+lifetime_max = 2.3
+spawn_radius = 3.0
+speed_max = 40.0
+gravity = 22.0
+drag = 7.0
+size_start = 5.6
+size_end = 8.0
+size_ease = 0.3
+size_jitter = 0.45
+colors = SubResource("Gradient_cunlv")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_2tl2c")
+emitters = Array[ExtResource("1_x7npv")]([SubResource("Resource_jgl70"), SubResource("Resource_dsbwy")])

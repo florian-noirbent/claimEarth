@@ -9,33 +9,55 @@
 [ext_resource type="Resource" path="res://config/presentation/effects/container_open_geode.tres" id="7_1rdg8"]
 [ext_resource type="Resource" path="res://config/presentation/effects/container_open_default.tres" id="8_ugyvx"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death.tres" id="9_k3thi"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_dust_puff.tres" id="10_rwlxb"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death_cooked.tres" id="10_x0ujl"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death_acid.tres" id="11_ci8g2"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_gasp_bubbles.tres" id="12_m4yu5"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death_poison.tres" id="12_qyy6w"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death_suffocation.tres" id="13_dtftg"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_poison_bubbles.tres" id="13_u52k1"]
 [ext_resource type="Resource" path="res://config/presentation/effects/death_impact.tres" id="14_47cvw"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_goo_splat.tres" id="14_jeftp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_gas_trail.tres" id="15_lle43"]
 [ext_resource type="Resource" path="res://config/presentation/effects/drill_debris.tres" id="15_rr67s"]
 [ext_resource type="Resource" path="res://config/presentation/effects/excavator_deploy.tres" id="16_2fxsf"]
 [ext_resource type="Resource" path="res://config/presentation/effects/explosion.tres" id="17_7lx5i"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_blood_splat.tres" id="17_fmgy6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_poison_leak.tres" id="18_a8fmp"]
 [ext_resource type="Resource" path="res://config/presentation/effects/explosion_large.tres" id="18_xmsq6"]
 [ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_lava.tres" id="19_p4nnd"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_acid_plop.tres" id="19_xcclj"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_acid_puddle.tres" id="20_3pvoc"]
 [ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_acid.tres" id="20_5sg7l"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_acid_drip.tres" id="21_4ffyf"]
 [ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_default.tres" id="21_fu6u7"]
 [ext_resource type="Texture2D" path="res://assets/objects/flag.svg" id="22_nwmxb"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_steam_puff.tres" id="23_7lx7d"]
 [ext_resource type="Resource" path="res://config/presentation/effects/flag_planted.tres" id="23_esj43"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_steam_burst.tres" id="24_4omtv"]
 [ext_resource type="Resource" path="res://config/presentation/effects/fuse_warning.tres" id="24_ntcln"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_sizzle.tres" id="25_tj2k7"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hazard_warning.tres" id="25_v1cw8"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_ember_rise.tres" id="26_45cxm"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_launch.tres" id="26_p6nbn"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_miss.tres" id="27_1vucp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_flames.tres" id="28_okx18"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_release.tres" id="28_rwlxb"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_cooked_ignite.tres" id="29_a2kio"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_spark_moving.tres" id="29_m4yu5"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_spark_terrain.tres" id="30_u52k1"]
 [ext_resource type="Resource" path="res://config/presentation/effects/hook_torn_off.tres" id="31_jeftp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_smolder.tres" id="31_w00c6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_smoke_trail.tres" id="32_bluli"]
 [ext_resource type="Resource" path="res://config/presentation/effects/impact_flash.tres" id="32_lle43"]
 [ext_resource type="Resource" path="res://config/presentation/effects/jump_dust.tres" id="33_fmgy6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_bomb.tres" id="33_n2yll"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_blood_trail.tres" id="34_4c3lh"]
 [ext_resource type="Resource" path="res://config/presentation/effects/knockout_stars.tres" id="34_a8fmp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_blood_spurt.tres" id="35_lo4x2"]
 [ext_resource type="Resource" path="res://config/presentation/effects/landing_dust.tres" id="35_xcclj"]
 [ext_resource type="Resource" path="res://config/presentation/effects/debris_chest.tres" id="36_3pvoc"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_blood_burst.tres" id="36_ti8xr"]
 [ext_resource type="Resource" path="res://config/presentation/effects/debris_geode.tres" id="37_4ffyf"]
 [ext_resource type="Resource" path="res://config/presentation/effects/debris_barrel.tres" id="38_7lx7d"]
 [ext_resource type="Resource" path="res://config/presentation/effects/debris_default.tres" id="39_4omtv"]
@@ -53,19 +75,30 @@
 [ext_resource type="Resource" path="res://config/presentation/effects/throw_whoosh.tres" id="51_jywpl"]
 [ext_resource type="Resource" path="res://config/presentation/effects/tool_swing.tres" id="52_ji1ct"]
 [ext_resource type="Resource" path="res://config/presentation/effects/victory.tres" id="53_drrkd"]
-
 [ext_resource type="Script" path="res://src/presentation/effects/attached_effect.gd" id="54_attached"]
 [ext_resource type="Resource" path="res://config/presentation/effects/projectile_fuse_spark.tres" id="55_fuse_spark"]
 [ext_resource type="Resource" path="res://config/presentation/effects/projectile_flare_glow.tres" id="56_flare_glow"]
 [ext_resource type="Resource" path="res://config/presentation/effects/projectile_flag_trail.tres" id="57_flag_trail"]
 [ext_resource type="Resource" path="res://config/presentation/effects/projectile_bottle_glint.tres" id="58_bottle_glint"]
 
-[sub_resource type="Resource" id="Attached_small_bomb"]
+[sub_resource type="Resource" id="Attached_flag"]
 script = ExtResource("54_attached")
-recipe = ExtResource("55_fuse_spark")
+recipe = ExtResource("57_flag_trail")
 interval_seconds = 0.03
-attach_offset = Vector2(35, -35)
+attach_offset = Vector2(15, -44)
+aim = 2
+
+[sub_resource type="Resource" id="Attached_flare"]
+script = ExtResource("54_attached")
+recipe = ExtResource("56_flare_glow")
+interval_seconds = 0.04
+attach_offset = Vector2(0, -19)
 aim = 1
+
+[sub_resource type="Resource" id="Attached_fluid_bottle"]
+script = ExtResource("54_attached")
+recipe = ExtResource("58_bottle_glint")
+interval_seconds = 0.14
 
 [sub_resource type="Resource" id="Attached_large_bomb"]
 script = ExtResource("54_attached")
@@ -75,24 +108,12 @@ attach_offset = Vector2(22, -36)
 aim = 1
 effect_scale = 1.2
 
-[sub_resource type="Resource" id="Attached_flare"]
+[sub_resource type="Resource" id="Attached_small_bomb"]
 script = ExtResource("54_attached")
-recipe = ExtResource("56_flare_glow")
-interval_seconds = 0.04
-attach_offset = Vector2(0, -19)
-aim = 1
-
-[sub_resource type="Resource" id="Attached_flag"]
-script = ExtResource("54_attached")
-recipe = ExtResource("57_flag_trail")
+recipe = ExtResource("55_fuse_spark")
 interval_seconds = 0.03
-attach_offset = Vector2(15, -44)
-aim = 2
-
-[sub_resource type="Resource" id="Attached_fluid_bottle"]
-script = ExtResource("54_attached")
-recipe = ExtResource("58_bottle_glint")
-interval_seconds = 0.14
+attach_offset = Vector2(35, -35)
+aim = 1
 
 [resource]
 script = ExtResource("48_lo4x2")
@@ -113,12 +134,34 @@ sand_burst_enter = ExtResource("46_n2yll")
 sand_burst_exit = ExtResource("47_4c3lh")
 hazard_warning = ExtResource("25_v1cw8")
 death = ExtResource("9_k3thi")
-death_by_cause = Dictionary[StringName, ExtResource("5_hnmkl")]({
-&"acid": ExtResource("11_ci8g2"),
-&"cooked": ExtResource("10_x0ujl"),
-&"impact": ExtResource("14_47cvw"),
-&"poison": ExtResource("12_qyy6w"),
-&"suffocation": ExtResource("13_dtftg")
+death_cue_by_key = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"acid_burst": ExtResource("11_ci8g2"),
+&"acid_drip": ExtResource("21_4ffyf"),
+&"acid_plop": ExtResource("19_xcclj"),
+&"acid_puddle": ExtResource("20_3pvoc"),
+&"blood_burst": ExtResource("36_ti8xr"),
+&"blood_splat": ExtResource("17_fmgy6"),
+&"blood_spurt": ExtResource("35_lo4x2"),
+&"blood_trail": ExtResource("34_4c3lh"),
+&"bomb_burst": ExtResource("33_n2yll"),
+&"cooked_burst": ExtResource("10_x0ujl"),
+&"cooked_ignite": ExtResource("29_a2kio"),
+&"dust_puff": ExtResource("10_rwlxb"),
+&"ember_rise": ExtResource("26_45cxm"),
+&"flames": ExtResource("28_okx18"),
+&"gas_trail": ExtResource("15_lle43"),
+&"gasp_bubbles": ExtResource("12_m4yu5"),
+&"goo_splat": ExtResource("14_jeftp"),
+&"impact_burst": ExtResource("14_47cvw"),
+&"last_breath": ExtResource("13_dtftg"),
+&"poison_bubbles": ExtResource("13_u52k1"),
+&"poison_burst": ExtResource("12_qyy6w"),
+&"poison_leak": ExtResource("18_a8fmp"),
+&"sizzle": ExtResource("25_tj2k7"),
+&"smoke_blood_trail": ExtResource("32_bluli"),
+&"smolder": ExtResource("31_w00c6"),
+&"steam_burst": ExtResource("24_4omtv"),
+&"steam_puff": ExtResource("23_7lx7d")
 })
 throw_whoosh = ExtResource("51_jywpl")
 tool_swing = ExtResource("52_ji1ct")

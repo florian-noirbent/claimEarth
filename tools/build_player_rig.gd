@@ -236,6 +236,57 @@ const CLIPS: Array[Dictionary] = [
 			"ThighLeft": 15, "ShinLeft": 30, "BootLeft": 25,
 		},
 	},
+	# Poses a death sequence holds on the whole body before it comes apart.
+	{
+		"name": &"death_choke", "length": 0.24, "loop": true,
+		"pelvis": [[0.0, Vector2(0, 10)], [0.12, Vector2(0, 14)], [0.24, Vector2(0, 10)]],
+		"rotations": {
+			"Torso": [[0.0, -8], [0.12, -4], [0.24, -8]],
+			"Head": [[0.0, -22], [0.12, -14], [0.24, -22]],
+			"Backpack": 4,
+			"UpperArm": [[0.0, -38], [0.12, -30], [0.24, -38]],
+			"Forearm": -128,
+			"UpperArmLeft": [[0.0, -52], [0.12, -44], [0.24, -52]],
+			"ForearmLeft": -120,
+			"Thigh": -22, "Shin": 48, "Boot": -18,
+			"ThighLeft": 14, "ShinLeft": 40, "BootLeft": -10,
+		},
+	},
+	{
+		"name": &"death_spread", "length": 0.2, "loop": true,
+		"rotations": {
+			"Torso": [[0.0, -3], [0.1, 3], [0.2, -3]],
+			"Head": [[0.0, -16], [0.1, -8], [0.2, -16]],
+			"Backpack": [[0.0, 6], [0.1, -4], [0.2, 6]],
+			"UpperArm": [[0.0, -100], [0.1, -84], [0.2, -100]],
+			"Forearm": [[0.0, -12], [0.1, -30], [0.2, -12]],
+			"UpperArmLeft": [[0.0, 100], [0.1, 84], [0.2, 100]],
+			"ForearmLeft": [[0.0, -12], [0.1, -30], [0.2, -12]],
+			"Thigh": [[0.0, -44], [0.1, -34], [0.2, -44]],
+			"Shin": 12, "Boot": -10,
+			"ThighLeft": [[0.0, 44], [0.1, 34], [0.2, 44]],
+			"ShinLeft": 12, "BootLeft": 10,
+		},
+	},
+	{
+		"name": &"death_slump", "length": 1.0, "loop": false,
+		"pelvis": [[0.0, Vector2(0, 0)], [1.0, Vector2(0, 46)]],
+		"rotations": {
+			"Torso": [[0.0, 6], [1.0, 30]],
+			"Head": [[0.0, 8], [1.0, 34]],
+			"Backpack": [[0.0, -4], [1.0, -14]],
+			"UpperArm": [[0.0, 10], [1.0, 24]],
+			"Forearm": [[0.0, -8], [1.0, -4]],
+			"UpperArmLeft": [[0.0, -4], [1.0, -20]],
+			"ForearmLeft": [[0.0, -8], [1.0, -4]],
+			"Thigh": [[0.0, -10], [1.0, -62]],
+			"Shin": [[0.0, 20], [1.0, 118]],
+			"Boot": [[0.0, -8], [1.0, -30]],
+			"ThighLeft": [[0.0, -16], [1.0, -74]],
+			"ShinLeft": [[0.0, 26], [1.0, 124]],
+			"BootLeft": [[0.0, -8], [1.0, -26]],
+		},
+	},
 ]
 
 var _bones := {}
@@ -278,6 +329,7 @@ func _init() -> void:
 	root.set(&"burrow_outline_material", burrow_outline_material)
 	root.set(&"burrow_body_tint", BURROW_BODY_TINT)
 	root.set(&"burrow_z_index", BURROW_Z_INDEX)
+	root.set(&"part_texture_margin", TEXTURE_MARGIN)
 	skeleton.scale = Vector2(rig_scale, rig_scale)
 	# The rig origin is the ground point under the pelvis.
 	skeleton.position = Vector2(0.0, -bounds.end.y * rig_scale)

@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_a6a2b"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_yu2a3"]
+
+[sub_resource type="Resource" id="Resource_4w4wn"]
+script = ExtResource("1_a6a2b")
+effect_key = &"acid_burst"
+
+[sub_resource type="Resource" id="Resource_xn0bo"]
+script = ExtResource("1_a6a2b")
+effect_key = &"acid_drip"
+at = 0.04
+plays = 22
+interval = 0.03
+anchor = 3
+
+[sub_resource type="Resource" id="Resource_33dvj"]
+script = ExtResource("1_a6a2b")
+effect_key = &"acid_puddle"
+at = 0.28
+plays = 9
+interval = 0.06
+offset = Vector2(0, 22)
+
+[sub_resource type="Resource" id="Resource_m6qga"]
+script = ExtResource("1_a6a2b")
+effect_key = &"acid_plop"
+at = 0.74
+plays = 3
+interval = 0.07
+anchor = 2
+
+[sub_resource type="Curve" id="Curve_rmlur"]
+bake_resolution = 200
+_data = [Vector2(0.22, 0), 0.0, 2.272727, 1, 1, Vector2(0.66, 1), 2.272727, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_yo3ki"]
+bake_resolution = 200
+_data = [Vector2(0, 0.9), 0.0, -14.999999, 1, 1, Vector2(0.06, 0), -14.999999, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_ja0ku"]
+bake_resolution = 200
+_data = [Vector2(0.04, 0), 0.0, 0.6071429, 1, 1, Vector2(0.6, 0.34), 0.6071429, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_i3rph"]
+_limits = [0.0, 8.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0, 2), 0.0, -5.5999994, 1, 1, Vector2(0.25, 0.6), -5.5999994, -2.4, 1, 1, Vector2(0.5, 0), -2.4, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_k1id5"]
+bake_resolution = 200
+_data = [Vector2(0, 0), 0.0, 4.722222, 1, 1, Vector2(0.18, 0.85), 4.722222, 0.12195118, 1, 1, Vector2(1, 0.95), 0.12195118, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_yu2a3")
+burst_at = 0.2
+detach_stagger = 0.3
+detach_order = 2
+look_stagger = 0.22
+pose = &"death_slump"
+shake = SubResource("Curve_i3rph")
+inherit_velocity = 0.1
+radial_speed_max = 45.0
+lift_speed_max = 30.0
+spin_degrees_max = 140.0
+gib_scale = 1.5
+featured_parts = Array[StringName]([&"Head"])
+featured_restitution = 0.5
+featured_stay_solid = true
+featured_tint_scale = 0.3
+gravity = 900.0
+air_drag = 2.5
+restitution = 0.04
+friction = 0.9
+buoyancy = 0.6
+flash = SubResource("Curve_yo3ki")
+flash_color = Color(0.8, 1, 0.5, 1)
+tint = SubResource("Curve_k1id5")
+tint_color = Color(0.5, 1, 0.2, 1)
+dissolve = SubResource("Curve_rmlur")
+dissolve_edge_color = Color(0.85, 1, 0.35, 1)
+dissolve_edge_width = 0.14
+dissolve_top_down = 0.8
+melt = SubResource("Curve_ja0ku")
+cues = Array[ExtResource("1_a6a2b")]([SubResource("Resource_4w4wn"), SubResource("Resource_xn0bo"), SubResource("Resource_33dvj"), SubResource("Resource_m6qga")])
+splat_effect_key = &"acid_plop"
+splat_min_speed = 100.0

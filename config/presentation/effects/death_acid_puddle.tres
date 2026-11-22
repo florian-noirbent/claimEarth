@@ -1,0 +1,73 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_xc0r0"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_ecy2u"]
+
+[sub_resource type="Gradient" id="Gradient_pbewp"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.55, 1, 0.2, 0.95, 0.41250002, 0.75, 0.15, 0.9, 0.385, 0.7, 0.14, 0)
+
+[sub_resource type="Resource" id="Resource_q8wpa"]
+script = ExtResource("1_xc0r0")
+count = 2
+lifetime_min = 1.0
+lifetime_max = 1.7
+spawn_radius = 3.0
+direction_degrees = 0.0
+spread_degrees = 16.0
+speed_max = 210.0
+drag = 5.0
+size_start = 9.799999999999999
+size_end = 14.0
+size_ease = 0.3
+size_jitter = 0.45
+colors = SubResource("Gradient_pbewp")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_e8w27"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.55, 1, 0.2, 0.95, 0.41250002, 0.75, 0.15, 0.9, 0.385, 0.7, 0.14, 0)
+
+[sub_resource type="Resource" id="Resource_olg31"]
+script = ExtResource("1_xc0r0")
+count = 2
+lifetime_min = 1.0
+lifetime_max = 1.7
+spawn_radius = 3.0
+direction_degrees = 180.0
+spread_degrees = 16.0
+speed_max = 210.0
+drag = 5.0
+size_start = 9.799999999999999
+size_end = 14.0
+size_ease = 0.3
+size_jitter = 0.45
+colors = SubResource("Gradient_e8w27")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_7mpdp"]
+offsets = PackedFloat32Array(0, 0.8, 1)
+colors = PackedColorArray(0.685, 1, 0.44, 0.95, 0.685, 1, 0.44, 0.85, 0.685, 1, 0.44, 0)
+
+[sub_resource type="Resource" id="Resource_g80ii"]
+script = ExtResource("1_xc0r0")
+shape = 2
+count = 2
+lifetime_min = 0.5
+lifetime_max = 0.9
+spawn_radius = 16.0
+spread_degrees = 70.0
+speed_min = 20.0
+speed_max = 70.0
+gravity = -80.0
+drag = 1.5
+size_start = 2.5
+size_end = 7.0
+size_jitter = 0.4
+thickness_start = 2.6
+colors = SubResource("Gradient_7mpdp")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_ecy2u")
+emitters = Array[ExtResource("1_xc0r0")]([SubResource("Resource_q8wpa"), SubResource("Resource_olg31"), SubResource("Resource_g80ii")])

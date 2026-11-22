@@ -1,0 +1,73 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_iuimd"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_o1ywl"]
+
+[sub_resource type="Resource" id="Resource_qbuwq"]
+script = ExtResource("1_iuimd")
+effect_key = &"steam_puff"
+at = 0.03
+plays = 12
+interval = 0.03
+anchor = 3
+
+[sub_resource type="Resource" id="Resource_rc8y7"]
+script = ExtResource("1_iuimd")
+effect_key = &"steam_burst"
+at = 0.4
+
+[sub_resource type="Resource" id="Resource_mb5xx"]
+script = ExtResource("1_iuimd")
+effect_key = &"steam_puff"
+at = 0.48
+plays = 6
+interval = 0.08
+anchor = 1
+
+[sub_resource type="Curve" id="Curve_jkvn0"]
+bake_resolution = 200
+_data = [Vector2(0, 0.9), 0.0, -14.999999, 1, 1, Vector2(0.06, 0), -14.999999, 0.0, 1, 1, Vector2(0.39, 0), 0.0, 39.99998, 1, 1, Vector2(0.41, 0.8), 39.99998, -15.999997, 1, 1, Vector2(0.46, 0), -15.999997, 0.0, 1, 1]
+point_count = 5
+
+[sub_resource type="Curve" id="Curve_n4li3"]
+_limits = [0.0, 8.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, 6.25, 1, 1, Vector2(0.4, 3.5), 6.25, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_yacla"]
+_limits = [0.0, 2.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, 0.87500006, 1, 1, Vector2(0.4, 1.35), 0.87500006, -11.666667, 1, 1, Vector2(0.43, 1), -11.666667, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_bslyk"]
+bake_resolution = 200
+_data = [Vector2(0, 0), 0.0, 3.3333333, 1, 1, Vector2(0.3, 1), 3.3333333, -0.14285718, 1, 1, Vector2(1, 0.9), -0.14285718, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_o1ywl")
+burst_at = 0.4
+pose = &"death_spread"
+shake = SubResource("Curve_n4li3")
+radial_speed_min = 120.0
+radial_speed_max = 330.0
+lift_speed_min = 120.0
+lift_speed_max = 300.0
+spin_degrees_min = 300.0
+spin_degrees_max = 900.0
+gib_scale = 1.6
+featured_parts = Array[StringName]([&"Head", &"Boot", &"BootLeft"])
+featured_speed_scale = 1.2
+gravity = 1300.0
+restitution = 0.3
+friction = 0.4
+flash = SubResource("Curve_jkvn0")
+tint = SubResource("Curve_bslyk")
+tint_color = Color(1, 0.16, 0.12, 1)
+swell = SubResource("Curve_yacla")
+swell_wobble = 0.35
+swell_wobble_hz = 12.0
+cues = Array[ExtResource("1_iuimd")]([SubResource("Resource_qbuwq"), SubResource("Resource_rc8y7"), SubResource("Resource_mb5xx")])
+splat_effect_key = &"dust_puff"

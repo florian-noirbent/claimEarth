@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_2agun"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_lseuw"]
+
+[sub_resource type="Gradient" id="Gradient_3pla7"]
+offsets = PackedFloat32Array(0, 0.12, 0.55, 1)
+colors = PackedColorArray(0.66, 0.86, 0.2, 0, 0.66, 0.86, 0.2, 0.75, 0.66, 0.86, 0.2, 0.525, 0.66, 0.86, 0.2, 0)
+
+[sub_resource type="Resource" id="Resource_bt3rr"]
+script = ExtResource("1_2agun")
+count = 2
+lifetime_min = 0.35
+lifetime_max = 0.6
+spawn_radius = 2.0
+relative_to_direction = true
+direction_degrees = 0.0
+spread_degrees = 30.0
+speed_min = 130.0
+speed_max = 280.0
+gravity = -30.0
+drag = 4.0
+size_start = 5.0
+size_end = 15.0
+size_ease = 0.5
+size_jitter = 0.35
+colors = SubResource("Gradient_3pla7")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_lseuw")
+emitters = Array[ExtResource("1_2agun")]([SubResource("Resource_bt3rr")])

@@ -14,5 +14,7 @@ requests. Its `WorldEffects` child plays `EffectRecipe` resources from the
 recipe. Effects add no nodes, stay inside a fixed particle budget, draw above the
 world and unaffected by cave darkness, and end on their own. Change a look by editing
 its recipe resource; add a shape or motion in `EffectEmitter` and `EffectBatch`.
+The effects of the player's death sequences are recipes too, stored by cue key in
+`death_cue_by_key` and played when the sequence asks for them.
 
 Keep renderer node counts bounded and refresh the terrain texture only through `WorldGrid` or the active simulation backend texture.

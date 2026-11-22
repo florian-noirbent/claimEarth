@@ -20,6 +20,11 @@ signal liquid_entered(world_position: Vector2, color: Color, speed: float)
 signal liquid_exited(world_position: Vector2, color: Color, speed: float)
 signal sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
 signal hazard_warning(cause: StringName, level: float, color: Color)
+## The death sequence asks for the world effect declared under key at this moment.
+signal death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float)
+## A loose body part hit terrain. key is the death sequence's splat effect and may be
+## empty; normal points away from the surface.
+signal gib_landed(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float)
 
 const GrappleModelScript = preload("res://src/player/grapple_model.gd")
 const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd")
@@ -77,9 +82,15 @@ var _reported_liquid: TerrainDefinition
 var _reported_sand_burrowing := false
 var _airborne_seconds := 0.0
 var _dead := false
+## Surface and incoming speed of the latest lethal impact, and the physics frame it
+## happened in: a death that begins in that same frame is the one it asked for.
+var _lethal_impact: DeathContext
+var _lethal_impact_frame := -1
 
 
 func _ready() -> void:
+	presentation.death_cue_requested.connect(death_cue.emit)
+	presentation.gib_landed.connect(gib_landed.emit)
 	_capture_base_configs()
 	_movement_model = PlayerMovementModel.new(movement_config)
 	_grapple_model = GrappleModelScript.new(grapple_config)
@@ -281,16 +292,48 @@ func ragdoll_remaining() -> float:
 	return _ragdoll_remaining
 
 
-## Called once when the player's death is final, never for a Relentless flag drop. The
-## body stays in the scene, visible at its death position, for duration_seconds until the
-## result panel opens, while the world and its effects keep running. This is the seam a
-## death animation builds on; today it only ends control, hazards, the hook, and physics.
-func begin_death(cause: StringName, duration_seconds: float) -> void:
+## Called once when the player's death is final, never for a Relentless flag drop. It
+## ends control, hazards, the hook, and physics for good and hands the body to the death
+## sequence of this cause, which plays over duration_seconds until the result panel
+## opens, while the world and its effects keep running. The node stays in the scene at
+## its death position. context carries what the caller knows about the death, such as a
+## blast center; the player adds its own facts (velocity, the surface a lethal impact hit,
+## the terrain at the body).
+func begin_death(cause: StringName, duration_seconds: float, context: DeathContext = null) -> void:
 	if _dead:
 		return
 	_dead = true
 	set_physics_process(false)
+	_grapple_model.detach()
+	_report_grapple_changes(null)
+	presentation.begin_death(cause, duration_seconds, _complete_death_context(context), _terrain_query)
 	death_began.emit(cause, duration_seconds)
+
+
+## Holds the death sequence on its current frame while the session is suspended.
+func set_death_suspended(suspended: bool) -> void:
+	presentation.set_death_suspended(suspended)
+
+
+func _complete_death_context(context: DeathContext) -> DeathContext:
+	if context == null:
+		context = DeathContext.new()
+	context.velocity = velocity
+	if _lethal_impact != null and _lethal_impact_frame == _physics_frame_count:
+		context.velocity = _lethal_impact.velocity
+		context.surface_normal = _lethal_impact.surface_normal
+	if _world != null and _terrain_registry != null:
+		for sample_position in _occupied_sample_positions():
+			var offset := HexMetrics.offset_for_world(sample_position, _hex_radius)
+			if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+				continue
+			var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+			if definition == null:
+				continue
+			for tag in definition.perk_tags:
+				if not context.terrain_tags.has(tag):
+					context.terrain_tags.append(tag)
+	return context
 
 
 func is_dead() -> bool:
@@ -328,7 +371,8 @@ func _advance_ragdoll(delta: float) -> void:
 	_ragdoll_remaining = maxf(0.0, _ragdoll_remaining - delta)
 
 
-func _handle_terrain_impact(impact_speed: float) -> void:
+## velocity_change is what the collision did to the velocity, when the caller knows it.
+func _handle_terrain_impact(impact_speed: float, velocity_change: Vector2 = Vector2.ZERO) -> void:
 	if movement_config == null or impact_speed <= movement_config.impact_hazard_minimum_speed:
 		return
 	var hazard_span := movement_config.lethal_impact_speed - movement_config.impact_hazard_minimum_speed
@@ -347,6 +391,10 @@ func _handle_terrain_impact(impact_speed: float) -> void:
 	_grapple_model.detach()
 	presentation.cancel_hook_launch()
 	if cause == DeathCauseScript.IMPACT:
+		_lethal_impact = DeathContext.new()
+		_lethal_impact.velocity = velocity - velocity_change
+		_lethal_impact.surface_normal = velocity_change.normalized()
+		_lethal_impact_frame = _physics_frame_count
 		death_requested.emit(DeathCauseScript.IMPACT)
 		return
 	_ragdoll_remaining = maxf(_ragdoll_remaining, movement_config.ragdoll_seconds)
@@ -381,14 +429,11 @@ func _handle_physics_impacts(
 	post_grapple_result: TerrainBodyMotionResult,
 	unstuck_result: TerrainBodyUnstuckResult
 ) -> bool:
-	var greatest_velocity_change := maxf(
-		maxf(
-			motion_result.velocity_change.length(),
-			post_grapple_result.velocity_change.length()
-		),
-		unstuck_result.velocity_change.length()
-	)
-	_handle_terrain_impact(greatest_velocity_change)
+	var greatest_velocity_change := motion_result.velocity_change
+	for velocity_change: Vector2 in [post_grapple_result.velocity_change, unstuck_result.velocity_change]:
+		if velocity_change.length() > greatest_velocity_change.length():
+			greatest_velocity_change = velocity_change
+	_handle_terrain_impact(greatest_velocity_change.length(), greatest_velocity_change)
 	return _apply_jelly_surface_bounce(motion_result, post_grapple_result)
 
 

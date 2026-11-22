@@ -71,6 +71,10 @@ extends Resource
 @export_range(0.0, 3000.0, 1.0) var splash_min_speed := 60.0
 @export_range(0.0, 3000.0, 1.0) var splash_full_speed := 600.0
 @export_range(-40.0, 0.0, 0.5) var splash_min_db := -12.0
+## Loose body parts of a death hitting terrain slower than this are silent.
+@export_range(0.0, 3000.0, 1.0) var gib_impact_min_speed := 180.0
+@export_range(0.0, 3000.0, 1.0) var gib_impact_full_speed := 700.0
+@export_range(-40.0, 0.0, 0.5) var gib_impact_min_db := -10.0
 ## Meter fill at which the warning switches to the urgent double pulse.
 @export_range(0.0, 1.0, 0.01) var hazard_critical_level := 0.85
 ## Meter fill at which the warning plays at its base pitch and quietest level.

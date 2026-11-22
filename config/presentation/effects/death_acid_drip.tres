@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_vg727"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_t4bt4"]
+
+[sub_resource type="Gradient" id="Gradient_s8oo5"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.55, 1, 0.2, 1, 0.25, 0.62, 0.08, 1, 0.25, 0.62, 0.08, 0)
+
+[sub_resource type="Resource" id="Resource_k5qkj"]
+script = ExtResource("1_vg727")
+count = 2
+lifetime_max = 0.55
+spawn_radius = 4.0
+direction_degrees = 90.0
+spread_degrees = 60.0
+speed_min = 5.0
+speed_max = 60.0
+gravity = 900.0
+drag = 0.7
+size_start = 7.5
+size_end = 3.0
+size_jitter = 0.3
+colors = SubResource("Gradient_s8oo5")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_t4bt4")
+emitters = Array[ExtResource("1_vg727")]([SubResource("Resource_k5qkj")])

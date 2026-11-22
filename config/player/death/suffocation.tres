@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_nud4p"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_kno35"]
+
+[sub_resource type="Resource" id="Resource_2jni4"]
+script = ExtResource("1_nud4p")
+effect_key = &"gasp_bubbles"
+at = 0.04
+plays = 3
+interval = 0.14
+offset = Vector2(0, -22)
+
+[sub_resource type="Resource" id="Resource_4al4t"]
+script = ExtResource("1_nud4p")
+effect_key = &"last_breath"
+at = 0.43
+offset = Vector2(0, -22)
+
+[sub_resource type="Curve" id="Curve_ccjro"]
+_limits = [0.0, 8.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0, 2.6), 0.0, -3.9999995, 1, 1, Vector2(0.3, 1.4), -3.9999995, -8.75, 1, 1, Vector2(0.46, 0), -8.75, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_k8s76"]
+bake_resolution = 200
+_data = [Vector2(0, 0), 0.0, 2.1590908, 1, 1, Vector2(0.44, 0.95), 2.1590908, -0.08928574, 1, 1, Vector2(1, 0.9), -0.08928574, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_kno35")
+burst_at = 0.46
+detach_stagger = 0.14
+detach_order = 2
+pose = &"death_choke"
+shake = SubResource("Curve_ccjro")
+inherit_velocity = 0.15
+radial_speed_min = 10.0
+radial_speed_max = 85.0
+lift_speed_max = 50.0
+spin_degrees_min = 30.0
+spin_degrees_max = 320.0
+gib_scale = 1.45
+featured_parts = Array[StringName]([&"Head"])
+featured_restitution = 0.42
+gravity = 1150.0
+air_drag = 0.6
+restitution = 0.14
+friction = 0.7
+liquid_drag_scale = 0.6
+buoyancy = 0.45
+tint = SubResource("Curve_k8s76")
+tint_color = Color(0.5, 0.42, 1, 1)
+cues = Array[ExtResource("1_nud4p")]([SubResource("Resource_2jni4"), SubResource("Resource_4al4t")])
+splat_effect_key = &"dust_puff"
+splat_min_speed = 90.0

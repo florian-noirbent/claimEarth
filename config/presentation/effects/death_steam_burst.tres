@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_tsh5n"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_imyg0"]
+
+[sub_resource type="Gradient" id="Gradient_noia8"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(0.96, 0.97, 1, 0.9, 0.96, 0.97, 1, 0.5, 0.96, 0.97, 1, 0)
+
+[sub_resource type="Resource" id="Resource_fli3f"]
+script = ExtResource("1_tsh5n")
+shape = 2
+lifetime_min = 0.4
+lifetime_max = 0.4
+size_start = 12.0
+size_end = 80.0
+size_ease = 0.4
+thickness_start = 8.0
+thickness_end = 1.5
+colors = SubResource("Gradient_noia8")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_o60i8"]
+offsets = PackedFloat32Array(0, 0.12, 0.55, 1)
+colors = PackedColorArray(0.96, 0.97, 1, 0, 0.96, 0.97, 1, 0.8, 0.96, 0.97, 1, 0.56, 0.96, 0.97, 1, 0)
+
+[sub_resource type="Resource" id="Resource_cacqt"]
+script = ExtResource("1_tsh5n")
+count = 16
+lifetime_min = 0.6
+lifetime_max = 1.15
+spawn_radius = 8.0
+speed_min = 60.0
+speed_max = 260.0
+gravity = -130.0
+drag = 2.6
+size_start = 14.0
+size_end = 42.0
+size_ease = 0.5
+size_jitter = 0.35
+colors = SubResource("Gradient_o60i8")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_rjdgj"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1, 0.45, 0.4, 1, 0.9, 0.2, 0.2, 1, 0.9, 0.2, 0.2, 0)
+
+[sub_resource type="Resource" id="Resource_qg5oh"]
+script = ExtResource("1_tsh5n")
+count = 10
+lifetime_min = 0.45
+lifetime_max = 0.85
+spawn_radius = 6.0
+speed_min = 120.0
+speed_max = 380.0
+gravity = 1300.0
+drag = 0.7
+size_start = 6.0
+size_end = 2.4000000000000004
+size_jitter = 0.5
+colors = SubResource("Gradient_rjdgj")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_imyg0")
+emitters = Array[ExtResource("1_tsh5n")]([SubResource("Resource_fli3f"), SubResource("Resource_cacqt"), SubResource("Resource_qg5oh")])
+shake_intensity = 6.0

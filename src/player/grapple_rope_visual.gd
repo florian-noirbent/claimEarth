@@ -121,6 +121,17 @@ func cancel_launch() -> void:
 		_stow()
 
 
+## The hand lets go for good: a rope that is out falls back over the given time. Keep
+## stepping it with `advance(false, ...)` and `pose` until it is no longer out.
+func let_go(seconds: float) -> void:
+	if _phase == Phase.STOWED or _phase == Phase.RETRACTING:
+		return
+	if rope_line.visible:
+		_start_retract(seconds)
+	else:
+		_stow()
+
+
 ## Advances the rope's phase for this step. Call before posing the arms, then `pose`.
 func advance(attached: bool, anchor_world_position: Vector2, delta: float) -> void:
 	_anchor = anchor_world_position

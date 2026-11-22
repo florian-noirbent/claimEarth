@@ -4,7 +4,7 @@ extends GutTest
 
 
 const DeathCauseScript = preload("res://src/player/death_cause.gd")
-const SUFFIXES := ["death", "ignored", "flag", "menu", "restart", "zero", "world", "seam"]
+const SUFFIXES := ["death", "ignored", "flag", "menu", "restart", "zero", "world", "seam", "blast", "remains", "suspend"]
 
 
 func before_each() -> void:
@@ -102,6 +102,7 @@ func test_destroyed_flag_takes_the_same_beat_and_saves_no_score() -> void:
 	assert_eq(app_root.get_run_state(), RunPhase.OUTCOME_BEAT)
 	assert_false(app_root.get_player().is_physics_processing())
 	assert_false(app_root.get_player().is_dead(), "A lost flag is not a death.")
+	assert_false(app_root.get_player().presentation.death.has_begun(), "A lost flag leaves the body whole.")
 	assert_eq(PlayerStatistics.count_in(app_root.statistics_controller.statistics().flags_lost_by_cause, &"lava"), 1)
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 	var started_msec := Time.get_ticks_msec()
@@ -132,7 +133,10 @@ func test_the_world_keeps_running_during_the_beat_and_stops_with_the_panel() -> 
 
 func test_leaving_for_the_menu_during_the_beat_cancels_it() -> void:
 	var app_root := await _started_app("menu")
+	var player := app_root.get_player()
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
+	assert_true(player.presentation.death.is_playing())
+	await wait_physics_frames(4)
 
 	app_root.ui.menu_requested.emit()
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU)
@@ -140,13 +144,16 @@ func test_leaving_for_the_menu_during_the_beat_cancels_it() -> void:
 
 	assert_eq(app_root.get_run_state(), RunPhase.MAIN_MENU, "The cancelled beat never opens the result panel.")
 	assert_false(app_root.ui.result_panel.visible)
+	assert_false(is_instance_valid(player), "The half-played death sequence left with its session.")
 	assert_eq(app_root.active_session_count(), 0)
 	assert_eq(app_root.statistics_controller.statistics().runs_started, 1)
 
 
 func test_restarting_during_the_beat_starts_a_clean_run() -> void:
 	var app_root := await _started_app("restart")
+	var dead_player := app_root.get_player()
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
+	await wait_physics_frames(4)
 
 	app_root.ui.restart_requested.emit()
 	await wait_until(func() -> bool:
@@ -155,6 +162,11 @@ func test_restarting_during_the_beat_starts_a_clean_run() -> void:
 	await wait_seconds(app_root.death_beat_seconds + 0.3)
 
 	assert_false(app_root.get_player().is_dead())
+	assert_false(is_instance_valid(dead_player), "The remains left with the old session.")
+	var rig := app_root.get_player().presentation.rig
+	assert_false(app_root.get_player().presentation.death.has_begun(), "The new player is whole.")
+	assert_null(rig.part_sprite(0).material)
+	assert_eq(rig.z_index, 0)
 	assert_eq(app_root.get_run_state(), RunPhase.PLAYING, "The old beat does not end the new run.")
 	assert_true(app_root.get_player().is_physics_processing())
 	assert_true(app_root.statistics_controller.is_run_active())
@@ -174,6 +186,11 @@ func test_a_zero_beat_opens_the_result_panel_at_once() -> void:
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 	assert_true(app_root.ui.result_panel.visible)
+	var animator := app_root.get_player().presentation.death
+	assert_true(animator.has_begun(), "Without a beat the body still comes apart, behind the panel.")
+	assert_eq(animator.detached_part_count(), 16)
+	await wait_physics_frames(6)
+	assert_true(is_instance_valid(app_root.get_player()))
 
 
 func test_death_seam_runs_once_with_the_cause_and_beat_and_not_for_a_relentless_drop() -> void:
@@ -185,6 +202,9 @@ func test_death_seam_runs_once_with_the_cause_and_beat_and_not_for_a_relentless_
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 	assert_eq(app_root.get_run_state(), RunPhase.FLAG_IN_FLIGHT)
 	assert_false(player.is_dead(), "Relentless dropped the flag: the death is not final.")
+	await wait_physics_frames(3)
+	assert_false(player.presentation.death.has_begun(), "A Relentless drop plays no death sequence.")
+	assert_null(player.presentation.rig.part_sprite(0).material)
 
 	app_root.transition_to(RunPhase.GENERATING)
 	await wait_until(func() -> bool:
@@ -198,6 +218,69 @@ func test_death_seam_runs_once_with_the_cause_and_beat_and_not_for_a_relentless_
 	assert_true(player_two.is_dead())
 	assert_signal_emit_count(player_two, "death_began", 1)
 	assert_eq(get_signal_parameters(player_two, "death_began"), [DeathCauseScript.BOMB, app_root.death_beat_seconds])
+	var library := player_two.presentation.death.library
+	assert_same(player_two.presentation.death.sequence(), library.sequences[DeathCauseScript.BOMB], "The first cause picks the sequence.")
+
+
+func test_a_bomb_kill_hands_the_blast_center_to_the_death_sequence() -> void:
+	var app_root := await _started_app("blast")
+	var player := app_root.get_player()
+	var explosion := load("res://config/items/explosions/small_bomb_explosion.tres") as ExplosionDefinition
+
+	app_root.item_controller.resolve_explosion(explosion, player.global_position + Vector2(-20.0, 0.0))
+
+	assert_eq(app_root.get_run_state(), RunPhase.OUTCOME_BEAT)
+	assert_true(player.is_dead())
+	var animator := player.presentation.death
+	assert_same(animator.sequence(), animator.library.sequences[DeathCauseScript.BOMB])
+	assert_eq(animator._push, Vector2.RIGHT, "The parts are thrown away from the blast.")
+	assert_eq(PlayerStatistics.count_in(app_root.statistics_controller.statistics().deaths_by_cause, DeathCauseScript.BOMB), 1)
+
+
+func test_the_remains_stay_apart_behind_the_result_panel() -> void:
+	var app_root := await _started_app("remains")
+	var player := app_root.get_player()
+
+	app_root._on_player_death_requested(DeathCauseScript.IMPACT)
+	await _until_state(app_root, RunPhase.DEATH)
+	await wait_until(func() -> bool:
+		return not player.presentation.death.is_playing()
+	, 4.0)
+
+	var animator := player.presentation.death
+	assert_false(animator.is_playing(), "The sequence ends on its own behind the panel.")
+	assert_eq(animator.detached_part_count(), 16)
+	assert_true(animator.simulation().all_asleep())
+	var settled := player.presentation.rig.part_sprite(0).global_position
+	await wait_physics_frames(10)
+	assert_eq(player.presentation.rig.part_sprite(0).global_position, settled, "The player does not come back whole.")
+	assert_gt(settled.distance_to(player.presentation.rig.part_sprite(15).global_position), 1.0)
+
+
+func test_a_suspended_session_holds_the_death_sequence_like_its_effects() -> void:
+	var app_root := await _started_app("suspend")
+	var player := app_root.get_player()
+	var animator := player.presentation.death
+	# A death the feedback sink never saw end the run: the session can still be suspended.
+	player.begin_death(DeathCauseScript.BOMB, 2.0)
+	await wait_physics_frames(3)
+
+	app_root._session.set_active(false)
+	assert_true(app_root.gameplay_feedback.is_suspended())
+	var held := animator.progress()
+	await wait_physics_frames(8)
+	assert_eq(animator.progress(), held, "The sequence freezes with the world and its effects.")
+
+	app_root._session.set_active(true)
+	await wait_physics_frames(4)
+	assert_gt(animator.progress(), held)
+
+	# Once the run has ended the effects play on, and so does the sequence.
+	app_root.gameplay_feedback.spawn_death(player.global_position, DeathCauseScript.BOMB)
+	app_root._session.set_active(false)
+	held = animator.progress()
+	await wait_physics_frames(4)
+	assert_gt(animator.progress(), held)
 
 
 func test_shipped_beats_are_two_seconds_for_death_and_shorter_for_a_lost_flag() -> void:

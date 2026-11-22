@@ -3,7 +3,8 @@ class_name RunItemController
 extends Node
 
 
-signal player_killed(cause: StringName)
+## source_position is where the killing force came from, such as the blast center.
+signal player_killed(cause: StringName, source_position: Vector2)
 signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed(cause: StringName, world_position: Vector2)
@@ -363,7 +364,7 @@ func resolve_explosion(definition: ExplosionDefinition, impact_position: Vector2
 	var spec := ExplosionRuntimeSpec.from_definition(definition)
 	_runtime_tuning.apply_to_explosion(spec, source_item)
 	if _player != null and _player.global_position.distance_to(impact_position) <= spec.player_kill_radius * _hex_radius:
-		player_killed.emit(DeathCause.BOMB)
+		player_killed.emit(DeathCause.BOMB, impact_position)
 	_apply_projectile_blast_impulses(spec, impact_position)
 	var result := _explosion_service.resolve_spec(
 		_world,

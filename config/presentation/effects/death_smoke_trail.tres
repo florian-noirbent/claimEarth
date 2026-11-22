@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_devky"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_owyoq"]
+
+[sub_resource type="Gradient" id="Gradient_3tcv8"]
+offsets = PackedFloat32Array(0, 0.12, 0.55, 1)
+colors = PackedColorArray(0.14, 0.12, 0.12, 0, 0.14, 0.12, 0.12, 0.55, 0.14, 0.12, 0.12, 0.385, 0.14, 0.12, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_ua2ma"]
+script = ExtResource("1_devky")
+lifetime_min = 0.35
+lifetime_max = 0.6
+spawn_radius = 2.0
+speed_max = 30.0
+gravity = -60.0
+drag = 2.6
+size_end = 11.0
+size_ease = 0.5
+size_jitter = 0.35
+colors = SubResource("Gradient_3tcv8")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_84005"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.93, 0.05, 0.07, 1, 0.55, 0, 0.04, 1, 0.55, 0, 0.04, 0)
+
+[sub_resource type="Resource" id="Resource_krljh"]
+script = ExtResource("1_devky")
+lifetime_max = 0.5
+spawn_radius = 2.0
+speed_max = 45.0
+gravity = 520.0
+drag = 0.7
+size_start = 5.0
+size_end = 2.0
+size_jitter = 0.5
+colors = SubResource("Gradient_84005")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_owyoq")
+emitters = Array[ExtResource("1_devky")]([SubResource("Resource_ua2ma"), SubResource("Resource_krljh")])

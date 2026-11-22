@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_w37rs"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_oaugd"]
+
+[sub_resource type="Resource" id="Resource_anuak"]
+script = ExtResource("1_w37rs")
+effect_key = &"blood_burst"
+aim = 1
+
+[sub_resource type="Resource" id="Resource_s0utf"]
+script = ExtResource("1_w37rs")
+effect_key = &"blood_spurt"
+anchor = 1
+aim = 2
+
+[sub_resource type="Resource" id="Resource_hh7ad"]
+script = ExtResource("1_w37rs")
+effect_key = &"blood_spurt"
+at = 0.12
+plays = 5
+anchor = 3
+aim = 3
+
+[sub_resource type="Curve" id="Curve_axk0h"]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, -19.999998, 1, 1, Vector2(0.05, 0), -19.999998, 0.0, 1, 1]
+point_count = 2
+
+[resource]
+script = ExtResource("2_oaugd")
+radial_speed_min = 200.0
+radial_speed_max = 480.0
+push_speed_min = 100.0
+push_speed_max = 300.0
+lift_speed_min = 120.0
+lift_speed_max = 320.0
+spin_degrees_min = 500.0
+spin_degrees_max = 1200.0
+gib_scale = 1.8
+featured_parts = Array[StringName]([&"Head", &"Boot", &"BootLeft"])
+featured_speed_scale = 1.2
+featured_restitution = 0.7
+gravity = 1500.0
+restitution = 0.42
+flash = SubResource("Curve_axk0h")
+cues = Array[ExtResource("1_w37rs")]([SubResource("Resource_anuak"), SubResource("Resource_s0utf"), SubResource("Resource_hh7ad")])
+trail_effect_key = &"blood_trail"
+trail_interval_seconds = 0.04
+trail_until = 0.55
+splat_effect_key = &"blood_splat"
