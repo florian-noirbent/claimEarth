@@ -33,13 +33,9 @@ extends Node2D
 @onready var body_visual: Node2D = %BodyVisual
 @onready var rig: PlayerRig = %Rig
 @onready var sand_outline: Line2D = %SandOutline
-@onready var rope_line: Line2D = %RopeLine
-@onready var hook_indicator: Polygon2D = %HookIndicator
+@onready var grapple: GrappleRopeVisual = %Grapple
 
 var _selector := PlayerAnimationSelector.new()
-var _hook_launch_elapsed := 0.0
-var _hook_launch_duration := 0.0
-var _hook_launch_target := Vector2.ZERO
 var _grapple_attached := false
 var _grapple_anchor := Vector2.ZERO
 var _was_ragdolling := false
@@ -117,14 +113,11 @@ func _tumble(snapshot: PlayerAnimationSnapshot, lying: bool, delta: float) -> fl
 
 
 func start_hook_launch(target_world_position: Vector2) -> void:
-	_hook_launch_elapsed = 0.0
-	_hook_launch_duration = maxf(hook_launch_animation_seconds, 0.001)
-	_hook_launch_target = target_world_position
+	grapple.start_launch(target_world_position, hook_launch_animation_seconds)
 
 
 func cancel_hook_launch() -> void:
-	_hook_launch_elapsed = 0.0
-	_hook_launch_duration = 0.0
+	grapple.cancel_launch()
 
 
 func update_grapple(
@@ -134,48 +127,23 @@ func update_grapple(
 ) -> void:
 	_grapple_attached = attached
 	_grapple_anchor = anchor_world_position
-	if _hook_launch_duration > 0.0:
-		_hook_launch_elapsed = minf(
-			_hook_launch_duration,
-			_hook_launch_elapsed + delta
-		)
-		var progress := _hook_launch_elapsed / _hook_launch_duration
-		_show_rope(to_local(_hook_launch_target) * progress)
-		if _hook_launch_elapsed < _hook_launch_duration:
-			rig.update_aim(true, _hook_launch_target, delta)
-			return
-		cancel_hook_launch()
-
-	if not attached:
-		rig.update_aim(false, Vector2.ZERO, delta)
-		rope_line.visible = false
-		hook_indicator.visible = false
-		return
-
+	grapple.advance(attached, anchor_world_position, delta)
 	# A swinging body turns around often, so its hands hold the rope on the center line.
-	rig.update_aim(true, anchor_world_position, delta, _selector.state == PlayerAnimationState.HOOK_SWING)
-	_show_rope(to_local(anchor_world_position))
+	var centered := grapple.phase() == GrappleRopeVisual.Phase.HOLDING \
+		and _selector.state == PlayerAnimationState.HOOK_SWING
+	rig.update_aim(grapple.is_out(), grapple.aim_target(), delta, centered)
+	# The rope leaves from the near hand, which the aim above has just moved.
+	grapple.pose(rig.grip_position(), delta)
 
 
 func set_sand_burrow_visible(visible: bool) -> void:
 	sand_outline.visible = visible
 
 
-## Draws the rope from the near hand to a point in local space.
-func _show_rope(local_end: Vector2) -> void:
-	rope_line.visible = true
-	hook_indicator.visible = true
-	rope_line.points = PackedVector2Array([
-		to_local(rig.grip_position()),
-		local_end,
-	])
-	hook_indicator.position = local_end
-
-
 ## Returns which side the hook pulls toward: -1, 1, or 0 with no hook out.
 func _aim_side() -> float:
-	if _hook_launch_duration > 0.0:
-		return signf(_hook_launch_target.x - global_position.x)
+	if grapple.is_launching():
+		return signf(grapple.launch_target().x - global_position.x)
 	if _grapple_attached:
 		return signf(_grapple_anchor.x - global_position.x)
 	return 0.0

@@ -7,6 +7,8 @@ and runtime sampling while consuming grid-backed terrain motion from `src/world`
 perk snapshot into typed active policy. `PlayerPresentationController` owns the
 body rig, rope, hook, and sand-outline visuals and is updated directly
 by `PlayerController`; it has no gameplay decisions or independent process loop.
+`GrappleRopeVisual` draws the rope and claw for the presentation and animates their
+launch, bite, miss, and retraction from the attachment facts it is stepped with.
 `PlayerAnimationSelector` picks the animation state and facing from a per-step
 `PlayerAnimationSnapshot`, and `PlayerRig` plays that state, aims the arms, and
 swings the limbs limply while knocked out. The presentation advances the rig's

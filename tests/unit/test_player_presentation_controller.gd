@@ -114,8 +114,9 @@ func test_swinging_body_leans_along_the_rope_and_holds_it_on_the_center_line() -
 	assert_almost_eq(presentation.body_visual.rotation, PI * 0.25 * presentation.swing_lean, 0.01)
 	presentation.update_grapple(true, anchor, 1.0 / 60.0)
 	var rope_start := presentation.to_local(presentation.rig.grip_position())
-	assert_almost_eq(presentation.rope_line.points[0].x, rope_start.x, 0.001)
-	assert_almost_eq(presentation.rope_line.points[0].y, rope_start.y, 0.001)
+	assert_almost_eq(presentation.grapple.rope_grip_end().x, rope_start.x, 0.001)
+	assert_almost_eq(presentation.grapple.rope_grip_end().y, rope_start.y, 0.001)
+	assert_lt(_rope_bend(presentation.grapple), 0.05, "A settled rope under load is straight")
 	assert_almost_eq(presentation.rig.to_local(presentation.rig.grip_position()).x, 0.0, 0.1)
 	assert_lt(presentation.rig.to_local(presentation.rig.grip_position()).y, presentation.rig.to_local(presentation.rig.arm_aim.global_position).y, "The hand is above the shoulder")
 
@@ -124,7 +125,7 @@ func test_swinging_body_leans_along_the_rope_and_holds_it_on_the_center_line() -
 	presentation.update_body(snapshot, 1.0 / 60.0)
 	presentation.update_grapple(true, anchor, 1.0 / 60.0)
 	assert_lt(presentation.rig.scale.x, 0.0)
-	assert_lt(presentation.rope_line.points[0].distance_to(rope_start), 0.25)
+	assert_lt(presentation.grapple.rope_grip_end().distance_to(rope_start), 0.25)
 
 
 func test_standing_arms_reach_for_the_hook_anchor() -> void:
@@ -155,37 +156,111 @@ func test_hook_target_turns_a_standing_body_toward_it() -> void:
 	assert_lt(presentation.rig.scale.x, 0.0)
 
 
-func test_hook_launch_interpolates_then_hides_without_attachment() -> void:
+func test_hook_launch_flies_from_the_hand_then_a_miss_falls_back_and_hides() -> void:
 	var presentation := await _presentation()
+	var grapple := presentation.grapple
 	presentation.global_position = Vector2(10.0, 20.0)
 	presentation.hook_launch_animation_seconds = 0.1
+	grapple.miss_retract_seconds = 0.2
+	assert_false(grapple.rope_line.visible)
+	assert_false(grapple.hook.visible)
 
-	presentation.start_hook_launch(Vector2(110.0, 20.0))
+	presentation.start_hook_launch(Vector2(210.0, 20.0))
 	presentation.update_grapple(false, Vector2.ZERO, 0.05)
 
-	assert_true(presentation.rope_line.visible)
-	assert_true(presentation.hook_indicator.visible)
-	assert_almost_eq(presentation.rope_line.points[1].x, 50.0, 0.001)
-	assert_almost_eq(presentation.rope_line.points[1].y, 0.0, 0.001)
+	assert_true(grapple.rope_line.visible)
+	assert_true(grapple.hook.visible)
+	var grip := presentation.to_local(presentation.rig.grip_position())
+	var halfway := grip.lerp(Vector2(200.0, 0.0), 0.5)
+	assert_almost_eq(grapple.hook.position.x, halfway.x, 0.001)
+	assert_almost_eq(grapple.hook.position.y, halfway.y, 0.001)
+	assert_almost_eq(grapple.rope_grip_end().x, grip.x, 0.001)
+	assert_almost_eq(grapple.rope_grip_end().y, grip.y, 0.001)
+	assert_lt(grapple.rope_claw_end().distance_to(grapple.hook.position), 12.0, "The rope runs into the claw")
+	assert_gt(_rope_bend(grapple), 0.5, "A flying rope waves")
 
+	# The hook reaches its full range, then falls back to the hand instead of vanishing.
 	presentation.update_grapple(false, Vector2.ZERO, 0.05)
-	assert_false(presentation.rope_line.visible)
-	assert_false(presentation.hook_indicator.visible)
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.RETRACTING)
+	assert_true(grapple.rope_line.visible)
+	assert_almost_eq(grapple.hook.position.x, 200.0, 0.001)
+	presentation.update_grapple(false, Vector2.ZERO, 0.1)
+	assert_true(grapple.hook.visible)
+	assert_lt(grapple.hook.position.x, 200.0)
+	assert_gt(grapple.hook.position.x, grapple.rope_grip_end().x)
+	assert_gt(_rope_bend(grapple), 0.5, "A returning rope is slack")
+
+	presentation.update_grapple(false, Vector2.ZERO, 0.1)
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.STOWED)
+	assert_false(grapple.rope_line.visible)
+	assert_false(grapple.hook.visible)
 
 
-func test_attached_grapple_draws_world_anchor_and_cancel_stops_launch() -> void:
+func test_attached_grapple_bites_the_world_anchor_and_cancel_stops_launch() -> void:
 	var presentation := await _presentation()
+	var grapple := presentation.grapple
 	presentation.global_position = Vector2(10.0, 20.0)
 	presentation.hook_launch_animation_seconds = 1.0
 	presentation.start_hook_launch(Vector2(110.0, 20.0))
 	presentation.cancel_hook_launch()
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.STOWED)
 
-	presentation.update_grapple(true, Vector2(50.0, -20.0), 0.1)
+	presentation.update_grapple(true, Vector2(210.0, -180.0), 0.1)
 
-	assert_true(presentation.rope_line.visible)
-	assert_true(presentation.hook_indicator.visible)
-	assert_eq(presentation.rope_line.points[1], Vector2(40.0, -40.0))
-	assert_eq(presentation.hook_indicator.position, Vector2(40.0, -40.0))
+	assert_true(grapple.rope_line.visible)
+	assert_true(grapple.hook.visible)
+	assert_eq(grapple.hook.position, Vector2(200.0, -200.0))
+	var grip := presentation.to_local(presentation.rig.grip_position())
+	assert_almost_eq(grapple.rope_grip_end().x, grip.x, 0.001)
+	assert_almost_eq(grapple.rope_grip_end().y, grip.y, 0.001)
+	assert_lt(grapple.rope_claw_end().distance_to(Vector2(200.0, -200.0)), 12.0, "The rope runs into the claw")
+	assert_almost_eq(grapple.hook.rotation, (Vector2(200.0, -200.0) - grip).angle(), 0.001, "The claw points along the rope")
+	assert_almost_eq(grapple.upper_jaw.rotation, -grapple.jaw_open_angle, 0.001, "The jaws arrive open")
+
+	# A moving anchor, such as a hooked barrel, carries the claw along.
+	presentation.update_grapple(true, Vector2(180.0, -150.0), 0.1)
+	assert_eq(grapple.hook.position, Vector2(170.0, -170.0))
+	assert_gt(grapple.upper_jaw.rotation, -grapple.jaw_open_angle * 0.5, "The jaws snap shut on the anchor")
+	for _step in 60:
+		presentation.update_grapple(true, Vector2(180.0, -150.0), 1.0 / 60.0)
+	assert_lt(_rope_bend(grapple), 0.05, "The bite shiver dies out")
+	assert_almost_eq(grapple.upper_jaw.rotation, -grapple.jaw_closed_angle, 0.01)
+	assert_almost_eq(grapple.hook.scale.x, 1.0, 0.01)
+
+
+func test_released_hook_whips_back_to_the_hand_before_hiding() -> void:
+	var presentation := await _presentation()
+	var grapple := presentation.grapple
+	grapple.release_retract_seconds = 0.2
+	var anchor := presentation.global_position + Vector2(150.0, -100.0)
+	for _step in 30:
+		presentation.update_grapple(true, anchor, 1.0 / 60.0)
+
+	presentation.cancel_hook_launch()
+	presentation.update_grapple(false, Vector2.ZERO, 0.1)
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.RETRACTING)
+	assert_true(grapple.rope_line.visible)
+	assert_eq(grapple.hook.position, presentation.to_local(anchor), "The hook leaves from where it held on")
+
+	presentation.update_grapple(false, Vector2.ZERO, 0.1)
+	var grip := grapple.rope_grip_end()
+	var remaining := grapple.hook.position.distance_to(grip)
+	assert_gt(remaining, 1.0)
+	assert_lt(remaining, presentation.to_local(anchor).distance_to(grip))
+	assert_almost_eq(grapple.upper_jaw.rotation, -grapple.jaw_open_angle, 0.05, "The jaws let go")
+
+	presentation.update_grapple(false, Vector2.ZERO, 0.1)
+	assert_false(grapple.rope_line.visible)
+	assert_false(grapple.hook.visible)
+
+	# A hook released in flight returns from where it got to.
+	presentation.hook_launch_animation_seconds = 1.0
+	presentation.start_hook_launch(anchor)
+	presentation.update_grapple(false, Vector2.ZERO, 0.5)
+	presentation.cancel_hook_launch()
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.RETRACTING)
+	presentation.update_grapple(false, Vector2.ZERO, 0.3)
+	assert_eq(grapple.phase(), GrappleRopeVisual.Phase.STOWED)
 
 
 func test_sand_burrow_visibility_is_presentation_only() -> void:
@@ -205,3 +280,14 @@ func _presentation() -> PlayerPresentationController:
 	add_child_autofree(presentation)
 	await wait_process_frames(1)
 	return presentation
+
+
+## Greatest distance of a rope point from the straight line between the rope's ends.
+func _rope_bend(grapple: GrappleRopeVisual) -> float:
+	var points := grapple.rope_line.points
+	var start := points[0]
+	var direction := (points[points.size() - 1] - start).normalized()
+	var bend := 0.0
+	for point in points:
+		bend = maxf(bend, absf(direction.cross(point - start)))
+	return bend

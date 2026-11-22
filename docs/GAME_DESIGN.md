@@ -406,8 +406,12 @@ are stored apart from scores and are never submitted.
   on hard landings, swims while afloat in liquid, and digs while burrowing through
   sand. A knocked-out body goes limp: it tumbles in flight, rolls along the ground
   with its speed, drops flat once it slows down, and gets up through a crouch. A dark
-  outline keeps the body readable against the cave. With the hook out, the rope leaves
-  from the hand. A standing body reaches for the hook point; a swinging body leans
+  outline keeps the body readable against the cave. The hook is a steel claw on a
+  braided rope that leaves from the hand. It flies out with its jaws open and the rope
+  waving behind it, snaps shut on whatever it bites with a short shiver of the rope,
+  and follows a hooked barrel. A rope under load is straight. A hook that finds
+  nothing reaches its full range and falls back to the hand, and a released hook
+  whips back instead of vanishing. A standing body reaches for the hook point; a swinging body leans
   along the rope and holds it overhead on its center line, so the rope does not move
   when the character turns around. The character faces its direction of travel, or the hook when standing still.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must

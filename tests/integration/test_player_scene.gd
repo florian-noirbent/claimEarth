@@ -358,10 +358,10 @@ func test_hooked_target_is_pulled_while_player_falls_unconstrained() -> void:
 	await wait_physics_frames(1)
 
 	assert_eq(player.current_grapple_anchor_position(), query.target.center)
-	assert_true(player.presentation.rope_line.visible)
-	var expected_rope_end := player.presentation.to_local(query.target.center)
-	assert_almost_eq(player.presentation.rope_line.points[1].x, expected_rope_end.x, 0.001)
-	assert_almost_eq(player.presentation.rope_line.points[1].y, expected_rope_end.y, 0.001)
+	assert_true(player.presentation.grapple.rope_line.visible)
+	var expected_hook_point := player.presentation.to_local(query.target.center)
+	assert_almost_eq(player.presentation.grapple.hook.position.x, expected_hook_point.x, 0.001)
+	assert_almost_eq(player.presentation.grapple.hook.position.y, expected_hook_point.y, 0.001)
 
 	query.target.valid = false
 	await wait_physics_frames(1)
@@ -415,10 +415,10 @@ func test_player_hook_launch_animation_plays_without_anchor() -> void:
 	await wait_physics_frames(1)
 
 	assert_false(player.is_grapple_attached())
-	assert_true(player.presentation.rope_line.visible)
-	assert_true(player.presentation.hook_indicator.visible)
-	assert_gt(player.presentation.rope_line.points[1].length(), 0.0)
-	assert_lt(player.presentation.rope_line.points[1].length(), player.grapple_config.effective_attach_range())
+	assert_true(player.presentation.grapple.rope_line.visible)
+	assert_true(player.presentation.grapple.hook.visible)
+	assert_gt(player.presentation.grapple.hook.position.length(), 0.0)
+	assert_lt(player.presentation.grapple.hook.position.length(), player.grapple_config.effective_attach_range())
 
 	Input.action_release(InputActions.HOOK)
 	await wait_physics_frames(1)
@@ -436,8 +436,8 @@ func test_player_hook_launch_animation_uses_full_range_for_close_cursor() -> voi
 	Input.action_press(InputActions.HOOK)
 	await wait_physics_frames(1)
 
-	assert_true(player.presentation.rope_line.visible)
-	assert_gt(player.presentation.rope_line.points[1].length(), 20.0)
+	assert_true(player.presentation.grapple.rope_line.visible)
+	assert_gt(player.presentation.grapple.hook.position.length(), 20.0)
 
 	Input.action_release(InputActions.HOOK)
 	await wait_physics_frames(1)

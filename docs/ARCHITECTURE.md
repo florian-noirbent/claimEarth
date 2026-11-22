@@ -417,7 +417,10 @@ mode: `PlayerPresentationController` advances the rig once per physics step and 
 procedural layers then pose on top of the clips in the same call. Those layers are
 arm aiming at the hook (or, while swinging, holding the hands on the body's center
 line so mirroring the rig leaves the rope start in place), the lean along the rope,
-and the knockout. While knocked
+and the knockout. The presentation steps `GrappleRopeVisual` in the same call: it
+receives only whether the hook is attached and where, and derives the launch
+flight, the bite, the fall back after a miss, and the whip back after a release
+from those facts and the step time. While knocked
 out, the presentation turns the body (spin in flight, rolling with ground speed,
 lying flat at rest) and `PlayerRig` swings the limp bones as damped pendulums under
 gravity, the body's acceleration, air drag, and spin, inside per-joint limits, then
