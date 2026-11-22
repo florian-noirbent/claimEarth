@@ -5,13 +5,14 @@ tuning, and player presentation. `PlayerController` coordinates physics sequenci
 and runtime sampling while consuming grid-backed terrain motion from `src/world`.
 `PlayerRuntimeTuning` compiles authored movement/grapple resources and an immutable
 perk snapshot into typed active policy. `PlayerPresentationController` owns the
-body rig, rope, hook, and sand-outline visuals and is updated directly
+body rig, rope, hook, and sand-burrow look and is updated directly
 by `PlayerController`; it has no gameplay decisions or independent process loop.
 `GrappleRopeVisual` draws the rope and claw for the presentation and animates their
 launch, bite, miss, and retraction from the attachment facts it is stepped with.
 `PlayerAnimationSelector` picks the animation state and facing from a per-step
-`PlayerAnimationSnapshot`, and `PlayerRig` plays that state, aims the arms, and
-swings the limbs limply while knocked out. The presentation advances the rig's
+`PlayerAnimationSnapshot`, and `PlayerRig` plays that state, aims the arms,
+swings the limbs limply while knocked out, and, while burrowing, draws itself over the
+sand with a bright outline and a darkened body. The presentation advances the rig's
 animation itself, once per physics step.
 Pure models retain movement, grapple, and camera rules for focused tests.
 

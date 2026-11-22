@@ -215,10 +215,23 @@ func test_sand_worm_outline_only_shows_while_inside_sand() -> void:
 
 	player._update_sand_presentation()
 
-	assert_true(player.presentation.sand_outline.visible)
+	var rig := player.presentation.rig
+	assert_true(rig.is_burrowed())
+	assert_false(rig.z_as_relative, "A burrowing body is drawn over the sand that covers it")
+	assert_eq(rig.z_index, rig.burrow_z_index)
 	world.set_committed_by_offset(sand_cell.x, sand_cell.y, FixtureLoader.terrain_id("Air"), WorldGrid.AIR_QUANTITY)
 	player._update_sand_presentation()
-	assert_false(player.presentation.sand_outline.visible)
+	assert_false(rig.is_burrowed())
+	assert_true(rig.z_as_relative)
+	assert_eq(rig.z_index, 0)
+
+
+func test_sand_does_not_show_the_burrow_look_without_sand_worm() -> void:
+	var player := _player_surrounded_by("Sand")
+
+	player._update_sand_presentation()
+
+	assert_false(player.presentation.rig.is_burrowed())
 
 
 func test_heat_resistance_keeps_the_cooked_meter_empty_in_steam() -> void:

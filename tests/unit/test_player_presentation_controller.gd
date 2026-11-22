@@ -266,10 +266,74 @@ func test_released_hook_whips_back_to_the_hand_before_hiding() -> void:
 func test_sand_burrow_visibility_is_presentation_only() -> void:
 	var presentation := await _presentation()
 
+	var rig := presentation.rig
+	var outline := rig.get_node("Outline") as Node2D
+	var sprites := rig.get_node("Sprites") as Node2D
+	assert_ne(rig.burrow_outline_material, rig.outline_material)
+
 	presentation.set_sand_burrow_visible(true)
-	assert_true(presentation.sand_outline.visible)
+	assert_true(rig.is_burrowed())
+	assert_false(rig.z_as_relative, "A burrowing body is drawn over the terrain that covers it")
+	assert_eq(rig.z_index, rig.burrow_z_index)
+	assert_gt(rig.z_index, 0)
+	assert_eq(sprites.modulate, rig.burrow_body_tint)
+	for part: CanvasItem in outline.get_children():
+		assert_eq(part.material, rig.burrow_outline_material, "%s outline" % part.name)
+
 	presentation.set_sand_burrow_visible(false)
-	assert_false(presentation.sand_outline.visible)
+	assert_false(rig.is_burrowed())
+	assert_true(rig.z_as_relative)
+	assert_eq(rig.z_index, 0)
+	assert_eq(sprites.modulate, Color.WHITE)
+	for part: CanvasItem in outline.get_children():
+		assert_eq(part.material, rig.outline_material, "%s outline" % part.name)
+
+
+func test_sand_burrow_outline_follows_every_animated_part() -> void:
+	var presentation := await _presentation()
+	var rig := presentation.rig
+	var outline := rig.get_node("Outline") as Node2D
+	var sprites := rig.get_node("Sprites") as Node2D
+	assert_eq(outline.get_child_count(), sprites.get_child_count())
+	presentation.set_sand_burrow_visible(true)
+	var snapshot := PlayerAnimationSnapshot.new()
+	snapshot.sand_burrowing = true
+
+	var rest_transform := (outline.get_node("Forearm") as Node2D).global_transform
+	for facing: float in [1.0, -1.0]:
+		snapshot.velocity = Vector2(80.0 * facing, 0.0)
+		for step in 20:
+			presentation.update_body(snapshot, 1.0 / 60.0)
+		# RemoteTransform2D pushes the bone poses to the part lists on the next frame.
+		await wait_process_frames(2)
+		assert_eq(presentation.animation_state(), PlayerAnimationState.BURROW)
+		assert_eq(signf(rig.scale.x), facing)
+		for sprite: Sprite2D in sprites.get_children():
+			var silhouette := outline.get_node(NodePath(sprite.name)) as Sprite2D
+			assert_eq(silhouette.texture, sprite.texture, "%s texture" % sprite.name)
+			assert_true(
+				silhouette.global_transform.is_equal_approx(sprite.global_transform),
+				"%s silhouette follows its part facing %s" % [sprite.name, facing]
+			)
+	assert_false(
+		(outline.get_node("Forearm") as Node2D).global_transform.is_equal_approx(rest_transform),
+		"The burrow outline is the animated pose, not a fixed shape"
+	)
+
+
+func test_sand_burrow_outline_fits_the_part_texture_margin() -> void:
+	var presentation := await _presentation()
+	var rig := presentation.rig
+	var burrow_width := float(rig.burrow_outline_material.get_shader_parameter(&"width"))
+	var normal_width := float(rig.outline_material.get_shader_parameter(&"width"))
+
+	assert_gt(burrow_width, normal_width, "The burrow outline is the thicker one")
+	# tools/extract_player_parts.py leaves 32 transparent pixels around every part.
+	assert_lte(burrow_width, 32.0)
+	assert_ne(
+		rig.burrow_outline_material.get_shader_parameter(&"outline_color"),
+		rig.outline_material.get_shader_parameter(&"outline_color")
+	)
 
 
 func _presentation() -> PlayerPresentationController:

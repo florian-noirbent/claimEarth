@@ -22,6 +22,13 @@ const FAR_LIMB_TINT := Color(0.8, 0.78, 0.84)
 const OUTLINE_COLOR := Color(0.07, 0.04, 0.03)
 ## Outline thickness in world units; it cannot exceed the texture margin once scaled.
 const OUTLINE_WIDTH := 1.7
+## The look while burrowing through sand, when the whole rig is drawn over the terrain:
+## a brighter, thicker silhouette outline and a dark tint that sets the buried body off against the sand.
+const BURROW_OUTLINE_COLOR := Color(1.0, 0.84, 0.22)
+const BURROW_OUTLINE_WIDTH := 2.3
+const BURROW_BODY_TINT := Color(0.42, 0.33, 0.22)
+## Absolute draw layer of a burrowing rig, above the terrain and below world effects.
+const BURROW_Z_INDEX := 10
 const DEFAULT_BLEND_SECONDS := 0.12
 ## Cross-fade into a state, for the states that should not use the default.
 const BLEND_SECONDS := {
@@ -259,6 +266,18 @@ func _init() -> void:
 	var bounds := _build_skeleton(root, skeleton, sprites, outline, outline_material)
 	var rig_scale := RIG_HEIGHT / bounds.size.y
 	outline_material.set_shader_parameter(&"width", OUTLINE_WIDTH / rig_scale)
+	if maxf(OUTLINE_WIDTH, BURROW_OUTLINE_WIDTH) / rig_scale > TEXTURE_MARGIN:
+		push_error("An outline is wider than the %s px texture margin." % TEXTURE_MARGIN)
+		quit(1)
+		return
+	var burrow_outline_material := ShaderMaterial.new()
+	burrow_outline_material.shader = outline_material.shader
+	burrow_outline_material.set_shader_parameter(&"outline_color", BURROW_OUTLINE_COLOR)
+	burrow_outline_material.set_shader_parameter(&"width", BURROW_OUTLINE_WIDTH / rig_scale)
+	root.set(&"outline_material", outline_material)
+	root.set(&"burrow_outline_material", burrow_outline_material)
+	root.set(&"burrow_body_tint", BURROW_BODY_TINT)
+	root.set(&"burrow_z_index", BURROW_Z_INDEX)
 	skeleton.scale = Vector2(rig_scale, rig_scale)
 	# The rig origin is the ground point under the pelvis.
 	skeleton.position = Vector2(0.0, -bounds.end.y * rig_scale)

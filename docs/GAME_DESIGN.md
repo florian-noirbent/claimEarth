@@ -416,7 +416,9 @@ are stored apart from scores and are never submitted.
   on hard landings, swims while afloat in liquid, and digs while burrowing through
   sand. A knocked-out body goes limp: it tumbles in flight, rolls along the ground
   with its speed, drops flat once it slows down, and gets up through a crouch. A dark
-  outline keeps the body readable against the cave. The hook is a steel claw on a
+  outline keeps the body readable against the cave. Sand covers a body inside it, so a
+  Sand Worm burrowing through sand shows through on top of it as a darkened body with
+  a bright yellow outline that follows its pose. The hook is a steel claw on a
   braided rope that leaves from the hand. It flies out with its jaws open and the rope
   waving behind it, snaps shut on whatever it bites with a short shiver of the rope,
   and follows a hooked barrel. A rope under load is straight. A hook that finds
