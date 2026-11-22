@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_cue"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_seq"]
+
+[sub_resource type="Resource" id="Cue_dust"]
+script = ExtResource("1_cue")
+effect_key = &"dust_puff"
+at = 0.5
+offset = Vector2(0, 8)
+strength = 0.7
+
+[sub_resource type="Curve" id="Curve_lean"]
+_limits = [-180.0, 180.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0.46, 0), 0.0, -29.41176470588235, 1, 1, Vector2(0.8, -10), -29.41176470588235, -10.000000000000002, 1, 1, Vector2(1, -12), -10.000000000000002, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_shake"]
+_limits = [0.0, 8.0, 0.0, 1.0]
+bake_resolution = 200
+_data = [Vector2(0, 2.6), 0.0, -3.666666666666667, 1, 1, Vector2(0.3, 1.5), -3.666666666666667, -7.142857142857142, 1, 1, Vector2(0.44, 0.5), -7.142857142857142, -12.500000000000007, 1, 1, Vector2(0.48, 0), -12.500000000000007, 0.0, 1, 1]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_tint"]
+bake_resolution = 200
+_data = [Vector2(0, 0), 0.0, 2.261904761904762, 1, 1, Vector2(0.42, 0.95), 2.261904761904762, -0.08620689655172402, 1, 1, Vector2(1, 0.9), -0.08620689655172402, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_seq")
+burst_at = 0.46
+pose = &"death_choke"
+shake = SubResource("Curve_shake")
+lean = SubResource("Curve_lean")
+keep_whole = true
+loose_pose = &"death_slump"
+inherit_velocity = 0.0
+gravity = 1150.0
+air_drag = 0.6
+restitution = 0.1
+friction = 0.9
+tint = SubResource("Curve_tint")
+tint_color = Color(0.5, 0.42, 1, 1)
+cues = Array[ExtResource("1_cue")]([SubResource("Cue_dust")])

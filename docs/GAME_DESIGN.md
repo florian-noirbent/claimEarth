@@ -140,15 +140,17 @@ destroyed flag ends the run the same way after 0.8 seconds, with the explorer
 standing still. A Relentless death that drops the flag has no beat because the run
 continues.
 
-Every death takes the explorer apart in its own cartoon way. The sixteen body parts
-come off the body, fly, bounce off the hex terrain, slow down in liquids, and come to
-rest before the result panel opens; they stay where they fell behind it. The camera
-does not follow them. A held rope lets go and falls back. The remains are drawn over
-terrain, lava, and acid and are not darkened by the cave, so they read everywhere.
+Every death has its own cartoon sequence, and every one but suffocation takes the
+explorer apart. The sixteen body parts come off the body at about their own size,
+fly, bounce off the hex terrain, slow down in liquids, and come to rest before the
+result panel opens; they stay where they fell behind it. The camera does not follow
+them. A held rope lets go and falls back. The remains are drawn over terrain, lava,
+and acid and are not darkened by the cave, so they read everywhere.
 
 - Bomb: the body bursts at once. The parts are thrown away from the blast, spinning,
-  scorched with glowing embers and an ember-orange outline, trailing smoke and blood,
-  in a big red splash; the helmet and boots bounce the farthest.
+  lightly singed with an ember-orange outline that fades, trailing smoke and blood,
+  in a big red splash; limbs, helmet, and backpack stay recognisable, and the helmet
+  and boots bounce the farthest.
 - Impact: the body is squashed flat against the surface it hit for an instant, then
   bursts into a wide blood splash along that surface with stars and bone bits. The
   parts scatter along the surface and the helmet and boots bounce away.
@@ -162,9 +164,11 @@ terrain, lava, and acid and are not darkened by the cave, so they read everywher
   helmet plops down last and stays.
 - Poison: the body turns a sickly green and swells like a balloon, leaking gas, then
   pops into a green cloud with bubbles; the parts drift down slowly.
-- Suffocation: no blood. The body turns blue-purple, clutches its throat and
-  shudders while bubbles rise, lets out one last big bubble, and falls apart in a
-  heap like a puppet with cut strings.
+- Suffocation: no blood, and the body stays in one piece. It turns blue-purple,
+  clutches its throat, and shudders, then goes limp. In a liquid the bubbles thin
+  out, one last big bubble leaves, and the limp body tips over and floats slowly
+  upward. Buried in sand it sags onto its knees where it is. Anywhere else it keels
+  over and lies flat on the ground, or falls to it first.
 
 A death by any other cause bursts like the bomb death without the scorching.
 
@@ -263,11 +267,18 @@ physics, projectiles, and input remain frame-responsive.
 - Terrain impacts use the magnitude of velocity removed or redirected by collision,
   grapple correction, or escape from newly solid terrain. The greatest change in a
   physics frame contributes its amount above the configured safe-impact speed to a
-  visible meter. The meter recovers to empty over three seconds from full, marks the
+  visible meter. The meter recovers to empty over five seconds from full, marks the
   knockout threshold within the bar, and marks death at its end. Repeated nearby
   impacts accumulate; reaching the medium threshold knocks the player into a
   one-second uncontrolled tumble and detaches the hook, while reaching the end kills
   the player. A single impact at either threshold retains the same outcome.
+- Falling is a real risk. Impacts are safe up to 700 px/s, knock out from 860, and
+  kill from 1040; falls accelerate up to 1200 px/s. In free fall under normal gravity
+  that makes a drop harmless up to about six hex rows, a knockout from about nine
+  and a half, and death from about fourteen. A knockout fall leaves the meter about
+  half full or more, so a second hard landing soon after kills. Water only takes
+  a little speed off a fall. A full swing on the longest normal rope into a wall
+  fills about a quarter of the meter.
 - When solid terrain overlaps the player, escape targets only an Air position where
   the complete player body fits. Cramped one-row gaps are skipped, and the push is
   applied over consecutive physics frames until the overlap is cleared. If no such
@@ -291,8 +302,8 @@ breathable terrain: a partially filled head hex samples the hex above it, while 
 non-breathable hex blocks breathing. Steam and Air are breathable; any Sulfur Dioxide
 blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
 fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
-over their respective fill durations; Cooked recovers in one second and both impact
-and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
+over their respective fill durations; Cooked recovers in one second, suffocation
+recovers from full in three, and impact in five. Sulfur Resistance makes SO₂ breathable,
 prevents Poison, and adds two seconds to Acid survival. Heat Resistance makes Steam
 harmless at any pressure and adds one second to Lava Cooked exposure; Glass Cannon is
 immune to all terrain hazards and suffocation. Death never records current depth.

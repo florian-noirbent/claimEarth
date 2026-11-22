@@ -5,12 +5,13 @@
 
 [resource]
 script = ExtResource("1_0ikxp")
-impact_hazard_minimum_speed = 500.0
-impact_hazard_recovery_seconds = 3.0
+terminal_velocity = 1200.0
+impact_hazard_minimum_speed = 700.0
+impact_hazard_recovery_seconds = 5.0
 impact_hazard_icon = ExtResource("2_impact_icon")
 impact_hazard_bar_color = Color(0.96, 0.72, 0.2, 1)
 impact_hazard_display_order = 5
-medium_impact_speed = 650.0
-lethal_impact_speed = 1000.0
+medium_impact_speed = 860.0
+lethal_impact_speed = 1040.0
 ragdoll_seconds = 1.0
 ragdoll_spin_speed = 8.0

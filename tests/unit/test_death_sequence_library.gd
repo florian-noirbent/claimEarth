@@ -70,7 +70,44 @@ func test_every_requested_effect_part_and_pose_exists() -> void:
 			assert_true(parts.has(part), "Featured part %s is a rig part" % part)
 		if sequence.pose != &"":
 			assert_true(PlayerAnimationState.ALL.has(sequence.pose), "Pose %s is an animation state" % sequence.pose)
+		if sequence.loose_pose != &"":
+			assert_true(PlayerAnimationState.ALL.has(sequence.loose_pose), "Pose %s is an animation state" % sequence.loose_pose)
+		assert_lte(sequence.gib_scale, 1.25, "Loose parts keep close to their size on the body")
 		assert_lte(sequence.burst_at + sequence.detach_stagger, 0.75, "Every sequence leaves time to settle")
+
+
+func test_suffocation_never_takes_the_body_apart() -> void:
+	var library := load(LIBRARY_PATH) as DeathSequenceLibrary
+	var suffocation := library.sequences[DeathCause.SUFFOCATION]
+
+	assert_true(suffocation.keep_whole)
+	assert_gt(suffocation.variant_by_terrain_tag.size(), 0)
+	for variant: DeathSequence in suffocation.variant_by_terrain_tag.values():
+		assert_true(variant.keep_whole)
+	assert_same(
+		library.sequence_for(DeathCause.SUFFOCATION, PackedStringArray(["water", "liquid"])),
+		suffocation.variant_by_terrain_tag[&"liquid"]
+	)
+	assert_same(
+		library.sequence_for(DeathCause.SUFFOCATION, PackedStringArray(["sand"])),
+		suffocation.variant_by_terrain_tag[&"sand"]
+	)
+	assert_same(library.sequence_for(DeathCause.SUFFOCATION, PackedStringArray(["sulfur_dioxide", "gas"])), suffocation)
+
+
+func test_a_whole_body_sequence_rejects_settings_for_loose_parts() -> void:
+	var sequence := DeathSequence.new()
+	sequence.keep_whole = true
+	sequence.burst_at = 0.4
+	sequence.loose_pose = PlayerAnimationState.RAGDOLL
+	assert_eq(sequence.validate().size(), 0)
+
+	sequence.detach_stagger = 0.2
+	assert_string_contains(_joined(sequence.validate()), "detach_stagger must be 0")
+
+	var parts := DeathSequence.new()
+	parts.loose_pose = PlayerAnimationState.RAGDOLL
+	assert_string_contains(_joined(parts.validate()), "loose_pose needs keep_whole")
 
 
 func test_validation_reports_broken_sequences() -> void:
