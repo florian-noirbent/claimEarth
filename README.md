@@ -1,5 +1,7 @@
 # Claim Earth
 
+[![Claim Earth gameplay video](https://img.youtube.com/vi/qJeOVA3A9LI/maxresdefault.jpg)](https://www.youtube.com/watch?v=qJeOVA3A9LI)
+
 Claim Earth is a small Godot arcade game about descending through a generated hex cave with bombs, a grappling hook, and a flag used to bank the run's depth. The base game is implemented; current work is maintenance, portfolio polish, and feature development.
 
 ## Play
@@ -8,6 +10,11 @@ Claim Earth is a small Godot arcade game about descending through a generated he
 - [Play on GitHub Pages](https://florian-noirbent.github.io/claimEarth)
 
 GitHub Pages deploys the current Web build automatically whenever `master` is updated. GitHub README pages do not allow embedded game iframes, so both play buttons open the game on a full page.
+
+## Blog
+
+- [Claim Earth: Simulating, Rendering, and Colliding with a Texture](blog/claim-earth-simulating-rendering-and-colliding-with-a-texture.md)
+- [Original itch.io devlog](https://titan-koyos.itch.io/claim-earth/devlog/1799603/claim-earth-simulating-rendering-and-colliding-with-a-texture)
 
 ## Quick Start
 
