@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TerrainCatalog" load_steps=17 format=3]
+[gd_resource type="Resource" script_class="TerrainCatalog" load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/terrain_catalog.gd" id="1_h6xrb"]
 [ext_resource type="Resource" path="res://config/terrain/air.tres" id="2_fr7r6"]
@@ -16,8 +16,10 @@
 [ext_resource type="Resource" path="res://config/terrain/acid_sand_reaction.tres" id="13_as"]
 [ext_resource type="Resource" path="res://config/terrain/gas_water_reaction.tres" id="14_gw"]
 [ext_resource type="Resource" path="res://config/terrain/water_lava_reaction.tres" id="15_wl"]
+[ext_resource type="Resource" path="res://config/terrain/stone_steam_reaction.tres" id="16_ss"]
+[ext_resource type="Resource" path="res://config/terrain/dirt_steam_reaction.tres" id="17_ds"]
 
 [resource]
 script = ExtResource("1_h6xrb")
 definitions = [ExtResource("2_fr7r6"), ExtResource("3_qvytl"), ExtResource("4_tw4o8"), ExtResource("5_a7h5i"), ExtResource("6_3bxp7"), ExtResource("7_rqm1w"), ExtResource("8_sulfur"), ExtResource("9_acid"), ExtResource("10_gas"), ExtResource("10_steam")]
-contact_reactions = [ExtResource("11_sw"), ExtResource("12_sl"), ExtResource("13_as"), ExtResource("14_gw"), ExtResource("15_wl")]
+contact_reactions = [ExtResource("11_sw"), ExtResource("12_sl"), ExtResource("13_as"), ExtResource("14_gw"), ExtResource("15_wl"), ExtResource("16_ss"), ExtResource("17_ds")]

@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="BoilingReaction" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="BoilingReaction" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/terrain/boiling_reaction.gd" id="1_rule"]
 [ext_resource type="Resource" path="res://config/terrain/water.tres" id="2_water"]
 [ext_resource type="Resource" path="res://config/terrain/lava.tres" id="3_lava"]
 [ext_resource type="Resource" path="res://config/terrain/steam.tres" id="4_steam"]
+[ext_resource type="Resource" path="res://config/terrain/stone.tres" id="5_stone"]
 
 [resource]
 script = ExtResource("1_rule")
@@ -12,3 +13,5 @@ reactant_b = ExtResource("3_lava")
 steam_product = ExtResource("4_steam")
 steam_per_water = 10
 steam_quantity_per_second = 127
+heat_source_solidified_product = ExtResource("5_stone")
+heat_source_solidify_chance = 0.02

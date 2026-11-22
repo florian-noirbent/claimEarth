@@ -38,17 +38,30 @@ func _run() -> void:
 		return
 	if not await _verify_sulfur_converts_water_one_to_one_before_depleting(registry):
 		return
-	if not await _verify_water_lava_boils_into_steam(registry):
+	# Exact boiling and Steam motion fixtures run without the chance reactions.
+	var chanceless_registry := _registry_with_reaction_chance(0.0)
+	if chanceless_registry == null:
 		return
-	if not await _verify_boiling_detects_every_hex_direction(registry):
+	if not await _verify_water_lava_boils_into_steam(chanceless_registry):
 		return
-	if not await _verify_steam_rises_and_stays_conserved(registry):
+	if not await _verify_boiling_detects_every_hex_direction(chanceless_registry):
 		return
-	if not await _verify_steam_vents_through_the_top_edge(registry):
+	if not await _verify_steam_rises_and_stays_conserved(chanceless_registry):
 		return
-	if not await _verify_steam_levels_under_a_flat_ceiling(registry):
+	if not await _verify_steam_vents_through_the_top_edge(chanceless_registry):
 		return
-	if not await _verify_overpressured_steam_spreads_downward(registry):
+	if not await _verify_steam_levels_under_a_flat_ceiling(chanceless_registry):
+		return
+	if not await _verify_overpressured_steam_spreads_downward(chanceless_registry):
+		return
+	var certain_registry := _registry_with_reaction_chance(1.0)
+	if certain_registry == null:
+		return
+	if not await _verify_boiling_lava_solidifies(certain_registry):
+		return
+	if not await _verify_steam_condenses_under_a_ceiling(certain_registry):
+		return
+	if not await _verify_default_chance_reactions_are_seeded(registry):
 		return
 	if not await _verify_erosion_uses_authored_contact_limit(registry):
 		return
@@ -860,6 +873,178 @@ func _verify_boiling_detects_every_hex_direction(registry: TerrainRegistry) -> b
 	if not _expect(converted_only_once, "Several Lava neighbors must still boil a Water cell only once per tick."):
 		return false
 	return true
+
+
+## The shipped catalog with every chance reaction (Lava solidification, Steam
+## condensation) forced to one chance, so fixtures can assert exact outcomes.
+func _registry_with_reaction_chance(chance: float) -> TerrainRegistry:
+	var source_catalog := load("res://config/terrain/catalog.tres") as TerrainCatalog
+	var tuned_catalog := TerrainCatalog.new()
+	tuned_catalog.definitions = source_catalog.definitions.duplicate()
+	var tuned_reactions: Array = []
+	for reaction_variant in source_catalog.contact_reactions:
+		var copied_reaction := (reaction_variant as TerrainContactReaction).duplicate(true) as TerrainContactReaction
+		if copied_reaction is BoilingReaction:
+			(copied_reaction as BoilingReaction).heat_source_solidify_chance = chance
+		elif copied_reaction is CondensationReaction:
+			(copied_reaction as CondensationReaction).condensation_chance = chance
+		tuned_reactions.append(copied_reaction)
+	tuned_catalog.contact_reactions = tuned_reactions
+	var tuned_registry := TerrainRegistry.new()
+	if not _expect(tuned_registry.try_configure(tuned_catalog), "The chance-tuned catalog must validate: %s" % [tuned_registry.validation_errors]):
+		return null
+	return tuned_registry
+
+
+func _verify_boiling_lava_solidifies(certain_registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(certain_registry, "Air")
+	var stone := _terrain_id(certain_registry, "Stone")
+	var water := _terrain_id(certain_registry, "Water")
+	var lava := _terrain_id(certain_registry, "Lava")
+	var steam := _terrain_id(certain_registry, "Steam")
+	var center := HexCoord.from_offset_odd_q(2, 2)
+	for direction in range(6):
+		var world := WorldGrid.new(WorldDimensions.new(5, 5), stone)
+		var lava_offset := center.neighbor(direction).to_offset_odd_q()
+		world.set_committed_by_offset(2, 2, water, 127)
+		world.set_committed_by_offset(lava_offset.x, lava_offset.y, lava, 40)
+		var backend := _backend(world, certain_registry)
+		backend.attach_to(root)
+		await process_frame
+		if not await _advance_ticks(backend, 1, 1):
+			backend.shutdown()
+			return false
+		var solidified := (
+			_terrain_quantity_total(world, lava) == 0
+			and world.get_committed_by_offset(lava_offset.x, lava_offset.y) == stone
+			and world.get_committed_quantity_by_offset(lava_offset.x, lava_offset.y) == 127
+			and _terrain_quantity_total(world, water) == 126
+			and _terrain_quantity_total(world, steam) == 10
+		)
+		backend.shutdown()
+		await process_frame
+		if not _expect(solidified, "Lava that boils Water in hex direction %d must turn into a full Stone hex at certain chance." % direction):
+			return false
+
+	# Water holding a foreign secondary component cannot boil, so its Lava must not roll.
+	var blocked_world := WorldGrid.new(WorldDimensions.new(4, 4), stone)
+	blocked_world.set_committed_components_by_offset(1, 1, water, 127, air, 64)
+	blocked_world.set_committed_by_offset(1, 2, lava, 127)
+	var blocked_backend := _backend(blocked_world, certain_registry)
+	blocked_backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(blocked_backend, 1, 3):
+		blocked_backend.shutdown()
+		return false
+	var lava_kept := _terrain_quantity_total(blocked_world, lava) == 127 and _terrain_quantity_total(blocked_world, steam) == 0
+	blocked_backend.shutdown()
+	await process_frame
+	return _expect(lava_kept, "Lava must only solidify on a tick in which it turns Water into Steam.")
+
+
+func _verify_steam_condenses_under_a_ceiling(certain_registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(certain_registry, "Air")
+	var stone := _terrain_id(certain_registry, "Stone")
+	var water := _terrain_id(certain_registry, "Water")
+	var steam := _terrain_id(certain_registry, "Steam")
+	for ceiling_name in ["Stone", "Dirt", "Sulfur"]:
+		var condenses: bool = ceiling_name != "Sulfur"
+		var world := WorldGrid.new(WorldDimensions.new(3, 5), stone)
+		world.set_committed_by_offset(1, 1, _terrain_id(certain_registry, ceiling_name), 127)
+		world.set_committed_by_offset(1, 2, steam, 63)
+		world.set_committed_by_offset(1, 3, air, WorldGrid.AIR_QUANTITY)
+		var backend := _backend(world, certain_registry)
+		backend.attach_to(root)
+		await process_frame
+		if not await _advance_ticks(backend, 1, 1):
+			backend.shutdown()
+			return false
+		var steam_total := _terrain_quantity_total(world, steam)
+		var water_total := _terrain_quantity_total(world, water)
+		backend.shutdown()
+		await process_frame
+		if not _expect(
+			steam_total == (53 if condenses else 63) and water_total == (1 if condenses else 0),
+			"Steam directly under %s must %s (Steam %d, Water %d)." % [
+				ceiling_name,
+				"condense ten quantity into one Water per tick at certain chance" if condenses else "not condense",
+				steam_total,
+				water_total,
+			]
+		):
+			return false
+
+	var wisp_world := WorldGrid.new(WorldDimensions.new(3, 4), stone)
+	wisp_world.set_committed_by_offset(1, 1, steam, 4)
+	wisp_world.set_committed_by_offset(1, 2, air, WorldGrid.AIR_QUANTITY)
+	var wisp_backend := _backend(wisp_world, certain_registry)
+	wisp_backend.attach_to(root)
+	await process_frame
+	if not await _advance_ticks(wisp_backend, 1, 1):
+		wisp_backend.shutdown()
+		return false
+	var wisp_steam := _terrain_quantity_total(wisp_world, steam)
+	var wisp_water := _terrain_quantity_total(wisp_world, water)
+	wisp_backend.shutdown()
+	await process_frame
+	return _expect(
+		wisp_steam == 0 and wisp_water == 0,
+		"Less Steam than one condensation unit must dissipate without creating Water (Steam %d, Water %d)." % [wisp_steam, wisp_water]
+	)
+
+
+func _verify_default_chance_reactions_are_seeded(registry: TerrainRegistry) -> bool:
+	var air := _terrain_id(registry, "Air")
+	var stone := _terrain_id(registry, "Stone")
+	var water := _terrain_id(registry, "Water")
+	var lava := _terrain_id(registry, "Lava")
+	var steam := _terrain_id(registry, "Steam")
+	var pair_count := 15
+	var layer_width := pair_count * 2 + 1
+	var snapshots: Array[PackedByteArray] = []
+	var lava_cells_by_run := PackedInt32Array()
+	for run_seed in [12345, 12345, 54321]:
+		# One world holds sealed Water-over-Lava pairs, the other a Steam layer under Stone.
+		var boiling_world := WorldGrid.new(WorldDimensions.new(layer_width, 4), stone)
+		for pair_index in range(pair_count):
+			boiling_world.set_committed_by_offset(pair_index * 2 + 1, 1, water, 127)
+			boiling_world.set_committed_by_offset(pair_index * 2 + 1, 2, lava, 127)
+		var steam_world := WorldGrid.new(WorldDimensions.new(layer_width, 4), stone)
+		for col in range(1, layer_width - 1):
+			steam_world.set_committed_by_offset(col, 1, steam, 63)
+			steam_world.set_committed_by_offset(col, 2, air, WorldGrid.AIR_QUANTITY)
+		var steam_before := _terrain_quantity_total(steam_world, steam)
+		for world: WorldGrid in [boiling_world, steam_world]:
+			var backend := RenderTextureSimulationBackend.new()
+			backend.set_simulation_shader(load("res://src/simulation/render_texture_simulation.gdshader") as Shader)
+			backend.initialize(world, registry, run_seed)
+			backend.attach_to(root)
+			await process_frame
+			var advanced := await _advance_ticks(backend, 1, 30)
+			backend.shutdown()
+			await process_frame
+			if not advanced:
+				return false
+		var lava_cells := _occupied_terrain_cells(boiling_world, lava)
+		if not _expect(
+			lava_cells > 0 and lava_cells < pair_count,
+			"Thirty ticks at the default chance must solidify some boiling Lava but not all of it (%d of %d left)." % [lava_cells, pair_count]
+		):
+			return false
+		var steam_after := _terrain_quantity_total(steam_world, steam)
+		var condensed_water := _terrain_quantity_total(steam_world, water)
+		if not _expect(
+			condensed_water > 0 and steam_before - steam_after >= condensed_water * 10 and steam_after > 0,
+			"Steam under a Stone ceiling must slowly condense into Water at the default chance (Steam %d of %d, Water %d)." % [steam_after, steam_before, condensed_water]
+		):
+			return false
+		var snapshot := boiling_world.copy_rgba_bytes()
+		snapshot.append_array(steam_world.copy_rgba_bytes())
+		snapshots.append(snapshot)
+		lava_cells_by_run.append(lava_cells)
+	if not _expect(snapshots[0] == snapshots[1], "Chance reactions must replay identically for the same seed."):
+		return false
+	return _expect(snapshots[0] != snapshots[2], "Chance reactions must vary with the run seed (Lava cells left %s)." % [lava_cells_by_run])
 
 
 func _verify_erosion_uses_authored_contact_limit(registry: TerrainRegistry) -> bool:

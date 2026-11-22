@@ -45,10 +45,13 @@ var _flare_high_frequency_light := {}
 var _standard_light_sources: Dictionary = {}
 var _standard_light_image: Image
 var _standard_light_texture: ImageTexture
+## Run seed folded into the shader's signed 32-bit range; it varies chance reactions per run.
+var _chance_seed := 0
 
 
-func initialize(world: WorldGrid, registry: TerrainRegistry, _seed: int) -> void:
+func initialize(world: WorldGrid, registry: TerrainRegistry, run_seed: int) -> void:
 	_invalidate_render_request()
+	_chance_seed = run_seed & 0x7fffffff
 	_world = world
 	_metadata = CompiledTerrainData.compile(registry)
 	_pass_index = 0
@@ -352,6 +355,7 @@ func _configure_materials() -> void:
 		material.set_shader_parameter("standard_light_sources", _standard_light_texture)
 		material.set_shader_parameter("world_size", Vector2(_world.dimensions.width, _world.dimensions.depth))
 		material.set_shader_parameter("simulation_ticks_per_second", SIMULATION_TICKS_PER_SECOND)
+		material.set_shader_parameter("simulation_seed", _chance_seed)
 
 
 func _initialize_standard_light_texture() -> void:

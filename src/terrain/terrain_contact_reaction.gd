@@ -10,6 +10,9 @@ const OPCODE_EROSION := 3
 const OPCODE_GAS_ABSORPTION := 4
 const OPCODE_MUTUAL_REPLACEMENT := 5
 const OPCODE_BOILING := 6
+const OPCODE_CONDENSATION := 7
+## A compiled chance is a 16-bit fraction of this value, so 1.0 always succeeds.
+const CHANCE_SCALE := 65535
 
 @export var reactant_a: TerrainDefinition
 @export var reactant_b: TerrainDefinition
@@ -33,6 +36,12 @@ func parameter_bytes() -> PackedByteArray:
 
 func is_bidirectional() -> bool:
 	return true
+
+
+## Low and high byte of a 0-1 chance for the simulation's deterministic chance roll.
+static func chance_bytes(chance: float) -> PackedByteArray:
+	var scaled := roundi(clampf(chance, 0.0, 1.0) * CHANCE_SCALE)
+	return PackedByteArray([scaled & 255, scaled >> 8])
 
 
 func referenced_terrains() -> Array[TerrainDefinition]:

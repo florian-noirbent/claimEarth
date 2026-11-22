@@ -142,7 +142,7 @@ The first second of a run blocks throws so the Start click cannot fire an item.
 | Sand | Solid at half fill or more | Falls and creeps side-down; denser Sand displaces lighter moving terrain into a conserved hidden component that escapes through later pair passes; pushes the player out rather than burying them, with any resulting player velocity change evaluated as an impact | Becomes air |
 | Water | Passable | Falls and flows quickly side-down and side-up by CA fill offset; mildly damps immersed player motion and contributes no terrain-specific player hazard | Diffuses propagation |
 | Lava | Passable | Falls and flows like a slow viscous liquid; side-up overflow is slow and ignores small fill differences; strongly damps immersed player motion and fills the shared Cooked meter from 10% fill, with low-fill lava building it more slowly than a full hex | Detonates bombs |
-| Steam | Passable | Breathable buoyant gas that rises through Air without condensing, levels out under ceilings like an upside-down liquid, and escapes through the open top of the map. Normal pressure is 63 quantity; pressure above it spreads sideways and, once no higher exit remains, downward. Contact slowly fills the shared Cooked meter | None |
+| Steam | Passable | Breathable buoyant gas that rises through Air, levels out under ceilings like an upside-down liquid, slowly condenses back into Water under Stone or Dirt, and escapes through the open top of the map. Normal pressure is 63 quantity; pressure above it spreads sideways and, once no higher exit remains, downward. Contact slowly fills the shared Cooked meter | None |
 | Sulfur | Solid | Static yellow mineral. Water slowly converts it and nearby water into sulfuric acid; Lava permanently ignites it, consuming it into sulfur dioxide | Becomes air and emits sulfur dioxide |
 | Sulfuric Acid | Passable | Dense yellow-green liquid that sinks beneath water and consumes sand below it into water; contact fills a lethal Acid meter | None |
 | Sulfur Dioxide | Passable | Heavy yellow-green gas. One bar is 63 quantity, with four bars maximum; it settles through air and only overpressure rises. Contact fills a Poison meter and blocks breathing | None |
@@ -167,7 +167,13 @@ and displacement priority rather than terrain IDs. Once per tick, each Water cel
 touching any amount of Lava converts Water to Steam at its resource-configured rate.
 The default converts one Water quantity into ten Steam quantity and averages 127 Steam
 quantity per second; it pauses when the Water cell has no component capacity for the
-expanded Steam. Lava remains unchanged. Only the primary component
+expanded Steam. Each tick in which a Lava cell turns Water into Steam, that Lava cell
+has a 2% chance to cool into a full Stone hex, so Lava touching Water crusts over
+after about five seconds and stops producing Steam. Each tick, a Steam cell with Stone
+or Dirt directly above it has a 10% chance to condense: it loses ten Steam quantity
+and leaves one Water quantity behind, which drips down. A cell holding less than ten
+Steam loses it without leaving Water. Both chances are resource-configured and are
+rolled deterministically from the run seed, the tick, and the cell. Only the primary component
 affects rendering, collision, hazards, viscosity, and item contact.
 The out-of-bounds space below the final map row behaves as solid terrain, so fluids
 can settle and spread along the bottom edge without leaving the world. The space
