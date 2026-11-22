@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CondensationReaction" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/terrain/condensation_reaction.gd" id="1_rule"]
+[ext_resource type="Resource" path="res://config/terrain/dirt.tres" id="2_ceiling"]
+[ext_resource type="Resource" path="res://config/terrain/steam.tres" id="3_steam"]
+[ext_resource type="Resource" path="res://config/terrain/water.tres" id="4_water"]
+
+[resource]
+script = ExtResource("1_rule")
+reactant_a = ExtResource("2_ceiling")
+reactant_b = ExtResource("3_steam")
+liquid_product = ExtResource("4_water")
+condensation_chance = 0.1
+gas_quantity_per_condensation = 10
+liquid_quantity_per_condensation = 1

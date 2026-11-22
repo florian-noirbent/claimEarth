@@ -10,7 +10,7 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	assert_true(registry.has_definition(5))
 	assert_true(registry.has_definition(8))
 	assert_true(registry.has_definition(9))
-	assert_eq(registry.contact_reactions().size(), 5)
+	assert_eq(registry.contact_reactions().size(), 7)
 
 	for definition in registry.all_definitions():
 		assert_eq(definition.validate().size(), 0, definition.display_name)
@@ -62,7 +62,23 @@ func test_terrain_catalog_loads_all_required_definitions() -> void:
 	_assert_reaction_bytes(metadata, "Sulfur", "Lava", 2, [0, 0], [0, 0, 0, 0])
 	_assert_reaction_bytes(metadata, "Sulfuric Acid", "Sand", 3, [FixtureLoader.terrain_id("Water"), FixtureLoader.terrain_id("Air")], [2, 1, 2, 0])
 	_assert_reaction_bytes(metadata, "Sulfur Dioxide", "Water", 4, [0, FixtureLoader.terrain_id("Sulfuric Acid")], [3, 63, 189, 127])
-	_assert_reaction_bytes(metadata, "Water", "Lava", 6, [FixtureLoader.terrain_id("Steam"), 0], [10, 127, 0, 0])
+	# Chances compile as 16-bit fractions of 65535: 2% is 1311 (31, 5) and 10% is 6554 (154, 25).
+	var boiling_products := [FixtureLoader.terrain_id("Steam"), FixtureLoader.terrain_id("Stone")]
+	_assert_reaction_bytes(metadata, "Water", "Lava", 6, boiling_products, [10, 127, 31, 5])
+	_assert_reaction_bytes(metadata, "Lava", "Water", 6, boiling_products, [10, 127, 31, 5])
+	for ceiling_name in ["Stone", "Dirt"]:
+		_assert_reaction_bytes(metadata, ceiling_name, "Steam", 7, [0, FixtureLoader.terrain_id("Water")], [10, 1, 154, 25])
+		_assert_reaction_bytes(metadata, "Steam", ceiling_name, 0, [0, 0], [0, 0, 0, 0])
+	assert_eq(TerrainContactReaction.chance_bytes(0.0), PackedByteArray([0, 0]))
+	assert_eq(TerrainContactReaction.chance_bytes(1.0), PackedByteArray([255, 255]))
+	var unbacked_solidification := BoilingReaction.new()
+	unbacked_solidification.reactant_a = FixtureLoader.terrain_definition_named("Water")
+	unbacked_solidification.reactant_b = FixtureLoader.terrain_definition_named("Lava")
+	unbacked_solidification.steam_product = FixtureLoader.terrain_definition_named("Steam")
+	assert_eq(unbacked_solidification.validate().size(), 0)
+	unbacked_solidification.heat_source_solidify_chance = 0.5
+	assert_eq(unbacked_solidification.validate().size(), 1, "A solidify chance needs a solidified product.")
+	assert_eq(unbacked_solidification.parameter_bytes(), PackedByteArray([10, 127, 0, 0]))
 
 	var removed_properties := ["kind", "duration_seconds", "input_a_units", "input_b_units", "output_units", "persistent_ignition"]
 	var base_property_names := (TerrainContactReaction.new().get_property_list() as Array).map(

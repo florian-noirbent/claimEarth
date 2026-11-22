@@ -487,8 +487,21 @@ each Water cell, flagged as a boiling reactant in the compiled rule texture so o
 terrain skips the scan, checks its six neighbors for the authored boiling opcode, consumes whole
 Water units on a deterministic cadence, and adds the configured expanded Steam product
 to an empty or matching component in that same cell. A Water cell reacts at most once
-per tick regardless of contact-edge count; occupied component capacity applies
-backpressure, and the Lava neighbor is never mutated.
+per tick regardless of contact-edge count, and occupied component capacity applies
+backpressure. The boiling reaction compiles for both pair orders so its heat source
+can solidify: in the pass that pairs a boiling Water cell with the one neighbor that
+boils it, the heat source rolls the authored chance to become the authored solid.
+
+Chance reactions never use a random source. `chance_roll` in the simulation shader
+hashes the cell coordinate, the tick, the run seed (`simulation_seed`, passed to
+`initialize`), and a per-pass salt with integer arithmetic, and compares it with a
+16-bit chance compiled by `TerrainContactReaction.chance_bytes`. Every fragment that
+resolves the same pair therefore agrees, and a seed replays identically.
+`CondensationReaction` uses the same roll: reactant A is a ceiling terrain and
+reactant B the gas directly below it, resolved in the vertical pass that pairs them,
+which happens once per tick. A condensation removes the authored gas quantity and
+adds the authored liquid quantity to the gas cell; a smaller gas remainder is removed
+without liquid, and a cell with no free component slot for the liquid waits.
 
 Persistent burning is an optional terrain behavior compiled into additional rule
 texture rows. It authors the burn-product ID, ignition-token quantity, deterministic

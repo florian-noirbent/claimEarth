@@ -317,5 +317,6 @@ func _set_reaction(a: int, b: int, reaction: TerrainContactReaction) -> void:
 	reaction_parameter_2_by_pair[index] = parameters[2]
 	reaction_parameter_3_by_pair[index] = parameters[3]
 	# Boiling scans every neighbor, so the simulation needs to know which terrain to scan for.
+	# Both pair orders compile, but only reactant A boils.
 	if reaction.simulation_opcode() == TerrainContactReaction.OPCODE_BOILING:
-		boiling_reactant_by_id[a] = 1
+		boiling_reactant_by_id[reaction.reactant_a.stable_id] = 1

@@ -9,6 +9,7 @@ uniform vec2 world_size = vec2(1.0, 1.0);
 uniform int pass_kind = 0;
 uniform int simulation_tick = 0;
 uniform int simulation_ticks_per_second = 10;
+uniform int simulation_seed = 0;
 uniform ivec2 player_light_offset = ivec2(-1, -1);
 uniform int player_light_level = 0;
 uniform int player_light_update_radius = 0;
@@ -34,6 +35,8 @@ const int REACTION_EROSION = 3;
 const int REACTION_GAS_ABSORPTION = 4;
 const int REACTION_MUTUAL_REPLACEMENT = 5;
 const int REACTION_BOILING = 6;
+const int REACTION_CONDENSATION = 7;
+const int CHANCE_SCALE = 65535;
 const int FULL_QUANTITY = 127;
 const int MAX_STORED_QUANTITY = 255;
 const int NO_BURN_PRODUCT_ID = 255;
@@ -210,6 +213,27 @@ int reaction_byte(vec4 reaction, int channel) {
 	if (channel == 1) return byte_from_float(reaction.g);
 	if (channel == 2) return byte_from_float(reaction.b);
 	return byte_from_float(reaction.a);
+}
+
+uint hash_bits(uint value) {
+	value ^= value >> 16u;
+	value *= 0x7feb352du;
+	value ^= value >> 15u;
+	value *= 0x846ca68bu;
+	value ^= value >> 16u;
+	return value;
+}
+
+// A shader has no random source, so a chance is a hash of the cell, the tick, the run
+// seed, and a salt separating the rolls one cell makes in a tick. Integer arithmetic
+// keeps the roll identical on every GPU and for every fragment resolving the same pair.
+bool chance_roll(ivec2 coord, int salt, vec4 parameters) {
+	int chance = reaction_byte(parameters, 2) + reaction_byte(parameters, 3) * 256;
+	uint hashed = hash_bits(uint(simulation_seed) + uint(salt));
+	hashed = hash_bits(hashed + uint(simulation_tick));
+	hashed = hash_bits(hashed + uint(coord.y));
+	hashed = hash_bits(hashed + uint(coord.x));
+	return int(hashed % uint(CHANCE_SCALE)) < chance;
 }
 
 int standard_light(ivec2 coord) {
@@ -666,7 +690,8 @@ int boiling_steam_capacity(vec4 cell, int steam_id) {
 	return has_slot ? max(0, storage_capacity(steam_id) - component_fill(cell, steam_id)) : 0;
 }
 
-vec4 boil(vec4 cell, int steam_id, vec4 parameters) {
+// Liquid quantity the cell boils away this tick.
+int boiled_quantity(vec4 cell, int steam_id, vec4 parameters) {
 	int steam_per_water = max(1, reaction_byte(parameters, 0));
 	int steam_per_second = max(1, reaction_byte(parameters, 1));
 	int cadence_denominator = max(1, simulation_ticks_per_second * steam_per_water);
@@ -675,19 +700,25 @@ vec4 boil(vec4 cell, int steam_id, vec4 parameters) {
 	int cadence_tick = simulation_tick % cadence_denominator;
 	int water_to_consume = (cadence_tick + 1) * steam_per_second / cadence_denominator
 		- cadence_tick * steam_per_second / cadence_denominator;
-	water_to_consume = min(
+	return min(
 		water_to_consume,
 		min(fill_amount(cell), boiling_steam_capacity(cell, steam_id) / steam_per_water)
 	);
-	if (water_to_consume <= 0) {
-		return cell;
+}
+
+// Direction of the one neighbor that boils this liquid cell, or -1 without any.
+int boiling_heat_direction(ivec2 coord, int liquid_id) {
+	for (int direction = 0; direction < 6; direction++) {
+		ivec2 neighbor_coord = hex_neighbor(coord, direction);
+		if (!in_bounds(neighbor_coord)) {
+			continue;
+		}
+		vec4 reaction = read_reaction_header(liquid_id, terrain_id(read_cell(neighbor_coord)));
+		if (reaction_byte(reaction, 0) == REACTION_BOILING) {
+			return direction;
+		}
 	}
-	return add_component(
-		remove_primary_component(cell, water_to_consume),
-		steam_id,
-		water_to_consume * steam_per_water,
-		storage_capacity(steam_id)
-	);
+	return -1;
 }
 
 vec4 resolve_boiling_at(ivec2 coord, vec4 cell) {
@@ -695,18 +726,87 @@ vec4 resolve_boiling_at(ivec2 coord, vec4 cell) {
 	if (fill_amount(cell) <= 0 || !can_boil(liquid_id)) {
 		return cell;
 	}
-	for (int direction = 0; direction < 6; direction++) {
-		ivec2 neighbor_coord = hex_neighbor(coord, direction);
-		if (!in_bounds(neighbor_coord)) {
-			continue;
-		}
-		int heat_id = terrain_id(read_cell(neighbor_coord));
-		vec4 reaction = read_reaction_header(liquid_id, heat_id);
-		if (reaction_byte(reaction, 0) == REACTION_BOILING) {
-			return boil(cell, reaction_byte(reaction, 1), read_reaction_parameters(liquid_id, heat_id));
-		}
+	int heat_direction = boiling_heat_direction(coord, liquid_id);
+	if (heat_direction < 0) {
+		return cell;
 	}
-	return cell;
+	int heat_id = terrain_id(read_cell(hex_neighbor(coord, heat_direction)));
+	int steam_id = reaction_byte(read_reaction_header(liquid_id, heat_id), 1);
+	vec4 parameters = read_reaction_parameters(liquid_id, heat_id);
+	int water_to_consume = boiled_quantity(cell, steam_id, parameters);
+	if (water_to_consume <= 0) {
+		return cell;
+	}
+	return add_component(
+		remove_primary_component(cell, water_to_consume),
+		steam_id,
+		water_to_consume * max(1, reaction_byte(parameters, 0)),
+		storage_capacity(steam_id)
+	);
+}
+
+// The heat source that boils a liquid cell may solidify. The roll happens in the pass
+// that pairs the two cells, and only for the one neighbor that boils the liquid, so a
+// liquid cell causes at most one roll per tick.
+bool resolve_heat_source_solidification(
+	ivec2 a_coord,
+	ivec2 b_coord,
+	vec4 a,
+	vec4 b,
+	vec4 reaction,
+	out vec4 next_a,
+	out vec4 next_b
+) {
+	next_a = a;
+	next_b = b;
+	bool liquid_is_a = can_boil(terrain_id(a));
+	vec4 liquid = liquid_is_a ? a : b;
+	ivec2 liquid_coord = liquid_is_a ? a_coord : b_coord;
+	ivec2 heat_coord = liquid_is_a ? b_coord : a_coord;
+	int liquid_id = terrain_id(liquid);
+	vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
+	if (!can_boil(liquid_id) || boiled_quantity(liquid, reaction_byte(reaction, 1), parameters) <= 0) {
+		return false;
+	}
+	if (!chance_roll(heat_coord, pass_kind, parameters)) {
+		return false;
+	}
+	int heat_direction = liquid_is_a ? pair_direction() : hex_opposite_direction(pair_direction());
+	if (boiling_heat_direction(liquid_coord, liquid_id) != heat_direction) {
+		return false;
+	}
+	int solid_id = reaction_byte(reaction, 2);
+	vec4 solidified = make_cell(solid_id, normal_quantity(solid_id));
+	if (liquid_is_a) {
+		next_b = solidified;
+	} else {
+		next_a = solidified;
+	}
+	return true;
+}
+
+// Gas resting directly under its authored ceiling condenses by chance: `ceiling` is
+// the upper cell of a vertical pair and `gas` the lower one. A full gas unit leaves
+// liquid behind; a smaller remainder only dissipates.
+bool resolve_condensation(ivec2 gas_coord, vec4 gas, vec4 reaction, vec4 parameters, out vec4 next_gas) {
+	next_gas = gas;
+	int gas_per_condensation = max(1, reaction_byte(parameters, 0));
+	int liquid_quantity = reaction_byte(parameters, 1);
+	int liquid_id = reaction_byte(reaction, 2);
+	int consumed = min(fill_amount(gas), gas_per_condensation);
+	if (consumed <= 0) {
+		return false;
+	}
+	vec4 remaining = remove_primary_component(gas, consumed);
+	bool yields_liquid = consumed == gas_per_condensation;
+	if (yields_liquid && component_capacity(remaining, liquid_id, FULL_QUANTITY) < liquid_quantity) {
+		return false;
+	}
+	if (!chance_roll(gas_coord, pass_kind + 8 * REACTION_CONDENSATION, parameters)) {
+		return false;
+	}
+	next_gas = yields_liquid ? add_component(remaining, liquid_id, liquid_quantity, FULL_QUANTITY) : remaining;
+	return true;
 }
 
 // Light gases mirror the liquid rules upside down: they rise instead of falling, fill
@@ -792,12 +892,19 @@ vec4 vent_light_gas(vec4 cell) {
 	return cell;
 }
 
-bool resolve_authored_contact(vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
+bool resolve_authored_contact(ivec2 a_coord, ivec2 b_coord, vec4 a, vec4 b, out vec4 next_a, out vec4 next_b) {
 	next_a = a;
 	next_b = b;
 	vec4 reaction = read_reaction_header(terrain_id(a), terrain_id(b));
 	int opcode = reaction_byte(reaction, 0);
 	if (opcode == 0) return false;
+	if (opcode == REACTION_BOILING) {
+		return resolve_heat_source_solidification(a_coord, b_coord, a, b, reaction, next_a, next_b);
+	}
+	if (opcode == REACTION_CONDENSATION) {
+		return is_vertical_pass()
+			&& resolve_condensation(b_coord, b, reaction, read_reaction_parameters(terrain_id(a), terrain_id(b)), next_b);
+	}
 	if (opcode == REACTION_MUTUAL_REPLACEMENT) {
 		vec4 parameters = read_reaction_parameters(terrain_id(a), terrain_id(b));
 		next_a = make_cell(reaction_byte(reaction, 1), reaction_byte(parameters, 0));
@@ -960,7 +1067,7 @@ void resolve_pair(
 	}
 	next_a = a;
 	next_b = b;
-	if (resolve_authored_contact(a, b, next_a, next_b)) {
+	if (resolve_authored_contact(a_coord, b_coord, a, b, next_a, next_b)) {
 		return;
 	}
 	if (resolve_persistent_burn(a, b, next_a, next_b)) {
