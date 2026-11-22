@@ -7,7 +7,7 @@ Claim Earth is a small Godot arcade game about descending through a generated he
 - [Play on itch.io](https://titan-koyos.itch.io/claim-earth)
 - [Play on GitHub Pages](https://florian-noirbent.github.io/claimEarth)
 
-GitHub Pages deploys the current Web build automatically whenever `main` is updated. GitHub README pages do not allow embedded game iframes, so both play buttons open the game on a full page.
+GitHub Pages deploys the current Web build automatically whenever `master` is updated. GitHub README pages do not allow embedded game iframes, so both play buttons open the game on a full page.
 
 ## Quick Start
 
