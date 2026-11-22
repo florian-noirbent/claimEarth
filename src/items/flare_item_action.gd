@@ -18,4 +18,6 @@ func create_projectile(origin: Vector2, aim_position: Vector2, trajectory_servic
 		"horizontal_bounce_damping": factory.horizontal_bounce_damping,
 		"light_definition": factory.light_definition,
 		"visual_texture": definition.icon,
+		"visual_mirror_with_heading": factory.projectile_sprite_mirrors_with_heading,
+		"visual_settle_speed": factory.projectile_sprite_settle_speed,
 	}

@@ -40,6 +40,8 @@ var _shake := CameraShakeModel.new()
 var _world_bottom_edge := INF
 ## Zoom without shake; the camera zooms in from it while shaking.
 var _base_zoom := Vector2.ONE
+## Holds the shake at its current offset while gameplay is suspended.
+var _shake_suspended := false
 
 
 func _ready() -> void:
@@ -73,7 +75,8 @@ func _process(delta: float) -> void:
 	)
 	_apply_world_bottom_edge(visible_world_size.y)
 	var target_position := _model.update(target.global_position, visible_world_size, delta)
-	_shake.advance(delta)
+	if not _shake_suspended:
+		_shake.advance(delta)
 	var shake_zoom := _shake_zoom(visible_world_size)
 	global_position = _shaken_position(target_position, visible_world_size / shake_zoom)
 	global_rotation = _shake.rotation()
@@ -120,6 +123,12 @@ func apply_shake(intensity: float, source_position: Vector2 = Vector2.INF) -> vo
 
 func set_shake_intensity_multiplier(multiplier: float) -> void:
 	shake_intensity_multiplier = clampf(multiplier, 0.0, 2.0)
+
+
+## Freezes (true) or resumes (false) the shake. A suspended shake keeps its offset, roll, and
+## zoom, like the frozen world behind a pause screen, and decays on from there when resumed.
+func set_shake_suspended(is_suspended: bool) -> void:
+	_shake_suspended = is_suspended
 
 
 ## Current shake trauma from 0 to 1.

@@ -54,6 +54,46 @@
 [ext_resource type="Resource" path="res://config/presentation/effects/tool_swing.tres" id="52_ji1ct"]
 [ext_resource type="Resource" path="res://config/presentation/effects/victory.tres" id="53_drrkd"]
 
+[ext_resource type="Script" path="res://src/presentation/effects/attached_effect.gd" id="54_attached"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_fuse_spark.tres" id="55_fuse_spark"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_flare_glow.tres" id="56_flare_glow"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_flag_trail.tres" id="57_flag_trail"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_bottle_glint.tres" id="58_bottle_glint"]
+
+[sub_resource type="Resource" id="Attached_small_bomb"]
+script = ExtResource("54_attached")
+recipe = ExtResource("55_fuse_spark")
+interval_seconds = 0.03
+attach_offset = Vector2(35, -35)
+aim = 1
+
+[sub_resource type="Resource" id="Attached_large_bomb"]
+script = ExtResource("54_attached")
+recipe = ExtResource("55_fuse_spark")
+interval_seconds = 0.03
+attach_offset = Vector2(22, -36)
+aim = 1
+effect_scale = 1.2
+
+[sub_resource type="Resource" id="Attached_flare"]
+script = ExtResource("54_attached")
+recipe = ExtResource("56_flare_glow")
+interval_seconds = 0.04
+attach_offset = Vector2(0, -19)
+aim = 1
+
+[sub_resource type="Resource" id="Attached_flag"]
+script = ExtResource("54_attached")
+recipe = ExtResource("57_flag_trail")
+interval_seconds = 0.03
+attach_offset = Vector2(15, -44)
+aim = 2
+
+[sub_resource type="Resource" id="Attached_fluid_bottle"]
+script = ExtResource("54_attached")
+recipe = ExtResource("58_bottle_glint")
+interval_seconds = 0.14
+
 [resource]
 script = ExtResource("48_lo4x2")
 jump_dust = ExtResource("33_fmgy6")
@@ -82,6 +122,13 @@ death_by_cause = Dictionary[StringName, ExtResource("5_hnmkl")]({
 })
 throw_whoosh = ExtResource("51_jywpl")
 tool_swing = ExtResource("52_ji1ct")
+projectile_effect_by_key = Dictionary[StringName, ExtResource("54_attached")]({
+&"flag": SubResource("Attached_flag"),
+&"flare": SubResource("Attached_flare"),
+&"fluid_bottle": SubResource("Attached_fluid_bottle"),
+&"large_bomb": SubResource("Attached_large_bomb"),
+&"small_bomb": SubResource("Attached_small_bomb")
+})
 bounce_spark = ExtResource("4_6a4li")
 projectile_end_by_kind = Dictionary[StringName, ExtResource("5_hnmkl")]({
 &"fuse": ExtResource("40_tj2k7"),

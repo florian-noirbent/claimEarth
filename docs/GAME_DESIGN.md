@@ -238,12 +238,15 @@ Every run starts with 10 small bombs, 2 large bombs, and 1 flag. Pickaxes, shove
 flares, Water Bottles, Acid Bottles, and Excavators start at zero and are found in chests. Item
 tuning lives under `config/items/`. A thrown item appears in the world as its toolbar
 icon and turns to follow its flight; the flag flies pole tip first with its banner up.
+An item thrown to the left flies as the mirror image of one thrown to the right, so
+fuses, flames, corks, and the excavator's cabin stay on top. A bomb or flare that has
+settled into small bounces lies still instead of turning with each one.
 
 - Pickaxe: changes an aimed triangular three-hex wedge of Stone to Dirt or Dirt to
   Sand. Its charge follows target fill, capped at three per use; a final partial
   charge still completes a valid use.
 - Shovel: clears an aimed triangular three-hex wedge of Sand with the same charge rules.
-- Flare: is thrown farther than a small bomb, bounces as a visible rotating rod,
+- Flare: is thrown farther than a small bomb, bounces as a visible rod,
   lights the cave for ten seconds, and breaks on lava. The newest active flare uses
   the second high-frequency light slot alongside the player.
 - Water Bottle: uses the small bomb's ballistic throw, then breaks on a solid impact
@@ -436,6 +439,15 @@ are stored apart from scores and are never submitted.
 - The camera shakes with nearby explosions, hard impacts, and death. Stronger and
   closer causes shake more, causes far off screen do not shake, and the camera is
   briefly pushed away from a blast. Shake never shows the area below the map.
+- Thrown items carry a small effect for as long as they exist: a flickering spark at
+  the fuse tip of small and large bombs, a magenta-orange glow at the burning end of
+  a flare, a trail of gold sparkles behind the flying flag, and an occasional glint
+  on a bottle.
+- Pausing and the reward picker freeze world effects, the effects on thrown items,
+  and camera shake together with the world: the picture holds still, including a
+  shaken view, and everything continues from there when play resumes. After a death
+  or a planted or destroyed flag the run does not resume, so the last effects and the
+  shake play out behind the name entry and result panels.
 - Player moments have world effects: dust on jumps and on real landings (not on
   steps while running), a ring on air jumps, an impact flash, stars circling a
   knocked-out explorer for as long as the knockout lasts, hook launch streaks, sparks

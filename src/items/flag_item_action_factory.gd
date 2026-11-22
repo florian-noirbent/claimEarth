@@ -18,6 +18,8 @@ const FlagItemActionScript = preload("res://src/items/flag_item_action.gd")
 @export_range(-180.0, 180.0, 1.0) var projectile_sprite_rotation_degrees := -90.0
 ## Icon-pixel offset that puts the pole, not the banner, on the flight path.
 @export var projectile_sprite_offset := Vector2(26.0, 0.0)
+## Mirrors the flying icon when it heads left, so its up side stays on top.
+@export var projectile_sprite_mirrors_with_heading := true
 
 
 func _init() -> void:

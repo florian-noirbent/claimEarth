@@ -41,6 +41,9 @@ extends Resource
 @export_group("Items")
 @export var throw_whoosh: EffectRecipe
 @export var tool_swing: EffectRecipe
+## Effect that stays on a thrown item while it exists, by ItemDefinition.feedback_key; items
+## without an entry fly bare.
+@export var projectile_effect_by_key: Dictionary[StringName, AttachedEffect] = {}
 @export var bounce_spark: EffectRecipe
 @export_range(0.0, 2000.0, 1.0) var bounce_min_speed := 120.0
 @export_range(1.0, 4000.0, 1.0) var bounce_full_speed := 700.0
@@ -109,7 +112,12 @@ func validate() -> PackedStringArray:
 			_validate_recipe(property_name, value as EffectRecipe, errors)
 		elif value is Dictionary:
 			for key: StringName in value:
-				_validate_recipe("%s[%s]" % [property_name, key], value[key] as EffectRecipe, errors)
+				var label := "%s[%s]" % [property_name, key]
+				if value[key] is AttachedEffect:
+					for error in (value[key] as AttachedEffect).validate():
+						errors.append("%s: %s" % [label, error])
+				else:
+					_validate_recipe(label, value[key] as EffectRecipe, errors)
 	if flag_marker_texture == null:
 		errors.append("flag_marker_texture is required")
 	return errors

@@ -18,6 +18,13 @@ var _library := GameplayEffectLibrary.new()
 var _clock := 0.0
 var _barrel_bump_ready_at := 0.0
 var _flag_marker: Sprite2D
+var _session_active := true
+## Set by the moments that end a run; from then on feedback no longer freezes.
+var _run_ended := false
+## Bodies with an attached effect, by instance id so a freed body is simply gone.
+var _attached_body_ids := PackedInt64Array()
+var _attached_effects: Array[AttachedEffect] = []
+var _attached_waits := PackedFloat32Array()
 
 
 func _ready() -> void:
@@ -33,6 +40,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_clock += delta
 	_sync_anchor()
+	_advance_attached_effects(delta)
 
 
 ## The node that plays this feedback's effect recipes.
@@ -42,7 +50,24 @@ func effects() -> WorldEffects:
 
 ## Hands over the camera that shake requests reach; null detaches it.
 func set_camera(camera: DescendingCameraController) -> void:
+	if is_instance_valid(_camera) and _camera != camera:
+		_camera.set_shake_suspended(false)
 	_camera = camera
+	_apply_suspension()
+
+
+## The run session was suspended (false) or resumed (true). While it is suspended, effects,
+## attached effects, and the camera shake hold their current frame like the rest of the frozen
+## world, and go on from there when it resumes. A run that ended (death, planted or destroyed
+## flag) never resumes, so from that moment feedback keeps running and the last effects and
+## the shake play out behind the result screens.
+func set_active(is_active: bool) -> void:
+	_session_active = is_active
+	_apply_suspension()
+
+
+func is_suspended() -> bool:
+	return not _session_active and not _run_ended
 
 
 ## The single seam for camera shake. intensity is the peak offset in world px; world_position
@@ -147,11 +172,30 @@ func show_hazard_warning(world_position: Vector2, _cause: StringName, level: flo
 
 ## The player died for good here; cause is a DeathCause value.
 func spawn_death(world_position: Vector2, cause: StringName) -> void:
+	_end_run()
 	_play(_library.death, world_position)
 	_play(GameplayEffectLibrary.keyed(_library.death_by_cause, cause, null), world_position)
 
 
 # --- Items and world objects ---
+
+## A thrown item entered the world. The effect the library attaches to its feedback key, such
+## as a fuse spark or a trail, follows the projectile until it is freed.
+func show_projectile_effect(projectile: WorldRigidBody2D, item: ItemDefinition) -> void:
+	if item == null or not is_instance_valid(projectile):
+		return
+	var effect: AttachedEffect = _library.projectile_effect_by_key.get(item.feedback_key)
+	if effect == null or effect.recipe == null:
+		return
+	_attached_body_ids.append(projectile.get_instance_id())
+	_attached_effects.append(effect)
+	_attached_waits.append(0.0)
+
+
+## Bodies that currently carry an attached effect.
+func attached_effect_count() -> int:
+	return _attached_body_ids.size()
+
 
 ## The player threw a projectile item from origin along the normalized direction.
 func spawn_throw(origin: Vector2, direction: Vector2, _item: ItemDefinition) -> void:
@@ -243,12 +287,14 @@ func show_flag_flight(in_flight: bool) -> void:
 
 ## The flag landed here and claimed its depth.
 func spawn_flag_planted(world_position: Vector2) -> void:
+	_end_run()
 	_play(_library.flag_planted, world_position)
 	_plant_flag_marker(world_position)
 
 
 ## Terrain destroyed the flying flag here; cause is the terrain tag, such as &"lava".
 func spawn_flag_destroyed(world_position: Vector2, cause: StringName) -> void:
+	_end_run()
 	_play(
 		GameplayEffectLibrary.keyed(_library.flag_destroyed_by_cause, cause, _library.flag_destroyed_default),
 		world_position
@@ -290,6 +336,46 @@ func _play(
 	_effects.play(recipe, world_position, effect_scale, tint, direction, intensity, duration_seconds)
 	if recipe.shake_intensity > 0.0:
 		request_shake(recipe.shake_intensity * (intensity if recipe.shake_scales_with_intensity else 1.0), world_position)
+
+
+## Plays every attached effect that is due and forgets the ones whose body is gone.
+func _advance_attached_effects(delta: float) -> void:
+	for index in range(_attached_body_ids.size() - 1, -1, -1):
+		var body := instance_from_id(_attached_body_ids[index]) as WorldRigidBody2D
+		if body == null or body.is_queued_for_deletion() or not body.is_inside_tree():
+			_attached_body_ids.remove_at(index)
+			_attached_effects.remove_at(index)
+			_attached_waits.remove_at(index)
+			continue
+		var wait := _attached_waits[index] - delta
+		if wait <= 0.0:
+			var effect := _attached_effects[index]
+			_play_attached(effect, body)
+			wait = maxf(wait + effect.interval_seconds, 0.0)
+		_attached_waits[index] = wait
+
+
+func _play_attached(effect: AttachedEffect, body: WorldRigidBody2D) -> void:
+	var point := body.visual_point(effect.attach_offset)
+	var direction := Vector2.RIGHT
+	if effect.aim == AttachedEffect.Aim.OUTWARD:
+		direction = point - body.global_position
+	elif effect.aim == AttachedEffect.Aim.MOTION:
+		direction = body.velocity
+	_play(effect.recipe, point, effect.effect_scale, Color.WHITE, direction)
+
+
+func _end_run() -> void:
+	_run_ended = true
+	_apply_suspension()
+
+
+## A disabled process mode stops this node, the effect layers below it, and their tweens.
+func _apply_suspension() -> void:
+	var suspended := is_suspended()
+	process_mode = Node.PROCESS_MODE_DISABLED if suspended else Node.PROCESS_MODE_INHERIT
+	if is_instance_valid(_camera):
+		_camera.set_shake_suspended(suspended)
 
 
 ## Strength from MIN_STRENGTH to 1 of a moment at this speed, or 0 below its threshold.

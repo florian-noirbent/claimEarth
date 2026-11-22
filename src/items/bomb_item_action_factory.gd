@@ -16,6 +16,11 @@ const BombItemActionScript = preload("res://src/items/bomb_item_action.gd")
 @export var projectile_points := PackedVector2Array([-7, -7, 7, -7, 7, 7, -7, 7])
 ## World scale of the item icon drawn as the projectile.
 @export_range(0.01, 2.0, 0.01) var projectile_sprite_scale := 0.3
+## Mirrors the flying icon when it heads left, so its up side stays on top.
+@export var projectile_sprite_mirrors_with_heading := true
+## Speed in px/s below which the icon keeps its flight orientation instead of turning with
+## every small bounce.
+@export_range(0.0, 1000.0, 1.0) var projectile_sprite_settle_speed := 90.0
 
 
 func _init() -> void:

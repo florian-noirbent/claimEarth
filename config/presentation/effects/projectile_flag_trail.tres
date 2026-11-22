@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_emitter"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_recipe"]
+
+[sub_resource type="Gradient" id="Gradient_0"]
+colors = PackedColorArray(1, 0.82, 0.3, 0.4, 1, 0.6, 0.1, 0)
+
+[sub_resource type="Resource" id="Emitter_0"]
+script = ExtResource("1_emitter")
+shape = 1
+blend = 1
+lifetime_min = 0.3
+lifetime_max = 0.4
+size_start = 13.0
+size_end = 3.0
+size_ease = 0.7
+colors = SubResource("Gradient_0")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_1"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 0.96, 0.6, 1, 1, 0.8, 0.25, 0.9, 0.9, 0.55, 0.1, 0)
+
+[sub_resource type="Resource" id="Emitter_1"]
+script = ExtResource("1_emitter")
+shape = 6
+blend = 1
+lifetime_min = 0.4
+lifetime_max = 0.7
+spawn_radius = 10.0
+speed_min = 8.0
+speed_max = 40.0
+gravity = 80.0
+spin_degrees_min = -360.0
+spin_degrees_max = 360.0
+random_rotation = true
+size_start = 6.5
+size_end = 1.0
+size_jitter = 0.4
+colors = SubResource("Gradient_1")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_recipe")
+emitters = Array[ExtResource("1_emitter")]([SubResource("Emitter_0"), SubResource("Emitter_1")])
