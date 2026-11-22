@@ -195,12 +195,17 @@ func test_record_labels_mark_a_new_personal_best_only_after_confirmation() -> vo
 	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
 	ui.show_run_status(60, 50, false, _item_status([10, 2, 1], 0))
 
+	ui.show_flag_outcome(false, false)
 	ui.apply_state(RunPhase.NAME_ENTRY, 42, "", 40, "Miner")
 	assert_false(ui.name_entry_record_label.visible, "A shallower flag is not a record.")
 	await wait_seconds(SETTLE_SECONDS)
 	assert_eq(ui.name_entry_status.text, "Depth: 40")
 
 	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.apply_state(RunPhase.NAME_ENTRY, 42, "", 73, "Miner")
+	assert_false(ui.name_entry_record_label.visible, "Depth alone never marks a record; the fact from AppRoot does.")
+	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.show_flag_outcome(false, true)
 	ui.apply_state(RunPhase.NAME_ENTRY, 42, "", 73, "Miner")
 	assert_true(ui.name_entry_record_label.visible)
 	ui.show_name_error("Enter a name.")
@@ -214,6 +219,7 @@ func test_record_labels_mark_a_new_personal_best_only_after_confirmation() -> vo
 	assert_false(ui.name_entry_record_label.visible)
 
 	ui.apply_state(RunPhase.PLAYING, 42, "", -1, "")
+	ui.show_flag_outcome(false, true)
 	ui.apply_state(RunPhase.NAME_ENTRY, 42, "", 73, "Miner")
 	ui.score_confirmed.connect(func(_player_name: String) -> void:
 		ui.apply_state(RunPhase.SUBMITTING, 42, "", 73, "Miner")

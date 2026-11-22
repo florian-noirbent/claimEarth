@@ -14,6 +14,11 @@ signal settings_requested
 signal statistics_requested
 signal phone_controls_changed(enabled: bool)
 signal frame_limit_changed(fps: int)
+## channel is an AppSettingsData.VOLUME_* value; volume is the slider share from 0 to 1.
+signal volume_changed(channel: StringName, volume: float)
+## The player settled on a volume and should hear it.
+signal volume_preview_requested(channel: StringName)
+signal screen_shake_changed(multiplier: float)
 signal fullscreen_requested
 signal touch_move_changed(vector: Vector2)
 signal touch_aim_changed(vector: Vector2)
@@ -53,6 +58,10 @@ const UI_FEEDBACK_PRESS := &"press"
 @onready var frame_limit_slider: HSlider = %FrameLimitSlider
 @onready var frame_limit_value_label: Label = %FrameLimitValueLabel
 @onready var settings_back_button: Button = %SettingsBackButton
+@onready var master_volume_row: SettingsSliderRow = %MasterVolumeRow
+@onready var sfx_volume_row: SettingsSliderRow = %SfxVolumeRow
+@onready var music_volume_row: SettingsSliderRow = %MusicVolumeRow
+@onready var screen_shake_row: SettingsSliderRow = %ScreenShakeRow
 @onready var statistics_page: StatisticsPage = %StatisticsPage
 @onready var overlay_root: Control = %OverlayRoot
 @onready var playing_panel: VBoxContainer = %PlayingPanel
@@ -73,6 +82,9 @@ const UI_FEEDBACK_PRESS := &"press"
 @onready var reward_picker_title: Label = %RewardPickerTitle
 @onready var reward_picker_cards: HBoxContainer = %RewardPickerCards
 @onready var name_entry_panel: PanelContainer = %NameEntryPanel
+@onready var name_entry_title: Label = %NameEntryTitle
+@onready var name_entry_victory_label: Label = %NameEntryVictoryLabel
+@onready var result_victory_label: Label = %ResultVictoryLabel
 @onready var name_entry_status: Label = %NameEntryStatus
 @onready var player_name_input: LineEdit = %PlayerNameInput
 @onready var confirm_score_button: Button = %ConfirmScoreButton
@@ -113,21 +125,27 @@ var _toolbar_dealt := false
 var _depth_seen := false
 var _last_depth := 0
 var _deepest_milestone := 0
-var _last_personal_best := -1
 var _beyond_personal_best := false
 var _celebrated_personal_best := false
 var _pending_depth_is_record := false
+var _flag_is_victory := false
+var _title_font_size := 30
 var _score_was_confirmed := false
 var _modal_dim_wanted := false
 var _toast_tween: Tween
 var _play_status_color := Color.WHITE
 var _result_title_color := Color.WHITE
+var _volume_rows: Dictionary[StringName, SettingsSliderRow] = {}
 
 const FRAME_LIMIT_OPTIONS := [30, 60, 90, 120, 0]
 const _MENU_SHELL_STATES: Array[StringName] = [RunPhase.MAIN_MENU, RunPhase.GENERATING, RunPhase.LEADERBOARD]
 const _ACTIVE_PLAY_STATES: Array[StringName] = [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 const _RESULT_STATES: Array[StringName] = [RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT]
 const _TOOLBAR_SLOT_KEY := &"toolbar_catalog_index"
+const _NAME_ENTRY_TITLE := "Plant Your Flag"
+const _FLAG_PLANTED_TITLE := "Flag Planted"
+const _VICTORY_TITLE := "Victory!"
+const _RUN_LOST_TITLE := "Run Lost"
 
 
 func _ready() -> void:
@@ -141,6 +159,15 @@ func _ready() -> void:
 	statistics_page.back_requested.connect(_hide_statistics_page)
 	phone_controls_toggle.toggled.connect(_on_phone_controls_toggled)
 	frame_limit_slider.value_changed.connect(_on_frame_limit_slider_changed)
+	_volume_rows = {
+		AppSettingsData.VOLUME_MASTER: master_volume_row,
+		AppSettingsData.VOLUME_SFX: sfx_volume_row,
+		AppSettingsData.VOLUME_MUSIC: music_volume_row,
+	}
+	for channel: StringName in _volume_rows:
+		_volume_rows[channel].value_changed.connect(_on_volume_row_changed.bind(channel))
+		_volume_rows[channel].value_committed.connect(_on_volume_row_committed.bind(channel))
+	screen_shake_row.value_changed.connect(screen_shake_changed.emit)
 	pause_button.pressed.connect(pause_requested.emit)
 	fullscreen_button.pressed.connect(fullscreen_requested.emit)
 	resume_button.pressed.connect(pause_requested.emit)
@@ -191,14 +218,17 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 		RunPhase.NAME_ENTRY,
 		RunPhase.PAUSED,
 		RunPhase.SUBMITTING,
+		RunPhase.OUTCOME_BEAT,
 		RunPhase.DEATH,
 		RunPhase.RESULT,
 		RunPhase.REWARD_PICKER,
 	]
 	var is_active_play := state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
-	playing_panel.visible = is_active_play
+	# The outcome beat keeps the readouts over the still-running world and drops the controls.
+	var shows_readouts := is_active_play or state == RunPhase.OUTCOME_BEAT
+	playing_panel.visible = shows_readouts
 	if perk_stack != null:
-		perk_stack.visible = is_active_play
+		perk_stack.visible = shows_readouts
 	fps_label.visible = is_active_play
 	if is_active_play:
 		show_fps(roundi(Engine.get_frames_per_second()))
@@ -206,7 +236,7 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 			fps_timer.start()
 	else:
 		fps_timer.stop()
-	hazard_meter_stack.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	hazard_meter_stack.visible = shows_readouts
 	pause_button.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
 	_update_top_right_controls()
 	item_toolbar.visible = state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
@@ -232,12 +262,13 @@ func apply_state(state: StringName, run_seed: int, storage_warning: String, pend
 		RunPhase.NAME_ENTRY:
 			UiMotion.finish_value(name_entry_status)
 			name_entry_status.text = "Depth: %d" % pending_depth
+			name_entry_title.text = _VICTORY_TITLE if _flag_is_victory else _NAME_ENTRY_TITLE
 			player_name_input.text = player_name
 			player_name_input.grab_focus()
 		RunPhase.SUBMITTING, RunPhase.RESULT:
-			result_title.text = "Flag Planted"
+			result_title.text = _VICTORY_TITLE if _flag_is_victory else _FLAG_PLANTED_TITLE
 		RunPhase.DEATH:
-			result_title.text = "Run Lost"
+			result_title.text = _RUN_LOST_TITLE
 	_apply_state_presentation(previous_state, state, first_state, pending_depth)
 
 
@@ -297,6 +328,8 @@ func _show_settings_page() -> void:
 	status_label.visible = false
 	warning_label.visible = false
 	_show_auxiliary_page_shell()
+	# The panel is tall enough to reach the title art, so the title steps aside.
+	title_image.visible = false
 	settings_panel.visible = true
 	_play_panel_open(settings_panel)
 	settings_requested.emit()
@@ -307,6 +340,8 @@ func _hide_settings_page() -> void:
 		return
 	var was_open := settings_panel.visible
 	settings_panel.visible = false
+	if was_open and _current_state == RunPhase.MAIN_MENU:
+		title_image.visible = true
 	_restore_auxiliary_page_parent()
 	if was_open:
 		_play_page_return()
@@ -368,6 +403,25 @@ func set_frame_limit_fps(fps: int) -> void:
 		option_index = FRAME_LIMIT_OPTIONS.size() - 1
 	frame_limit_slider.set_value_no_signal(option_index)
 	frame_limit_value_label.text = _frame_limit_text(FRAME_LIMIT_OPTIONS[option_index])
+
+
+## Shows a saved volume on its slider; channel is an AppSettingsData.VOLUME_* value.
+func set_volume(channel: StringName, volume: float) -> void:
+	var row: SettingsSliderRow = _volume_rows.get(channel)
+	if row != null:
+		row.set_value_no_signal(volume)
+
+
+func set_screen_shake(multiplier: float) -> void:
+	screen_shake_row.set_value_no_signal(multiplier)
+
+
+func _on_volume_row_changed(volume: float, channel: StringName) -> void:
+	volume_changed.emit(channel, volume)
+
+
+func _on_volume_row_committed(_volume: float, channel: StringName) -> void:
+	volume_preview_requested.emit(channel)
 
 
 func set_touch_controls_visible(visible: bool) -> void:
@@ -486,6 +540,7 @@ func _update_item_toolbar(items: Array) -> void:
 			selected,
 			float(item.get("count", NAN))
 		)
+		slot.set_cooldown(float(item.get("cooldown_fraction", 0.0)), bool(item.get("locked", false)))
 		if selected:
 			_show_selection_name_if_changed(str(item.get("name", "Item")))
 	for slot in gained_slots:
@@ -537,6 +592,16 @@ func _clear_item_toolbar() -> void:
 	for child in item_toolbar_content.get_children():
 		child.free()
 	_toolbar_dealt = false
+
+
+## Reacts to a refused item use on the toolbar slot with that catalog index, if it is shown.
+func show_use_refused(catalog_index: int, reason: StringName) -> void:
+	for child in item_toolbar_content.get_children():
+		if int(child.get_meta(_TOOLBAR_SLOT_KEY, -1)) == catalog_index:
+			(child as ItemToolbarSlot).play_refused()
+			break
+	if reason == ItemUseRefusal.FLAG_IN_FLIGHT:
+		UiMotion.punch(run_state_label)
 
 
 func _on_item_slot_pressed(index: int) -> void:
@@ -617,6 +682,13 @@ func show_name_error(message: String) -> void:
 	UiMotion.shake(player_name_input, UiMotion.config().shake_degrees * 0.3)
 
 
+## Facts about the flag that just landed, sent by AppRoot before name entry opens: whether
+## it is a victory and whether its depth beats the saved personal best.
+func show_flag_outcome(is_victory: bool, is_new_personal_best: bool) -> void:
+	_flag_is_victory = is_victory
+	_pending_depth_is_record = is_new_personal_best
+
+
 func show_result(message: String) -> void:
 	result_status.text = message
 	if result_panel.visible:
@@ -686,6 +758,7 @@ func _setup_motion() -> void:
 	UiMotion.attach_buttons_in(self)
 	_play_status_color = play_status_label.get_theme_color(&"font_color")
 	_result_title_color = result_title.get_theme_color(&"font_color")
+	_title_font_size = result_title.get_theme_font_size(&"font_size")
 	var menu_button_style := menu_start_button.get_theme_stylebox(&"normal")
 	for node in find_children("*", "Button", true, false):
 		var button := node as Button
@@ -708,13 +781,13 @@ func _apply_state_presentation(previous_state: StringName, state: StringName, fi
 	if state == RunPhase.GENERATING:
 		_reset_run_feedback()
 	if state == RunPhase.NAME_ENTRY:
-		_pending_depth_is_record = pending_depth > _last_personal_best
 		_score_was_confirmed = false
 	elif state not in [RunPhase.SUBMITTING, RunPhase.RESULT]:
 		_pending_depth_is_record = false
+		_flag_is_victory = false
 		_score_was_confirmed = false
 	_refresh_record_labels()
-	result_title.add_theme_color_override(&"font_color", settings.danger_color if state == RunPhase.DEATH else _result_title_color)
+	_apply_outcome_titles(state)
 	_update_modal_dim(state)
 	if state == previous_state and not first_state:
 		return
@@ -743,6 +816,8 @@ func _apply_state_presentation(previous_state: StringName, state: StringName, fi
 			_play_panel_open(reward_picker_panel)
 		RunPhase.NAME_ENTRY:
 			_play_panel_open(name_entry_panel)
+			if _flag_is_victory:
+				_play_victory_reveal(name_entry_title, name_entry_victory_label)
 			UiMotion.count_to(name_entry_status, 0, pending_depth, "Depth: %d")
 			if name_entry_record_label.visible:
 				UiMotion.pop_in(name_entry_record_label, settings.count_up_duration)
@@ -766,6 +841,34 @@ func _reset_run_feedback() -> void:
 	generation_progress.value = 0.0
 
 
+## Colors and sizes the name-entry and result titles for a victory, a lost run, or neither,
+## and shows the victory line under them.
+func _apply_outcome_titles(state: StringName) -> void:
+	var settings := UiMotion.config()
+	var victory := _flag_is_victory and state in [RunPhase.NAME_ENTRY, RunPhase.SUBMITTING, RunPhase.RESULT]
+	var title_color := _result_title_color
+	if victory:
+		title_color = settings.victory_color
+	elif state == RunPhase.DEATH:
+		title_color = settings.danger_color
+	var font_size := settings.victory_title_font_size if victory else _title_font_size
+	result_title.add_theme_color_override(&"font_color", title_color)
+	result_title.add_theme_font_size_override(&"font_size", font_size)
+	name_entry_title.add_theme_color_override(&"font_color", title_color if victory else _result_title_color)
+	name_entry_title.add_theme_font_size_override(&"font_size", font_size)
+	name_entry_victory_label.visible = victory and state == RunPhase.NAME_ENTRY
+	result_victory_label.visible = victory and state != RunPhase.NAME_ENTRY
+
+
+## Celebrates a victory title: it lands from a larger size out of a bright flash and its
+## line follows.
+func _play_victory_reveal(title: Label, line: Label) -> void:
+	var settings := UiMotion.config()
+	UiMotion.punch(title, settings.victory_title_scale)
+	UiMotion.flash(title, settings.victory_flash_color, settings.count_up_duration)
+	UiMotion.pop_in(line, settings.stagger_delay * 4.0)
+
+
 func _refresh_record_labels() -> void:
 	name_entry_record_label.visible = _pending_depth_is_record and _current_state == RunPhase.NAME_ENTRY
 	var show_result_record := _pending_depth_is_record and _score_was_confirmed and _current_state in [RunPhase.SUBMITTING, RunPhase.RESULT]
@@ -782,8 +885,10 @@ func _update_modal_dim(state: StringName) -> void:
 	var color := settings.modal_dim_color
 	var wanted := true
 	match state:
-		RunPhase.PAUSED, RunPhase.NAME_ENTRY, RunPhase.SUBMITTING, RunPhase.RESULT:
+		RunPhase.PAUSED:
 			color = settings.modal_dim_color
+		RunPhase.NAME_ENTRY, RunPhase.SUBMITTING, RunPhase.RESULT:
+			color = settings.victory_dim_color if _flag_is_victory else settings.modal_dim_color
 		RunPhase.DEATH:
 			color = settings.death_dim_color
 		RunPhase.REWARD_PICKER:
@@ -852,7 +957,10 @@ func _play_page_return() -> void:
 func _play_result_intro() -> void:
 	var settings := UiMotion.config()
 	_play_panel_open(result_panel)
-	UiMotion.punch(result_title)
+	if _flag_is_victory and _current_state != RunPhase.DEATH:
+		_play_victory_reveal(result_title, result_victory_label)
+	else:
+		UiMotion.punch(result_title)
 	UiMotion.fade_in(result_status, settings.stagger_delay * 2.0)
 	_play_staggered([restart_button, result_menu_button], settings.stagger_delay * 3.0)
 
@@ -880,7 +988,6 @@ func _show_generation_bar(progress: float) -> void:
 ## Reacts to the depth readout: a small bump while descending, a toast at each depth
 ## milestone, and one celebration per run when the player first passes their best depth.
 func _update_depth_feedback(depth: int, personal_best: int) -> void:
-	_last_personal_best = personal_best
 	var previous_depth := _last_depth
 	_last_depth = depth
 	if not _depth_seen:

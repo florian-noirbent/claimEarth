@@ -49,3 +49,14 @@ func test_empty_name_is_rejected_without_changing_profile() -> void:
 	var result := controller.confirm_score("   ", 10, 1)
 	assert_false(result.accepted)
 	assert_eq(controller.personal_best_depth, -1)
+
+
+func test_new_personal_best_requires_a_deeper_flag_than_the_saved_best() -> void:
+	var controller := ScoreController.new()
+	autofree(controller)
+
+	assert_true(controller.is_new_personal_best(0), "Without a saved best any flag is a record.")
+	controller.personal_best_depth = 50
+	assert_false(controller.is_new_personal_best(40))
+	assert_false(controller.is_new_personal_best(50))
+	assert_true(controller.is_new_personal_best(51))

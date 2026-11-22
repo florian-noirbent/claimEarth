@@ -220,6 +220,10 @@ func test_keyed_moments_choose_their_sound_from_resource_keys() -> void:
 		_director.play_reward_claimed.bind(false),
 		_director.play_ui.bind(&"hover"),
 		_director.play_ui.bind(&"press"),
+		_director.play_use_refused.bind(ItemUseRefusal.EMPTY),
+		_director.play_use_refused.bind(ItemUseRefusal.FLAG_IN_FLIGHT),
+		_director.play_volume_preview.bind(AppSettingsData.VOLUME_SFX),
+		_director.play_volume_preview.bind(AppSettingsData.VOLUME_MUSIC),
 	]
 	for moment in moments:
 		moment.call()
@@ -229,7 +233,23 @@ func test_keyed_moments_choose_their_sound_from_resource_keys() -> void:
 		&"throw_light", &"throw_heavy", &"throw_flag", &"throw_light", &"tool_pickaxe", &"tool_shovel",
 		&"debris_wood", &"debris_crystal", &"debris_metal", &"chest_open", &"geode_open",
 		&"hook_release", &"hook_snap", &"reward_perk", &"reward_item", &"ui_hover", &"ui_press",
+		&"use_denied", &"use_denied", &"item_select",
 	])
+
+
+func test_refused_use_is_quiet_and_rate_limited() -> void:
+	_director.play_use_refused(ItemUseRefusal.START_LOCK)
+	_now_msec += 50
+	_director.play_use_refused(ItemUseRefusal.START_LOCK)
+	_director.play_use_refused(ItemUseRefusal.EMPTY)
+	_now_msec += 400
+	_director.play_use_refused(&"some_future_reason")
+
+	assert_eq(_ids(), [&"use_denied", &"use_denied"] as Array[StringName], "A held or mashed button plays one sound.")
+	var cues := (load(TUNING_PATH) as AudioTuning).cue_by_id()
+	assert_eq(cues[&"use_denied"].bus, AudioDirector.BUS_UI)
+	assert_lte(cues[&"use_denied"].volume_db, cues[&"ui_press"].volume_db, "Denied is no louder than a button press.")
+	assert_gte(cues[&"use_denied"].min_interval_seconds, 0.15)
 
 
 func test_each_death_cause_has_its_own_sting() -> void:
@@ -369,6 +389,8 @@ func _call_every_moment(director: AudioDirector) -> void:
 		director.play_ui_confirm,
 		director.play_ui.bind(AppUiController.UI_FEEDBACK_HOVER),
 		director.play_ui.bind(AppUiController.UI_FEEDBACK_PRESS),
+		director.play_use_refused.bind(ItemUseRefusal.EMPTY),
+		director.play_volume_preview.bind(AppSettingsData.VOLUME_SFX),
 		director.play_jump.bind(false),
 		director.play_jump.bind(true),
 		director.play_land.bind(350.0, 0.5),

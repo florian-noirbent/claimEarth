@@ -20,6 +20,9 @@ signal reward_claimed(claim: RewardClaim)
 signal world_object_destroyed(container_key: StringName, world_position: Vector2)
 ## Feedback facts: world positions, speeds in px/s. No gameplay rule depends on them.
 signal item_selected(definition: ItemDefinition)
+## A use or throw was refused. reason is an ItemUseRefusal value; catalog_index is the
+## selected item's catalog position, the key the toolbar uses, or -1 without a selection.
+signal use_refused(reason: StringName, catalog_index: int)
 signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
 signal projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition)
 signal projectile_resolved(world_position: Vector2, definition: ItemDefinition, resolution_kind: StringName)
@@ -34,6 +37,8 @@ const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
 const ItemProjectileScript = preload("res://src/items/item_projectile.gd")
 const ExplosionServiceScript = preload("res://src/items/explosion_service.gd")
+## Seconds after a run starts during which uses are refused.
+const RUN_START_LOCK_SECONDS := 1.0
 
 var _inventory: ItemInventory = ItemInventoryScript.new()
 var _trajectory_service: ItemTrajectoryService = ItemTrajectoryServiceScript.new()
@@ -107,7 +112,7 @@ func configure_run(
 	_sleep_scheduler.clear()
 	_dynamic_item_order.clear()
 	_successful_use_counts.clear()
-	_throw_lock_remaining = 1.0
+	_throw_lock_remaining = RUN_START_LOCK_SECONDS
 	_spawn_item_chests(chest_spawns)
 	_spawn_item_chests(geode_spawns)
 	_spawn_explosive_barrels(barrel_spawns)
@@ -263,28 +268,41 @@ func consume_amount(definition: ItemDefinition, amount: float, allow_partial: bo
 func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> bool:
 	if _player == null or _world == null:
 		return false
+	if is_flag_in_flight():
+		return _refuse_use(ItemUseRefusal.FLAG_IN_FLIGHT)
 	if not bypass_cooldown and _throw_lock_remaining > 0.0:
-		return false
+		return _refuse_use(ItemUseRefusal.START_LOCK)
 	var definition: ItemDefinition = _inventory.selected_definition()
 	if definition == null or not _inventory.can_consume(definition):
-		return false
+		return _refuse_use(ItemUseRefusal.EMPTY)
 	var action: ItemAction = definition.action_factory.create_action(definition)
 	if action == null:
 		return false
 	if action.is_immediate():
 		var charge_used := action.use_immediately(self, aim_position)
 		if charge_used <= 0.0:
-			return false
+			return _refuse_use(ItemUseRefusal.NO_EFFECT)
 		consume_amount(definition, charge_used, true)
 		tool_used.emit(definition, _player.global_position, _player.global_position.direction_to(aim_position))
 		item_used.emit(definition)
 		return true
 	if consume_amount(definition, 1.0) < 1.0:
-		return false
+		return _refuse_use(ItemUseRefusal.EMPTY)
 	_spawn_projectile(action, _player.global_position, aim_position, _player.velocity)
 	item_thrown.emit(definition, _player.global_position, _player.global_position.direction_to(aim_position))
 	item_used.emit(definition)
 	return true
+
+
+## Reports a refused use of the selected item and returns false for the caller to pass on.
+func _refuse_use(reason: StringName) -> bool:
+	use_refused.emit(reason, _inventory.definitions().find(_inventory.selected_definition()))
+	return false
+
+
+## Share of the timed use lock still to run: 1 when it starts, 0 once items can be used.
+func use_cooldown_fraction() -> float:
+	return clampf(_throw_lock_remaining / RUN_START_LOCK_SECONDS, 0.0, 1.0)
 
 
 ## Drops the held flag through the normal projectile path before a Relentless death settles.
@@ -555,6 +573,8 @@ func inventory_status() -> Dictionary:
 	var counts := PackedStringArray()
 	var items: Array[Dictionary] = []
 	var definitions := _inventory.definitions()
+	var cooldown_fraction := use_cooldown_fraction()
+	var use_locked := is_flag_in_flight()
 	for index in mini(3, definitions.size()):
 		var definition := definitions[index]
 		var count := _inventory.count_for(definition)
@@ -567,6 +587,8 @@ func inventory_status() -> Dictionary:
 			"catalog_index": index,
 			"selected": definition == selected_definition,
 			"shortcut": index + 1,
+			"cooldown_fraction": cooldown_fraction,
+			"locked": use_locked,
 		})
 	for dynamic_index in _dynamic_item_order.size():
 		var definition := _dynamic_item_order[dynamic_index]
@@ -582,6 +604,8 @@ func inventory_status() -> Dictionary:
 			"catalog_index": definitions.find(definition),
 			"selected": definition == selected_definition,
 			"shortcut": dynamic_index + 4,
+			"cooldown_fraction": cooldown_fraction,
+			"locked": use_locked,
 		})
 	return {"selected_name": selected_definition.display_name if selected_definition != null else "", "counts": counts, "items": items, "flag_in_flight": is_flag_in_flight()}.duplicate(true)
 

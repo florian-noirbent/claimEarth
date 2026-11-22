@@ -20,7 +20,9 @@ the flag loses it.
 4. Touching generated item chests pauses the run and offers a mandatory choice of supplies. Lootable purple geodes use the same choice flow to offer permanent, unique perks instead; destroying one drives a purple, front-loaded 5-wide pulse 20 hexes downward over 1.6 seconds.
 5. The player throws the flag when ready to claim a depth.
 6. A valid landing opens editable name entry and saves/submits the score.
-7. Death or a flag destroyed by lava ends the run without saving its depth.
+7. Death or a flag destroyed by lava ends the run without saving its depth. The
+   world keeps playing for a short beat before the result panel opens: two seconds
+   after a death, 0.8 seconds after a destroyed flag.
 8. The player restarts with a new seed or returns to the menu.
 
 ## Controls
@@ -65,6 +67,17 @@ Unlimited FPS. It defaults to 30 FPS on native mobile and mobile Web builds, and
 Unlimited on desktop and in the editor. The choice affects presentation frame rate,
 not terrain speed, and is saved independently from the Phone Controls preference.
 
+Settings has four more sliders, saved with the other preferences and applied while
+they are dragged:
+
+- Master Volume, Sound Effects, and Music, each from Off to 100% in 5% steps and
+  100% by default. Sound Effects also sets the interface sounds. Releasing the Master
+  or Sound Effects slider plays a short sound at the new volume.
+- Screen Shake from Off to 200% in 10% steps, 100% by default. Off disables camera
+  shake completely.
+
+While Settings is open from the main menu it replaces the title art.
+
 ### Standard Gamepad
 
 | Input | Action |
@@ -87,6 +100,12 @@ The top-left depth and personal-best readout is outlined so it reads over sky an
 cave. It bumps while the player descends, a short toast marks every 50 depth, and the
 first time a run goes deeper than the saved personal best the readout turns gold with
 a "Deeper than your best!" toast.
+A toolbar slot is covered while its item cannot be used. A timed lock is a dark cover
+with a gold edge that wipes down and off the slot as the lock runs out, and the icon
+pops when the item is ready; the only timed lock is the first second of a run. While
+the flag is in flight every slot is evenly dimmed. A refused use (an empty item, the
+run-start lock, a flag in flight, or a tool with nothing to change) shakes the
+selected slot with a red flash and plays a quiet "denied" sound.
 A live integer FPS reading appears with the top-left run status during active play in
 all release and debug builds so device performance can be compared directly.
 Collected perks appear as an icon stack above that status; hovering an icon shows its
@@ -108,6 +127,18 @@ fades out. The stack is generic so future terrain hazards can add their own icon
 color without HUD-specific logic.
 
 The first second of a run blocks throws so the Start click cannot fire an item.
+
+### Losing A Run
+
+When the player dies, the run is decided at that moment: statistics record the death,
+no score is saved, and input, pause, the hook, and item use stop. For two seconds the
+explorer stays where it died while terrain, thrown items, explosions, effects, and
+the camera keep running and the depth, perk, and hazard readouts stay on screen; the
+toolbar, pause button, and touch controls leave at once. Nothing that happens in the
+beat changes the outcome. The red result panel and the game-over sound follow. A
+destroyed flag ends the run the same way after 0.8 seconds, with the explorer
+standing still. A Relentless death that drops the flag has no beat because the run
+continues.
 
 ## World
 
@@ -389,8 +420,9 @@ are stored apart from scores and are never submitted.
 - A planted flag counts when it lands, whether or not a name is then confirmed. The
   score itself is still saved only after name entry.
 - A victory is a flag planted in Earth's lava core: at or below 95% of the world
-  depth. Only a flag protected by the Relentless perk survives there. The result
-  screen marks a victory.
+  depth. Only a flag protected by the Relentless perk survives there. Name entry and
+  the result panel then show a large gold "Victory!" title with the line "The flag
+  stands in Earth's core." over a warm gold dim.
 - Relentless can record both a death and the dropped flag's outcome in one run.
 - Loot and flags: chests and geodes opened, chests and geodes destroyed by a blast before
   being claimed, explosive barrels exploded, and flags lost by cause (lava or acid).
@@ -458,7 +490,8 @@ are stored apart from scores and are never submitted.
   the others fade, without delaying the resumed run.
 - Name entry counts the planted depth up from zero. A depth beyond the saved personal
   best is marked "New personal best!" on name entry and, once confirmed, on the result
-  panel. A lost run shows its title in red with a shake.
+  panel. A victory title lands from a larger size out of a bright flash and its line
+  pops in after it. A lost run shows its title in red with a shake.
 - The Statistics page reveals its sections top to bottom; whole-number values count up
   and bars grow to their share.
 - A held touch stick brightens, and the hook ring thickens while the hook is held.
@@ -472,7 +505,8 @@ are stored apart from scores and are never submitted.
   its own sting over a shared falling motif, and the hazard warning rises in pitch and
   doubles its pulse as the meter fills. Chests, geodes, and barrels break and open with
   wood, crystal, and metal sounds. Repeated sounds vary slightly in pitch and volume,
-  and sounds far from the screen centre are quieter.
+  and sounds far from the screen centre are quieter. A refused item use plays a
+  short, dull double tap, at most about four times a second.
 - Lighting diffuses through neighboring hexes using the emitting hex's
   terrain-specific coefficient. The surface row starts fully lit.
   Lava emits light and the player emits a stronger moving light. Light at or above

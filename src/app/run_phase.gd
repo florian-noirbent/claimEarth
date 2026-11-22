@@ -12,5 +12,7 @@ const NAME_ENTRY := &"name_entry"
 const PAUSED := &"paused"
 const REWARD_PICKER := &"reward_picker"
 const SUBMITTING := &"submitting"
+## The world keeps playing for a short beat after death or a destroyed flag.
+const OUTCOME_BEAT := &"outcome_beat"
 const DEATH := &"death"
 const RESULT := &"result"

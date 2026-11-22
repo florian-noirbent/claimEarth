@@ -48,6 +48,12 @@ extends Resource
 ## DeathCause value to sound id.
 @export var death_cues: Dictionary[StringName, StringName] = {}
 @export var default_death_cue: StringName
+## ItemUseRefusal value to sound id; an unknown reason plays the default and an empty id
+## keeps that reason silent.
+@export var use_refused_cues: Dictionary[StringName, StringName] = {}
+@export var default_use_refused_cue: StringName
+## Settings volume channel to the sound that previews it; channels without one stay silent.
+@export var volume_preview_cues: Dictionary[StringName, StringName] = {}
 
 @export_group("Player")
 ## A landing after less air time than this is a running step and stays silent, unless
@@ -118,13 +124,15 @@ func validate() -> PackedStringArray:
 			errors.append("sound cue %s has no recipe" % cue.id)
 	for keyed: Dictionary in [
 		ui_cues, throw_cues, tool_cues, bounce_cues, projectile_end_cues,
-		object_destroyed_cues, container_open_cues, death_cues,
+		object_destroyed_cues, container_open_cues, death_cues, use_refused_cues,
+		volume_preview_cues,
 	]:
 		for key: StringName in keyed:
 			_require_known(keyed[key], known, errors)
 	for default_cue: StringName in [
 		default_throw_cue, default_tool_cue, default_bounce_cue, default_projectile_end_cue,
 		default_object_destroyed_cue, default_container_open_cue, default_death_cue,
+		default_use_refused_cue,
 	]:
 		_require_known(default_cue, known, errors)
 	if distance_far <= distance_full:

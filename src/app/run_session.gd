@@ -34,6 +34,7 @@ signal player_liquid_exited(world_position: Vector2, color: Color, speed: float)
 signal player_sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
 signal player_hazard_warning(cause: StringName, level: float, color: Color)
 signal item_selected(definition: ItemDefinition)
+signal item_use_refused(reason: StringName, catalog_index: int)
 signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
 signal projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition)
 signal projectile_resolved(world_position: Vector2, definition: ItemDefinition, resolution_kind: StringName)
@@ -97,6 +98,7 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	world_controller.player_sand_burrow_changed.connect(player_sand_burrow_changed.emit)
 	world_controller.player_hazard_warning.connect(player_hazard_warning.emit)
 	item_controller.item_selected.connect(item_selected.emit)
+	item_controller.use_refused.connect(item_use_refused.emit)
 	item_controller.tool_used.connect(tool_used.emit)
 	item_controller.projectile_bounced.connect(projectile_bounced.emit)
 	item_controller.projectile_resolved.connect(projectile_resolved.emit)
@@ -120,6 +122,18 @@ func start_run(run_seed: int) -> void:
 func set_active(is_active: bool) -> void:
 	world_controller.set_active(is_active)
 	item_controller.set_active(is_active)
+
+
+## Stops the player's own simulation while the rest of the session keeps running.
+func freeze_player() -> void:
+	world_controller.set_player_active(false)
+
+
+## Tells the player its death is final; the result panel opens beat_seconds later.
+func begin_player_death(cause: StringName, beat_seconds: float) -> void:
+	var player := world_controller.player()
+	if player != null:
+		player.begin_death(cause, beat_seconds)
 
 
 func apply_pending_reward(choice_index: int) -> bool:

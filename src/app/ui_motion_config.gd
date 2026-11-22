@@ -39,6 +39,14 @@ extends Resource
 @export_range(0.0, 1.0, 0.01) var generating_menu_alpha := 0.45
 @export var record_color := Color(1.0, 0.86, 0.36, 1.0)
 @export var danger_color := Color(1.0, 0.42, 0.32, 1.0)
+## Title color of a victory on name entry and the result panel.
+@export var victory_color := Color(1.0, 0.9, 0.42, 1.0)
+## Bright tint a victory title flashes from when it is revealed.
+@export var victory_flash_color := Color(2.2, 2.0, 1.4, 1.0)
+## World dim behind name entry and results after a victory.
+@export var victory_dim_color := Color(0.13, 0.085, 0.01, 0.62)
+@export_range(1.0, 3.0, 0.01) var victory_title_scale := 1.7
+@export_range(8, 96, 1) var victory_title_font_size := 42
 
 @export_group("HUD")
 ## A toast announces every multiple of this depth the first time a run reaches it.
@@ -48,6 +56,12 @@ extends Resource
 @export_range(1.0, 2.0, 0.01) var item_gain_scale := 1.28
 @export var item_gain_color := Color(1.9, 1.6, 0.8, 1.0)
 @export var item_empty_modulate := Color(0.6, 0.6, 0.6, 0.45)
+## Cover that wipes off a toolbar slot while a timed use lock runs out.
+@export var item_cooldown_color := Color(0.02, 0.015, 0.01, 0.72)
+## Even cover of a toolbar slot under an untimed lock, such as a flag in flight.
+@export var item_locked_color := Color(0.02, 0.015, 0.01, 0.6)
+## Icon pop when a slot's item becomes usable again.
+@export_range(1.0, 2.0, 0.01) var item_ready_scale := 1.2
 ## Normalized hazard level at which a building meter starts to shake.
 @export_range(0.0, 1.0, 0.01) var hazard_shake_start_level := 0.5
 @export_range(0.0, 15.0, 0.1) var hazard_max_shake_degrees := 1.6

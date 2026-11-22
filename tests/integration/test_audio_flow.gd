@@ -34,6 +34,10 @@ func test_a_run_plays_synthesized_sounds_through_the_voice_pools() -> void:
 	_cues = []
 	var landing := HexMetrics.center_for_offset(5, 20, app_root.world_presenter.hex_radius)
 	app_root.item_controller.resolve_flag_landing(null, landing, null, &"lava")
+	assert_eq(_cues, [&"flag_destroyed"] as Array[StringName], "The game-over sting waits for the result panel.")
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 4.0)
 	assert_eq(_cues, [&"flag_destroyed", &"game_over"] as Array[StringName])
 
 	for id: StringName in [&"run_start", &"jump", &"land_soft", &"ui_press", &"flag_destroyed", &"game_over"]:

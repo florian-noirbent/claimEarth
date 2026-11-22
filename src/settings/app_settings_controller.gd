@@ -5,6 +5,9 @@ extends Node
 
 signal phone_controls_changed(enabled: bool)
 signal frame_limit_changed(fps: int)
+## channel is an AppSettingsData.VOLUME_* value; volume is the slider share from 0 to 1.
+signal volume_changed(channel: StringName, volume: float)
+signal screen_shake_changed(multiplier: float)
 
 
 const AppSettingsRepositoryScript = preload("res://src/settings/app_settings_repository.gd")
@@ -22,6 +25,9 @@ func configure(settings_path: String = "") -> void:
 	_configured = true
 	phone_controls_changed.emit(phone_controls_enabled())
 	frame_limit_changed.emit(frame_limit_fps())
+	for channel in AppSettingsDataScript.VOLUME_CHANNELS:
+		volume_changed.emit(channel, volume(channel))
+	screen_shake_changed.emit(screen_shake())
 
 
 func configure_settings_path(settings_path: String) -> void:
@@ -75,6 +81,41 @@ func set_frame_limit_fps(fps: int) -> void:
 
 func has_frame_limit_override() -> bool:
 	return _data.frame_limit_override_set
+
+
+## Slider share of a volume channel from 0 to 1; an unknown channel reads as the default.
+func volume(channel: StringName) -> float:
+	return _data.volumes.get(channel, AppSettingsDataScript.DEFAULT_VOLUME)
+
+
+func set_volume(channel: StringName, share: float) -> void:
+	if channel not in AppSettingsDataScript.VOLUME_CHANNELS:
+		push_error("Unsupported volume channel: %s" % channel)
+		return
+	if not _configured:
+		configure()
+	var clamped := clampf(share, 0.0, 1.0)
+	if is_equal_approx(volume(channel), clamped):
+		return
+	_data.volumes[channel] = clamped
+	_repository.save_data(_data)
+	volume_changed.emit(channel, clamped)
+
+
+## Camera shake strength from 0 (off) to AppSettingsData.MAX_SCREEN_SHAKE.
+func screen_shake() -> float:
+	return _data.screen_shake
+
+
+func set_screen_shake(multiplier: float) -> void:
+	if not _configured:
+		configure()
+	var clamped := clampf(multiplier, 0.0, AppSettingsDataScript.MAX_SCREEN_SHAKE)
+	if is_equal_approx(_data.screen_shake, clamped):
+		return
+	_data.screen_shake = clamped
+	_repository.save_data(_data)
+	screen_shake_changed.emit(clamped)
 
 
 static func default_frame_limit(is_mobile_runtime: bool) -> int:
