@@ -13,6 +13,11 @@ signal gameplay_started
 @export var item_catalog: ItemCatalog
 @export var perk_catalog: PerkCatalog
 @export var statistics_presentation: StatisticsPresentationConfig
+## Seconds the world keeps playing after the player's death before the result panel opens;
+## the death animation plays in this beat. Zero opens the panel at once.
+@export_range(0.0, 5.0, 0.05) var death_beat_seconds := 2.0
+## The same beat after a destroyed flag, which has only a short effect to show.
+@export_range(0.0, 5.0, 0.05) var flag_lost_beat_seconds := 0.8
 
 @onready var ui: AppUiController = %UiLayer
 @onready var score_controller: ScoreController = %ScoreController
@@ -45,6 +50,8 @@ var _pending_score_depth := -1
 var _terminal_outcome_locked := false
 var _relentless_flag_drop_pending := false
 var _pending_flag_victory := false
+var _outcome_beat_remaining := 0.0
+var _outcome_beat_next_state: StringName = RunPhase.DEATH
 var _previous_play_state: StringName = RunPhase.PLAYING
 var _reward_return_state: StringName = RunPhase.PLAYING
 var _test_mode := false
@@ -57,6 +64,14 @@ var _input_controller: GameplayInputController
 var _settings_controller: AppSettingsController
 var _developer_tools: DeveloperToolsController
 var _feedback: FeedbackRouter
+var _screen_shake_multiplier := AppSettingsData.DEFAULT_SCREEN_SHAKE
+
+## Audio buses each volume setting drives. Interface sounds follow the sound effects volume.
+const _VOLUME_BUSES := {
+	AppSettingsData.VOLUME_MASTER: [AudioDirector.BUS_MASTER],
+	AppSettingsData.VOLUME_SFX: [AudioDirector.BUS_SFX, AudioDirector.BUS_UI],
+	AppSettingsData.VOLUME_MUSIC: [AudioDirector.BUS_MUSIC],
+}
 
 
 func _notification(what: int) -> void:
@@ -89,6 +104,7 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_refresh_fullscreen_state)
 	_apply_phone_controls_enabled(false if _test_mode else _settings_controller.phone_controls_enabled())
 	_apply_frame_limit(0 if _test_mode else _settings_controller.frame_limit_fps())
+	_apply_saved_feedback_settings()
 	_apply_state(_run_coordinator.current_state)
 	if score_controller.has_service():
 		_refresh_leaderboard()
@@ -120,6 +136,9 @@ func _connect_persistent_signals() -> void:
 	ui.restart_requested.connect(_on_restart_requested)
 	ui.phone_controls_changed.connect(_settings_controller.set_phone_controls_enabled)
 	ui.frame_limit_changed.connect(_settings_controller.set_frame_limit_fps)
+	ui.volume_changed.connect(_settings_controller.set_volume)
+	ui.volume_preview_requested.connect(_feedback.volume_preview)
+	ui.screen_shake_changed.connect(_settings_controller.set_screen_shake)
 	ui.touch_move_changed.connect(_input_controller.set_touch_move)
 	ui.touch_aim_changed.connect(_input_controller.set_touch_aim)
 	ui.touch_aim_released.connect(_input_controller.release_touch_aim)
@@ -133,6 +152,8 @@ func _connect_persistent_signals() -> void:
 	_input_controller.pause_requested.connect(_toggle_pause)
 	_settings_controller.phone_controls_changed.connect(_apply_phone_controls_enabled)
 	_settings_controller.frame_limit_changed.connect(_apply_frame_limit)
+	_settings_controller.volume_changed.connect(_apply_volume)
+	_settings_controller.screen_shake_changed.connect(_apply_screen_shake)
 	score_controller.profile_changed.connect(_update_depth_markers)
 	score_controller.leaderboard_changed.connect(_on_leaderboard_top_loaded)
 	score_controller.submission_finished.connect(_on_leaderboard_submission_finished)
@@ -149,6 +170,7 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.flag_destroyed.connect(_on_flag_destroyed)
 	session.flag_flight_changed.connect(_on_flag_flight_changed)
 	session.item_used.connect(_on_item_used)
+	session.item_use_refused.connect(_on_item_use_refused)
 	session.reward_claimed.connect(_on_reward_claimed)
 	session.world_object_destroyed.connect(statistics_controller.record_object_destroyed.unbind(1))
 	session.reward_choices_requested.connect(_on_reward_choices_requested)
@@ -300,8 +322,6 @@ func _on_item_cycle_requested(direction: int) -> void:
 func _on_throw_requested(aim_position: Vector2) -> void:
 	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT] or item_controller == null:
 		return
-	if item_controller.is_flag_in_flight():
-		return
 	item_controller.throw_selected(aim_position)
 
 
@@ -370,6 +390,10 @@ func _apply_state(next_state: StringName) -> void:
 			_enter_main_menu()
 		RunPhase.LEADERBOARD, RunPhase.NAME_ENTRY, RunPhase.PAUSED, RunPhase.REWARD_PICKER, RunPhase.SUBMITTING, RunPhase.DEATH, RunPhase.RESULT:
 			_set_session_active(false)
+		RunPhase.OUTCOME_BEAT:
+			# The session stays active so the world and its effects play on; only the player stops.
+			if is_instance_valid(_session):
+				_session.freeze_player()
 		RunPhase.GENERATING:
 			# A restart abandons any run still in progress before the next one begins.
 			statistics_controller.end_run()
@@ -438,6 +462,7 @@ func _on_run_ready(next_seed: int) -> void:
 	if get_player() != null:
 		get_player().configure_input_controller(_input_controller)
 		_feedback.use_camera(get_player().camera)
+		_apply_screen_shake(_screen_shake_multiplier)
 	if _run_coordinator.current_state == RunPhase.GENERATING:
 		var world := current_world()
 		statistics_controller.begin_run(world.dimensions.depth if world != null else 0)
@@ -454,7 +479,37 @@ func _apply_frame_limit(fps: int) -> void:
 	ui.set_frame_limit_fps(fps)
 
 
+## Applies the saved volumes and shake strength at startup. Test mode keeps the defaults
+## unless the test supplied its own settings file.
+func _apply_saved_feedback_settings() -> void:
+	var use_saved := not _test_mode or not _configured_settings_path.is_empty()
+	for channel in AppSettingsData.VOLUME_CHANNELS:
+		_apply_volume(channel, _settings_controller.volume(channel) if use_saved else AppSettingsData.DEFAULT_VOLUME)
+	_apply_screen_shake(_settings_controller.screen_shake() if use_saved else AppSettingsData.DEFAULT_SCREEN_SHAKE)
+
+
+## Sets the buses of one volume setting. The slider share is squared so equal steps sound
+## like equal changes in loudness, and zero mutes the buses.
+func _apply_volume(channel: StringName, volume: float) -> void:
+	for bus: StringName in _VOLUME_BUSES.get(channel, []):
+		audio_director.set_bus_volume(bus, volume * volume)
+		audio_director.set_bus_muted(bus, volume <= 0.0)
+	ui.set_volume(channel, volume)
+
+
+## Remembers the shake strength and hands it to the current run's camera; every new run's
+## camera receives it again when the run becomes ready.
+func _apply_screen_shake(multiplier: float) -> void:
+	_screen_shake_multiplier = multiplier
+	ui.set_screen_shake(multiplier)
+	if get_player() != null:
+		get_player().camera.set_shake_intensity_multiplier(multiplier)
+
+
 func _process(delta: float) -> void:
+	if _run_coordinator.current_state == RunPhase.OUTCOME_BEAT:
+		_advance_outcome_beat(delta)
+		return
 	if _run_coordinator.current_state not in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]:
 		return
 	if not is_instance_valid(_session) or get_player() == null:
@@ -484,6 +539,7 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	statistics_controller.end_run()
 	_cancel_pending_reward()
 	_feedback.flag_planted(landing_position, _pending_flag_victory)
+	ui.show_flag_outcome(_pending_flag_victory, score_controller.is_new_personal_best(depth))
 	transition_to(RunPhase.NAME_ENTRY)
 
 
@@ -492,7 +548,7 @@ func _on_flag_destroyed(cause: StringName, world_position: Vector2) -> void:
 		statistics_controller.record_flag_lost(cause)
 		_feedback.flag_destroyed(world_position, cause)
 	var message := "The flag dissolved in acid." if cause == &"acid" else "The flag melted in lava."
-	_complete_terminal_outcome(message, RunPhase.DEATH)
+	_complete_terminal_outcome(message, RunPhase.DEATH, _outcome_beat_for(flag_lost_beat_seconds))
 
 
 func _on_flag_flight_changed(in_flight: bool) -> void:
@@ -505,6 +561,8 @@ func _on_flag_flight_changed(in_flight: bool) -> void:
 
 
 func _on_player_death_requested(cause: StringName) -> void:
+	if _terminal_outcome_locked:
+		return
 	# Recorded before the Relentless early returns: the death counts even while the dropped
 	# flag keeps the run alive. The controller keeps only the first death of a run.
 	if not _terminal_outcome_locked:
@@ -515,10 +573,14 @@ func _on_player_death_requested(cause: StringName) -> void:
 		_relentless_flag_drop_pending = true
 		return
 	_feedback.player_died(get_player().global_position if get_player() != null else Vector2.ZERO, cause)
-	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH)
+	# The death is final from here on: the one place the player learns it died.
+	var beat_seconds := _outcome_beat_for(death_beat_seconds)
+	if is_instance_valid(_session):
+		_session.begin_player_death(cause, beat_seconds)
+	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH, beat_seconds)
 
 
-func _complete_terminal_outcome(message: String, next_state: StringName) -> void:
+func _complete_terminal_outcome(message: String, next_state: StringName, beat_seconds: float = 0.0) -> void:
 	if _terminal_outcome_locked:
 		return
 	_terminal_outcome_locked = true
@@ -526,7 +588,32 @@ func _complete_terminal_outcome(message: String, next_state: StringName) -> void
 	statistics_controller.end_run()
 	_cancel_pending_reward()
 	ui.show_result(message)
-	transition_to(next_state)
+	_begin_outcome_beat(next_state, beat_seconds)
+
+
+## The beat a terminal outcome gets now: none unless it interrupts active play.
+func _outcome_beat_for(seconds: float) -> float:
+	var in_play := _run_coordinator.current_state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	return maxf(seconds, 0.0) if in_play else 0.0
+
+
+## Holds the result panel back while the world shows what ended the run. Input, pause, and
+## every later outcome are ignored during the beat; leaving the phase early cancels it.
+func _begin_outcome_beat(next_state: StringName, beat_seconds: float) -> void:
+	if beat_seconds <= 0.0:
+		transition_to(next_state)
+		return
+	_outcome_beat_next_state = next_state
+	_outcome_beat_remaining = beat_seconds
+	transition_to(RunPhase.OUTCOME_BEAT)
+
+
+func _advance_outcome_beat(delta: float) -> void:
+	if is_instance_valid(_session) and get_player() != null:
+		_session.advance(delta)
+	_outcome_beat_remaining -= delta
+	if _outcome_beat_remaining <= 0.0:
+		transition_to(_outcome_beat_next_state)
 
 
 func _on_confirm_score_requested(player_name: String) -> void:
@@ -539,8 +626,6 @@ func _on_confirm_score_requested(player_name: String) -> void:
 	_feedback.score_confirmed()
 	_update_depth_markers()
 	var summary := "%s claimed depth %d. Personal best: %d." % [score_controller.last_player_name, _pending_score_depth, score_controller.personal_best_depth]
-	if _pending_flag_victory:
-		summary += "\nVictory! The flag stands in Earth's core."
 	if not bool(confirmation["submitted"]):
 		ui.show_result(summary)
 		transition_to(RunPhase.RESULT)
@@ -615,6 +700,10 @@ func _on_pending_reward_invalidated() -> void:
 func _on_item_used(definition: ItemDefinition) -> void:
 	if definition != null:
 		statistics_controller.record_item_used(definition.stable_id)
+
+
+func _on_item_use_refused(reason: StringName, catalog_index: int) -> void:
+	ui.show_use_refused(catalog_index, reason)
 
 
 func _on_reward_claimed(claim: RewardClaim) -> void:

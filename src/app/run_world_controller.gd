@@ -84,10 +84,16 @@ func cancel_generation() -> void:
 
 
 func set_active(is_active: bool) -> void:
-	if _player != null:
-		_player.set_physics_process(is_active)
+	set_player_active(is_active)
 	if not is_active:
 		reset_simulation_clock()
+
+
+## Starts or stops the player's physics without touching the terrain simulation. A dead
+## player never simulates again.
+func set_player_active(is_active: bool) -> void:
+	if _player != null:
+		_player.set_physics_process(is_active and not _player.is_dead())
 
 
 func advance(delta: float) -> void:

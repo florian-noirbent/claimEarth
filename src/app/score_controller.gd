@@ -70,6 +70,11 @@ func confirm_score(player_name: String, depth: int, run_seed: int) -> Dictionary
 	return {"accepted": true, "submitted": true, "submission": submission}
 
 
+## True when confirming a flag at this depth would beat the saved personal best.
+func is_new_personal_best(depth: int) -> bool:
+	return depth > personal_best_depth
+
+
 func fetch_top(limit: int = 10) -> bool:
 	if _leaderboard_service == null:
 		return false

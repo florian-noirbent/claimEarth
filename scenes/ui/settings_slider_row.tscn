@@ -1,0 +1,36 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/app/settings_slider_row.gd" id="1_script"]
+
+[node name="SettingsSliderRow" type="HBoxContainer"]
+theme_override_constants/separation = 12
+script = ExtResource("1_script")
+
+[node name="TitleLabel" type="Label" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
+theme_override_font_sizes/font_size = 20
+text = "Setting"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 100.0
+step = 5.0
+value = 100.0
+
+[node name="ValueLabel" type="Label" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_font_sizes/font_size = 17
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1

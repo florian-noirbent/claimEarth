@@ -5,6 +5,8 @@ extends CharacterBody2D
 
 signal death_requested(cause: StringName)
 signal hazard_status_changed(statuses: Array)
+## The death became final; the result panel opens duration_seconds later. See begin_death.
+signal death_began(cause: StringName, duration_seconds: float)
 ## Feedback facts: world positions, speeds in px/s. No gameplay rule depends on them.
 signal jumped(world_position: Vector2, is_air_jump: bool)
 signal landed(world_position: Vector2, impact_speed: float, airborne_seconds: float)
@@ -74,6 +76,7 @@ var _reported_anchor_position := Vector2.ZERO
 var _reported_liquid: TerrainDefinition
 var _reported_sand_burrowing := false
 var _airborne_seconds := 0.0
+var _dead := false
 
 
 func _ready() -> void:
@@ -276,6 +279,22 @@ func is_ragdolling() -> bool:
 
 func ragdoll_remaining() -> float:
 	return _ragdoll_remaining
+
+
+## Called once when the player's death is final, never for a Relentless flag drop. The
+## body stays in the scene, visible at its death position, for duration_seconds until the
+## result panel opens, while the world and its effects keep running. This is the seam a
+## death animation builds on; today it only ends control, hazards, the hook, and physics.
+func begin_death(cause: StringName, duration_seconds: float) -> void:
+	if _dead:
+		return
+	_dead = true
+	set_physics_process(false)
+	death_began.emit(cause, duration_seconds)
+
+
+func is_dead() -> bool:
+	return _dead
 
 
 func _create_input_frame():

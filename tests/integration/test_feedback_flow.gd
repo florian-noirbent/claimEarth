@@ -176,7 +176,13 @@ func test_pause_and_reward_picker_freeze_feedback_and_a_death_releases_it() -> v
 	assert_true(visuals.is_suspended(), "The reward picker freezes feedback like the rest of the world")
 	app_root.transition_to(RunPhase.PLAYING)
 
+	app_root.death_beat_seconds = 0.1
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
+	assert_eq(app_root.get_run_state(), RunPhase.OUTCOME_BEAT)
+	assert_false(visuals.is_suspended(), "The death effect plays through the beat before the game over screen")
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 2.0)
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 	assert_false(visuals.is_suspended(), "The death effect plays out behind the game over screen")
 
@@ -220,6 +226,11 @@ func test_knockout_and_death_reach_both_sinks() -> void:
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 
 	assert_eq(audio.named(&"death"), [[&"death", DeathCauseScript.COOKED]] as Array[Array])
+	assert_eq(audio.named(&"game_over").size(), 0, "Game over sounds when the result panel opens.")
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 4.0)
+	assert_eq(audio.named(&"death").size(), 1)
 	assert_eq(audio.named(&"game_over").size(), 1)
 	var death_shake := (load("res://config/presentation/gameplay_effects.tres") as GameplayEffectLibrary).death.shake_intensity
 	assert_gt(death_shake, 0.0)
@@ -236,6 +247,9 @@ func test_flag_outcomes_reach_the_sinks() -> void:
 
 	assert_eq(audio.named(&"flag_destroyed"), [[&"flag_destroyed", &"lava"]] as Array[Array])
 	assert_eq(visuals.named(&"flag_destroyed"), [[&"flag_destroyed", landing, &"lava"]] as Array[Array])
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 4.0)
 	assert_eq(audio.named(&"game_over").size(), 1)
 	assert_eq(audio.named(&"flag_plant").size(), 0)
 

@@ -20,7 +20,7 @@ func test_deep_run_ending_in_death_counts_a_game_and_persists() -> void:
 	await wait_process_frames(2)
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 
-	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
+	# Statistics settle at the moment of death, before the beat ends.
 	var data := app_root.statistics_controller.statistics()
 	assert_eq(data.runs_started, 1)
 	assert_eq(data.games_played, 1)
@@ -30,6 +30,12 @@ func test_deep_run_ending_in_death_counts_a_game_and_persists() -> void:
 	assert_eq(data.total_depth_traveled, 60)
 	assert_gt(data.total_play_seconds, 0.0)
 	assert_true(FileAccess.file_exists(_statistics_path("death")))
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 4.0)
+	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
+	assert_eq(app_root.statistics_controller.statistics().runs_started, 1)
+	assert_eq(app_root.statistics_controller.statistics().total_deaths(), 1)
 
 	var reloaded := _instantiate_app("death")
 	add_child_autofree(reloaded)
@@ -114,7 +120,8 @@ func test_planted_flag_counts_before_name_entry_and_score_waits_for_confirmation
 
 	assert_eq(app_root.get_run_state(), RunPhase.RESULT)
 	assert_eq(app_root.score_controller.personal_best_depth, 25)
-	assert_false(app_root.ui.result_status.text.contains("Victory"))
+	assert_eq(app_root.ui.result_title.text, "Flag Planted")
+	assert_false(app_root.ui.result_victory_label.visible)
 	assert_eq(app_root.statistics_controller.statistics().runs_started, 1)
 	assert_eq(app_root.statistics_controller.statistics().flags_planted, 1)
 
@@ -128,12 +135,17 @@ func test_flag_planted_in_the_lava_core_is_a_victory() -> void:
 	assert_eq(app_root.statistics_controller.statistics().victories, 1)
 	app_root.ui.confirm_score_button.pressed.emit()
 	assert_eq(app_root.get_run_state(), RunPhase.RESULT)
-	assert_string_contains(app_root.ui.result_status.text, "Victory! The flag stands in Earth's core.")
+	assert_eq(app_root.ui.result_title.text, "Victory!")
+	assert_true(app_root.ui.result_victory_label.visible)
+	assert_eq(app_root.ui.result_victory_label.text, "The flag stands in Earth's core.")
 
 
 func test_destroyed_flag_records_a_flag_loss_without_a_planted_flag() -> void:
 	var app_root := await _start_app("flag_lost")
 	_land_flag(app_root, 40, &"lava")
+	await wait_until(func() -> bool:
+		return app_root.get_run_state() == RunPhase.DEATH
+	, 4.0)
 
 	assert_eq(app_root.get_run_state(), RunPhase.DEATH)
 	var data := app_root.statistics_controller.statistics()

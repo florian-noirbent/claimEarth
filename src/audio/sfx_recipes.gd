@@ -50,6 +50,7 @@ static func _table() -> Dictionary[StringName, Callable]:
 		&"pause": _pause.bind(true),
 		&"resume": _pause.bind(false),
 		&"item_select": _item_select,
+		&"use_denied": _use_denied,
 		&"run_start": _run_start,
 		&"game_over": _game_over,
 		&"victory": _victory,
@@ -237,6 +238,16 @@ static func _item_select(rate: int) -> PackedFloat32Array:
 	mix = _layer(mix, _sweep(rate, 0.05, SINE, 880.0, 660.0, 1.0, 0.001, 0.04), rate, 1.0)
 	mix = _layer(mix, _noise(rate, 0.012, 32, BAND, 3200.0, -1.0, 1.5, 0.0, 0.01), rate, 0.3)
 	return _finish(mix, rate, 0.0005, 0.008)
+
+
+## A short, dull double tap that steps down: "not now".
+static func _use_denied(rate: int) -> PackedFloat32Array:
+	var mix := S.silence(_frames(0.15, rate))
+	mix = _layer(mix, _sweep(rate, 0.05, TRIANGLE, 233.0, 208.0, 1.0, 0.002, 0.04), rate, 1.0)
+	mix = _layer(mix, _sweep(rate, 0.07, TRIANGLE, 175.0, 147.0, 1.0, 0.002, 0.06), rate, 0.9, 0.07)
+	mix = _layer(mix, _noise(rate, 0.012, 33, BAND, 900.0, -1.0, 1.2, 0.0, 0.01), rate, 0.2)
+	S.low_pass(mix, rate, 2400.0)
+	return _finish(mix, rate, 0.0005, 0.01)
 
 
 # --- Run flow ---

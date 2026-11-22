@@ -82,8 +82,12 @@ exists (`UiMotion.enabled`), so headless tests observe final states immediately;
 that cover motion switch it on explicitly. A control that must leave after its owner
 is already hidden, such as a chosen reward card, is moved to the UI `EffectsLayer`,
 ignores input there, and frees itself. Feedback that needs facts from gameplay is
-derived from data the UI already receives (item counts, depth, personal best); new
-facts arrive through `AppRoot` like any other outcome.
+derived from data the UI already receives (item counts, depth, and each inventory
+entry's `cooldown_fraction` and `locked` state, which arrive every frame with the run
+status); other facts arrive through `AppRoot` as typed calls:
+`show_flag_outcome(is_victory, is_new_personal_best)` before name entry, with the
+record fact from `ScoreController.is_new_personal_best`, and
+`show_use_refused(catalog_index, reason)` for a refused item use.
 
 Mouse item selection and throwing remain unhandled-input workflows routed through
 `AppRoot`, so GUI-consumed clicks cannot trigger gameplay. Touch gesture ownership
@@ -93,12 +97,27 @@ single phone gesture from producing duplicate gameplay actions.
 ## Run State
 
 `RunCoordinator` starts at `MAIN_MENU` and transitions through `GENERATING`,
-`PLAYING`, `FLAG_IN_FLIGHT`, `NAME_ENTRY`, `SUBMITTING`, `DEATH`, `RESULT`,
-`PAUSED`, and `LEADERBOARD`.
+`PLAYING`, `FLAG_IN_FLIGHT`, `NAME_ENTRY`, `SUBMITTING`, `OUTCOME_BEAT`, `DEATH`,
+`RESULT`, `PAUSED`, and `LEADERBOARD`.
 
 `AppRoot` holds the terminal-outcome lock. The first death, planted flag, or destroyed
 flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
+
+A lost run that interrupts active play passes through `OUTCOME_BEAT` before `DEATH`.
+The lock, the statistics records, and `end_run` all happen when the beat starts; the
+beat only delays the result panel and the game-over sound. During it `AppRoot` keeps
+the session active and advancing (terrain, projectiles, explosions, effects, camera)
+but stops the player, every input handler and pause ignore the phase, and the lock
+discards whatever the still-running world reports. The countdown runs only in that
+phase, so a restart or a return to the menu cancels it. `AppRoot.death_beat_seconds`
+and `flag_lost_beat_seconds` are exported; zero skips the phase.
+
+`PlayerController.begin_death(cause, duration_seconds)` is the seam for a death
+animation. `AppRoot` calls it through `RunSession.begin_player_death` exactly once,
+when a death is final (never for a Relentless flag drop), with the length of the beat;
+it emits `death_began`. Today it only stops the player's physics for good, and the
+node stays in the scene, visible and in place, until the session is disposed.
 
 ## Feedback
 
@@ -108,7 +127,7 @@ never decide how a moment sounds or looks:
 | Owner | Facts |
 | --- | --- |
 | `PlayerController` | `jumped`, `landed`, `hard_impact`, `knocked_out`, `hook_launched`, `hook_attached`, `hook_missed`, `hook_released`, `liquid_entered`, `liquid_exited`, `sand_burrow_changed`, `hazard_warning` |
-| `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `projectile_spawned`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
+| `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `use_refused`, `projectile_spawned`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
 | `AppUiController` | `ui_feedback_requested(kind)` for hover and press on every button, including toolbar slots and reward cards |
 | `AppRoot` | Run-state moments: run start, pause and resume, game over, score confirmed, player death, flag outcomes, victory, reward picker shown |
 
@@ -119,7 +138,11 @@ thrown `ItemProjectile`, already in the tree. A sink may read it while it lives 
 must not own it, reparent it, or keep it alive.
 `RunWorldController` relays player facts as `player_*` signals and `RunSession`
 relays every fact unchanged. `HazardWarningTracker` rate-limits `hazard_warning`
-with the level and interval exported on `PlayerController`.
+with the level and interval exported on `PlayerController`. `use_refused(reason,
+catalog_index)` carries an `ItemUseRefusal` value for every way `throw_selected`
+declines a use; it fires once per press because throw input is edge-triggered, and
+`item_selected` fires only for a selection the player made, not for the automatic
+switch away from a depleted item.
 
 `FeedbackRouter` (owned by `AppRoot`) is the only caller of the two sinks. It
 connects each session's facts, converts hex units to world units, and calls one
@@ -204,8 +227,9 @@ the shake by its distance from the camera target (full inside
 from the cause. The offset is added after follow and bounds are resolved and never
 moves the view below the world's bottom edge. Explosions ask for an intensity
 proportional to their blast radius. `shake_intensity_multiplier` (0 to 2, set
-through `set_shake_intensity_multiplier`) scales or disables all shake for
-accessibility settings.
+through `set_shake_intensity_multiplier`) scales or disables all shake. `AppRoot`
+sets it from the Screen Shake setting on every run's camera when the run becomes
+ready, and on the current camera when the setting changes.
 
 To add a feedback moment:
 
@@ -244,7 +268,9 @@ mix keeps its own headroom: recipes peak below full scale, cue volumes are negat
 and a sound entering a crowded pool is turned down (`crowd_duck_db_per_voice`).
 `AudioTuning.set_gain_db` moves the whole set at once. `AudioDirector.set_bus_volume`,
 `bus_volume`, `set_bus_muted`, and `is_bus_muted` are the volume interface for
-settings; nothing persists them yet.
+settings. `AppRoot` maps the saved Master, Sound Effects, and Music shares to buses
+(Sound Effects drives both `SFX` and `UI`), squares the share so slider steps sound
+even, and mutes a bus at zero.
 
 Sounds with a world position fade with their distance from the screen centre of the
 viewport's current `Camera2D`; there are no positional audio nodes. Variation uses a
@@ -780,6 +806,15 @@ for Unlimited, defaulting to 30 on the same mobile targets and Unlimited elsewhe
 `AppRoot` applies it immediately through `Engine.max_fps`; it does not alter the
 fixed-rate terrain clock. These preferences remain independent and keep device
 policy out of gameplay ownership.
+
+The same file (version 3) stores `master_volume`, `sfx_volume`, and `music_volume`
+as shares from 0 to 1 and `screen_shake` from 0 to 2. A missing field or a value
+that is not a number reads as the default of 1; numbers are clamped. Older files
+therefore load unchanged and gain the fields on the next save. `AppUiController`
+emits `volume_changed(channel, volume)`, `volume_preview_requested(channel)`, and
+`screen_shake_changed(multiplier)` from reusable `SettingsSliderRow` rows;
+`AppSettingsController` saves and re-emits, and `AppRoot` applies. In test mode the
+saved values are applied at startup only when the test supplied a settings path.
 
 `StatisticsRepository` stores lifetime statistics in a separate
 `user://claim_earth_statistics.json`, written through a temporary file and only when

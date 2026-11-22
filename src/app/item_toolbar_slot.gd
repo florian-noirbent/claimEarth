@@ -11,11 +11,16 @@ extends Button
 @onready var icon_rect: TextureRect = %Icon
 @onready var key_label: Label = %KeyLabel
 @onready var count_label: Label = %CountLabel
+@onready var cooldown_wipe: ColorRect = %CooldownWipe
+@onready var cooldown_edge: ColorRect = %CooldownEdge
 
 var _configured := false
 var _selected := false
 var _count := 0.0
 var _count_text := ""
+var _cooldown_fraction := 0.0
+var _locked := false
+var _refusal_ready_msec := 0
 
 
 func _ready() -> void:
@@ -79,3 +84,45 @@ func play_gained() -> void:
 	UiMotion.punch(icon_rect, settings.item_gain_scale)
 	UiMotion.punch(count_label, settings.item_gain_scale)
 	UiMotion.flash(self, settings.item_gain_color)
+
+
+## Covers the slot while its item cannot be used. A timed lock wipes downward as
+## `fraction` falls from 1 to 0 and the icon pops when it ends; `locked` is an untimed
+## lock that covers the slot evenly. Runs every frame during play, so it only acts on change.
+func set_cooldown(fraction: float, locked: bool) -> void:
+	var share := clampf(fraction, 0.0, 1.0)
+	if is_equal_approx(share, _cooldown_fraction) and locked == _locked:
+		return
+	var was_blocked := _cooldown_fraction > 0.0 or _locked
+	_cooldown_fraction = share
+	_locked = locked
+	var blocked := share > 0.0 or locked
+	var settings := UiMotion.config()
+	cooldown_wipe.visible = blocked
+	cooldown_wipe.color = settings.item_locked_color if locked and share <= 0.0 else settings.item_cooldown_color
+	cooldown_wipe.anchor_top = 1.0 - share if share > 0.0 else 0.0
+	cooldown_edge.visible = share > 0.0
+	if was_blocked and not blocked and _count > 0.0:
+		UiMotion.punch(icon_rect, settings.item_ready_scale)
+
+
+func cooldown_fraction() -> float:
+	return _cooldown_fraction
+
+
+func is_locked() -> bool:
+	return _locked
+
+
+## Shakes and flashes the slot because a use of its item was refused. Presses arriving
+## while it still shakes are absorbed, so a burst of them reads as one refusal.
+func play_refused() -> void:
+	var now := Time.get_ticks_msec()
+	if now < _refusal_ready_msec:
+		return
+	var settings := UiMotion.config()
+	_refusal_ready_msec = now + int(settings.shake_duration * 1000.0)
+	UiMotion.shake(self)
+	UiMotion.flash(self, settings.danger_color)
+	if _count <= 0.0:
+		UiMotion.punch(count_label)

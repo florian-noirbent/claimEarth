@@ -133,6 +133,11 @@ func play_ui(kind: StringName) -> void:
 	_play(_tuning.ui_cues.get(kind, &""))
 
 
+## The player settled a volume slider; channel is an AppSettingsData.VOLUME_* value.
+func play_volume_preview(channel: StringName) -> void:
+	_play(_tuning.volume_preview_cues.get(channel, &""))
+
+
 # --- Player ---
 
 ## The player started a jump; is_air_jump is true when it spent an extra air jump.
@@ -230,6 +235,12 @@ func play_tool_use(item: ItemDefinition) -> void:
 ## The player selected another item.
 func play_item_select(_item: ItemDefinition) -> void:
 	_play(&"item_select")
+
+
+## A use or throw of the selected item was refused; reason is an ItemUseRefusal value.
+## Arrives once per press, and the cue's minimum interval absorbs rapid presses.
+func play_use_refused(reason: StringName) -> void:
+	_play(_tuning.use_refused_cues.get(reason, _tuning.default_use_refused_cue))
 
 
 ## A thrown item bounced off terrain; impact_speed is its speed before the bounce.

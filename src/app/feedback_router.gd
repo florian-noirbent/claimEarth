@@ -33,6 +33,7 @@ func attach(session: RunSession) -> void:
 	session.tool_used.connect(_on_tool_used)
 	session.item_selected.connect(_audio.play_item_select)
 	session.projectile_spawned.connect(_on_projectile_spawned)
+	session.item_use_refused.connect(_on_item_use_refused)
 	session.projectile_bounced.connect(_on_projectile_bounced)
 	session.projectile_resolved.connect(_on_projectile_resolved)
 	session.fluid_bottle_burst.connect(_on_fluid_bottle_burst)
@@ -73,6 +74,10 @@ func score_confirmed() -> void:
 
 func ui(kind: StringName) -> void:
 	_audio.play_ui(kind)
+
+
+func volume_preview(channel: StringName) -> void:
+	_audio.play_volume_preview(channel)
 
 
 func player_died(world_position: Vector2, cause: StringName) -> void:
@@ -180,6 +185,10 @@ func _on_tool_used(definition: ItemDefinition, origin: Vector2, direction: Vecto
 
 func _on_projectile_spawned(projectile: ItemProjectile, definition: ItemDefinition) -> void:
 	_visuals.show_projectile_effect(projectile, definition)
+
+
+func _on_item_use_refused(reason: StringName, _catalog_index: int) -> void:
+	_audio.play_use_refused(reason)
 
 
 func _on_projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition) -> void:

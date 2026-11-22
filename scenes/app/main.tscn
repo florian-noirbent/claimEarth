@@ -38,6 +38,7 @@
 [ext_resource type="Resource" path="res://config/statistics/statistics_presentation.tres" id="32_statistics_presentation"]
 [ext_resource type="Resource" path="res://config/items/catalog.tres" id="33_item_catalog"]
 [ext_resource type="Resource" path="res://config/perks/catalog.tres" id="34_perk_catalog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_slider_row.tscn" id="35_settings_slider_row"]
 
 [sub_resource type="Resource" id="Resource_7rhj7"]
 script = ExtResource("3_hgfhf")
@@ -669,6 +670,28 @@ theme_override_font_sizes/font_size = 15
 text = "Lower limits reduce heat and battery use."
 autowrap_mode = 2
 
+[node name="MasterVolumeRow" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" instance=ExtResource("35_settings_slider_row")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Master Volume"
+
+[node name="SfxVolumeRow" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" instance=ExtResource("35_settings_slider_row")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Sound Effects"
+
+[node name="MusicVolumeRow" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" instance=ExtResource("35_settings_slider_row")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Music"
+
+[node name="ScreenShakeRow" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" instance=ExtResource("35_settings_slider_row")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Screen Shake"
+max_percent = 200
+step_percent = 10
+
 [node name="SettingsBackButton" type="Button" parent="UiLayer/Center/Content/SettingsPanel/SettingsMargin/SettingsContent" unique_id=1227367705]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 58)
@@ -958,10 +981,24 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="NameEntryTitle" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=1909882641]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Plant Your Flag"
+horizontal_alignment = 1
+
+[node name="NameEntryVictoryLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.9, 0.42, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "The flag stands in Earth's core."
 horizontal_alignment = 1
 
 [node name="NameEntryStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=926994201]
@@ -1033,6 +1070,19 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Run Complete"
+horizontal_alignment = 1
+
+[node name="ResultVictoryLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.9, 0.42, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "The flag stands in Earth's core."
 horizontal_alignment = 1
 
 [node name="ResultRecordLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
