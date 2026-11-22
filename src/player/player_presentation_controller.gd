@@ -32,7 +32,6 @@ extends Node2D
 
 @onready var body_visual: Node2D = %BodyVisual
 @onready var rig: PlayerRig = %Rig
-@onready var sand_outline: Line2D = %SandOutline
 @onready var grapple: GrappleRopeVisual = %Grapple
 
 var _selector := PlayerAnimationSelector.new()
@@ -136,8 +135,9 @@ func update_grapple(
 	grapple.pose(rig.grip_position(), delta)
 
 
+## Shows the body through the sand it is burrowing in, or returns it to its normal look.
 func set_sand_burrow_visible(visible: bool) -> void:
-	sand_outline.visible = visible
+	rig.set_burrowed(visible)
 
 
 ## Returns which side the hook pulls toward: -1, 1, or 0 with no hook out.

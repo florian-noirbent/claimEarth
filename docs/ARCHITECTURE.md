@@ -556,7 +556,7 @@ clamping. `PlayerRuntimeTuning` compiles the immutable perk snapshot against the
 authored movement and grapple resources, producing duplicated active configs and
 typed player, terrain, and hazard policy without exposing modifier keys throughout
 the controller. `PlayerPresentationController` owns the body rig, rope, hook, and
-sand-outline visuals; `PlayerController` updates it synchronously after physics and
+sand-burrow look; `PlayerController` updates it synchronously after physics and
 it owns no gameplay decisions or independent processing.
 
 The body is `PlayerRig`, a cutout skeleton generated into
@@ -565,7 +565,12 @@ hierarchy, while the part sprites sit in one flat list in draw order and follow
 their bones through `RemoteTransform2D`, so draw order never depends on the bone
 tree or on `z_index`. A second flat list behind it draws every part again as a grown
 silhouette through `player_outline.gdshader`, which outlines the whole body without
-an offscreen pass. Each physics step `PlayerController` fills one
+an offscreen pass. Terrain is drawn over the player, so
+`PlayerPresentationController.set_sand_burrow_visible()` switches the rig to its
+burrow look while a Sand Worm is inside sand: `PlayerRig.set_burrowed()` raises the
+whole rig to an absolute draw layer above the terrain, swaps the silhouette list to
+the brighter, thicker burrow outline material, and tints the part list. Both outline
+materials, the tint, and the layer are builder constants stored on the rig. Each physics step `PlayerController` fills one
 `PlayerAnimationSnapshot`; the pure `PlayerAnimationSelector` turns it into a
 `PlayerAnimationState` and a facing, including the landing crouch timer and the
 short grace that ignores footing lost for a few frames on hex slopes. The rig's

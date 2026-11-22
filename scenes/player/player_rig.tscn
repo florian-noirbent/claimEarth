@@ -24,7 +24,12 @@ shader = ExtResource("2_wgxgs")
 shader_parameter/outline_color = Color(0.07, 0.04, 0.03, 1)
 shader_parameter/width = 22.459615384615383
 
-[sub_resource type="Animation" id="Animation_1lrue"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1lrue"]
+shader = ExtResource("2_wgxgs")
+shader_parameter/outline_color = Color(1, 0.84, 0.22, 1)
+shader_parameter/width = 30.386538461538457
+
+[sub_resource type="Animation" id="Animation_o1pc8"]
 length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -231,7 +236,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_o1pc8"]
+[sub_resource type="Animation" id="Animation_ptpgy"]
 length = 0.44
 loop_mode = 1
 tracks/0/type = "value"
@@ -439,7 +444,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_ptpgy"]
+[sub_resource type="Animation" id="Animation_ikfcs"]
 length = 0.5
 loop_mode = 1
 tracks/0/type = "value"
@@ -647,7 +652,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_ikfcs"]
+[sub_resource type="Animation" id="Animation_a4grv"]
 length = 1.4
 loop_mode = 1
 tracks/0/type = "value"
@@ -855,7 +860,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_a4grv"]
+[sub_resource type="Animation" id="Animation_ba36k"]
 length = 2.4
 loop_mode = 1
 tracks/0/type = "value"
@@ -1063,7 +1068,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0), Vector2(0, 4), Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_ba36k"]
+[sub_resource type="Animation" id="Animation_sbqu7"]
 length = 0.6
 loop_mode = 1
 tracks/0/type = "value"
@@ -1271,7 +1276,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_sbqu7"]
+[sub_resource type="Animation" id="Animation_e3m5p"]
 length = 0.3
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -1478,7 +1483,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 34), Vector2(0, 26)]
 }
 
-[sub_resource type="Animation" id="Animation_e3m5p"]
+[sub_resource type="Animation" id="Animation_fdpj5"]
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -1685,7 +1690,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 0)]
 }
 
-[sub_resource type="Animation" id="Animation_fdpj5"]
+[sub_resource type="Animation" id="Animation_4gt3w"]
 length = 0.48
 loop_mode = 1
 tracks/0/type = "value"
@@ -1893,7 +1898,7 @@ tracks/16/keys = {
 "values": [Vector2(0, 8), Vector2(0, -8), Vector2(0, 8), Vector2(0, -8), Vector2(0, 8)]
 }
 
-[sub_resource type="Animation" id="Animation_4gt3w"]
+[sub_resource type="Animation" id="Animation_5syjn"]
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -2100,7 +2105,7 @@ tracks/16/keys = {
 "values": [Vector2(0, -4), Vector2(0, 4), Vector2(0, -4)]
 }
 
-[sub_resource type="Animation" id="Animation_5syjn"]
+[sub_resource type="Animation" id="Animation_ybe21"]
 length = 0.8
 loop_mode = 1
 tracks/0/type = "value"
@@ -2308,71 +2313,68 @@ tracks/16/keys = {
 "values": [Vector2(0, 5), Vector2(0, -3), Vector2(0, 5), Vector2(0, -3), Vector2(0, 5)]
 }
 
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_ybe21"]
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_v2m8v"]
 _data = {
-&"RESET": SubResource("Animation_1lrue"),
-&"burrow": SubResource("Animation_o1pc8"),
-&"fall": SubResource("Animation_ptpgy"),
-&"hook_swing": SubResource("Animation_ikfcs"),
-&"idle": SubResource("Animation_a4grv"),
-&"jump": SubResource("Animation_ba36k"),
-&"land": SubResource("Animation_sbqu7"),
-&"ragdoll": SubResource("Animation_e3m5p"),
-&"run": SubResource("Animation_fdpj5"),
-&"swim": SubResource("Animation_4gt3w"),
-&"walk": SubResource("Animation_5syjn")
+&"RESET": SubResource("Animation_o1pc8"),
+&"burrow": SubResource("Animation_ptpgy"),
+&"fall": SubResource("Animation_ikfcs"),
+&"hook_swing": SubResource("Animation_a4grv"),
+&"idle": SubResource("Animation_ba36k"),
+&"jump": SubResource("Animation_sbqu7"),
+&"land": SubResource("Animation_e3m5p"),
+&"ragdoll": SubResource("Animation_fdpj5"),
+&"run": SubResource("Animation_4gt3w"),
+&"swim": SubResource("Animation_5syjn"),
+&"walk": SubResource("Animation_ybe21")
 }
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_v2m8v"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_vbnkj"]
 animation = &"burrow"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_vbnkj"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_46rgl"]
 animation = &"fall"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_46rgl"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_rsalm"]
 animation = &"hook_swing"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_rsalm"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_3jjmp"]
 animation = &"idle"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_3jjmp"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_uwxmw"]
 animation = &"jump"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_uwxmw"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_0t6s3"]
 animation = &"land"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_0t6s3"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_7tkum"]
 animation = &"ragdoll"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_7tkum"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jo1ho"]
 animation = &"run"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jo1ho"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_w4akp"]
 animation = &"swim"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_w4akp"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_lwprp"]
 animation = &"walk"
 
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_lwprp"]
-advance_mode = 2
-
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7eb2y"]
-xfade_time = 0.12
+advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_vlryf"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_1v3uq"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_wrv6d"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_cf3da"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_jq07m"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_r4v5p"]
 xfade_time = 0.12
@@ -2381,25 +2383,25 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6hvs0"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_bltkr"]
-xfade_time = 0.16
-
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ewcp8"]
-xfade_time = 0.12
-
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ngjth"]
 xfade_time = 0.06
 
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s53vn"]
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ewcp8"]
+xfade_time = 0.16
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ngjth"]
 xfade_time = 0.12
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s53vn"]
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_doxgp"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_4nh4y"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_nlw5c"]
 xfade_time = 0.12
@@ -2408,25 +2410,25 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6tumx"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_evaxe"]
-xfade_time = 0.16
-
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xmtb5"]
-xfade_time = 0.12
-
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c2wmt"]
 xfade_time = 0.06
 
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0ph6y"]
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xmtb5"]
+xfade_time = 0.16
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c2wmt"]
 xfade_time = 0.12
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0ph6y"]
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_t1ynv"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_is51f"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_h3f54"]
 xfade_time = 0.12
@@ -2435,13 +2437,13 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_vpfoe"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_jykub"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_t3h7d"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_4dn1t"]
 xfade_time = 0.12
@@ -2450,10 +2452,10 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_8j4ml"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xaebc"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6ahy4"]
 xfade_time = 0.12
@@ -2462,25 +2464,25 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_8dxay"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_dk3ef"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_g6u43"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ai3v0"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_fmkrs"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w25gi"]
-xfade_time = 0.05
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2nkrk"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ugy83"]
 xfade_time = 0.12
@@ -2489,22 +2491,22 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_avo10"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_n2t32"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_83i12"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_hdt7g"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c5tg2"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_gkwty"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2m5rj"]
 xfade_time = 0.12
@@ -2516,109 +2518,109 @@ xfade_time = 0.12
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_geaav"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6n7lp"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_g6ywp"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_hidst"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c36e5"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s7ixc"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_prauv"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0ch68"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0von4"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_33u10"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_vbqax"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_e5yke"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6fd1w"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_k22vb"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6gnx6"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_u58hs"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_gc8nj"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_q12ud"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_bs1g8"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_625p6"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c2xpl"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0akw7"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_aeao2"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7pjju"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_nclwt"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6vms1"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_n1ui4"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_h4wqb"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_gmtp7"]
-xfade_time = 0.16
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_fxstf"]
-xfade_time = 0.12
+xfade_time = 0.16
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7fk58"]
 xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_5mhir"]
-xfade_time = 0.06
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_t3751"]
-xfade_time = 0.12
+xfade_time = 0.06
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_urqhg"]
-xfade_time = 0.05
+xfade_time = 0.12
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_dlpu7"]
-xfade_time = 0.12
+xfade_time = 0.05
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_pcual"]
 xfade_time = 0.12
@@ -2626,432 +2628,438 @@ xfade_time = 0.12
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_5vmo8"]
 xfade_time = 0.12
 
-[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_xvygf"]
-states/burrow/node = SubResource("AnimationNodeAnimation_v2m8v")
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xvygf"]
+xfade_time = 0.12
+
+[sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_hooms"]
+states/burrow/node = SubResource("AnimationNodeAnimation_vbnkj")
 states/burrow/position = Vector2(612.70514, 34.683044)
-states/fall/node = SubResource("AnimationNodeAnimation_vbnkj")
+states/fall/node = SubResource("AnimationNodeAnimation_46rgl")
 states/fall/position = Vector2(277.29486, 496.33557)
-states/hook_swing/node = SubResource("AnimationNodeAnimation_46rgl")
+states/hook_swing/node = SubResource("AnimationNodeAnimation_rsalm")
 states/hook_swing/position = Vector2(277.29492, 143.6644)
-states/idle/node = SubResource("AnimationNodeAnimation_rsalm")
+states/idle/node = SubResource("AnimationNodeAnimation_3jjmp")
 states/idle/position = Vector2(820, 320)
-states/jump/node = SubResource("AnimationNodeAnimation_3jjmp")
+states/jump/node = SubResource("AnimationNodeAnimation_uwxmw")
 states/jump/position = Vector2(427.2949, 605.31696)
-states/land/node = SubResource("AnimationNodeAnimation_uwxmw")
+states/land/node = SubResource("AnimationNodeAnimation_0t6s3")
 states/land/position = Vector2(220, 319.99997)
-states/ragdoll/node = SubResource("AnimationNodeAnimation_0t6s3")
+states/ragdoll/node = SubResource("AnimationNodeAnimation_7tkum")
 states/ragdoll/position = Vector2(762.7051, 143.66441)
-states/run/node = SubResource("AnimationNodeAnimation_7tkum")
+states/run/node = SubResource("AnimationNodeAnimation_jo1ho")
 states/run/position = Vector2(612.7051, 605.31696)
-states/swim/node = SubResource("AnimationNodeAnimation_jo1ho")
+states/swim/node = SubResource("AnimationNodeAnimation_w4akp")
 states/swim/position = Vector2(427.29486, 34.683044)
-states/walk/node = SubResource("AnimationNodeAnimation_w4akp")
+states/walk/node = SubResource("AnimationNodeAnimation_lwprp")
 states/walk/position = Vector2(762.7051, 496.33557)
-transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_lwprp"), "idle", "walk", SubResource("AnimationNodeStateMachineTransition_7eb2y"), "idle", "run", SubResource("AnimationNodeStateMachineTransition_vlryf"), "idle", "jump", SubResource("AnimationNodeStateMachineTransition_1v3uq"), "idle", "fall", SubResource("AnimationNodeStateMachineTransition_wrv6d"), "idle", "land", SubResource("AnimationNodeStateMachineTransition_cf3da"), "idle", "hook_swing", SubResource("AnimationNodeStateMachineTransition_jq07m"), "idle", "swim", SubResource("AnimationNodeStateMachineTransition_r4v5p"), "idle", "burrow", SubResource("AnimationNodeStateMachineTransition_cc64q"), "idle", "ragdoll", SubResource("AnimationNodeStateMachineTransition_6hvs0"), "walk", "idle", SubResource("AnimationNodeStateMachineTransition_bltkr"), "walk", "run", SubResource("AnimationNodeStateMachineTransition_ewcp8"), "walk", "jump", SubResource("AnimationNodeStateMachineTransition_ngjth"), "walk", "fall", SubResource("AnimationNodeStateMachineTransition_s53vn"), "walk", "land", SubResource("AnimationNodeStateMachineTransition_doxgp"), "walk", "hook_swing", SubResource("AnimationNodeStateMachineTransition_4nh4y"), "walk", "swim", SubResource("AnimationNodeStateMachineTransition_nlw5c"), "walk", "burrow", SubResource("AnimationNodeStateMachineTransition_7gvg8"), "walk", "ragdoll", SubResource("AnimationNodeStateMachineTransition_6tumx"), "run", "idle", SubResource("AnimationNodeStateMachineTransition_evaxe"), "run", "walk", SubResource("AnimationNodeStateMachineTransition_xmtb5"), "run", "jump", SubResource("AnimationNodeStateMachineTransition_c2wmt"), "run", "fall", SubResource("AnimationNodeStateMachineTransition_0ph6y"), "run", "land", SubResource("AnimationNodeStateMachineTransition_t1ynv"), "run", "hook_swing", SubResource("AnimationNodeStateMachineTransition_is51f"), "run", "swim", SubResource("AnimationNodeStateMachineTransition_h3f54"), "run", "burrow", SubResource("AnimationNodeStateMachineTransition_p6jy8"), "run", "ragdoll", SubResource("AnimationNodeStateMachineTransition_vpfoe"), "jump", "idle", SubResource("AnimationNodeStateMachineTransition_jykub"), "jump", "walk", SubResource("AnimationNodeStateMachineTransition_t3h7d"), "jump", "run", SubResource("AnimationNodeStateMachineTransition_4dn1t"), "jump", "fall", SubResource("AnimationNodeStateMachineTransition_i3dwb"), "jump", "land", SubResource("AnimationNodeStateMachineTransition_8j4ml"), "jump", "hook_swing", SubResource("AnimationNodeStateMachineTransition_xaebc"), "jump", "swim", SubResource("AnimationNodeStateMachineTransition_6ahy4"), "jump", "burrow", SubResource("AnimationNodeStateMachineTransition_h5hx1"), "jump", "ragdoll", SubResource("AnimationNodeStateMachineTransition_8dxay"), "fall", "idle", SubResource("AnimationNodeStateMachineTransition_dk3ef"), "fall", "walk", SubResource("AnimationNodeStateMachineTransition_g6u43"), "fall", "run", SubResource("AnimationNodeStateMachineTransition_ai3v0"), "fall", "jump", SubResource("AnimationNodeStateMachineTransition_fmkrs"), "fall", "land", SubResource("AnimationNodeStateMachineTransition_w25gi"), "fall", "hook_swing", SubResource("AnimationNodeStateMachineTransition_2nkrk"), "fall", "swim", SubResource("AnimationNodeStateMachineTransition_ugy83"), "fall", "burrow", SubResource("AnimationNodeStateMachineTransition_2u3xv"), "fall", "ragdoll", SubResource("AnimationNodeStateMachineTransition_avo10"), "land", "idle", SubResource("AnimationNodeStateMachineTransition_n2t32"), "land", "walk", SubResource("AnimationNodeStateMachineTransition_83i12"), "land", "run", SubResource("AnimationNodeStateMachineTransition_hdt7g"), "land", "jump", SubResource("AnimationNodeStateMachineTransition_c5tg2"), "land", "fall", SubResource("AnimationNodeStateMachineTransition_gkwty"), "land", "hook_swing", SubResource("AnimationNodeStateMachineTransition_2m5rj"), "land", "swim", SubResource("AnimationNodeStateMachineTransition_78b76"), "land", "burrow", SubResource("AnimationNodeStateMachineTransition_37g5f"), "land", "ragdoll", SubResource("AnimationNodeStateMachineTransition_geaav"), "hook_swing", "idle", SubResource("AnimationNodeStateMachineTransition_6n7lp"), "hook_swing", "walk", SubResource("AnimationNodeStateMachineTransition_g6ywp"), "hook_swing", "run", SubResource("AnimationNodeStateMachineTransition_hidst"), "hook_swing", "jump", SubResource("AnimationNodeStateMachineTransition_c36e5"), "hook_swing", "fall", SubResource("AnimationNodeStateMachineTransition_s7ixc"), "hook_swing", "land", SubResource("AnimationNodeStateMachineTransition_prauv"), "hook_swing", "swim", SubResource("AnimationNodeStateMachineTransition_0ch68"), "hook_swing", "burrow", SubResource("AnimationNodeStateMachineTransition_0von4"), "hook_swing", "ragdoll", SubResource("AnimationNodeStateMachineTransition_33u10"), "swim", "idle", SubResource("AnimationNodeStateMachineTransition_vbqax"), "swim", "walk", SubResource("AnimationNodeStateMachineTransition_e5yke"), "swim", "run", SubResource("AnimationNodeStateMachineTransition_6fd1w"), "swim", "jump", SubResource("AnimationNodeStateMachineTransition_k22vb"), "swim", "fall", SubResource("AnimationNodeStateMachineTransition_6gnx6"), "swim", "land", SubResource("AnimationNodeStateMachineTransition_u58hs"), "swim", "hook_swing", SubResource("AnimationNodeStateMachineTransition_gc8nj"), "swim", "burrow", SubResource("AnimationNodeStateMachineTransition_q12ud"), "swim", "ragdoll", SubResource("AnimationNodeStateMachineTransition_bs1g8"), "burrow", "idle", SubResource("AnimationNodeStateMachineTransition_625p6"), "burrow", "walk", SubResource("AnimationNodeStateMachineTransition_c2xpl"), "burrow", "run", SubResource("AnimationNodeStateMachineTransition_0akw7"), "burrow", "jump", SubResource("AnimationNodeStateMachineTransition_aeao2"), "burrow", "fall", SubResource("AnimationNodeStateMachineTransition_7pjju"), "burrow", "land", SubResource("AnimationNodeStateMachineTransition_nclwt"), "burrow", "hook_swing", SubResource("AnimationNodeStateMachineTransition_6vms1"), "burrow", "swim", SubResource("AnimationNodeStateMachineTransition_n1ui4"), "burrow", "ragdoll", SubResource("AnimationNodeStateMachineTransition_h4wqb"), "ragdoll", "idle", SubResource("AnimationNodeStateMachineTransition_gmtp7"), "ragdoll", "walk", SubResource("AnimationNodeStateMachineTransition_fxstf"), "ragdoll", "run", SubResource("AnimationNodeStateMachineTransition_7fk58"), "ragdoll", "jump", SubResource("AnimationNodeStateMachineTransition_5mhir"), "ragdoll", "fall", SubResource("AnimationNodeStateMachineTransition_t3751"), "ragdoll", "land", SubResource("AnimationNodeStateMachineTransition_urqhg"), "ragdoll", "hook_swing", SubResource("AnimationNodeStateMachineTransition_dlpu7"), "ragdoll", "swim", SubResource("AnimationNodeStateMachineTransition_pcual"), "ragdoll", "burrow", SubResource("AnimationNodeStateMachineTransition_5vmo8")]
+transitions = ["Start", "idle", SubResource("AnimationNodeStateMachineTransition_7eb2y"), "idle", "walk", SubResource("AnimationNodeStateMachineTransition_vlryf"), "idle", "run", SubResource("AnimationNodeStateMachineTransition_1v3uq"), "idle", "jump", SubResource("AnimationNodeStateMachineTransition_wrv6d"), "idle", "fall", SubResource("AnimationNodeStateMachineTransition_cf3da"), "idle", "land", SubResource("AnimationNodeStateMachineTransition_jq07m"), "idle", "hook_swing", SubResource("AnimationNodeStateMachineTransition_r4v5p"), "idle", "swim", SubResource("AnimationNodeStateMachineTransition_cc64q"), "idle", "burrow", SubResource("AnimationNodeStateMachineTransition_6hvs0"), "idle", "ragdoll", SubResource("AnimationNodeStateMachineTransition_bltkr"), "walk", "idle", SubResource("AnimationNodeStateMachineTransition_ewcp8"), "walk", "run", SubResource("AnimationNodeStateMachineTransition_ngjth"), "walk", "jump", SubResource("AnimationNodeStateMachineTransition_s53vn"), "walk", "fall", SubResource("AnimationNodeStateMachineTransition_doxgp"), "walk", "land", SubResource("AnimationNodeStateMachineTransition_4nh4y"), "walk", "hook_swing", SubResource("AnimationNodeStateMachineTransition_nlw5c"), "walk", "swim", SubResource("AnimationNodeStateMachineTransition_7gvg8"), "walk", "burrow", SubResource("AnimationNodeStateMachineTransition_6tumx"), "walk", "ragdoll", SubResource("AnimationNodeStateMachineTransition_evaxe"), "run", "idle", SubResource("AnimationNodeStateMachineTransition_xmtb5"), "run", "walk", SubResource("AnimationNodeStateMachineTransition_c2wmt"), "run", "jump", SubResource("AnimationNodeStateMachineTransition_0ph6y"), "run", "fall", SubResource("AnimationNodeStateMachineTransition_t1ynv"), "run", "land", SubResource("AnimationNodeStateMachineTransition_is51f"), "run", "hook_swing", SubResource("AnimationNodeStateMachineTransition_h3f54"), "run", "swim", SubResource("AnimationNodeStateMachineTransition_p6jy8"), "run", "burrow", SubResource("AnimationNodeStateMachineTransition_vpfoe"), "run", "ragdoll", SubResource("AnimationNodeStateMachineTransition_jykub"), "jump", "idle", SubResource("AnimationNodeStateMachineTransition_t3h7d"), "jump", "walk", SubResource("AnimationNodeStateMachineTransition_4dn1t"), "jump", "run", SubResource("AnimationNodeStateMachineTransition_i3dwb"), "jump", "fall", SubResource("AnimationNodeStateMachineTransition_8j4ml"), "jump", "land", SubResource("AnimationNodeStateMachineTransition_xaebc"), "jump", "hook_swing", SubResource("AnimationNodeStateMachineTransition_6ahy4"), "jump", "swim", SubResource("AnimationNodeStateMachineTransition_h5hx1"), "jump", "burrow", SubResource("AnimationNodeStateMachineTransition_8dxay"), "jump", "ragdoll", SubResource("AnimationNodeStateMachineTransition_dk3ef"), "fall", "idle", SubResource("AnimationNodeStateMachineTransition_g6u43"), "fall", "walk", SubResource("AnimationNodeStateMachineTransition_ai3v0"), "fall", "run", SubResource("AnimationNodeStateMachineTransition_fmkrs"), "fall", "jump", SubResource("AnimationNodeStateMachineTransition_w25gi"), "fall", "land", SubResource("AnimationNodeStateMachineTransition_2nkrk"), "fall", "hook_swing", SubResource("AnimationNodeStateMachineTransition_ugy83"), "fall", "swim", SubResource("AnimationNodeStateMachineTransition_2u3xv"), "fall", "burrow", SubResource("AnimationNodeStateMachineTransition_avo10"), "fall", "ragdoll", SubResource("AnimationNodeStateMachineTransition_n2t32"), "land", "idle", SubResource("AnimationNodeStateMachineTransition_83i12"), "land", "walk", SubResource("AnimationNodeStateMachineTransition_hdt7g"), "land", "run", SubResource("AnimationNodeStateMachineTransition_c5tg2"), "land", "jump", SubResource("AnimationNodeStateMachineTransition_gkwty"), "land", "fall", SubResource("AnimationNodeStateMachineTransition_2m5rj"), "land", "hook_swing", SubResource("AnimationNodeStateMachineTransition_78b76"), "land", "swim", SubResource("AnimationNodeStateMachineTransition_37g5f"), "land", "burrow", SubResource("AnimationNodeStateMachineTransition_geaav"), "land", "ragdoll", SubResource("AnimationNodeStateMachineTransition_6n7lp"), "hook_swing", "idle", SubResource("AnimationNodeStateMachineTransition_g6ywp"), "hook_swing", "walk", SubResource("AnimationNodeStateMachineTransition_hidst"), "hook_swing", "run", SubResource("AnimationNodeStateMachineTransition_c36e5"), "hook_swing", "jump", SubResource("AnimationNodeStateMachineTransition_s7ixc"), "hook_swing", "fall", SubResource("AnimationNodeStateMachineTransition_prauv"), "hook_swing", "land", SubResource("AnimationNodeStateMachineTransition_0ch68"), "hook_swing", "swim", SubResource("AnimationNodeStateMachineTransition_0von4"), "hook_swing", "burrow", SubResource("AnimationNodeStateMachineTransition_33u10"), "hook_swing", "ragdoll", SubResource("AnimationNodeStateMachineTransition_vbqax"), "swim", "idle", SubResource("AnimationNodeStateMachineTransition_e5yke"), "swim", "walk", SubResource("AnimationNodeStateMachineTransition_6fd1w"), "swim", "run", SubResource("AnimationNodeStateMachineTransition_k22vb"), "swim", "jump", SubResource("AnimationNodeStateMachineTransition_6gnx6"), "swim", "fall", SubResource("AnimationNodeStateMachineTransition_u58hs"), "swim", "land", SubResource("AnimationNodeStateMachineTransition_gc8nj"), "swim", "hook_swing", SubResource("AnimationNodeStateMachineTransition_q12ud"), "swim", "burrow", SubResource("AnimationNodeStateMachineTransition_bs1g8"), "swim", "ragdoll", SubResource("AnimationNodeStateMachineTransition_625p6"), "burrow", "idle", SubResource("AnimationNodeStateMachineTransition_c2xpl"), "burrow", "walk", SubResource("AnimationNodeStateMachineTransition_0akw7"), "burrow", "run", SubResource("AnimationNodeStateMachineTransition_aeao2"), "burrow", "jump", SubResource("AnimationNodeStateMachineTransition_7pjju"), "burrow", "fall", SubResource("AnimationNodeStateMachineTransition_nclwt"), "burrow", "land", SubResource("AnimationNodeStateMachineTransition_6vms1"), "burrow", "hook_swing", SubResource("AnimationNodeStateMachineTransition_n1ui4"), "burrow", "swim", SubResource("AnimationNodeStateMachineTransition_h4wqb"), "burrow", "ragdoll", SubResource("AnimationNodeStateMachineTransition_gmtp7"), "ragdoll", "idle", SubResource("AnimationNodeStateMachineTransition_fxstf"), "ragdoll", "walk", SubResource("AnimationNodeStateMachineTransition_7fk58"), "ragdoll", "run", SubResource("AnimationNodeStateMachineTransition_5mhir"), "ragdoll", "jump", SubResource("AnimationNodeStateMachineTransition_t3751"), "ragdoll", "fall", SubResource("AnimationNodeStateMachineTransition_urqhg"), "ragdoll", "land", SubResource("AnimationNodeStateMachineTransition_dlpu7"), "ragdoll", "hook_swing", SubResource("AnimationNodeStateMachineTransition_pcual"), "ragdoll", "swim", SubResource("AnimationNodeStateMachineTransition_5vmo8"), "ragdoll", "burrow", SubResource("AnimationNodeStateMachineTransition_xvygf")]
 
-[node name="PlayerRig" type="Node2D" unique_id=1999898545]
+[node name="PlayerRig" type="Node2D" unique_id=241512194]
 script = ExtResource("1_5b2p1")
+outline_material = SubResource("ShaderMaterial_2oq0q")
+burrow_outline_material = SubResource("ShaderMaterial_1lrue")
+burrow_body_tint = Color(0.42, 0.33, 0.22, 1)
 
-[node name="Skeleton" type="Node2D" parent="." unique_id=747638358]
+[node name="Skeleton" type="Node2D" parent="." unique_id=992697538]
 position = Vector2(0, -22.55604)
 scale = Vector2(0.07569141, 0.07569141)
 
-[node name="Pelvis" type="Node2D" parent="Skeleton" unique_id=1160394433]
+[node name="Pelvis" type="Node2D" parent="Skeleton" unique_id=1544985485]
 unique_name_in_owner = true
 
-[node name="Torso" type="Node2D" parent="Skeleton/Pelvis" unique_id=95833864]
+[node name="Torso" type="Node2D" parent="Skeleton/Pelvis" unique_id=415651714]
 unique_name_in_owner = true
 position = Vector2(6, -17)
 
-[node name="Head" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=1004502271]
+[node name="Head" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=886715747]
 unique_name_in_owner = true
 position = Vector2(-11, -152)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Head" unique_id=1906606148]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Head" unique_id=1129257480]
 remote_path = NodePath("../../../../../Sprites/Head")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Head" unique_id=450869772]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Head" unique_id=1933190990]
 remote_path = NodePath("../../../../../Outline/Head")
 
-[node name="Backpack" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=1592434216]
+[node name="Backpack" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=82455641]
 unique_name_in_owner = true
 position = Vector2(-81, -104)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Backpack" unique_id=563005220]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Backpack" unique_id=196138598]
 scale = Vector2(0.85, 0.85)
 remote_path = NodePath("../../../../../Sprites/Backpack")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Backpack" unique_id=1776892865]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/Backpack" unique_id=1557734912]
 scale = Vector2(0.85, 0.85)
 remote_path = NodePath("../../../../../Outline/Backpack")
 
-[node name="ArmAim" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=981872173]
+[node name="ArmAim" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=1134869381]
 unique_name_in_owner = true
 position = Vector2(-53, -116)
 
-[node name="UpperArm" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim" unique_id=624233630]
+[node name="UpperArm" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim" unique_id=122646866]
 unique_name_in_owner = true
 
-[node name="Forearm" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=1073448551]
+[node name="Forearm" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=7663905]
 unique_name_in_owner = true
 position = Vector2(-14, 91)
 
-[node name="Hand" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=280142599]
+[node name="Hand" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=129172744]
 unique_name_in_owner = true
 position = Vector2(0, 70)
 
-[node name="Grip" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=48941919]
+[node name="Grip" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=1314113552]
 unique_name_in_owner = true
 position = Vector2(5, 32)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=691662358]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=187155647]
 scale = Vector2(1.25, 1)
 remote_path = NodePath("../../../../../../../../Sprites/Hand")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=876513443]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm/Hand" unique_id=747348908]
 scale = Vector2(1.25, 1)
 remote_path = NodePath("../../../../../../../../Outline/Hand")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=337477856]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=794914116]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../../Sprites/Forearm")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=1707762236]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm/Forearm" unique_id=1379294628]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../../Outline/Forearm")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=1142278361]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=1958507779]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../Sprites/UpperArm")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=622785104]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAim/UpperArm" unique_id=444566950]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../Outline/UpperArm")
 
-[node name="ArmAimLeft" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=2065742342]
+[node name="ArmAimLeft" type="Node2D" parent="Skeleton/Pelvis/Torso" unique_id=2017222792]
 unique_name_in_owner = true
 position = Vector2(-15, -116)
 
-[node name="UpperArmLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft" unique_id=980919233]
+[node name="UpperArmLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft" unique_id=1829912326]
 unique_name_in_owner = true
 
-[node name="ForearmLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=604579621]
+[node name="ForearmLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=128307741]
 unique_name_in_owner = true
 position = Vector2(-14, 92)
 
-[node name="HandLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=1605029454]
+[node name="HandLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=2015584644]
 unique_name_in_owner = true
 position = Vector2(0, 76)
 
-[node name="GripLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=170178562]
+[node name="GripLeft" type="Node2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=1897153816]
 unique_name_in_owner = true
 position = Vector2(0, 34)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=1560640788]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=1256566749]
 scale = Vector2(1.25, 1)
 remote_path = NodePath("../../../../../../../../Sprites/HandLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=428952350]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft/HandLeft" unique_id=534416732]
 scale = Vector2(1.25, 1)
 remote_path = NodePath("../../../../../../../../Outline/HandLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=1691293457]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=1499182138]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../../Sprites/ForearmLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=518930902]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft/ForearmLeft" unique_id=1292879393]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../../Outline/ForearmLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=89442701]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=177959364]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../Sprites/UpperArmLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=1184309056]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso/ArmAimLeft/UpperArmLeft" unique_id=855493341]
 scale = Vector2(1.35, 1)
 remote_path = NodePath("../../../../../../Outline/UpperArmLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso" unique_id=508723229]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso" unique_id=890780919]
 scale = Vector2(1.1, 1)
 remote_path = NodePath("../../../../Sprites/Torso")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso" unique_id=495244444]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Torso" unique_id=547832206]
 scale = Vector2(1.1, 1)
 remote_path = NodePath("../../../../Outline/Torso")
 
-[node name="Thigh" type="Node2D" parent="Skeleton/Pelvis" unique_id=741138890]
+[node name="Thigh" type="Node2D" parent="Skeleton/Pelvis" unique_id=1033503181]
 unique_name_in_owner = true
 position = Vector2(-14, 17)
 
-[node name="Shin" type="Node2D" parent="Skeleton/Pelvis/Thigh" unique_id=463025403]
+[node name="Shin" type="Node2D" parent="Skeleton/Pelvis/Thigh" unique_id=392592205]
 unique_name_in_owner = true
 position = Vector2(2, 84)
 
-[node name="Boot" type="Node2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=1093087350]
+[node name="Boot" type="Node2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=558678572]
 unique_name_in_owner = true
 position = Vector2(-10, 96)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin/Boot" unique_id=1970498991]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin/Boot" unique_id=725061321]
 scale = Vector2(1.15, 1)
 remote_path = NodePath("../../../../../../Sprites/Boot")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin/Boot" unique_id=625060988]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin/Boot" unique_id=638781310]
 scale = Vector2(1.15, 1)
 remote_path = NodePath("../../../../../../Outline/Boot")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=656229964]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=89108802]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../../Sprites/Shin")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=2120662673]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh/Shin" unique_id=1473583516]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../../Outline/Shin")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh" unique_id=1108385054]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh" unique_id=505409263]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../Sprites/Thigh")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh" unique_id=924038661]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/Thigh" unique_id=255951032]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../Outline/Thigh")
 
-[node name="ThighLeft" type="Node2D" parent="Skeleton/Pelvis" unique_id=1967435370]
+[node name="ThighLeft" type="Node2D" parent="Skeleton/Pelvis" unique_id=1537278742]
 unique_name_in_owner = true
 position = Vector2(12, 17)
 
-[node name="ShinLeft" type="Node2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=1886130644]
+[node name="ShinLeft" type="Node2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=1508199976]
 unique_name_in_owner = true
 position = Vector2(2, 88)
 
-[node name="BootLeft" type="Node2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=1194824953]
+[node name="BootLeft" type="Node2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=1540540774]
 unique_name_in_owner = true
 position = Vector2(-10, 96)
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft/BootLeft" unique_id=262415948]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft/BootLeft" unique_id=1634233088]
 scale = Vector2(1.15, 1)
 remote_path = NodePath("../../../../../../Sprites/BootLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft/BootLeft" unique_id=434946742]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft/BootLeft" unique_id=1160773001]
 scale = Vector2(1.15, 1)
 remote_path = NodePath("../../../../../../Outline/BootLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=1555829500]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=1858955259]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../../Sprites/ShinLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=109941206]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft/ShinLeft" unique_id=526893660]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../../Outline/ShinLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=330900460]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=2005445581]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../Sprites/ThighLeft")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=2137460586]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis/ThighLeft" unique_id=1640957162]
 scale = Vector2(1.3, 1)
 remote_path = NodePath("../../../../Outline/ThighLeft")
 
-[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis" unique_id=1903498988]
+[node name="Sprite" type="RemoteTransform2D" parent="Skeleton/Pelvis" unique_id=1640180691]
 scale = Vector2(1.12, 1)
 remote_path = NodePath("../../../Sprites/Pelvis")
 
-[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis" unique_id=1598340990]
+[node name="Outline" type="RemoteTransform2D" parent="Skeleton/Pelvis" unique_id=1166142903]
 scale = Vector2(1.12, 1)
 remote_path = NodePath("../../../Outline/Pelvis")
 
-[node name="Outline" type="Node2D" parent="." unique_id=1170666035]
+[node name="Outline" type="Node2D" parent="." unique_id=1113997560]
 texture_filter = 4
 
-[node name="HandLeft" type="Sprite2D" parent="Outline" unique_id=1382996663]
+[node name="HandLeft" type="Sprite2D" parent="Outline" unique_id=410847745]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("3_efpp7")
 centered = false
 offset = Vector2(-72, -48)
 
-[node name="ForearmLeft" type="Sprite2D" parent="Outline" unique_id=559455070]
+[node name="ForearmLeft" type="Sprite2D" parent="Outline" unique_id=1668715101]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("4_fh83f")
 centered = false
 offset = Vector2(-70, -44)
 
-[node name="UpperArmLeft" type="Sprite2D" parent="Outline" unique_id=1960060279]
+[node name="UpperArmLeft" type="Sprite2D" parent="Outline" unique_id=1485616717]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("5_nofdb")
 centered = false
 offset = Vector2(-92, -68)
 
-[node name="BootLeft" type="Sprite2D" parent="Outline" unique_id=52893345]
+[node name="BootLeft" type="Sprite2D" parent="Outline" unique_id=887135775]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("6_7isba")
 centered = false
 offset = Vector2(-88, -46)
 
-[node name="ShinLeft" type="Sprite2D" parent="Outline" unique_id=58824757]
+[node name="ShinLeft" type="Sprite2D" parent="Outline" unique_id=2010257193]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("7_m0rdl")
 centered = false
 offset = Vector2(-102, -46)
 
-[node name="ThighLeft" type="Sprite2D" parent="Outline" unique_id=1906110804]
+[node name="ThighLeft" type="Sprite2D" parent="Outline" unique_id=287861696]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("8_wlw2k")
 centered = false
 offset = Vector2(-88, -44)
 
-[node name="Backpack" type="Sprite2D" parent="Outline" unique_id=523342062]
+[node name="Backpack" type="Sprite2D" parent="Outline" unique_id=804029901]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("9_2tige")
 centered = false
 offset = Vector2(-180, -90)
 
-[node name="Torso" type="Sprite2D" parent="Outline" unique_id=114347543]
+[node name="Torso" type="Sprite2D" parent="Outline" unique_id=46573673]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("10_a1ry2")
 centered = false
 offset = Vector2(-125, -208)
 
-[node name="Boot" type="Sprite2D" parent="Outline" unique_id=459248324]
+[node name="Boot" type="Sprite2D" parent="Outline" unique_id=1299174185]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("11_muvmg")
 centered = false
 offset = Vector2(-90, -46)
 
-[node name="Shin" type="Sprite2D" parent="Outline" unique_id=1169282257]
+[node name="Shin" type="Sprite2D" parent="Outline" unique_id=277010121]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("12_o1gki")
 centered = false
 offset = Vector2(-102, -46)
 
-[node name="Thigh" type="Sprite2D" parent="Outline" unique_id=863116547]
+[node name="Thigh" type="Sprite2D" parent="Outline" unique_id=1847701654]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("13_xl3df")
 centered = false
 offset = Vector2(-90, -44)
 
-[node name="Pelvis" type="Sprite2D" parent="Outline" unique_id=1497167141]
+[node name="Pelvis" type="Sprite2D" parent="Outline" unique_id=697301528]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("14_1shra")
 centered = false
 offset = Vector2(-102, -75)
 
-[node name="Head" type="Sprite2D" parent="Outline" unique_id=783871942]
+[node name="Head" type="Sprite2D" parent="Outline" unique_id=1965252541]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("15_o4eao")
 centered = false
 offset = Vector2(-168, -252)
 
-[node name="Hand" type="Sprite2D" parent="Outline" unique_id=101452601]
+[node name="Hand" type="Sprite2D" parent="Outline" unique_id=736888394]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("16_yvipk")
 centered = false
 offset = Vector2(-70, -48)
 
-[node name="Forearm" type="Sprite2D" parent="Outline" unique_id=554074172]
+[node name="Forearm" type="Sprite2D" parent="Outline" unique_id=2124151674]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("17_ya207")
 centered = false
 offset = Vector2(-68, -44)
 
-[node name="UpperArm" type="Sprite2D" parent="Outline" unique_id=1015672560]
+[node name="UpperArm" type="Sprite2D" parent="Outline" unique_id=371133334]
 material = SubResource("ShaderMaterial_2oq0q")
 texture = ExtResource("18_2hxc0")
 centered = false
 offset = Vector2(-92, -65)
 
-[node name="Sprites" type="Node2D" parent="." unique_id=851068026]
+[node name="Sprites" type="Node2D" parent="." unique_id=1804813665]
 texture_filter = 4
 
-[node name="HandLeft" type="Sprite2D" parent="Sprites" unique_id=517222510]
+[node name="HandLeft" type="Sprite2D" parent="Sprites" unique_id=1819168494]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("3_efpp7")
 centered = false
 offset = Vector2(-72, -48)
 
-[node name="ForearmLeft" type="Sprite2D" parent="Sprites" unique_id=514322707]
+[node name="ForearmLeft" type="Sprite2D" parent="Sprites" unique_id=354891047]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("4_fh83f")
 centered = false
 offset = Vector2(-70, -44)
 
-[node name="UpperArmLeft" type="Sprite2D" parent="Sprites" unique_id=577958214]
+[node name="UpperArmLeft" type="Sprite2D" parent="Sprites" unique_id=2070119371]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("5_nofdb")
 centered = false
 offset = Vector2(-92, -68)
 
-[node name="BootLeft" type="Sprite2D" parent="Sprites" unique_id=1642293157]
+[node name="BootLeft" type="Sprite2D" parent="Sprites" unique_id=1392437593]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("6_7isba")
 centered = false
 offset = Vector2(-88, -46)
 
-[node name="ShinLeft" type="Sprite2D" parent="Sprites" unique_id=2085221546]
+[node name="ShinLeft" type="Sprite2D" parent="Sprites" unique_id=1875736730]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("7_m0rdl")
 centered = false
 offset = Vector2(-102, -46)
 
-[node name="ThighLeft" type="Sprite2D" parent="Sprites" unique_id=1644133154]
+[node name="ThighLeft" type="Sprite2D" parent="Sprites" unique_id=839311855]
 modulate = Color(0.8, 0.78, 0.84, 1)
 texture = ExtResource("8_wlw2k")
 centered = false
 offset = Vector2(-88, -44)
 
-[node name="Backpack" type="Sprite2D" parent="Sprites" unique_id=1324233834]
+[node name="Backpack" type="Sprite2D" parent="Sprites" unique_id=29323825]
 texture = ExtResource("9_2tige")
 centered = false
 offset = Vector2(-180, -90)
 
-[node name="Torso" type="Sprite2D" parent="Sprites" unique_id=943124810]
+[node name="Torso" type="Sprite2D" parent="Sprites" unique_id=1918370772]
 texture = ExtResource("10_a1ry2")
 centered = false
 offset = Vector2(-125, -208)
 
-[node name="Boot" type="Sprite2D" parent="Sprites" unique_id=1810311095]
+[node name="Boot" type="Sprite2D" parent="Sprites" unique_id=247150991]
 texture = ExtResource("11_muvmg")
 centered = false
 offset = Vector2(-90, -46)
 
-[node name="Shin" type="Sprite2D" parent="Sprites" unique_id=1693901926]
+[node name="Shin" type="Sprite2D" parent="Sprites" unique_id=1974447311]
 texture = ExtResource("12_o1gki")
 centered = false
 offset = Vector2(-102, -46)
 
-[node name="Thigh" type="Sprite2D" parent="Sprites" unique_id=817135662]
+[node name="Thigh" type="Sprite2D" parent="Sprites" unique_id=2040855249]
 texture = ExtResource("13_xl3df")
 centered = false
 offset = Vector2(-90, -44)
 
-[node name="Pelvis" type="Sprite2D" parent="Sprites" unique_id=1191281891]
+[node name="Pelvis" type="Sprite2D" parent="Sprites" unique_id=1063434832]
 texture = ExtResource("14_1shra")
 centered = false
 offset = Vector2(-102, -75)
 
-[node name="Head" type="Sprite2D" parent="Sprites" unique_id=464980801]
+[node name="Head" type="Sprite2D" parent="Sprites" unique_id=1774747344]
 texture = ExtResource("15_o4eao")
 centered = false
 offset = Vector2(-168, -252)
 
-[node name="Hand" type="Sprite2D" parent="Sprites" unique_id=1901423588]
+[node name="Hand" type="Sprite2D" parent="Sprites" unique_id=1372074405]
 texture = ExtResource("16_yvipk")
 centered = false
 offset = Vector2(-70, -48)
 
-[node name="Forearm" type="Sprite2D" parent="Sprites" unique_id=744404264]
+[node name="Forearm" type="Sprite2D" parent="Sprites" unique_id=652740307]
 texture = ExtResource("17_ya207")
 centered = false
 offset = Vector2(-68, -44)
 
-[node name="UpperArm" type="Sprite2D" parent="Sprites" unique_id=1791673258]
+[node name="UpperArm" type="Sprite2D" parent="Sprites" unique_id=409914183]
 texture = ExtResource("18_2hxc0")
 centered = false
 offset = Vector2(-92, -65)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1383013377]
-libraries/ = SubResource("AnimationLibrary_ybe21")
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=593666743]
+libraries/ = SubResource("AnimationLibrary_v2m8v")
 
-[node name="AnimationTree" type="AnimationTree" parent="." unique_id=703303614]
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=1501358119]
 unique_name_in_owner = true
 callback_mode_process = 2
-tree_root = SubResource("AnimationNodeStateMachine_xvygf")
+tree_root = SubResource("AnimationNodeStateMachine_hooms")
 anim_player = NodePath("../AnimationPlayer")

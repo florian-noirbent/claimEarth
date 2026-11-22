@@ -18,15 +18,6 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 position = Vector2(0, 16)
 
-[node name="SandOutline" type="Line2D" parent="."]
-unique_name_in_owner = true
-z_index = 10
-z_as_relative = false
-visible = false
-width = 2.5
-default_color = Color(0.98, 0.82, 0.28, 0.95)
-points = PackedVector2Array(-14, -14, 14, -14, 18, 18, -18, 18, -14, -14)
-
 [node name="Grapple" type="Node2D" parent="."]
 unique_name_in_owner = true
 script = ExtResource("3_grapple")

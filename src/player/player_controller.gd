@@ -588,6 +588,10 @@ func _hazard_effect_at(world_position: Vector2):
 		and _runtime_tuning.sulfur_dioxide_immune \
 		and definition.perk_tags.has("sulfur_dioxide"):
 		return null
+	if _runtime_tuning != null \
+		and _runtime_tuning.steam_immune \
+		and definition.perk_tags.has("steam"):
+		return null
 	var effect = definition.hazard_behavior.resolve_for_quantity(_world.get_committed_quantity_by_offset(offset.x, offset.y))
 	if effect != null and _runtime_tuning != null and definition.perk_tags.has("heat"):
 		effect.fill_seconds += _runtime_tuning.heat_duration_seconds_add

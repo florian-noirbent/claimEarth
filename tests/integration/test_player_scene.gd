@@ -635,21 +635,34 @@ func test_steam_is_breathable_and_applies_slow_cooked_heat() -> void:
 	assert_eq(effect.fill_seconds, 5.0)
 
 
-func test_heat_resistance_extends_lava_and_steam_cooked_duration() -> void:
+func test_heat_resistance_delays_lava_and_prevents_steam_cooked_heat() -> void:
 	var scene := load("res://scenes/player/player.tscn") as PackedScene
 	var player := scene.instantiate() as PlayerController
 	add_child_autofree(player)
 	await wait_process_frames(1)
 
 	var registry := FixtureLoader.terrain_registry()
+	var steam_id := FixtureLoader.terrain_id("Steam")
 	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id("Lava"))
 	player.configure_environment(world, registry, 16.0)
 	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 0.2)
 	player.set_perk_modifiers(_perk_modifiers(["res://config/perks/heat_resistance.tres"]))
 
-	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 1.2)
-	world.fill_committed(FixtureLoader.terrain_id("Steam"), 63)
-	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 6.0)
+	var lava_effect = player._hazard_effect_at(player.global_position)
+	assert_eq(lava_effect.cause, DeathCause.COOKED)
+	assert_eq(lava_effect.fill_seconds, 1.2)
+	for quantity in [1, 63, registry.get_definition(steam_id).maximum_quantity]:
+		world.fill_committed(steam_id, quantity)
+		assert_null(
+			player._hazard_effect_at(player.global_position),
+			"Steam quantity %d must not heat a Heat Resistance player" % quantity
+		)
+		assert_true(player._head_has_breathable_air())
+
+	player.set_perk_modifiers(null)
+	world.fill_committed(steam_id, 63)
+	assert_eq(player._hazard_effect_at(player.global_position).fill_seconds, 5.0)
 
 
 func test_sulfur_resistance_makes_sulfur_dioxide_breathable_and_non_poisonous() -> void:

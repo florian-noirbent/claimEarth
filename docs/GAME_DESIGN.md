@@ -228,9 +228,9 @@ blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
 fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
 over their respective fill durations; Cooked recovers in one second and both impact
 and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
-prevents Poison, and adds two seconds to Acid survival. Heat Resistance adds one second
-to both Lava and Steam Cooked exposure; Glass Cannon is immune to
-all terrain hazards and suffocation. Death never records current depth.
+prevents Poison, and adds two seconds to Acid survival. Heat Resistance makes Steam
+harmless at any pressure and adds one second to Lava Cooked exposure; Glass Cannon is
+immune to all terrain hazards and suffocation. Death never records current depth.
 
 ## Items
 
@@ -416,7 +416,9 @@ are stored apart from scores and are never submitted.
   on hard landings, swims while afloat in liquid, and digs while burrowing through
   sand. A knocked-out body goes limp: it tumbles in flight, rolls along the ground
   with its speed, drops flat once it slows down, and gets up through a crouch. A dark
-  outline keeps the body readable against the cave. The hook is a steel claw on a
+  outline keeps the body readable against the cave. Sand covers a body inside it, so a
+  Sand Worm burrowing through sand shows through on top of it as a darkened body with
+  a bright yellow outline that follows its pose. The hook is a steel claw on a
   braided rope that leaves from the hand. It flies out with its jaws open and the rope
   waving behind it, snaps shut on whatever it bites with a short shiver of the rope,
   and follows a hooked barrel. A rope under load is straight. A hook that finds

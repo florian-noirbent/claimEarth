@@ -1,5 +1,5 @@
 ## Cutout skeleton of the player: plays animation states, aims both arms at the hook,
-## and swings the limbs limply while knocked out.
+## swings the limbs limply while knocked out, and shows through sand while burrowing.
 ##
 ## The rig has no process loop. Its owner calls play_state, advance, update_ragdoll,
 ## and update_aim once per step, in that order.
@@ -42,6 +42,15 @@ const CENTER_LOCK_ANGLE := 0.1
 ## Time the limbs take to return from limp to the animated pose.
 @export var limp_recover_seconds := 0.25
 
+@export_group("Sand Burrow")
+## Silhouette outline materials outside and inside sand; the rig builder fills these in.
+@export var outline_material: ShaderMaterial
+@export var burrow_outline_material: ShaderMaterial
+## Tint of the painted body while it is drawn over the sand it is buried in.
+@export var burrow_body_tint := Color.WHITE
+## Absolute draw layer of a burrowing rig; it must be above the terrain.
+@export var burrow_z_index := 10
+
 @onready var animation_tree: AnimationTree = %AnimationTree
 @onready var arm_aim: Node2D = %ArmAim
 @onready var arm_aim_left: Node2D = %ArmAimLeft
@@ -49,6 +58,8 @@ const CENTER_LOCK_ANGLE := 0.1
 @onready var grip_left: Node2D = %GripLeft
 @onready var _skeleton: Node2D = $Skeleton
 @onready var _pelvis: Node2D = %Pelvis
+@onready var _outline: Node2D = $Outline
+@onready var _sprites: Node2D = $Sprites
 
 var _playback: AnimationNodeStateMachinePlayback
 var _state: StringName = &""
@@ -57,6 +68,7 @@ var _limp_angles := PackedFloat32Array()
 var _limp_speeds := PackedFloat32Array()
 var _limp_weight := 0.0
 var _limp_velocity := Vector2.ZERO
+var _burrowed := false
 
 
 func _ready() -> void:
@@ -79,6 +91,25 @@ func play_state(state: StringName) -> void:
 		_playback.travel(state)
 	else:
 		_playback.start(state)
+
+
+func is_burrowed() -> bool:
+	return _burrowed
+
+
+## Shows the body through sand: terrain is drawn over the player, so a burrowing rig
+## moves above it with a bright outline and a tinted body. Every part keeps following
+## its bone, so the silhouette stays the animated one.
+func set_burrowed(burrowed: bool) -> void:
+	if burrowed == _burrowed:
+		return
+	_burrowed = burrowed
+	z_as_relative = not burrowed
+	z_index = burrow_z_index if burrowed else 0
+	_sprites.modulate = burrow_body_tint if burrowed else Color.WHITE
+	var part_material := burrow_outline_material if burrowed else outline_material
+	for part: CanvasItem in _outline.get_children():
+		part.material = part_material
 
 
 ## Advances the animation clips; the limp limbs and the arm aim are then posed on top.

@@ -215,10 +215,70 @@ func test_sand_worm_outline_only_shows_while_inside_sand() -> void:
 
 	player._update_sand_presentation()
 
-	assert_true(player.presentation.sand_outline.visible)
+	var rig := player.presentation.rig
+	assert_true(rig.is_burrowed())
+	assert_false(rig.z_as_relative, "A burrowing body is drawn over the sand that covers it")
+	assert_eq(rig.z_index, rig.burrow_z_index)
 	world.set_committed_by_offset(sand_cell.x, sand_cell.y, FixtureLoader.terrain_id("Air"), WorldGrid.AIR_QUANTITY)
 	player._update_sand_presentation()
-	assert_false(player.presentation.sand_outline.visible)
+	assert_false(rig.is_burrowed())
+	assert_true(rig.z_as_relative)
+	assert_eq(rig.z_index, 0)
+
+
+func test_sand_does_not_show_the_burrow_look_without_sand_worm() -> void:
+	var player := _player_surrounded_by("Sand")
+
+	player._update_sand_presentation()
+
+	assert_false(player.presentation.rig.is_burrowed())
+
+
+func test_heat_resistance_keeps_the_cooked_meter_empty_in_steam() -> void:
+	var steam_id := FixtureLoader.terrain_id("Steam")
+	var maximum_steam := FixtureLoader.terrain_registry().get_definition(steam_id).maximum_quantity
+	var resistant := _player_surrounded_by("Steam")
+	resistant.set_perk_modifiers(_perk_modifiers("res://config/perks/heat_resistance.tres"))
+	var ordinary := _player_surrounded_by("Steam")
+	watch_signals(resistant)
+	watch_signals(ordinary)
+
+	for quantity in [1, 63, maximum_steam]:
+		resistant._world.fill_committed(steam_id, quantity)
+		# Ten seconds is twice the time normal-pressure Steam needs to fill the meter.
+		for step in 100:
+			resistant._sample_environment(0.1)
+		assert_eq(
+			resistant._environment_status.statuses().size(),
+			0,
+			"Steam quantity %d must not start a hazard meter" % quantity
+		)
+	assert_signal_not_emitted(resistant, "death_requested")
+	assert_signal_not_emitted(resistant, "hazard_warning")
+
+	ordinary._sample_environment(2.5)
+	var statuses := ordinary._environment_status.statuses()
+	assert_eq(statuses.size(), 1)
+	assert_eq(statuses[0].cause, DeathCause.COOKED)
+	assert_almost_eq(float(statuses[0].level), 0.5, 0.001)
+	ordinary._sample_environment(2.5)
+	assert_signal_emitted_with_parameters(ordinary, "death_requested", [DeathCause.COOKED])
+
+
+func test_heat_resistance_still_cooks_in_lava_one_second_later() -> void:
+	var resistant := _player_surrounded_by("Lava")
+	resistant.set_perk_modifiers(_perk_modifiers("res://config/perks/heat_resistance.tres"))
+	var ordinary := _player_surrounded_by("Lava")
+	watch_signals(resistant)
+	watch_signals(ordinary)
+
+	ordinary._sample_environment(0.2)
+	assert_signal_emitted_with_parameters(ordinary, "death_requested", [DeathCause.COOKED])
+	resistant._sample_environment(0.6)
+	assert_signal_not_emitted(resistant, "death_requested")
+	assert_almost_eq(resistant._environment_status.level_for(DeathCause.COOKED), 0.5, 0.001)
+	resistant._sample_environment(0.6)
+	assert_signal_emitted_with_parameters(resistant, "death_requested", [DeathCause.COOKED])
 
 
 func test_sand_worm_collision_policy_survives_pre_tree_configuration_order() -> void:
@@ -249,6 +309,22 @@ func test_sand_worm_collision_policy_survives_pre_tree_configuration_order() -> 
 
 	assert_false(player._terrain_query.is_solid_cell(sand_cell.x, sand_cell.y))
 	assert_eq(player.movement_config.gravity, 1400.0)
+
+
+func _perk_modifiers(resource_path: String) -> PerkModifierSnapshot:
+	var builder := PerkModifierBuilder.new()
+	for effect in (load(resource_path) as PerkDefinition).effects:
+		effect.apply(builder)
+	return builder.build()
+
+
+func _player_surrounded_by(terrain_name: String) -> PlayerController:
+	var player := load("res://scenes/player/player.tscn").instantiate() as PlayerController
+	add_child_autofree(player)
+	var world := WorldGrid.new(WorldDimensions.new(7, 7), FixtureLoader.terrain_id(terrain_name))
+	player.global_position = HexMetrics.center_for_offset(3, 3, 16.0)
+	player.configure_environment(world, FixtureLoader.terrain_registry(), 16.0)
+	return player
 
 
 func _jelly_modifiers() -> PerkModifierSnapshot:
