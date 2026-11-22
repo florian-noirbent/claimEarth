@@ -68,6 +68,7 @@ static func _table() -> Dictionary[StringName, Callable]:
 		&"hook_snap": _hook_snap,
 		&"splash_in": _splash_in,
 		&"splash_out": _splash_out,
+		&"gib_splat": _gib_splat,
 		&"sand_burrow_in": _sand_burrow.bind(true),
 		&"sand_burrow_out": _sand_burrow.bind(false),
 		&"hazard_warning": _hazard_warning.bind(false),
@@ -424,6 +425,20 @@ static func _splash_in(rate: int) -> PackedFloat32Array:
 	)
 	mix = _layer(mix, bubbles, rate, 0.35, 0.08)
 	S.low_pass(mix, rate, 6000.0)
+	return _finish(mix, rate, 0.001, 0.03)
+
+
+## A loose body part slapping onto terrain: a soft thud under a short wet squelch.
+static func _gib_splat(rate: int) -> PackedFloat32Array:
+	var mix := S.silence(_frames(0.22, rate))
+	mix = _layer(mix, _sweep(rate, 0.07, SINE, 190.0, 90.0, 0.8, 0.002, 0.06), rate, 0.3)
+	mix = _layer(mix, _noise(rate, 0.12, 311, BAND, 1700.0, 600.0, 0.9, 0.002, 0.1), rate, 1.0)
+	var squelch := _scatter(rate, 3, 0.1, 312, func(grain_index: int) -> PackedFloat32Array:
+		var base := 520.0 + 380.0 * S.hash01(313, grain_index)
+		return _sweep(rate, 0.035, SINE, base * 1.6, base, 1.0, 0.003, 0.03)
+	)
+	mix = _layer(mix, squelch, rate, 0.8, 0.02)
+	S.low_pass(mix, rate, 4200.0)
 	return _finish(mix, rate, 0.001, 0.03)
 
 

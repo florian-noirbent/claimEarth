@@ -220,6 +220,19 @@ func play_death(cause: StringName) -> void:
 	_play(_tuning.death_cues.get(cause, _tuning.default_death_cue))
 
 
+## A loose body part of the dead player hit terrain; impact_speed is the speed the hit
+## stopped. Many parts land close together, so the cue's minimum interval thins them out.
+func play_gib_impact(world_position: Vector2, impact_speed: float) -> void:
+	if impact_speed < _tuning.gib_impact_min_speed:
+		return
+	_play(
+		&"gib_splat",
+		_scaled_db(impact_speed, _tuning.gib_impact_min_speed, _tuning.gib_impact_full_speed, _tuning.gib_impact_min_db),
+		1.0,
+		world_position
+	)
+
+
 # --- Items and world objects ---
 
 ## The player threw a projectile item; item.feedback_key names its family.

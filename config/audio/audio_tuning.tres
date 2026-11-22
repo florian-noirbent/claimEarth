@@ -229,6 +229,15 @@ pitch_variation_semitones = 0.8
 min_interval_seconds = 0.15
 priority = 4
 
+[sub_resource type="Resource" id="Resource_gibsplat"]
+script = ExtResource("1_1q837")
+id = &"gib_splat"
+volume_db = -11.0
+volume_variation_db = 1.5
+pitch_variation_semitones = 2.5
+min_interval_seconds = 0.07
+priority = 3
+
 [sub_resource type="Resource" id="Resource_gnnwb"]
 script = ExtResource("1_1q837")
 id = &"splash_out"
@@ -541,7 +550,7 @@ priority = 2
 
 [resource]
 script = ExtResource("2_hyb37")
-cues = Array[ExtResource("1_1q837")]([SubResource("Resource_lb771"), SubResource("Resource_ky68g"), SubResource("Resource_bmdqf"), SubResource("Resource_rpr2g"), SubResource("Resource_xocwf"), SubResource("Resource_gcffn"), SubResource("Resource_xju6p"), SubResource("Resource_js62y"), SubResource("Resource_uirpc"), SubResource("Resource_jfypb"), SubResource("Resource_da05t"), SubResource("Resource_nxf0q"), SubResource("Resource_mxord"), SubResource("Resource_itp0s"), SubResource("Resource_is5eo"), SubResource("Resource_jkxfn"), SubResource("Resource_x6cfk"), SubResource("Resource_ql8jv"), SubResource("Resource_wv3ju"), SubResource("Resource_0l3ya"), SubResource("Resource_7xlgb"), SubResource("Resource_xvi7c"), SubResource("Resource_rwifk"), SubResource("Resource_qr81l"), SubResource("Resource_6j4hq"), SubResource("Resource_20xmh"), SubResource("Resource_gnnwb"), SubResource("Resource_hlksy"), SubResource("Resource_fu0nq"), SubResource("Resource_otjmj"), SubResource("Resource_8q4pu"), SubResource("Resource_2awpv"), SubResource("Resource_f44oh"), SubResource("Resource_gateh"), SubResource("Resource_lwmsv"), SubResource("Resource_ixrkr"), SubResource("Resource_p3j7v"), SubResource("Resource_5plek"), SubResource("Resource_pvgpe"), SubResource("Resource_jnneh"), SubResource("Resource_bmnbj"), SubResource("Resource_xi606"), SubResource("Resource_011j8"), SubResource("Resource_ls58k"), SubResource("Resource_hco8v"), SubResource("Resource_cb7pj"), SubResource("Resource_vmoyw"), SubResource("Resource_f0w8w"), SubResource("Resource_jjib3"), SubResource("Resource_clodl"), SubResource("Resource_puxmx"), SubResource("Resource_4xs31"), SubResource("Resource_5orw3"), SubResource("Resource_obns1"), SubResource("Resource_78ndb"), SubResource("Resource_75rdm"), SubResource("Resource_csler"), SubResource("Resource_ul63v"), SubResource("Resource_y47k8"), SubResource("Resource_eb00r"), SubResource("Resource_dr3md"), SubResource("Resource_knmob"), SubResource("Resource_e65ad"), SubResource("Resource_sq8h5"), SubResource("Resource_usedn")])
+cues = Array[ExtResource("1_1q837")]([SubResource("Resource_lb771"), SubResource("Resource_ky68g"), SubResource("Resource_bmdqf"), SubResource("Resource_rpr2g"), SubResource("Resource_xocwf"), SubResource("Resource_gcffn"), SubResource("Resource_xju6p"), SubResource("Resource_js62y"), SubResource("Resource_uirpc"), SubResource("Resource_jfypb"), SubResource("Resource_da05t"), SubResource("Resource_nxf0q"), SubResource("Resource_mxord"), SubResource("Resource_itp0s"), SubResource("Resource_is5eo"), SubResource("Resource_jkxfn"), SubResource("Resource_x6cfk"), SubResource("Resource_ql8jv"), SubResource("Resource_wv3ju"), SubResource("Resource_0l3ya"), SubResource("Resource_7xlgb"), SubResource("Resource_xvi7c"), SubResource("Resource_rwifk"), SubResource("Resource_qr81l"), SubResource("Resource_6j4hq"), SubResource("Resource_20xmh"), SubResource("Resource_gibsplat"), SubResource("Resource_gnnwb"), SubResource("Resource_hlksy"), SubResource("Resource_fu0nq"), SubResource("Resource_otjmj"), SubResource("Resource_8q4pu"), SubResource("Resource_2awpv"), SubResource("Resource_f44oh"), SubResource("Resource_gateh"), SubResource("Resource_lwmsv"), SubResource("Resource_ixrkr"), SubResource("Resource_p3j7v"), SubResource("Resource_5plek"), SubResource("Resource_pvgpe"), SubResource("Resource_jnneh"), SubResource("Resource_bmnbj"), SubResource("Resource_xi606"), SubResource("Resource_011j8"), SubResource("Resource_ls58k"), SubResource("Resource_hco8v"), SubResource("Resource_cb7pj"), SubResource("Resource_vmoyw"), SubResource("Resource_f0w8w"), SubResource("Resource_jjib3"), SubResource("Resource_clodl"), SubResource("Resource_puxmx"), SubResource("Resource_4xs31"), SubResource("Resource_5orw3"), SubResource("Resource_obns1"), SubResource("Resource_78ndb"), SubResource("Resource_75rdm"), SubResource("Resource_csler"), SubResource("Resource_ul63v"), SubResource("Resource_y47k8"), SubResource("Resource_eb00r"), SubResource("Resource_dr3md"), SubResource("Resource_knmob"), SubResource("Resource_e65ad"), SubResource("Resource_sq8h5"), SubResource("Resource_usedn")])
 ui_cues = Dictionary[StringName, StringName]({
 &"hover": &"ui_hover",
 &"press": &"ui_press"
