@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_dage7"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_24lml"]
+
+[sub_resource type="Gradient" id="Gradient_8mcxe"]
+colors = PackedColorArray(1, 0.52, 0.12, 0.85, 1, 0.52, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_oce0y"]
+script = ExtResource("1_dage7")
+shape = 1
+blend = 1
+lifetime_min = 0.4
+lifetime_max = 0.4
+size_start = 26.0
+size_end = 60.0
+size_ease = 0.5
+colors = SubResource("Gradient_8mcxe")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_j3upb"]
+offsets = PackedFloat32Array(0, 0.3, 0.7, 1)
+colors = PackedColorArray(1, 1, 0.92, 1, 1, 0.86, 0.3, 1, 1, 0.52, 0.12, 1, 0.85, 0.2, 0.08, 0)
+
+[sub_resource type="Resource" id="Resource_cmxop"]
+script = ExtResource("1_dage7")
+count = 9
+lifetime_min = 0.35
+lifetime_max = 0.7
+spawn_radius = 8.0
+spread_degrees = 80.0
+speed_min = 80.0
+speed_max = 220.0
+gravity = -140.0
+drag = 2.0
+size_start = 9.0
+size_end = 2.5
+colors = SubResource("Gradient_j3upb")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_iiarh"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(0.17, 0.15, 0.14, 0.85, 0.17, 0.15, 0.14, 0.6, 0.17, 0.15, 0.14, 0)
+
+[sub_resource type="Resource" id="Resource_3ca1o"]
+script = ExtResource("1_dage7")
+count = 5
+delay_min = 0.12
+delay_max = 0.3
+lifetime_min = 0.7
+lifetime_max = 1.2
+spawn_radius = 3.0
+spread_degrees = 60.0
+speed_min = 20.0
+speed_max = 60.0
+gravity = -80.0
+drag = 2.2
+size_start = 7.0
+size_end = 15.0
+size_ease = 0.5
+size_jitter = 0.3
+colors = SubResource("Gradient_iiarh")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_yyci6"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.17, 0.15, 0.14, 1, 0.17, 0.15, 0.14, 1, 0.17, 0.15, 0.14, 0)
+
+[sub_resource type="Resource" id="Resource_axle6"]
+script = ExtResource("1_dage7")
+shape = 4
+count = 5
+lifetime_min = 0.6
+lifetime_max = 1.0
+spread_degrees = 150.0
+speed_min = 100.0
+speed_max = 240.0
+gravity = 300.0
+drag = 2.0
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_start = 3.5
+size_end = 2.4499999999999997
+size_jitter = 0.4
+aspect = 1.6
+colors = SubResource("Gradient_yyci6")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_24lml")
+emitters = Array[ExtResource("1_dage7")]([SubResource("Resource_oce0y"), SubResource("Resource_cmxop"), SubResource("Resource_3ca1o"), SubResource("Resource_axle6")])
+shake_intensity = 4.0

@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_max5k"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_lltfp"]
+
+[sub_resource type="Gradient" id="Gradient_jvnh6"]
+colors = PackedColorArray(1, 1, 0.92, 0.7, 1, 1, 0.92, 0)
+
+[sub_resource type="Resource" id="Resource_ke7ys"]
+script = ExtResource("1_max5k")
+shape = 1
+blend = 1
+lifetime_min = 0.12
+lifetime_max = 0.12
+size_start = 14.0
+size_end = 24.0
+size_ease = 0.5
+colors = SubResource("Gradient_jvnh6")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_6g817"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 0.92, 1, 1, 0.52, 0.12, 1, 1, 0.52, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_ssemp"]
+script = ExtResource("1_max5k")
+shape = 3
+blend = 1
+count = 6
+lifetime_min = 0.18
+lifetime_max = 0.35
+speed_min = 140.0
+speed_max = 320.0
+gravity = 500.0
+drag = 2.5
+size_start = 4.5
+size_end = 3.0
+thickness_start = 3.0
+thickness_end = 1.2000000000000002
+streak_seconds = 0.05
+colors = SubResource("Gradient_6g817")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_cf7m4"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.6, 0.57, 0.55, 1, 0.6, 0.57, 0.55, 1, 0.6, 0.57, 0.55, 0)
+
+[sub_resource type="Resource" id="Resource_dtw4g"]
+script = ExtResource("1_max5k")
+shape = 4
+count = 4
+lifetime_min = 0.35
+lifetime_max = 0.6
+spread_degrees = 300.0
+speed_min = 90.0
+speed_max = 220.0
+gravity = 900.0
+drag = 0.6
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_start = 3.5
+size_end = 2.4499999999999997
+size_jitter = 0.4
+colors = SubResource("Gradient_cf7m4")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_lltfp")
+emitters = Array[ExtResource("1_max5k")]([SubResource("Resource_ke7ys"), SubResource("Resource_ssemp"), SubResource("Resource_dtw4g")])

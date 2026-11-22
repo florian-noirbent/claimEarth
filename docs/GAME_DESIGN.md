@@ -417,6 +417,27 @@ are stored apart from scores and are never submitted.
   when the character turns around. The character faces its direction of travel, or the hook when standing still.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
+- Explosions show a white core flash, a fireball that cools from white-yellow through
+  orange to dark red, a shockwave ring, sparks and debris that fall with gravity,
+  smoke, and a short afterglow. Everything scales with the blast radius; large
+  explosions add a second ring, fire tongues, embers, and a taller smoke column. The
+  explosion's effect color tints the fire. Effects glow in unlit caves.
+- The camera shakes with nearby explosions, hard impacts, and death. Stronger and
+  closer causes shake more, causes far off screen do not shake, and the camera is
+  briefly pushed away from a blast. Shake never shows the area below the map.
+- Player moments have world effects: dust on jumps and on real landings (not on
+  steps while running), a ring on air jumps, an impact flash, stars circling a
+  knocked-out explorer for as long as the knockout lasts, hook launch streaks, sparks
+  and chips where the hook bites (a ring on a moving target), splashes in the
+  liquid's color, sand bursts, a pulse in the hazard's meter color while a hazard
+  warns, and a death burst with a cause-specific addition.
+- Item and world moments have world effects: a throw whoosh, a tool swing arc with
+  chips, bounce sparks, a burn-out fizzle, glass and liquid from a broken bottle,
+  closing red rings on a lit chain fuse, planks, crystal, or metal from a destroyed
+  chest, geode, or barrel, dust under a bumping barrel, excavator landing and drill
+  debris, bursts when a container opens and when a reward is claimed, a burst and a
+  flag that stays planted where the flag lands, a cause-specific puff when the flag
+  is destroyed, and confetti with light rays on victory.
 - Lighting diffuses through neighboring hexes using the emitting hex's
   terrain-specific coefficient. The surface row starts fully lit.
   Lava emits light and the player emits a stronger moving light. Light at or above

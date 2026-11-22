@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_j5rs6"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_fihe3"]
+
+[sub_resource type="Gradient" id="Gradient_ih6cv"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_5cacv"]
+script = ExtResource("1_j5rs6")
+shape = 5
+count = 12
+lifetime_min = 0.6
+lifetime_max = 1.0
+spread_degrees = 260.0
+speed_min = 180.0
+speed_max = 440.0
+gravity = 850.0
+drag = 0.7
+spin_degrees_min = -900.0
+spin_degrees_max = 900.0
+random_rotation = true
+size_start = 6.0
+size_end = 3.5
+size_jitter = 0.4
+colors = SubResource("Gradient_ih6cv")
+tint_palette = PackedColorArray(0.72, 0.5, 1, 1, 0.818, 0.675, 1, 1, 0.5, 0.95, 1, 1)
+
+[sub_resource type="Gradient" id="Gradient_h8u3l"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.6, 0.57, 0.55, 1, 0.6, 0.57, 0.55, 1, 0.6, 0.57, 0.55, 0)
+
+[sub_resource type="Resource" id="Resource_b5d0e"]
+script = ExtResource("1_j5rs6")
+shape = 4
+count = 5
+lifetime_min = 0.5
+lifetime_max = 0.9
+spread_degrees = 220.0
+speed_min = 160.0
+speed_max = 360.0
+gravity = 900.0
+drag = 0.6
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_end = 2.8
+size_jitter = 0.4
+colors = SubResource("Gradient_h8u3l")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_56mfs"]
+colors = PackedColorArray(0.72, 0.5, 1, 0.7, 0.72, 0.5, 1, 0)
+
+[sub_resource type="Resource" id="Resource_o5qwk"]
+script = ExtResource("1_j5rs6")
+shape = 1
+blend = 1
+size_start = 24.0
+size_end = 60.0
+size_ease = 0.5
+colors = SubResource("Gradient_56mfs")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_fihe3")
+emitters = Array[ExtResource("1_j5rs6")]([SubResource("Resource_5cacv"), SubResource("Resource_b5d0e"), SubResource("Resource_o5qwk")])

@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_l05rh"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_0b8sy"]
+
+[sub_resource type="Gradient" id="Gradient_3wl1k"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1.5, 1.5, 1.5, 0.9, 1.2, 1.2, 1.2, 0.5, 1.2, 1.2, 1.2, 0)
+
+[sub_resource type="Resource" id="Resource_oar0k"]
+script = ExtResource("1_l05rh")
+shape = 2
+lifetime_min = 0.4
+lifetime_max = 0.4
+size_start = 10.0
+size_end = 40.0
+size_ease = 0.4
+thickness_start = 5.0
+thickness_end = 1.5
+colors = SubResource("Gradient_3wl1k")
+tint_amount = 1.0
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_os2nx"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1.25, 1.25, 1.25, 1, 1.1, 1.1, 1.1, 0.9, 1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_w7ns7"]
+script = ExtResource("1_l05rh")
+count = 12
+count_scales_with_intensity = true
+lifetime_min = 0.4
+lifetime_max = 0.7
+spawn_radius = 10.0
+spread_degrees = 80.0
+speed_min = 220.0
+speed_max = 460.0
+speed_scales_with_intensity = true
+gravity = 950.0
+drag = 0.8
+size_start = 6.5
+size_end = 3.0
+size_jitter = 0.4
+colors = SubResource("Gradient_os2nx")
+tint_amount = 1.0
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_0b8sy")
+emitters = Array[ExtResource("1_l05rh")]([SubResource("Resource_oar0k"), SubResource("Resource_w7ns7")])

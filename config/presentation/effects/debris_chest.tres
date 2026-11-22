@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_p7cp4"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_u8ate"]
+
+[sub_resource type="Gradient" id="Gradient_od5xf"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.62, 0.4, 0.2, 1, 0.62, 0.4, 0.2, 1, 0.62, 0.4, 0.2, 0)
+
+[sub_resource type="Resource" id="Resource_ey5eh"]
+script = ExtResource("1_p7cp4")
+shape = 4
+count = 9
+lifetime_min = 0.7
+lifetime_max = 1.1
+spread_degrees = 220.0
+speed_min = 180.0
+speed_max = 420.0
+gravity = 900.0
+drag = 0.6
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_start = 4.5
+size_end = 3.15
+size_jitter = 0.4
+aspect = 2.6
+colors = SubResource("Gradient_od5xf")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_w2x7i"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.403, 0.26, 0.13, 1, 0.403, 0.26, 0.13, 1, 0.403, 0.26, 0.13, 0)
+
+[sub_resource type="Resource" id="Resource_j4s1a"]
+script = ExtResource("1_p7cp4")
+shape = 4
+count = 4
+lifetime_min = 0.7
+lifetime_max = 1.1
+spread_degrees = 220.0
+speed_min = 160.0
+speed_max = 360.0
+gravity = 900.0
+drag = 0.6
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_start = 3.5
+size_end = 2.4499999999999997
+size_jitter = 0.4
+aspect = 2.0
+colors = SubResource("Gradient_w2x7i")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_7qeks"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(1, 0.84, 0.3, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_ghiy1"]
+script = ExtResource("1_p7cp4")
+count = 7
+lifetime_min = 0.6
+lifetime_max = 1.0
+spread_degrees = 160.0
+speed_min = 200.0
+speed_max = 440.0
+gravity = 900.0
+drag = 0.6
+size_end = 3.0
+colors = SubResource("Gradient_7qeks")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_u8ate")
+emitters = Array[ExtResource("1_p7cp4")]([SubResource("Resource_ey5eh"), SubResource("Resource_j4s1a"), SubResource("Resource_ghiy1")])

@@ -74,3 +74,65 @@ func test_camera_bottom_edge_clamp_aligns_the_viewport_to_the_final_hex_edge() -
 	controller._apply_world_bottom_edge(resized_visible_height)
 	var resized_position := model.update(Vector2(0.0, 2000.0), Vector2(1200.0, resized_visible_height), 1.0 / 60.0)
 	assert_almost_eq(resized_position.y + resized_visible_height * 0.5, bottom_edge, 0.001)
+
+
+func test_shake_never_shows_below_the_world_bottom_edge() -> void:
+	var controller := DescendingCameraController.new()
+	add_child_autofree(controller)
+	var visible_size := Vector2(2400.0, 720.0)
+	controller.configure_bounds(0.0, INF)
+	controller.configure_world_bottom_edge(1000.0)
+	controller._apply_world_bottom_edge(visible_size.y)
+	var resting := Vector2(0.0, controller._model.max_y)
+	var moved := false
+
+	controller.apply_shake(controller.shake_max_offset)
+	for _frame in 60:
+		controller._shake.advance(1.0 / 60.0)
+		var shown_size := visible_size / controller._shake_zoom(visible_size)
+		var shaken := controller._shaken_position(resting, shown_size)
+		var corner_drop := absf(sin(controller._shake.rotation())) * shown_size.x * 0.5
+		moved = moved or not shaken.is_equal_approx(resting)
+		assert_lte(shaken.y + shown_size.y * 0.5 + corner_drop, 1000.0 + 0.001)
+
+	assert_true(moved, "The camera still shakes at the bottom")
+
+
+func test_shaking_view_stays_between_the_sides_of_the_resting_view() -> void:
+	var controller := DescendingCameraController.new()
+	add_child_autofree(controller)
+	var visible_size := Vector2(2400.0, 1350.0)
+	var half_size := visible_size * 0.5
+	assert_eq(controller._shake_zoom(visible_size), 1.0, "A resting camera keeps its zoom")
+
+	controller.apply_shake(controller.shake_max_offset, Vector2(300.0, 100.0))
+	controller.apply_shake(controller.shake_max_offset, Vector2(-300.0, 50.0))
+	var zoomed_in := false
+	for _frame in 120:
+		controller._shake.advance(1.0 / 60.0)
+		var shake_zoom := controller._shake_zoom(visible_size)
+		var shown_half := half_size / shake_zoom
+		var roll := absf(sin(controller._shake.rotation()))
+		zoomed_in = zoomed_in or shake_zoom > 1.0
+		assert_lte(absf(controller._shake.offset().x) + shown_half.x + roll * shown_half.y, half_size.x + 0.001)
+
+	assert_true(zoomed_in)
+	assert_eq(controller._shake_zoom(visible_size), 1.0, "The zoom returns when the shake ends")
+
+
+func test_shake_multiplier_setting_scales_and_disables_camera_shake() -> void:
+	var controller := DescendingCameraController.new()
+	add_child_autofree(controller)
+	var visible_size := Vector2(2400.0, 1350.0)
+
+	controller.set_shake_intensity_multiplier(0.0)
+	controller.apply_shake(controller.shake_max_offset)
+	controller._shake.advance(1.0 / 60.0)
+
+	assert_gt(controller.shake_trauma(), 0.0)
+	assert_eq(controller._shaken_position(Vector2(5.0, 9.0), visible_size), Vector2(5.0, 9.0))
+	assert_eq(controller._shake.rotation(), 0.0)
+	assert_eq(controller._shake_zoom(visible_size), 1.0)
+
+	controller.set_shake_intensity_multiplier(5.0)
+	assert_eq(controller.shake_intensity_multiplier, 2.0)

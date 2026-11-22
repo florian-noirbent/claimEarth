@@ -111,6 +111,62 @@ shake strength. Camera shake has one entry point,
 `GameplayFeedback.request_shake(intensity, world_position)`, which forwards to the
 run camera that `FeedbackRouter.use_camera` hands over when the player exists.
 
+### World Effects
+
+`GameplayFeedback` decides which effect a moment plays and at what scale, tint,
+direction, and strength; it filters weak or repeated moments (footstep landings,
+slow bounces, barrel bumps inside a cooldown). Everything about an effect's look is
+data:
+
+| Type | Role |
+| --- | --- |
+| `EffectEmitter` | One particle layer: shape (disc, glow, ring or arc, streak, chunk, shard, star), blend (normal or additive), count, delays, lifetime, placement, motion (ballistic or orbit), size, and a color gradient over its life |
+| `EffectRecipe` | The emitter layers of one effect in draw order, plus the camera shake the moment asks for (`config/presentation/effects/*.tres`) |
+| `GameplayEffectLibrary` | One recipe per moment, keyed dictionaries for moments that vary by death cause, resolution kind, object key, or container key, and the speed thresholds (`config/presentation/gameplay_effects.tres`) |
+| `WorldEffects` | Child node of `GameplayFeedback` in `run_session.tscn`: holds the library and plays recipes into two shared `EffectBatch` layers |
+| `EffectBatch` | Fixed ring of packed particle slots simulated and drawn by one canvas item with immediate-mode `_draw` |
+
+Rules that keep effects cheap and safe:
+
+- Effects never add nodes. The two layers (normal below additive) hold at most
+  `particles_per_layer` particles each. Above `pressure_start` usage an emitter
+  spawns a shrinking share of its count, down to `pressure_floor`; a full layer
+  replaces its oldest particles. A layer without particles stops processing.
+- Particle motion uses the frame delta, particles end by lifetime, and the layers
+  are freed with the session, so disposing a run mid-effect needs no cleanup.
+- Recipe lengths and speeds are world px multiplied by the played scale. Explosion
+  recipes are played at a scale of the blast radius, so their lengths are fractions
+  of that radius and one recipe serves every explosion size; `explosion_large` adds
+  layers for explosions with large feedback, and the explosion's effect color tints
+  the emitters that set a `tint_amount`.
+- The layers draw above terrain, world objects, and the player (`layer_z_index`) and
+  below the HUD. Cave darkness is part of the terrain shader, so effects are not
+  darkened: fire, sparks, and flashes read as emissive in unlit caves. Effects do
+  not add light to the terrain lighting simulation.
+- Anchored emitters (knockout stars, hazard pulse) follow the node the run camera
+  follows.
+- A planted flag stays in the world as a sprite owned by `GameplayFeedback`.
+
+To add or change an effect, edit or add an `EffectRecipe` resource, reference it
+from the library, and play it from the moment's `GameplayFeedback` method. A new
+look that the emitter fields cannot express belongs in `EffectEmitter` and
+`EffectBatch`, not in a one-off effect node.
+
+### Camera Shake
+
+`DescendingCameraController` feeds every request into `CameraShakeModel`, a pure
+trauma model. A request for a peak offset adds trauma (the root of its share of the
+full offset); trauma is capped at 1 and decays exponentially. The shake is trauma
+squared times seeded simplex noise sampled over time, applied as a translation and
+a small roll, so motion is smooth and repeatable. The request position attenuates
+the shake by its distance from the camera target (full inside
+`shake_full_distance`, none beyond `shake_zero_distance`) and adds a short kick away
+from the cause. The offset is added after follow and bounds are resolved and never
+moves the view below the world's bottom edge. Explosions ask for an intensity
+proportional to their blast radius. `shake_intensity_multiplier` (0 to 2, set
+through `set_shake_intensity_multiplier`) scales or disables all shake for
+accessibility settings.
+
 To add a feedback moment:
 
 1. Emit a typed fact from the owner at the moment it happens; relay it through
@@ -723,6 +779,7 @@ branch is required.
 | Save/leaderboard | Offline fake-service tests plus fast suite |
 | Statistics | Controller/builder unit tests, statistics flow integration test, plus fast suite |
 | Feedback facts and routing | Owner signal tests, feedback flow integration test, plus fast suite |
+| World effects and camera shake | Effect library validation, effect budget and feedback unit tests, shake model tests, fast suite, and performance suite |
 | Input/touch/gamepad/settings | Input unit/contract tests, run/UI integration tests, plus fast suite |
 | Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 

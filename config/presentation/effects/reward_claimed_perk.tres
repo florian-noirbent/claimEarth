@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_hy2on"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_5q0ib"]
+
+[sub_resource type="Gradient" id="Gradient_sqp5c"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.72, 0.5, 1, 0.6, 0.72, 0.5, 1, 0)
+
+[sub_resource type="Resource" id="Resource_d8bdq"]
+script = ExtResource("1_hy2on")
+shape = 2
+lifetime_min = 0.26
+lifetime_max = 0.26
+size_start = 36.0
+size_end = 8.0
+size_ease = 0.4
+thickness_end = 6.0
+colors = SubResource("Gradient_sqp5c")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_ifdfg"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(0.5, 0.95, 1, 0.9, 0.72, 0.5, 1, 0.4, 0.72, 0.5, 1, 0)
+
+[sub_resource type="Resource" id="Resource_dusul"]
+script = ExtResource("1_hy2on")
+shape = 2
+delay_min = 0.2
+delay_max = 0.2
+lifetime_min = 0.5
+lifetime_max = 0.5
+size_start = 10.0
+size_end = 56.0
+size_ease = 0.4
+thickness_start = 6.0
+thickness_end = 1.5
+colors = SubResource("Gradient_ifdfg")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_4f6fj"]
+colors = PackedColorArray(0.72, 0.5, 1, 0.7, 0.72, 0.5, 1, 0)
+
+[sub_resource type="Resource" id="Resource_tea11"]
+script = ExtResource("1_hy2on")
+shape = 1
+blend = 1
+delay_min = 0.2
+delay_max = 0.2
+lifetime_min = 0.45
+lifetime_max = 0.45
+size_start = 24.0
+size_end = 64.0
+size_ease = 0.5
+colors = SubResource("Gradient_4f6fj")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_8sggf"]
+offsets = PackedFloat32Array(0, 0.3, 0.7, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.5, 0.95, 1, 1, 0.72, 0.5, 1, 1, 0.72, 0.5, 1, 0)
+
+[sub_resource type="Resource" id="Resource_l88a5"]
+script = ExtResource("1_hy2on")
+shape = 6
+count = 9
+lifetime_min = 0.6
+lifetime_max = 1.0
+spawn_radius = 16.0
+spread_degrees = 100.0
+speed_min = 80.0
+speed_max = 220.0
+gravity = -60.0
+drag = 1.6
+spin_degrees_min = -300.0
+spin_degrees_max = 300.0
+random_rotation = true
+size_start = 7.0
+size_end = 2.0
+size_jitter = 0.3
+colors = SubResource("Gradient_8sggf")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_5q0ib")
+emitters = Array[ExtResource("1_hy2on")]([SubResource("Resource_d8bdq"), SubResource("Resource_dusul"), SubResource("Resource_tea11"), SubResource("Resource_l88a5")])
