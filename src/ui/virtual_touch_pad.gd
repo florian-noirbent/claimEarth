@@ -12,6 +12,8 @@ enum Kind { MOVE, AIM_AND_HOOK }
 @export var kind: Kind = Kind.MOVE
 @export var inner_radius := 58.0
 @export var outer_radius := 112.0
+@export_range(0.0, 1.0, 0.01) var held_outline_alpha := 1.0
+@export_range(0.0, 1.0, 0.01) var held_fill_alpha := 0.62
 
 var _touch_index := -1
 var _active_kind: Kind = Kind.MOVE
@@ -24,10 +26,13 @@ func _ready() -> void:
 
 func _draw() -> void:
 	var center := size * 0.5
-	var outline := Color(0.96, 0.75, 0.19, 0.78)
-	var fill := Color(0.08, 0.055, 0.035, 0.46)
+	# A held pad brightens so a touch reads as registered even under the thumb.
+	var held := _touch_index >= 0
+	var outline := Color(0.96, 0.75, 0.19, held_outline_alpha if held else 0.78)
+	var fill := Color(0.08, 0.055, 0.035, held_fill_alpha if held else 0.46)
 	if kind == Kind.AIM_AND_HOOK:
-		draw_arc(center, outer_radius, 0.0, TAU, 48, outline, 4.0, true)
+		var hooking := held and _active_kind == Kind.AIM_AND_HOOK
+		draw_arc(center, outer_radius, 0.0, TAU, 48, outline, 7.0 if hooking else 4.0, true)
 		draw_arc(center, inner_radius + 10.0, 0.0, TAU, 40, Color(outline, 0.5), 2.0, true)
 	else:
 		draw_circle(center, outer_radius, fill)

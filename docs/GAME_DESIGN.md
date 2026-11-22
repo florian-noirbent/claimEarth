@@ -80,11 +80,18 @@ not terrain speed, and is saved independently from the Phone Controls preference
 
 The in-game HUD presents inventory as a compact bottom icon toolbar with the selected
 item highlighted. Toolbar items can be clicked to select them. Changing selection
-briefly shows the item name above the toolbar.
+briefly shows the item name above the toolbar. A newly selected slot pops, or shakes
+when its item is empty; an empty item is dimmed with a red count. A slot pulses gold
+when its item is gained and its icon squashes when the item is used.
+The top-left depth and personal-best readout is outlined so it reads over sky and
+cave. It bumps while the player descends, a short toast marks every 50 depth, and the
+first time a run goes deeper than the saved personal best the readout turns gold with
+a "Deeper than your best!" toast.
 A live integer FPS reading appears with the top-left run status during active play in
 all release and debug builds so device performance can be compared directly.
 Collected perks appear as an icon stack above that status; hovering an icon shows its
-name and effect. The stack wraps before the hazard display.
+name and effect. A newly gained perk icon pops in. The stack wraps before the hazard
+display.
 Jelly removes impact damage and knockout, makes the player float in liquids, enables
 jumping from the liquid surface, rebounds from meaningful hard-surface landings, and
 lets explosions throw the player without changing their lethal radius. Small residual
@@ -93,9 +100,11 @@ A compact pause button opens the pause menu, which contains Resume, Restart, and
 Back to Menu actions together with in-run access to the same Help and Settings
 panels as the main menu. Closing either panel returns to the paused run.
 
-Active hazards appear as an icon-only stack of filling bars at the top center. Building
-bars pulse with a gold warning outline; recovering bars are dimmed with a downward
-indicator. The stack is generic so future terrain hazards can add their own icon and
+Active hazards appear as an icon-only stack of filling bars at the top center. A bar
+pops in when its hazard starts. Building bars pulse with a gold warning outline; past
+half full they pulse faster, glow red, and shake harder the closer they are to full.
+Recovering bars are calm and dimmed with a downward indicator, and an emptied bar
+fades out. The stack is generic so future terrain hazards can add their own icon and
 color without HUD-specific logic.
 
 The first second of a run blocks throws so the Start click cannot fire an item.
@@ -412,6 +421,21 @@ are stored apart from scores and are never submitted.
   when the character turns around. The character faces its direction of travel, or the hook when standing still.
 - `AudioDirector`, `GameplayFeedback`, and camera shake are presentation only and must
   not own gameplay decisions.
+- Interface motion is short (about 0.1 to 0.3 seconds), never delays input, and never
+  changes what a control does. Buttons grow slightly on hover or focus, shrink while
+  pressed, and show a light outline when focused. Menus, pages, and panels pop in with
+  staggered buttons. Starting a run and returning to the menu fade in from darkness;
+  loading shows a progress bar under the status line and dims the menu buttons.
+  Pause, name entry, results, and the reward picker dim the world behind them, with a
+  red tint on a lost run, and the dim fades out when play resumes.
+- Reward cards deal in one after another. The chosen card swells and lifts away while
+  the others fade, without delaying the resumed run.
+- Name entry counts the planted depth up from zero. A depth beyond the saved personal
+  best is marked "New personal best!" on name entry and, once confirmed, on the result
+  panel. A lost run shows its title in red with a shake.
+- The Statistics page reveals its sections top to bottom; whole-number values count up
+  and bars grow to their share.
+- A held touch stick brightens, and the hook ring thickens while the hook is held.
 - Lighting diffuses through neighboring hexes using the emitting hex's
   terrain-specific coefficient. The surface row starts fully lit.
   Lava emits light and the player emits a stronger moving light. Light at or above

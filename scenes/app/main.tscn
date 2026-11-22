@@ -224,6 +224,57 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_focus"]
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.94, 0.76, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_hud_panel"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.055, 0.035, 0.78)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.2, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_background"]
+bg_color = Color(0.05, 0.035, 0.025, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.2, 0.1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_fill"]
+bg_color = Color(0.96, 0.75, 0.19, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="Main" type="Control" unique_id=739120312]
 layout_mode = 3
 anchors_preset = 15
@@ -259,6 +310,7 @@ unique_name_in_owner = true
 script = ExtResource("8_ui")
 item_toolbar_slot_scene = ExtResource("7_toolbar_slot")
 reward_picker_card_scene = ExtResource("25_reward_card")
+button_focus_style = SubResource("StyleBox_button_focus")
 
 [node name="MenuBackground" type="TextureRect" parent="UiLayer" unique_id=1887254834]
 anchors_preset = 15
@@ -279,6 +331,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.02, 0.015, 0.03, 0.58)
+
+[node name="ModalDim" type="ColorRect" parent="UiLayer"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.015, 0.012, 0.02, 0.6)
 
 [node name="TitleBar" type="MarginContainer" parent="UiLayer" unique_id=148739024]
 anchors_preset = 10
@@ -342,9 +405,33 @@ theme_override_constants/separation = 12
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.87, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 19
 text = "Ready to descend"
 horizontal_alignment = 1
+
+[node name="GenerationProgress" type="ProgressBar" parent="UiLayer/Center/Content/Status"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = 2.0
+offset_right = 150.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBox_progress_background")
+theme_override_styles/fill = SubResource("StyleBox_progress_fill")
+max_value = 1.0
+step = 0.001
+show_percentage = false
 
 [node name="WarningLabel" type="Label" parent="UiLayer/Center/Content" unique_id=1034415227]
 unique_name_in_owner = true
@@ -710,20 +797,29 @@ theme_override_constants/separation = 6
 [node name="PlayStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/TopLeftHud/PlayingPanel" unique_id=163240117]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.94, 0.9, 1)
-theme_override_font_sizes/font_size = 18
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
 text = "Depth 0"
 
 [node name="RunStateLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/TopLeftHud/PlayingPanel" unique_id=1063391024]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.8, 0.9, 0.96, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 5
 text = "Free"
 
 [node name="FpsLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/TopLeftHud/PlayingPanel" unique_id=654315536]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.85, 0.92, 1)
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.8, 0.9, 0.96, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 5
 text = "FPS: 0"
 
 [node name="HazardMeterStack" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=2071889634 instance=ExtResource("21_hazard_meter_stack")]
@@ -753,6 +849,7 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_hud_panel")
 
 [node name="ItemToolbarMargin" type="MarginContainer" parent="UiLayer/OverlayRoot/OverlayContent/ItemToolbar" unique_id=2088349828]
 layout_mode = 2
@@ -820,16 +917,37 @@ offset_bottom = -84.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
+
+[node name="HudToast" type="Label" parent="UiLayer/OverlayRoot/OverlayContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 168.0
+offset_right = 320.0
+offset_bottom = 214.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.03, 0.02, 0.92)
+theme_override_constants/outline_size = 9
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="NameEntryPanel" type="PanelContainer" parent="UiLayer/OverlayRoot/OverlayContent" unique_id=563556894]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 360.0
+offset_left = 336.0
 offset_top = 150.0
-offset_right = 920.0
+offset_right = 896.0
 offset_bottom = 420.0
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
@@ -850,6 +968,19 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.89, 0.85, 1)
 theme_override_font_sizes/font_size = 17
 text = "Depth: 0"
+horizontal_alignment = 1
+
+[node name="NameEntryRecordLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.86, 0.36, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "New personal best!"
 horizontal_alignment = 1
 
 [node name="PlayerNameInput" type="LineEdit" parent="UiLayer/OverlayRoot/OverlayContent/NameEntryPanel/NameEntryContent" unique_id=674480781]
@@ -884,9 +1015,9 @@ expand_icon = true
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 340.0
+offset_left = 316.0
 offset_top = 150.0
-offset_right = 940.0
+offset_right = 916.0
 offset_bottom = 420.0
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
@@ -900,6 +1031,19 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.75, 0.19, 1)
 theme_override_font_sizes/font_size = 30
 text = "Run Complete"
+horizontal_alignment = 1
+
+[node name="ResultRecordLabel" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.86, 0.36, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.01, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "New personal best!"
 horizontal_alignment = 1
 
 [node name="ResultStatus" type="Label" parent="UiLayer/OverlayRoot/OverlayContent/ResultPanel/ResultContent" unique_id=2123267930]
@@ -945,10 +1089,10 @@ expand_icon = true
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 420.0
-offset_top = 92.0
-offset_right = 860.0
-offset_bottom = 628.0
+offset_left = 396.0
+offset_top = 100.0
+offset_right = 836.0
+offset_bottom = 572.0
 theme_override_styles/panel = SubResource("StyleBox_menu_panel")
 
 [node name="PauseContent" type="VBoxContainer" parent="UiLayer/OverlayRoot/OverlayContent/PausePanel" unique_id=447488270]
@@ -1061,7 +1205,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.015, 0.012, 0.02, 0.78)
+color = Color(0.015, 0.012, 0.02, 0)
 
 [node name="Center" type="CenterContainer" parent="UiLayer/OverlayRoot/RewardPickerLayer" unique_id=756438191]
 layout_mode = 1
@@ -1104,6 +1248,16 @@ size_flags_vertical = 3
 theme_override_constants/separation = 22
 alignment = 1
 
+[node name="EffectsLayer" type="Control" parent="UiLayer"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="TopRightControls" type="HBoxContainer" parent="UiLayer" unique_id=527232074]
 unique_name_in_owner = true
 anchors_preset = 1
@@ -1145,6 +1299,17 @@ theme_override_styles/pressed = SubResource("StyleBox_menu_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_menu_button_hover")
 icon = ExtResource("24_fullscreen")
 expand_icon = true
+
+[node name="TransitionCurtain" type="ColorRect" parent="UiLayer"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.015, 0.03, 1)
 
 [node name="SelectionNameTimer" type="Timer" parent="UiLayer" unique_id=2125176947]
 unique_name_in_owner = true
