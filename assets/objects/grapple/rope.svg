@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 14">
+  <defs>
+    <linearGradient id="fibre" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6dfa4"/>
+      <stop offset="0.5" stop-color="#d8a964"/>
+      <stop offset="1" stop-color="#a06c36"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="1" width="28" height="12" fill="#2b1a0e"/>
+  <rect x="0" y="3.2" width="28" height="7.6" fill="url(#fibre)"/>
+  <path d="M4 11.2l6-8.4M18 11.2l6-8.4" stroke="#6b4220" stroke-width="1.8" fill="none"/>
+  <path d="M6.6 10.4l4.6-6.4M20.6 10.4l4.6-6.4" stroke="#fff3cf" stroke-opacity="0.6" stroke-width="1" fill="none"/>
+  <rect x="0" y="1" width="28" height="2.2" fill="#2b1a0e"/>
+  <rect x="0" y="10.8" width="28" height="2.2" fill="#2b1a0e"/>
+</svg>

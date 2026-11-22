@@ -14,6 +14,11 @@ Current art is original repository content stored by runtime use:
   `reference.png` is the original character painting, `template/` and
   `parts_sheet.png` are the redraw template sliced from it, and `parts_redraw.png`
   is the repainted sheet the part textures are extracted from.
+- `assets/objects/grapple/rope.svg` — one seamless tile of the braided grappling
+  rope with a dark outline; `scenes/player/player_presentation.tscn` repeats it along
+  the rope. `claw_jaw.svg` (one steel jaw, mirrored for the other) and `claw_hub.svg`
+  (hinge and brass rope sleeve) form the claw. All three are imported with mipmaps
+  because they are drawn far below their authored size.
 - `assets/objects/*.svg` — item art, used both as toolbar/reward icons and as the
   world sprite of the thrown item. They are imported with mipmaps because world
   sprites are drawn at roughly a sixth of their texture size.

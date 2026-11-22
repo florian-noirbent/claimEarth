@@ -1,7 +1,12 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_presentation_controller.gd" id="1_presentation"]
 [ext_resource type="PackedScene" path="res://scenes/player/player_rig.tscn" id="2_rig"]
+
+[ext_resource type="Script" path="res://src/player/grapple_rope_visual.gd" id="3_grapple"]
+[ext_resource type="Texture2D" path="res://assets/objects/grapple/rope.svg" id="4_rope"]
+[ext_resource type="Texture2D" path="res://assets/objects/grapple/claw_jaw.svg" id="5_jaw"]
+[ext_resource type="Texture2D" path="res://assets/objects/grapple/claw_hub.svg" id="6_hub"]
 
 [node name="PlayerPresentation" type="Node2D"]
 script = ExtResource("1_presentation")
@@ -22,14 +27,51 @@ width = 2.5
 default_color = Color(0.98, 0.82, 0.28, 0.95)
 points = PackedVector2Array(-14, -14, 14, -14, 18, 18, -18, 18, -14, -14)
 
-[node name="RopeLine" type="Line2D" parent="."]
+[node name="Grapple" type="Node2D" parent="."]
 unique_name_in_owner = true
-visible = false
-width = 2.0
-default_color = Color(0.95, 0.95, 0.95, 0.9)
+script = ExtResource("3_grapple")
 
-[node name="HookIndicator" type="Polygon2D" parent="."]
+[node name="RopeLine" type="Line2D" parent="Grapple"]
 unique_name_in_owner = true
 visible = false
-color = Color(0.96, 0.75, 0.19, 1)
-polygon = PackedVector2Array(0, -6, 6, 0, 0, 6, -6, 0)
+texture_filter = 4
+texture_repeat = 2
+width = 5.5
+texture = ExtResource("4_rope")
+texture_mode = 1
+joint_mode = 2
+
+[node name="Hook" type="Node2D" parent="Grapple"]
+unique_name_in_owner = true
+visible = false
+texture_filter = 4
+
+[node name="RopeSocket" type="Node2D" parent="Grapple/Hook"]
+unique_name_in_owner = true
+position = Vector2(-10.5, 0)
+
+[node name="Claw" type="Node2D" parent="Grapple/Hook"]
+position = Vector2(-7, 0)
+scale = Vector2(0.19, 0.19)
+
+[node name="UpperJaw" type="Node2D" parent="Grapple/Hook/Claw"]
+unique_name_in_owner = true
+
+[node name="Sprite" type="Sprite2D" parent="Grapple/Hook/Claw/UpperJaw"]
+texture = ExtResource("5_jaw")
+centered = false
+offset = Vector2(-10, -41)
+
+[node name="LowerJaw" type="Node2D" parent="Grapple/Hook/Claw"]
+unique_name_in_owner = true
+
+[node name="Sprite" type="Sprite2D" parent="Grapple/Hook/Claw/LowerJaw"]
+scale = Vector2(1, -1)
+texture = ExtResource("5_jaw")
+centered = false
+offset = Vector2(-10, -41)
+
+[node name="Hub" type="Sprite2D" parent="Grapple/Hook/Claw"]
+texture = ExtResource("6_hub")
+centered = false
+offset = Vector2(-42, -24)
