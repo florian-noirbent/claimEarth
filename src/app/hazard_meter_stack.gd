@@ -7,6 +7,7 @@ extends Control
 @onready var rows: VBoxContainer = %Rows
 
 var _rows_by_key := {}
+var _retiring_by_key := {}
 
 
 func update_hazards(snapshots: Array) -> void:
@@ -22,9 +23,16 @@ func update_hazards(snapshots: Array) -> void:
 		retained[key] = true
 		var row = _rows_by_key.get(key)
 		if row == null:
-			row = row_scene.instantiate()
+			row = _retiring_by_key.get(key)
+			if row != null:
+				# The hazard returned while its meter was fading out: keep that meter.
+				_retiring_by_key.erase(key)
+				UiMotion.stop(row)
+			else:
+				row = row_scene.instantiate()
+				rows.add_child(row)
+				row.play_appear()
 			_rows_by_key[key] = row
-			rows.add_child(row)
 		row.configure(
 			_value(snapshot, &"icon", null) as Texture2D,
 			_value(snapshot, &"bar_color", Color.WHITE) as Color,
@@ -38,17 +46,27 @@ func update_hazards(snapshots: Array) -> void:
 			continue
 		var retired = _rows_by_key[key]
 		_rows_by_key.erase(key)
-		retired.queue_free()
+		_retiring_by_key[key] = retired
+		retired.play_retire(_free_retired.bind(key, retired))
 
 
 func clear_hazards() -> void:
 	for row in _rows_by_key.values():
 		row.queue_free()
+	for row in _retiring_by_key.values():
+		row.queue_free()
 	_rows_by_key.clear()
+	_retiring_by_key.clear()
 
 
 func meter_count() -> int:
 	return _rows_by_key.size()
+
+
+func _free_retired(key: StringName, row: Node) -> void:
+	if _retiring_by_key.get(key) == row:
+		_retiring_by_key.erase(key)
+	row.queue_free()
 
 
 func _sort_snapshots(left: Variant, right: Variant) -> bool:

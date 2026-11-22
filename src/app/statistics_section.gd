@@ -6,6 +6,10 @@ extends VBoxContainer
 @export var stat_tile_scene: PackedScene
 @export var icon_cell_scene: PackedScene
 @export var bar_row_scene: PackedScene
+## Share of the shared stagger delay used between this section's entries.
+@export_range(0.0, 2.0, 0.05) var entry_stagger_ratio := 0.5
+## Entries past this index appear together so long sections do not drag.
+@export_range(0, 40, 1) var max_staggered_entries := 10
 
 @onready var icon_rect: TextureRect = %Icon
 @onready var title_label: Label = %Title
@@ -42,6 +46,18 @@ func configure(section: StatisticsSectionViewData) -> void:
 		var control := entry_scene.instantiate() as StatisticsEntryControl
 		_content.add_child(control)
 		control.configure(entry)
+
+
+## Fades the section in after `delay` and reveals its entries one after another.
+func play_intro(delay: float) -> void:
+	UiMotion.fade_in(self, delay)
+	if _content == null:
+		return
+	var step := UiMotion.config().stagger_delay * entry_stagger_ratio
+	for index in _content.get_child_count():
+		var entry := _content.get_child(index) as StatisticsEntryControl
+		if entry != null:
+			entry.play_intro(delay + step * mini(index, max_staggered_entries))
 
 
 func entry_count() -> int:

@@ -59,6 +59,7 @@ theme_override_styles/focus = SubResource("StyleBox_hover")
 theme_override_styles/pressed = SubResource("StyleBox_pressed")
 theme_override_styles/disabled = SubResource("StyleBox_normal")
 script = ExtResource("1_script")
+confirmed_style = SubResource("StyleBox_hover")
 
 [node name="ContentMargin" type="MarginContainer" parent="."]
 layout_mode = 1

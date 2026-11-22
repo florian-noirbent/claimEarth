@@ -5,6 +5,8 @@ extends PanelContainer
 signal back_requested
 
 @export var section_scene: PackedScene
+## Share of the shared stagger delay used between sections.
+@export_range(0.0, 4.0, 0.05) var section_stagger_ratio := 1.5
 
 @onready var back_button: Button = %BackButton
 @onready var scroll: ScrollContainer = %Scroll
@@ -14,6 +16,7 @@ signal back_requested
 
 func _ready() -> void:
 	back_button.pressed.connect(back_requested.emit)
+	UiMotion.attach_button(back_button)
 
 
 ## Replaces every rendered section with the sections from the view data.
@@ -31,6 +34,16 @@ func show_statistics(view: StatisticsViewData) -> void:
 			sections_root.add_child(control)
 			control.configure(section)
 	scroll.scroll_vertical = 0
+	_play_intro()
+
+
+## Reveals the sections top to bottom; bars grow and whole numbers count up.
+func _play_intro() -> void:
+	var step := UiMotion.config().stagger_delay * section_stagger_ratio
+	for index in sections_root.get_child_count():
+		var section := sections_root.get_child(index) as StatisticsSection
+		if section != null:
+			section.play_intro(step * index)
 
 
 func section_count() -> int:

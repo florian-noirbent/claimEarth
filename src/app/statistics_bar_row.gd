@@ -21,13 +21,21 @@ func _apply_entry(entry: StatisticsEntryViewData) -> void:
 	caption_label.add_theme_color_override(&"font_color", _value_color() if _highlighted else BODY_COLOR)
 	var has_bar := entry.fraction >= 0.0
 	bar.visible = has_bar
+	UiMotion.finish_value(bar)
 	bar.value = clampf(entry.fraction, 0.0, 1.0)
 	caption_label.size_flags_horizontal = Control.SIZE_FILL if has_bar else Control.SIZE_EXPAND_FILL
 	bar.add_theme_stylebox_override(&"background", _bar_style(_BAR_BACKGROUND, Color(0.24, 0.15, 0.09, 1.0)))
 	bar.add_theme_stylebox_override(&"fill", _bar_style(HIGHLIGHT_COLOR if _highlighted else _BAR_FILL, Color(0, 0, 0, 0)))
+	UiMotion.finish_value(value_label)
 	value_label.text = entry.value_text
 	value_label.add_theme_color_override(&"font_color", _value_color())
 	secondary_label.text = entry.secondary_text
+
+
+func _play_value_intro(delay: float) -> void:
+	_count_up(value_label, delay)
+	if bar.visible:
+		UiMotion.tween_range(bar, bar.value, -1.0, delay, 0.0)
 
 
 func _bar_style(color: Color, border: Color) -> StyleBoxFlat:

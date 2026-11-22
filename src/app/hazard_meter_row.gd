@@ -13,7 +13,9 @@ extends Control
 
 var _active := false
 var _bar_color := Color.WHITE
+var _level := 0.0
 var _pulse_time := 0.0
+var _sweep_time := 0.0
 
 
 func configure(
@@ -26,27 +28,68 @@ func configure(
 ) -> void:
 	icon_rect.texture = icon
 	_bar_color = bar_color
+	var was_active := _active
 	_active = active
-	meter.value = clampf(normalized_level, 0.0, 1.0) * 100.0
+	_level = clampf(normalized_level, 0.0, 1.0)
+	meter.value = _level * 100.0
 	secondary_marker.visible = secondary_threshold > 0.0 and secondary_threshold < 1.0
 	secondary_marker.anchor_left = clampf(secondary_threshold, 0.0, 1.0)
 	secondary_marker.anchor_right = secondary_marker.anchor_left
 	lethal_end_marker.visible = lethal_end
 	_apply_presentation()
 	set_process(_active)
+	if was_active and not _active:
+		_settle()
 
 
 func is_building() -> bool:
 	return _active
 
 
+## Normalized 0..1 urgency of a building meter past the configured shake start level.
+func danger() -> float:
+	if not _active:
+		return 0.0
+	var start := UiMotion.config().hazard_shake_start_level
+	return clampf(inverse_lerp(start, 1.0, _level), 0.0, 1.0)
+
+
+## Pops the meter in when its hazard first appears.
+func play_appear() -> void:
+	UiMotion.pop_in(self)
+
+
+## Fades the meter out, then calls `on_finished`.
+func play_retire(on_finished: Callable) -> void:
+	set_process(false)
+	_settle()
+	UiMotion.fade_out(self, on_finished)
+
+
+## A building meter pulses faster, glows redder, and shakes harder as it nears full.
 func _process(delta: float) -> void:
-	_pulse_time += delta
-	var pulse := 0.94 + (sin(_pulse_time * 7.0) + 1.0) * 0.03
-	panel.modulate = Color(pulse, pulse, pulse, 1.0)
+	var settings := UiMotion.config()
+	var urgency := danger()
+	_sweep_time += delta
+	_pulse_time += delta * TAU * lerpf(settings.hazard_min_pulse_hz, settings.hazard_max_pulse_hz, _level)
+	var wave := (sin(_pulse_time) + 1.0) * 0.5
+	var glow := 0.94 + wave * (0.06 + 0.3 * urgency)
+	panel.modulate = Color(glow, glow * (1.0 - 0.35 * urgency * wave), glow * (1.0 - 0.45 * urgency * wave), 1.0)
 	var sweep_width := 34.0
 	var travel := maxf(size.x + sweep_width, 1.0)
-	forward_sweep.position.x = fmod(_pulse_time * 100.0, travel) - sweep_width
+	forward_sweep.position.x = fmod(_sweep_time * 100.0, travel) - sweep_width
+	if not UiMotion.enabled or UiMotion.is_moving(self):
+		return
+	pivot_offset_ratio = Vector2(0.5, 0.5)
+	scale = Vector2.ONE * (1.0 + settings.hazard_max_pulse_scale * urgency * wave)
+	rotation = deg_to_rad(settings.hazard_max_shake_degrees) * urgency * sin(_pulse_time * 2.3)
+
+
+func _settle() -> void:
+	if UiMotion.is_moving(self):
+		return
+	scale = Vector2.ONE
+	rotation = 0.0
 
 
 func _apply_presentation() -> void:

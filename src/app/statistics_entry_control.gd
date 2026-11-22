@@ -38,9 +38,15 @@ func configure(entry: StatisticsEntryViewData) -> void:
 	_highlighted = entry.highlighted
 	_dimmed = entry.dimmed
 	tooltip_text = entry.tooltip if not entry.tooltip.is_empty() else entry.label
-	modulate = DIMMED_MODULATE if _dimmed else Color.WHITE
+	UiMotion.set_rest_modulate(self, DIMMED_MODULATE if _dimmed else Color.WHITE)
 	_apply_entry(entry)
 	_refresh_style()
+
+
+## Reveals the entry after `delay`; components add their own count-ups and bar growth.
+func play_intro(delay: float) -> void:
+	UiMotion.pop_in(self, delay)
+	_play_value_intro(delay)
 
 
 func is_highlighted() -> bool:
@@ -54,6 +60,17 @@ func is_dimmed() -> bool:
 ## Fills the component-specific labels, icon, and bar.
 func _apply_entry(_entry: StatisticsEntryViewData) -> void:
 	pass
+
+
+## Animates the component-specific value into place.
+func _play_value_intro(_delay: float) -> void:
+	pass
+
+
+## Counts a label up from zero when it shows a plain whole number.
+func _count_up(label: Label, delay: float) -> void:
+	if label.text.is_valid_int():
+		UiMotion.count_to(label, 0, label.text.to_int(), "%d", -1.0, delay)
 
 
 func _value_color() -> Color:

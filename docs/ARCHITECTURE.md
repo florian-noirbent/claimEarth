@@ -68,6 +68,22 @@ and user preferences only. `AppRoot` composes the input and settings controllers
 routes normalized intents to the active session, and resets held input when a run
 ends, pauses, loses focus, or the overlay is hidden.
 
+UI motion is cosmetic and layered on top of logical state. `AppUiController` and the
+`scenes/ui` components set visibility, text, and values first, then call the static
+`UiMotion` helper (`src/app/ui_motion.gd`) for pops, fades, punches, shakes,
+count-ups, bar growth, and button hover/press response. `UiMotion` keeps one tween per
+control and channel (transform, modulate, value); starting an effect ends the previous
+one on that channel at its rest state, so interrupted controls never keep a partial
+scale, rotation, or opacity. Effects use scale, rotation, and modulate only, never
+layout position, so containers stay authoritative. Tuning lives in the validated
+`UiMotionConfig` resource `config/ui/ui_motion.tres`. Motion is skipped when no display
+exists (`UiMotion.enabled`), so headless tests observe final states immediately; tests
+that cover motion switch it on explicitly. A control that must leave after its owner
+is already hidden, such as a chosen reward card, is moved to the UI `EffectsLayer`,
+ignores input there, and frees itself. Feedback that needs facts from gameplay is
+derived from data the UI already receives (item counts, depth, personal best); new
+facts arrive through `AppRoot` like any other outcome.
+
 Mouse item selection and throwing remain unhandled-input workflows routed through
 `AppRoot`, so GUI-consumed clicks cannot trigger gameplay. Touch gesture ownership
 and emulated-mouse suppression are contained in the input/UI boundary, preventing a
@@ -678,7 +694,11 @@ branch is required.
 1. Add UI nodes under `UiLayer` and presentation logic to `AppUiController`.
 2. Emit a typed intent signal rather than calling gameplay directly.
 3. Route it in `AppRoot`; add a `RunPhase` only when behavior truly needs a state.
-4. Cover visibility, transition, repeated-entry, and cleanup behavior.
+4. Apply the final visibility and values at once, then add motion through `UiMotion`
+   with durations from `UiMotionConfig`; buttons created at runtime call
+   `UiMotion.attach_button`.
+5. Cover visibility, transition, repeated-entry, and cleanup behavior. Cover motion
+   with `UiMotion.enabled` forced on and assert that controls end at rest.
 
 ### Add A Statistic
 
@@ -718,6 +738,7 @@ branch is required.
 | --- | --- |
 | Pure rule/resource | Relevant unit and contract tests |
 | Run/UI workflow | Integration test plus fast suite |
+| UI motion and feedback | `test_ui_motion` and `test_app_ui_motion` unit tests plus fast suite |
 | Generation | Fixed-seed generation tests plus fast suite |
 | Simulation/rendering/collision | Fast suite and performance suite |
 | Save/leaderboard | Offline fake-service tests plus fast suite |
