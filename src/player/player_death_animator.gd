@@ -34,6 +34,10 @@ enum Look { DISSOLVE, MELT, SWELL, TINT, FLASH, SCORCH, EMBER, GLOW, COUNT }
 ## Smallest and largest collision radius of a loose part before gib_scale, in world px.
 @export var gib_radius_min := 2.5
 @export var gib_radius_max := 9.0
+## Collision radius of a body that stays whole, in world px.
+@export var whole_body_radius := 14.0
+## How far a whole body that lies flat sinks to rest on the ground, in world px.
+@export var whole_body_lying_drop := 7.0
 
 var _rig: PlayerRig
 var _body_visual: Node2D
@@ -54,7 +58,14 @@ var _base_body_transform := Transform2D.IDENTITY
 var _outline_color := Color.BLACK
 ## The squash currently applied to the whole body, without its offset.
 var _squash := Transform2D.IDENTITY
+## The lean currently applied to the whole body, in radians.
+var _lean := 0.0
 var _attached_count := 0
+## Gib that carries a body that stays whole, once it is loose; -1 before and otherwise.
+var _whole_gib := -1
+## Turn of a whole body by its lean, with -1 or 1 for the side it faces.
+var _lean_side := 1.0
+var _whole_splat_wait := 0.0
 var _hand_part := -1
 var _materials: Array[ShaderMaterial] = []
 var _outline_materials: Array[ShaderMaterial] = []
@@ -118,7 +129,22 @@ func progress() -> float:
 
 
 func detached_part_count() -> int:
-	return _simulation.count()
+	var count := 0
+	for gib in _gib_indices:
+		if gib >= 0:
+			count += 1
+	return count
+
+
+## True once a body that stays whole has gone loose.
+func is_whole_body_loose() -> bool:
+	return _whole_gib >= 0
+
+
+## Where the body's center is now: a whole body that went loose moves, any other stays
+## where it died.
+func body_position() -> Vector2:
+	return _simulation.position_of(_whole_gib) if _whole_gib >= 0 else _body_position
 
 
 ## Holds the sequence on its current frame, like the rest of a suspended world.
@@ -153,6 +179,7 @@ func begin(
 	_body_position = body_visual.global_position
 	_base_body_transform = body_visual.transform
 	_push = _context.push_direction(_body_position)
+	_lean_side = -1.0 if rig.scale.x < 0.0 else 1.0
 	_rng.seed = _seed_override if _seed_override >= 0 else hash([cause, Vector2i(_body_position.round())])
 	_configure_simulation(query)
 	_prepare_parts()
@@ -178,11 +205,14 @@ func advance(delta: float) -> void:
 	_elapsed += delta
 	var time := progress()
 	_advance_rope(delta)
+	if _sequence.keep_whole and _whole_gib < 0 and time >= _sequence.burst_at:
+		_let_whole_body_go()
 	if _attached_count > 0:
 		_advance_whole_body(time, delta)
-	for part in _gib_indices.size():
-		if _gib_indices[part] < 0 and time >= _detach_times[part]:
-			_detach(part)
+	if not _sequence.keep_whole:
+		for part in _gib_indices.size():
+			if _gib_indices[part] < 0 and time >= _detach_times[part]:
+				_detach(part)
 	var settle := smoothstep(library.settle_from, 1.0, time)
 	_simulation.restitution_scale = 1.0 - settle
 	_simulation.settle_drag = library.settle_drag * settle
@@ -192,7 +222,7 @@ func advance(delta: float) -> void:
 		_update_part(part, time, delta)
 	_play_cues(time)
 	_report_gibs(time, delta)
-	if time >= 1.0 and _attached_count == 0 and _is_rope_stowed():
+	if time >= 1.0 and (_attached_count == 0 or _sequence.keep_whole) and _is_rope_stowed():
 		if _simulation.all_asleep() or _elapsed >= _duration + library.settle_grace_seconds:
 			_playing = false
 			set_physics_process(false)
@@ -288,10 +318,15 @@ func _create_material(shader: Shader, center: Vector2, part_seed: float) -> Shad
 
 ## Steps the rig while parts still hang on it, and squashes and shakes the whole body.
 func _advance_whole_body(time: float, delta: float) -> void:
+	var loose := _whole_gib >= 0
+	var lean := deg_to_rad(DeathSequence.sample(_sequence.lean, time, 0.0)) * _lean_side
 	if delta > 0.0:
 		_rig.advance(delta)
-		_rig.update_ragdoll(_sequence.limp, false, Vector2.ZERO, 0.0, delta)
+		var velocity := _simulation.velocity_of(_whole_gib) if loose else Vector2.ZERO
+		var lying := loose and _simulation.is_grounded(_whole_gib)
+		_rig.update_ragdoll(_sequence.limp and (loose or not _sequence.keep_whole), lying, velocity, (lean - _lean) / delta, delta)
 		_rig.update_aim(false, Vector2.ZERO, delta)
+	_lean = lean
 	var length := maxf(DeathSequence.sample(_sequence.squash, time, 1.0), 0.05)
 	var spread := minf(1.0 / sqrt(length), SQUASH_MAX_SPREAD)
 	var axis := _push if _push != Vector2.ZERO else Vector2.UP
@@ -305,7 +340,25 @@ func _advance_whole_body(time: float, delta: float) -> void:
 	if shake > 0.0 and delta > 0.0:
 		origin += Vector2(_rng.randf_range(-shake, shake), _rng.randf_range(-shake, shake))
 	_squash = Transform2D(x_axis, y_axis, Vector2.ZERO)
-	_body_visual.transform = Transform2D(x_axis, y_axis, origin) * _base_body_transform
+	if loose:
+		# The body's parent no longer moves, so the offset is in its frame.
+		origin += _simulation.position_of(_whole_gib) - _body_position
+		origin.y += whole_body_lying_drop * absf(sin(lean))
+	_body_visual.transform = Transform2D(x_axis, y_axis, origin) * Transform2D(lean, Vector2.ZERO) * _base_body_transform
+
+
+## Turns a body that stays whole into one loose body.
+func _let_whole_body_go() -> void:
+	_whole_gib = _simulation.add_gib(
+		_body_position,
+		_context.velocity * _sequence.inherit_velocity,
+		0.0,
+		0.0,
+		whole_body_radius,
+		_sequence.restitution
+	)
+	if _sequence.loose_pose != &"":
+		_rig.play_state(_sequence.loose_pose)
 
 
 ## Frees one part from the rig and throws it.
@@ -473,7 +526,7 @@ func _play_cue(cue: DeathCue) -> void:
 			direction = cue.offset.normalized()
 		elif cue.aim == DeathCue.Aim.MOTION and _context.velocity != Vector2.ZERO:
 			direction = _context.velocity.normalized()
-		cue_requested.emit(cue.effect_key, _body_position + cue.offset, direction, cue.strength)
+		cue_requested.emit(cue.effect_key, body_position() + cue.offset, direction, cue.strength)
 		return
 	var parts := PackedInt32Array()
 	for part in _part_gone.size():
@@ -502,6 +555,14 @@ func _play_cue(cue: DeathCue) -> void:
 
 ## Reports the trails of flying parts and the hits of parts that struck terrain.
 func _report_gibs(time: float, delta: float) -> void:
+	if _whole_gib >= 0:
+		_whole_splat_wait -= delta
+		var body_impact := _simulation.impact_speed_of(_whole_gib)
+		if body_impact >= _sequence.splat_min_speed and _whole_splat_wait <= 0.0:
+			_whole_splat_wait = _sequence.splat_cooldown_seconds
+			var body_normal := _simulation.impact_normal_of(_whole_gib)
+			var touched := _simulation.position_of(_whole_gib) - body_normal * _simulation.radius_of(_whole_gib)
+			gib_landed.emit(_sequence.splat_effect_key, touched, body_normal, body_impact)
 	var trailing := _sequence.trail_effect_key != &"" and time <= _sequence.trail_until
 	for part in _gib_indices.size():
 		var gib := _gib_indices[part]

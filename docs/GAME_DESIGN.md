@@ -140,11 +140,12 @@ destroyed flag ends the run the same way after 0.8 seconds, with the explorer
 standing still. A Relentless death that drops the flag has no beat because the run
 continues.
 
-Every death takes the explorer apart in its own cartoon way. The sixteen body parts
-come off the body, fly, bounce off the hex terrain, slow down in liquids, and come to
-rest before the result panel opens; they stay where they fell behind it. The camera
-does not follow them. A held rope lets go and falls back. The remains are drawn over
-terrain, lava, and acid and are not darkened by the cave, so they read everywhere.
+Every death has its own cartoon sequence, and every one but suffocation takes the
+explorer apart. The sixteen body parts come off the body,
+fly, bounce off the hex terrain, slow down in liquids, and come to rest before the
+result panel opens; they stay where they fell behind it. The camera does not follow
+them. A held rope lets go and falls back. The remains are drawn over terrain, lava,
+and acid and are not darkened by the cave, so they read everywhere.
 
 - Bomb: the body bursts at once. The parts are thrown away from the blast, spinning,
   scorched with glowing embers and an ember-orange outline, trailing smoke and blood,
@@ -162,9 +163,11 @@ terrain, lava, and acid and are not darkened by the cave, so they read everywher
   helmet plops down last and stays.
 - Poison: the body turns a sickly green and swells like a balloon, leaking gas, then
   pops into a green cloud with bubbles; the parts drift down slowly.
-- Suffocation: no blood. The body turns blue-purple, clutches its throat and
-  shudders while bubbles rise, lets out one last big bubble, and falls apart in a
-  heap like a puppet with cut strings.
+- Suffocation: no blood, and the body stays in one piece. It turns blue-purple,
+  clutches its throat, and shudders, then goes limp. In a liquid the bubbles thin
+  out, one last big bubble leaves, and the limp body tips over and floats slowly
+  upward. Buried in sand it sags onto its knees where it is. Anywhere else it keels
+  over and lies flat on the ground, or falls to it first.
 
 A death by any other cause bursts like the bomb death without the scorching.
 

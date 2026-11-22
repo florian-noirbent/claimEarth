@@ -1,6 +1,6 @@
-## How the body comes apart for one death cause: the anticipation while it is still whole,
-## the burst that frees its parts, how the loose parts fly and look over time, and which
-## world effects the sequence asks for. Times are shares of the death beat, so a sequence
+## How the body dies for one death cause: the anticipation while it is still whole, the
+## burst that frees its parts (or lets the whole body go limp), how the loose parts fly
+## and look over time, and which world effects the sequence asks for. Times are shares of the death beat, so a sequence
 ## fits whatever beat it is played in. Curves run over the beat (x from 0 to 1); an empty
 ## curve leaves its channel at rest.
 class_name DeathSequence
@@ -28,12 +28,24 @@ enum DetachOrder {
 @export_group("Anticipation")
 ## Animation state the whole body holds until it bursts; empty keeps its last pose.
 @export var pose: StringName = &""
-## Lets the limbs hang limp while the body is still whole.
+## Lets the limbs hang limp while the body is still whole, or from the moment a
+## keep_whole body goes loose.
 @export var limp := false
 ## Body length along the push direction (or its height without one); 1 is unsquashed.
 @export var squash: Curve
 ## Random body offset in world px.
 @export var shake: Curve
+## Tilt of the whole body in degrees, toward the side it faces.
+@export var lean: Curve
+
+@export_group("Whole body")
+## The body never comes apart. From burst_at on it is one loose body instead: it goes
+## limp and falls, sinks, floats, and comes to rest by this sequence's physics. The
+## detach order, the burst impulses apart from inherit_velocity, and the featured parts
+## are then unused.
+@export var keep_whole := false
+## Animation state the body takes when it goes loose; empty keeps the pose.
+@export var loose_pose: StringName = &""
 
 @export_group("Burst")
 ## Share of the body's velocity every part keeps.
@@ -180,6 +192,10 @@ func _validate_own() -> PackedStringArray:
 			errors.append("%s_max must be >= %s_min" % [range_name, range_name])
 	if gib_scale <= 0.0:
 		errors.append("gib_scale must be positive")
+	if keep_whole and detach_stagger > 0.0:
+		errors.append("keep_whole has no parts to stagger; detach_stagger must be 0")
+	if loose_pose != &"" and not keep_whole:
+		errors.append("loose_pose needs keep_whole")
 	if trail_effect_key != &"" and trail_interval_seconds <= 0.0:
 		errors.append("trail_interval_seconds must be positive")
 	for index in cues.size():

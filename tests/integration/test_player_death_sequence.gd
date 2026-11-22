@@ -24,7 +24,8 @@ func test_every_cause_plays_to_a_settled_end_with_every_part_loose_and_out_of_te
 
 		assert_false(animator.is_playing(), "%s finishes" % cause)
 		assert_lte(steps * STEP, BEAT + 0.75, "%s is settled when the beat ends or just after" % cause)
-		assert_eq(animator.detached_part_count(), 16, "%s frees every part" % cause)
+		var whole := animator.sequence().keep_whole
+		assert_eq(animator.detached_part_count(), 0 if whole else 16, "%s frees every part unless it keeps the body whole" % cause)
 		assert_true(animator.simulation().all_asleep())
 		for gib in animator.simulation().count():
 			assert_false(
@@ -128,7 +129,11 @@ func test_a_zero_beat_plays_everything_at_once_without_errors() -> void:
 		player.begin_death(cause, 0.0)
 
 		assert_eq(animator.progress(), 1.0)
-		assert_eq(animator.detached_part_count(), 16, "%s frees every part at once" % cause)
+		if animator.sequence().keep_whole:
+			assert_eq(animator.detached_part_count(), 0, "%s keeps the body whole" % cause)
+			assert_true(animator.is_whole_body_loose(), "%s lets the body go at once" % cause)
+		else:
+			assert_eq(animator.detached_part_count(), 16, "%s frees every part at once" % cause)
 		assert_signal_emitted(player, "death_cue")
 		assert_lte(get_signal_emit_count(player, "death_cue"), 16 * animator.sequence().cues.size() + 16, "Repeats collapse into one play")
 		_play_out(animator)
@@ -175,6 +180,74 @@ func test_a_blast_throws_the_parts_away_from_it_and_a_fall_off_the_floor_it_hit(
 	assert_eq(animator.detached_part_count(), 16)
 	for gib in animator.simulation().count():
 		assert_lt(animator.simulation().velocity_of(gib).y, 250.0, "No part is thrown down into the floor it hit")
+
+
+func test_suffocation_keeps_the_body_in_one_piece_and_lays_it_down() -> void:
+	var player := await _player_in_room("Air")
+	var rig := player.presentation.rig
+	var animator := player.presentation.death
+	var head := _part(rig, &"Head")
+	var boot := _part(rig, &"Boot")
+	var reach := rig.part_sprite(head).global_position.distance_to(rig.part_sprite(boot).global_position)
+
+	player.begin_death(DeathCause.SUFFOCATION, BEAT)
+	assert_true(animator.sequence().keep_whole)
+	assert_eq(rig.current_state(), animator.sequence().pose)
+	assert_false(animator.is_whole_body_loose(), "It chokes upright first")
+	_play_out(animator)
+
+	assert_false(animator.is_playing())
+	assert_true(animator.is_whole_body_loose())
+	assert_eq(animator.detached_part_count(), 0, "No part ever comes off")
+	assert_eq(rig.current_state(), animator.sequence().loose_pose)
+	for part in rig.part_count():
+		assert_true(rig.part_sprite(part).visible)
+		assert_eq(rig.part_outline(part).global_position, rig.part_sprite(part).global_position)
+	var head_position := rig.part_sprite(head).global_position
+	var boot_position := rig.part_sprite(boot).global_position
+	assert_lt(head_position.distance_to(boot_position), reach * 1.5, "Head and boots are still one body apart")
+	assert_lt(absf(head_position.y - boot_position.y), reach * 0.5, "The body lies flat")
+	assert_gt(absf(player.presentation.body_visual.rotation), 1.2)
+	assert_eq(rig.z_index, rig.burrow_z_index, "It is drawn above terrain and liquids like other remains")
+
+
+func test_a_drowned_body_stays_whole_and_floats_up() -> void:
+	var player := await _player_in_room("Water")
+	var animator := player.presentation.death
+	watch_signals(player)
+
+	player.begin_death(DeathCause.SUFFOCATION, BEAT)
+	assert_same(animator.sequence(), animator.library.sequences[DeathCause.SUFFOCATION].variant_by_terrain_tag[&"liquid"])
+	for _step in int(BEAT / STEP):
+		animator.advance(STEP)
+
+	assert_eq(animator.detached_part_count(), 0)
+	assert_true(animator.is_whole_body_loose())
+	assert_lt(animator.body_position().y, player.global_position.y - 8.0, "The limp body rises")
+	assert_gt(animator.body_position().y, player.global_position.y - 160.0, "Slowly")
+	assert_almost_eq(
+		player.presentation.body_visual.global_position.x, animator.body_position().x, 1.0,
+		"The drawn body is where the loose body is"
+	)
+	assert_signal_emitted(player, "death_cue")
+
+	player.set_death_suspended(true)
+	var held := animator.body_position()
+	await wait_physics_frames(5)
+	assert_eq(animator.body_position(), held, "A suspended float holds its frame")
+
+
+func test_a_body_buried_in_sand_sags_where_it_is() -> void:
+	var player := await _player_in_room("Sand")
+	var animator := player.presentation.death
+
+	player.begin_death(DeathCause.SUFFOCATION, BEAT)
+	assert_same(animator.sequence(), animator.library.sequences[DeathCause.SUFFOCATION].variant_by_terrain_tag[&"sand"])
+	_play_out(animator)
+
+	assert_false(animator.is_playing())
+	assert_eq(animator.detached_part_count(), 0)
+	assert_almost_eq(animator.body_position(), player.global_position, Vector2(1.0, 1.0), "Enclosed by sand it cannot fall")
 
 
 func test_the_terrain_at_the_body_selects_the_steam_variant() -> void:
