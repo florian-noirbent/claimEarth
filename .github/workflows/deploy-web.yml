@@ -1,0 +1,69 @@
+name: Deploy Web Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot
+        shell: bash
+        run: |
+          set -e
+          mkdir -p build-tools/godot build-tools/templates
+          curl -L --fail \
+            -o build-tools/godot.zip \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q build-tools/godot.zip -d build-tools/godot
+          chmod +x build-tools/godot/Godot_v4.7.2-stable_linux.x86_64
+
+          curl -L --fail \
+            -o build-tools/templates.tpz \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          unzip -q build-tools/templates.tpz -d build-tools/templates
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          cp build-tools/templates/templates/* "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+
+      - name: Export Web build
+        shell: bash
+        run: |
+          mkdir -p build/web
+          build-tools/godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path . --export-release claimearth build/web/index.html
+
+      - name: Verify Web build
+        shell: bash
+        run: |
+          test -f build/web/index.html
+          test -f build/web/index.pck
+          test -f build/web/index.wasm
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,6 +2,13 @@
 
 Claim Earth is a small Godot arcade game about descending through a generated hex cave with bombs, a grappling hook, and a flag used to bank the run's depth. The base game is implemented; current work is maintenance, portfolio polish, and feature development.
 
+## Play
+
+- [Play on itch.io](https://titan-koyos.itch.io/claim-earth)
+- [Play on GitHub Pages](https://florian-noirbent.github.io/claimEarth)
+
+GitHub Pages deploys the current Web build automatically whenever `main` is updated. GitHub README pages do not allow embedded game iframes, so both play buttons open the game on a full page.
+
 ## Quick Start
 
 Use Godot 4.7.2 with the Compatibility renderer. The development scripts run on
