@@ -4,6 +4,9 @@ class_name WorldRigidBody2D
 extends Node2D
 
 
+## Feedback fact: the body rebounded off terrain at this speed in px/s.
+signal bounced(impact_speed: float)
+
 ## Sprite scale used when a body config names a texture without its own `visual_scale`.
 const DEFAULT_VISUAL_SCALE := 0.45
 
@@ -181,6 +184,7 @@ func _destructive_terrain_kind(definition: TerrainDefinition, quantity: int) -> 
 
 func _bounce(previous_position: Vector2, delta: float) -> void:
 	global_position = previous_position
+	var impact_speed := velocity.length()
 	var x_hit := _is_blocked(previous_position + Vector2(velocity.x * delta, 0.0))
 	var y_hit := _is_blocked(previous_position + Vector2(0.0, velocity.y * delta))
 	velocity.x = -velocity.x * horizontal_bounce_damping if x_hit else velocity.x * horizontal_bounce_damping
@@ -191,6 +195,7 @@ func _bounce(previous_position: Vector2, delta: float) -> void:
 	else:
 		velocity.y = -absf(velocity.y) * bounce_damping
 	rotation = velocity.angle() if velocity.length_squared() > 1.0 else rotation
+	bounced.emit(impact_speed)
 
 
 func _is_blocked(world_position: Vector2) -> bool:

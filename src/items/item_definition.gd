@@ -14,6 +14,8 @@ enum CountDisplay {
 @export_multiline var description := ""
 @export var icon: Texture2D
 @export var perk_tags := PackedStringArray()
+## Names the family of audio and visual feedback this item uses; never read by gameplay.
+@export var feedback_key: StringName
 @export var starting_inventory := 0.0
 @export var count_display := CountDisplay.INTEGER
 @export var action_factory: ItemActionFactory

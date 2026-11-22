@@ -5,6 +5,19 @@ extends CharacterBody2D
 
 signal death_requested(cause: StringName)
 signal hazard_status_changed(statuses: Array)
+## Feedback facts: world positions, speeds in px/s. No gameplay rule depends on them.
+signal jumped(world_position: Vector2, is_air_jump: bool)
+signal landed(world_position: Vector2, impact_speed: float, airborne_seconds: float)
+signal hard_impact(world_position: Vector2, impact_speed: float)
+signal knocked_out(world_position: Vector2, impact_speed: float, duration_seconds: float)
+signal hook_launched(origin: Vector2, target_position: Vector2)
+signal hook_attached(anchor_position: Vector2, is_moving_target: bool)
+signal hook_missed(origin: Vector2, target_position: Vector2)
+signal hook_released(anchor_position: Vector2, by_input: bool)
+signal liquid_entered(world_position: Vector2, color: Color, speed: float)
+signal liquid_exited(world_position: Vector2, color: Color, speed: float)
+signal sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
+signal hazard_warning(cause: StringName, level: float, color: Color)
 
 const GrappleModelScript = preload("res://src/player/grapple_model.gd")
 const GrappleInputFrameScript = preload("res://src/player/grapple_input_frame.gd")
@@ -15,6 +28,7 @@ const TerrainCollisionQueryScript = preload("res://src/world/terrain_collision_q
 const TerrainBodyMotionSolverScript = preload("res://src/world/terrain_body_motion_solver.gd")
 const TerrainBodyUnstuckSolverScript = preload("res://src/world/terrain_body_unstuck_solver.gd")
 const GameplayInputControllerScript = preload("res://src/input/gameplay_input_controller.gd")
+const HazardWarningTrackerScript = preload("res://src/player/hazard_warning_tracker.gd")
 const FLOOR_CONTACT_NORMAL_Y := -0.35
 
 @export var movement_config: PlayerMovementConfig
@@ -25,6 +39,9 @@ const FLOOR_CONTACT_NORMAL_Y := -0.35
 @export var horizontal_collision_radius := 14.0
 @export var terrain_unstuck_search_ring := 8
 @export var terrain_unstuck_push_speed := 900.0
+## A filling hazard meter at or above this level reports hazard_warning, repeated at this interval.
+@export_range(0.0, 1.0, 0.01) var hazard_warning_level := 0.6
+@export_range(0.05, 10.0, 0.05) var hazard_warning_repeat_seconds := 0.8
 
 @onready var presentation: PlayerPresentationController = %PlayerPresentation
 @onready var camera: DescendingCameraController = %FollowCamera
@@ -51,6 +68,12 @@ var _base_movement_config: PlayerMovementConfig
 var _base_grapple_config: GrappleConfig
 var _runtime_tuning: PlayerRuntimeTuning
 var _animation_frame := PlayerAnimationSnapshot.new()
+var _hazard_warnings = HazardWarningTrackerScript.new()
+var _reported_anchor: GrappleAnchor
+var _reported_anchor_position := Vector2.ZERO
+var _reported_liquid: TerrainDefinition
+var _reported_sand_burrowing := false
+var _airborne_seconds := 0.0
 
 
 func _ready() -> void:
@@ -129,6 +152,7 @@ func _exit_tree() -> void:
 
 func _physics_process(delta: float) -> void:
 	_physics_frame_count += 1
+	var was_grounded := _grounded
 	_advance_ragdoll(delta)
 	var input_frame = GrappleInputFrameScript.new() if is_ragdolling() else _create_input_frame()
 	if is_ragdolling():
@@ -141,7 +165,10 @@ func _physics_process(delta: float) -> void:
 		_has_jelly_liquid_jump_support(),
 		_is_horizontal_air_control_enabled()
 	)
+	if _movement_model.jumped_last_step:
+		jumped.emit(global_position, _movement_model.air_jumped_last_step)
 	velocity = _grapple_model.update(input_frame, global_position, _movement_model.velocity, delta)
+	_report_grapple_changes(input_frame)
 	_apply_fluid_drag(delta)
 	if input_frame.hook_pressed:
 		presentation.start_hook_launch(_hook_launch_target(input_frame.aim_position))
@@ -169,7 +196,14 @@ func _physics_process(delta: float) -> void:
 	velocity = post_grapple_result.velocity
 	_grounded = _grounded or post_grapple_result.grounded
 	var unstuck_result := _apply_terrain_unstuck(delta)
-	_handle_physics_impacts(motion_result, post_grapple_result, unstuck_result)
+	var bounced := _handle_physics_impacts(motion_result, post_grapple_result, unstuck_result)
+	if bounced or (_grounded and not was_grounded):
+		landed.emit(global_position, maxf(
+			_downward_floor_impact_speed(motion_result),
+			_downward_floor_impact_speed(post_grapple_result)
+		), _airborne_seconds)
+	_airborne_seconds = 0.0 if _grounded or bounced else _airborne_seconds + delta
+	_report_grapple_changes(null)
 	_movement_model.sync_after_move(velocity, _is_grounded_for_movement())
 	velocity = _movement_model.velocity
 	presentation.update_body(_animation_snapshot(), delta)
@@ -180,6 +214,7 @@ func _physics_process(delta: float) -> void:
 	)
 	_sample_environment(delta)
 	_update_sand_presentation()
+	_report_medium_changes()
 
 
 func set_spawn_position(world_position: Vector2) -> void:
@@ -210,6 +245,7 @@ func configure_environment(world: WorldGrid, terrain_registry: TerrainRegistry, 
 	_terrain_query.configure(world, CompiledTerrainData.compile(terrain_registry), hex_radius)
 	_apply_runtime_collision_policy()
 	_environment_status.reset()
+	_hazard_warnings.reset()
 	hazard_status_changed.emit([])
 
 
@@ -280,6 +316,7 @@ func _handle_terrain_impact(impact_speed: float) -> void:
 	if hazard_span <= 0.0 or _impact_hazard_effect == null:
 		return
 	var contribution := (impact_speed - movement_config.impact_hazard_minimum_speed) / hazard_span
+	hard_impact.emit(global_position, impact_speed)
 	var cause := _environment_status.add_instant(_impact_hazard_effect, contribution)
 	var accumulated_level := _environment_status.level_for(DeathCauseScript.IMPACT)
 	var knockout_level := (
@@ -295,6 +332,7 @@ func _handle_terrain_impact(impact_speed: float) -> void:
 		return
 	_ragdoll_remaining = maxf(_ragdoll_remaining, movement_config.ragdoll_seconds)
 	_ragdoll_spin_direction = -1.0 if velocity.x < 0.0 else 1.0
+	knocked_out.emit(global_position, impact_speed, _ragdoll_remaining)
 
 
 func _create_impact_hazard_effect() -> HazardEffect:
@@ -323,7 +361,7 @@ func _handle_physics_impacts(
 	motion_result: TerrainBodyMotionResult,
 	post_grapple_result: TerrainBodyMotionResult,
 	unstuck_result: TerrainBodyUnstuckResult
-) -> void:
+) -> bool:
 	var greatest_velocity_change := maxf(
 		maxf(
 			motion_result.velocity_change.length(),
@@ -332,7 +370,7 @@ func _handle_physics_impacts(
 		unstuck_result.velocity_change.length()
 	)
 	_handle_terrain_impact(greatest_velocity_change)
-	_apply_jelly_surface_bounce(motion_result, post_grapple_result)
+	return _apply_jelly_surface_bounce(motion_result, post_grapple_result)
 
 
 func _apply_jelly_surface_bounce(
@@ -392,7 +430,10 @@ func _sample_environment(delta: float) -> void:
 	if suffocation_effect != null:
 		effects.append(suffocation_effect)
 	var cause := _environment_status.evaluate(effects, delta)
-	hazard_status_changed.emit(_environment_status.statuses())
+	var statuses := _environment_status.statuses()
+	hazard_status_changed.emit(statuses)
+	for status in _hazard_warnings.advance(statuses, delta, hazard_warning_level, hazard_warning_repeat_seconds):
+		hazard_warning.emit(status.cause, status.level, status.bar_color)
 	if cause != DeathCauseScript.NONE:
 		death_requested.emit(cause)
 
@@ -455,6 +496,55 @@ func _liquid_submersion_fraction() -> float:
 
 func _update_sand_presentation() -> void:
 	presentation.set_sand_burrow_visible(_is_sand_burrowing())
+
+
+## Reports hook launch, attach, miss, and release since the last report as feedback facts.
+## A null input frame reports only state changes, such as an impact tearing the hook off.
+func _report_grapple_changes(input_frame: GrappleInputFrame) -> void:
+	var hook_pressed := input_frame != null and input_frame.hook_pressed
+	var launch_target := _hook_launch_target(input_frame.aim_position) if hook_pressed else Vector2.ZERO
+	if hook_pressed:
+		hook_launched.emit(global_position, launch_target)
+	var anchor: GrappleAnchor = _grapple_model.state.anchor if _grapple_model.state.is_attached else null
+	if anchor == _reported_anchor:
+		if anchor != null:
+			_reported_anchor_position = anchor.current_position()
+		elif hook_pressed:
+			hook_missed.emit(global_position, launch_target)
+		return
+	if _reported_anchor != null:
+		hook_released.emit(_reported_anchor_position, input_frame != null and input_frame.hook_released)
+	_reported_anchor = anchor
+	if anchor != null:
+		_reported_anchor_position = anchor.current_position()
+		hook_attached.emit(_reported_anchor_position, anchor.is_target())
+
+
+## Reports the body entering or leaving liquid and Sand Worm burrowing as feedback facts.
+func _report_medium_changes() -> void:
+	var liquid := _body_liquid_definition()
+	if liquid != null and _reported_liquid == null:
+		liquid_entered.emit(global_position, liquid.debug_color, velocity.length())
+	elif liquid == null and _reported_liquid != null:
+		liquid_exited.emit(global_position, _reported_liquid.debug_color, velocity.length())
+	_reported_liquid = liquid
+	var burrowing := _is_sand_burrowing()
+	if burrowing != _reported_sand_burrowing:
+		_reported_sand_burrowing = burrowing
+		sand_burrow_changed.emit(global_position, burrowing)
+
+
+func _body_liquid_definition() -> TerrainDefinition:
+	if _world == null or _terrain_registry == null:
+		return null
+	for sample_position in _occupied_sample_positions():
+		var offset := HexMetrics.offset_for_world(sample_position, _hex_radius)
+		if not _world.dimensions.is_in_bounds_offset(offset.x, offset.y):
+			continue
+		var definition := _terrain_registry.get_definition(_world.get_committed_by_offset(offset.x, offset.y))
+		if definition != null and definition.perk_tags.has("liquid"):
+			return definition
+	return null
 
 
 func _is_sand_burrowing() -> bool:

@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 stable_id = 7
 display_name = "Water Bottle"
+feedback_key = &"fluid_bottle"
 description = "Breaks on impact to release Water into nearby Air."
 icon = ExtResource("3_icon")
 action_factory = ExtResource("2_factory")

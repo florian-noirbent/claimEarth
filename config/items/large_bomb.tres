@@ -8,6 +8,7 @@
 script = ExtResource("1_xwpnt")
 stable_id = 2
 display_name = "Large Bomb"
+feedback_key = &"large_bomb"
 perk_tags = PackedStringArray("large_bomb")
 description = "Shorter throw, much larger blast. Lethal across a wider area."
 icon = ExtResource("3_icon")

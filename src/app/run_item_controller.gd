@@ -6,9 +6,10 @@ extends Node
 signal player_killed(cause: StringName)
 signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
-signal flag_destroyed(cause: StringName)
+signal flag_destroyed(cause: StringName, world_position: Vector2)
 signal flag_flight_changed(in_flight: bool)
-signal item_thrown
+## Emitted when a projectile leaves the player; direction is the normalized aim.
+signal item_thrown(definition: ItemDefinition, origin: Vector2, direction: Vector2)
 ## Emitted once per successful player use or throw, even when a perk preserved the item.
 signal item_used(definition: ItemDefinition)
 signal terrain_changed(change_set: TerrainChangeSet)
@@ -16,7 +17,18 @@ signal terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPuls
 signal reward_choices_requested(title: String, choices: Array)
 signal pending_reward_invalidated
 signal reward_claimed(claim: RewardClaim)
-signal world_object_destroyed(container_key: StringName)
+signal world_object_destroyed(container_key: StringName, world_position: Vector2)
+## Feedback facts: world positions, speeds in px/s. No gameplay rule depends on them.
+signal item_selected(definition: ItemDefinition)
+signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
+signal projectile_bounced(world_position: Vector2, impact_speed: float, definition: ItemDefinition)
+signal projectile_resolved(world_position: Vector2, definition: ItemDefinition, resolution_kind: StringName)
+signal fluid_bottle_burst(world_position: Vector2, color: Color)
+signal explosive_fuse_armed(world_position: Vector2, fuse_seconds: float)
+signal barrel_bumped(world_position: Vector2, impact_speed: float)
+signal excavator_deployed(world_position: Vector2)
+signal excavator_drilled(world_position: Vector2, dug_cell_count: int)
+signal reward_container_opened(world_position: Vector2, container_key: StringName)
 
 const ItemInventoryScript = preload("res://src/items/item_inventory.gd")
 const ItemTrajectoryServiceScript = preload("res://src/items/item_trajectory_service.gd")
@@ -208,7 +220,10 @@ func select_index(index: int) -> void:
 		return
 	if _is_dynamic_index(index) and _inventory.count_for(definitions[index]) <= 0.0:
 		return
+	var previous := _inventory.selected_definition()
 	_inventory.select_index(index)
+	if _inventory.selected_definition() != previous:
+		item_selected.emit(_inventory.selected_definition())
 
 
 func select_dynamic_shortcut(shortcut: int) -> void:
@@ -261,13 +276,13 @@ func throw_selected(aim_position: Vector2, bypass_cooldown: bool = false) -> boo
 		if charge_used <= 0.0:
 			return false
 		consume_amount(definition, charge_used, true)
-		item_thrown.emit()
+		tool_used.emit(definition, _player.global_position, _player.global_position.direction_to(aim_position))
 		item_used.emit(definition)
 		return true
 	if consume_amount(definition, 1.0) < 1.0:
 		return false
 	_spawn_projectile(action, _player.global_position, aim_position, _player.velocity)
-	item_thrown.emit()
+	item_thrown.emit(definition, _player.global_position, _player.global_position.direction_to(aim_position))
 	item_used.emit(definition)
 	return true
 
@@ -310,6 +325,7 @@ func _spawn_projectile(action: ItemAction, origin: Vector2, aim_position: Vector
 	_register_explosive(projectile.explosive)
 	projectile.set_physics_process(_is_active)
 	projectile.resolved.connect(_on_projectile_resolved)
+	projectile.bounced.connect(_on_projectile_bounced.bind(projectile))
 	add_child(projectile)
 	if action.locks_throwing_until_resolved():
 		_active_flag_projectile = projectile
@@ -357,7 +373,7 @@ func resolve_flag_landing(_item_action: ItemAction, impact_position: Vector2, _p
 	_active_flag_projectile = null
 	flag_flight_changed.emit(false)
 	if resolution_kind != &"impact" and resolution_kind != &"fuse":
-		flag_destroyed.emit(resolution_kind)
+		flag_destroyed.emit(resolution_kind, impact_position)
 	elif resolution_kind == &"impact":
 		var landing_depth := maxi(0, HexMetrics.offset_for_world(impact_position, _hex_radius).y)
 		flag_planted.emit(landing_depth, impact_position)
@@ -430,6 +446,7 @@ func resolve_fluid_bottle_impact(deposited_terrain: TerrainDefinition, impact_po
 				break
 		ring += 1
 	_commit_external_terrain_changes(change_set)
+	fluid_bottle_burst.emit(impact_position, deposited_terrain.debug_color)
 
 func spawn_excavator(position: Vector2, factory: ExcavatorItemActionFactory) -> void:
 	var robot := ExcavatorRobot.new()
@@ -439,6 +456,7 @@ func spawn_excavator(position: Vector2, factory: ExcavatorItemActionFactory) -> 
 	robot.tick_interval_multiplier = _runtime_tuning.excavator_tick_interval_multiplier
 	_register_explosive(robot.explosive)
 	robot.set_active(_is_active)
+	excavator_deployed.emit(position)
 
 func excavator_tick(robot: ExcavatorRobot, factory: ExcavatorItemActionFactory) -> void:
 	if _world == null or _terrain_registry == null: return
@@ -461,6 +479,7 @@ func excavator_tick(robot: ExcavatorRobot, factory: ExcavatorItemActionFactory) 
 			var change := _world.set_committed_by_offset(cell.x, cell.y, next_id, WorldGrid.AIR_QUANTITY if next_id == 0 else _world.get_committed_quantity_by_offset(cell.x, cell.y))
 			changes.add_cell_change(change)
 	_commit_external_terrain_changes(changes)
+	excavator_drilled.emit(robot.global_position, changes.changed_cell_count())
 	if clear: robot.global_position = HexMetrics.center_for_offset(origin.x, origin.y + 1, _hex_radius)
 
 
@@ -620,7 +639,16 @@ func _format_count(definition: ItemDefinition, count: float) -> String:
 
 
 func _on_projectile_resolved(projectile: ItemProjectile, impact_position: Vector2, resolution_kind: StringName) -> void:
+	projectile_resolved.emit(impact_position, projectile.action.definition, resolution_kind)
 	projectile.action.resolve(self, impact_position, projectile, resolution_kind)
+
+
+func _on_projectile_bounced(impact_speed: float, projectile: ItemProjectile) -> void:
+	projectile_bounced.emit(projectile.global_position, impact_speed, projectile.action.definition if projectile.action != null else null)
+
+
+func _on_barrel_bounced(impact_speed: float, barrel: ExplosiveBarrel) -> void:
+	barrel_bumped.emit(barrel.global_position, impact_speed)
 
 
 func _spawn_item_chests(chest_spawns: Array[GeneratedItemChestSpawn]) -> void:
@@ -676,6 +704,7 @@ func _spawn_explosive_barrels(barrel_spawns: Array[GeneratedExplosiveBarrelSpawn
 		if _grapple_targets != null:
 			_grapple_targets.register(barrel.grapple_target())
 		barrel.tree_exiting.connect(_on_explosive_barrel_exiting.bind(barrel))
+		barrel.bounced.connect(_on_barrel_bounced.bind(barrel))
 
 
 func _on_explosive_barrel_exiting(barrel: ExplosiveBarrel) -> void:
@@ -697,6 +726,7 @@ func _on_item_chest_touched(chest: ItemChest) -> void:
 	_set_chest_interactivity(false)
 	match _rewards.begin(chest):
 		RunItemRewards.BeginResult.STARTED:
+			reward_container_opened.emit(chest.global_position, chest.spawn_data.definition.statistics_key)
 			reward_choices_requested.emit(_rewards.request_title(), _rewards.request_choices())
 		RunItemRewards.BeginResult.INVALID:
 			_invalidate_pending_reward()
@@ -744,6 +774,7 @@ func _register_explosive(explosive: WorldExplosive2D) -> void:
 	_explosives.append(explosive)
 	explosive.set_active(_is_active)
 	explosive.detonation_requested.connect(_on_explosive_detonation_requested)
+	explosive.chain_armed.connect(_on_explosive_chain_armed)
 
 
 func _forget_explosive(explosive: WorldExplosive2D) -> void:
@@ -752,6 +783,8 @@ func _forget_explosive(explosive: WorldExplosive2D) -> void:
 	_explosives.erase(explosive)
 	if explosive.detonation_requested.is_connected(_on_explosive_detonation_requested):
 		explosive.detonation_requested.disconnect(_on_explosive_detonation_requested)
+	if explosive.chain_armed.is_connected(_on_explosive_chain_armed):
+		explosive.chain_armed.disconnect(_on_explosive_chain_armed)
 
 
 ## Arms explosives the lethal core overlaps, and opted-in explosives anywhere in the blast radius.
@@ -773,14 +806,14 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 	if explosive_host is ItemChest:
 		var container := explosive_host as ItemChest
 		if container.spawn_data != null and container.spawn_data.definition != null:
-			world_object_destroyed.emit(container.spawn_data.definition.statistics_key)
+			world_object_destroyed.emit(container.spawn_data.definition.statistics_key, impact_position)
 		if container.spawn_data != null and container.spawn_data.definition != null and container.spawn_data.definition.destruction_pulse != null:
 			var origin := HexMetrics.offset_for_world(container.global_position, _hex_radius)
 			var pulse_definition := container.spawn_data.definition.destruction_pulse
 			_terrain_pulses.append(DirectionalTerrainPulse.new(pulse_definition, origin))
 			terrain_pulse_started.emit(HexMetrics.center_for_offset(origin.x, origin.y, _hex_radius), pulse_definition)
 	if explosive_host is ExplosiveBarrel and (explosive_host as ExplosiveBarrel).barrel_definition() != null:
-		world_object_destroyed.emit((explosive_host as ExplosiveBarrel).barrel_definition().statistics_key)
+		world_object_destroyed.emit((explosive_host as ExplosiveBarrel).barrel_definition().statistics_key, impact_position)
 	if is_instance_valid(explosive_host):
 		explosive_host.queue_free()
 	var source_item: ItemDefinition
@@ -789,6 +822,12 @@ func _on_explosive_detonation_requested(explosive: WorldExplosive2D) -> void:
 		if projectile.action != null:
 			source_item = projectile.action.definition
 	resolve_explosion(definition, impact_position, source_item)
+
+
+## Reports a running chain fuse; an instant chain or one a host disarmed again is not a fuse.
+func _on_explosive_chain_armed(explosive: WorldExplosive2D) -> void:
+	if explosive != null and explosive.is_chain_armed() and explosive.chain_fuse_remaining() > 0.0:
+		explosive_fuse_armed.emit(explosive.global_position, explosive.chain_fuse_remaining())
 
 
 func _on_item_chest_explosion_armed(chest: ItemChest) -> void:

@@ -56,6 +56,7 @@ var _injected_leaderboard_service: LeaderboardService
 var _input_controller: GameplayInputController
 var _settings_controller: AppSettingsController
 var _developer_tools: DeveloperToolsController
+var _feedback: FeedbackRouter
 
 
 func _notification(what: int) -> void:
@@ -81,6 +82,7 @@ func _ready() -> void:
 		score_controller.configure_save_path(_configured_save_path)
 	score_controller.configure(leaderboard_config, _test_mode, _injected_leaderboard_service)
 	_configure_statistics()
+	_feedback = FeedbackRouter.new(audio_director)
 	_connect_persistent_signals()
 	ui.set_web_fullscreen_available(OS.has_feature("web"))
 	_refresh_fullscreen_state()
@@ -123,6 +125,7 @@ func _connect_persistent_signals() -> void:
 	ui.touch_aim_released.connect(_input_controller.release_touch_aim)
 	ui.touch_hook_pressed.connect(_input_controller.press_touch_hook)
 	ui.touch_hook_released.connect(_input_controller.release_touch_hook)
+	ui.ui_feedback_requested.connect(_feedback.ui)
 	_input_controller.throw_requested.connect(_on_throw_requested)
 	_input_controller.item_cycle_requested.connect(_on_item_cycle_requested)
 	_input_controller.item_selected_requested.connect(_on_item_selected)
@@ -142,18 +145,16 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.player_died.connect(_on_player_death_requested)
 	session.player_hazard_status_changed.connect(ui.show_hazard_statuses)
 	session.player_killed.connect(_on_player_death_requested)
-	session.explosion_resolved.connect(_on_explosion_resolved)
 	session.flag_planted.connect(_on_flag_planted)
 	session.flag_destroyed.connect(_on_flag_destroyed)
 	session.flag_flight_changed.connect(_on_flag_flight_changed)
-	session.item_thrown.connect(audio_director.play_throw)
 	session.item_used.connect(_on_item_used)
 	session.reward_claimed.connect(_on_reward_claimed)
-	session.world_object_destroyed.connect(statistics_controller.record_object_destroyed)
+	session.world_object_destroyed.connect(statistics_controller.record_object_destroyed.unbind(1))
 	session.reward_choices_requested.connect(_on_reward_choices_requested)
 	session.pending_reward_invalidated.connect(_on_pending_reward_invalidated)
-	session.terrain_pulse_started.connect(_on_terrain_pulse_started)
 	session.perks_changed.connect(_on_perks_changed)
+	_feedback.attach(session)
 
 
 func _initial_run_seed() -> int:
@@ -341,8 +342,21 @@ func _is_fullscreen_mode(mode: DisplayServer.WindowMode) -> bool:
 	return mode in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
 
 
-func _on_state_changed(_previous_state: StringName, next_state: StringName) -> void:
+func _on_state_changed(previous_state: StringName, next_state: StringName) -> void:
 	_apply_state(next_state)
+	_route_state_feedback(previous_state, next_state)
+
+
+func _route_state_feedback(previous_state: StringName, next_state: StringName) -> void:
+	var resumes_play := next_state in [RunPhase.PLAYING, RunPhase.FLAG_IN_FLIGHT]
+	if next_state == RunPhase.PAUSED:
+		_feedback.pause_changed(true)
+	elif next_state == RunPhase.DEATH:
+		_feedback.game_over()
+	elif resumes_play and previous_state == RunPhase.PAUSED:
+		_feedback.pause_changed(false)
+	elif resumes_play and previous_state == RunPhase.GENERATING:
+		_feedback.run_started()
 
 
 func _apply_state(next_state: StringName) -> void:
@@ -423,6 +437,7 @@ func _on_run_ready(next_seed: int) -> void:
 	_current_seed = next_seed
 	if get_player() != null:
 		get_player().configure_input_controller(_input_controller)
+		_feedback.use_camera(get_player().camera)
 	if _run_coordinator.current_state == RunPhase.GENERATING:
 		var world := current_world()
 		statistics_controller.begin_run(world.dimensions.depth if world != null else 0)
@@ -460,27 +475,6 @@ func _refresh_play_status(delta: float) -> void:
 	ui.show_run_status(player_depth, score_controller.personal_best_depth, get_player().is_grapple_attached(), item_status)
 
 
-func _on_explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool) -> void:
-	audio_director.play_explosion(is_large)
-	if gameplay_feedback != null and world_presenter != null:
-		gameplay_feedback.spawn_ring(impact_position, color, blast_radius * world_presenter.hex_radius * 0.75)
-	if get_player() != null:
-		get_player().camera.apply_shake(10.0 if is_large else 6.0)
-
-
-func _on_terrain_pulse_started(origin: Vector2, definition: DirectionalTerrainPulseDefinition) -> void:
-	if gameplay_feedback == null or world_presenter == null or definition == null:
-		return
-	gameplay_feedback.spawn_directional_pulse(
-		origin,
-		definition.color,
-		definition.width * world_presenter.hex_radius * 1.5,
-		definition.step_count * sqrt(3.0) * world_presenter.hex_radius,
-		definition.pulse_tick_count * definition.step_interval_seconds,
-		definition.front_load_decay
-	)
-
-
 func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	if _terminal_outcome_locked:
 		return
@@ -489,15 +483,14 @@ func _on_flag_planted(depth: int, landing_position: Vector2) -> void:
 	_pending_flag_victory = statistics_controller.record_flag_planted(depth)
 	statistics_controller.end_run()
 	_cancel_pending_reward()
-	audio_director.play_flag_plant()
-	if gameplay_feedback != null:
-		gameplay_feedback.spawn_ring(landing_position, Color(0.98, 0.86, 0.32, 0.9), 18.0)
+	_feedback.flag_planted(landing_position, _pending_flag_victory)
 	transition_to(RunPhase.NAME_ENTRY)
 
 
-func _on_flag_destroyed(cause: StringName) -> void:
+func _on_flag_destroyed(cause: StringName, world_position: Vector2) -> void:
 	if not _terminal_outcome_locked:
 		statistics_controller.record_flag_lost(cause)
+		_feedback.flag_destroyed(world_position, cause)
 	var message := "The flag dissolved in acid." if cause == &"acid" else "The flag melted in lava."
 	_complete_terminal_outcome(message, RunPhase.DEATH)
 
@@ -521,9 +514,7 @@ func _on_player_death_requested(cause: StringName) -> void:
 	if item_controller != null and item_controller.drop_flag_on_player_death():
 		_relentless_flag_drop_pending = true
 		return
-	audio_director.play_death()
-	if get_player() != null:
-		get_player().camera.apply_shake(14.0)
+	_feedback.player_died(get_player().global_position if get_player() != null else Vector2.ZERO, cause)
 	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH)
 
 
@@ -545,7 +536,7 @@ func _on_confirm_score_requested(player_name: String) -> void:
 	if not bool(confirmation["accepted"]):
 		ui.show_name_error(String(confirmation["error"]))
 		return
-	audio_director.play_ui_confirm()
+	_feedback.score_confirmed()
 	_update_depth_markers()
 	var summary := "%s claimed depth %d. Personal best: %d." % [score_controller.last_player_name, _pending_score_depth, score_controller.personal_best_depth]
 	if _pending_flag_victory:
@@ -598,6 +589,7 @@ func _on_reward_choices_requested(title: String, choices: Array) -> void:
 	_reward_return_state = _run_coordinator.current_state
 	transition_to(RunPhase.REWARD_PICKER)
 	ui.show_reward_choices(title, choices)
+	_feedback.reward_choices_shown()
 
 
 func _on_reward_selected(index: int) -> void:
@@ -628,6 +620,7 @@ func _on_item_used(definition: ItemDefinition) -> void:
 func _on_reward_claimed(claim: RewardClaim) -> void:
 	if claim == null:
 		return
+	_feedback.reward_claimed(claim)
 	statistics_controller.record_container_opened(claim.container_key)
 	for offered in claim.offered_items:
 		if offered != null:

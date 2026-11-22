@@ -22,9 +22,9 @@ func test_flag_resolution_emits_depth_and_destructive_terrain_outcome() -> void:
 	controller.resolve_flag_landing(null, landing_position, null, &"impact")
 	assert_signal_emitted_with_parameters(controller, "flag_planted", [27, landing_position])
 	controller.resolve_flag_landing(null, landing_position, null, &"lava")
-	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"lava"])
+	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"lava", landing_position])
 	controller.resolve_flag_landing(null, landing_position, null, &"acid")
-	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"acid"])
+	assert_signal_emitted_with_parameters(controller, "flag_destroyed", [&"acid", landing_position])
 
 
 func test_flag_landing_above_surface_clamps_depth_to_zero() -> void:
@@ -221,7 +221,8 @@ func test_item_used_reports_an_immediate_tool_only_when_it_spends_charge() -> vo
 
 	assert_signal_emit_count(digging, "item_used", 1)
 	assert_signal_emitted_with_parameters(digging, "item_used", [shovel])
-	assert_signal_emit_count(digging, "item_thrown", 1)
+	assert_signal_not_emitted(digging, "item_thrown")
+	assert_signal_emit_count(digging, "tool_used", 1)
 
 
 func test_run_session_forwards_item_use_and_reward_claim_outcomes() -> void:
@@ -369,7 +370,7 @@ func test_bomb_arms_chest_and_chest_detonation_can_arm_bomb() -> void:
 	chest.explosive._physics_process(0.31)
 
 	assert_signal_emit_count(controller, "world_object_destroyed", 1)
-	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"item_chest"])
+	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"item_chest", chest.global_position])
 	assert_true(second_bomb.explosive.is_chain_armed())
 	assert_true(chest.is_queued_for_deletion())
 
@@ -613,7 +614,7 @@ func test_detonating_barrel_explodes_through_its_explosive_and_leaves_the_grappl
 	assert_signal_emit_count(controller, "explosion_resolved", 1)
 	assert_false(first_target.is_valid())
 	assert_signal_emit_count(controller, "world_object_destroyed", 1)
-	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"explosive_barrel"])
+	assert_eq(get_signal_parameters(controller, "world_object_destroyed"), [&"explosive_barrel", first.global_position])
 	assert_true(second.explosive.is_chain_armed(), "A barrel blast chains into barrels inside its radius")
 	await wait_process_frames(1)
 	assert_false(is_instance_valid(first))
