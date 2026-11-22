@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://hw8ljernfq4o" path="res://src/generation/pocket_noise_pass.gd" id="4_eemob"]
 [ext_resource type="Script" uid="uid://c6xc08gl400h1" path="res://src/generation/spawn_shaft_pass.gd" id="5_3ipti"]
 [ext_resource type="Script" uid="uid://dbmagduv515l6" path="res://src/audio/audio_director.gd" id="5_audio"]
+[ext_resource type="Resource" path="res://config/audio/audio_tuning.tres" id="5_audio_tuning"]
 [ext_resource type="Resource" path="res://config/leaderboard/simpleboards.tres" id="6_leaderboard_config"]
 [ext_resource type="Resource" uid="uid://bxwt8166bt34x" path="res://config/items/item_chest.tres" id="6_ox7et"]
 [ext_resource type="Script" uid="uid://dem5l8k4hfuqc" path="res://src/generation/generated_item_pass.gd" id="7_samyh"]
@@ -253,6 +254,7 @@ rules = ExtResource("31_statistics_rules")
 [node name="AudioDirector" type="Node" parent="." unique_id=1497690768]
 unique_name_in_owner = true
 script = ExtResource("5_audio")
+tuning = ExtResource("5_audio_tuning")
 
 [node name="UiLayer" type="CanvasLayer" parent="." unique_id=772962582]
 unique_name_in_owner = true

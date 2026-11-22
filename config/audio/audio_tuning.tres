@@ -1,0 +1,588 @@
+[gd_resource type="Resource" script_class="AudioTuning" format=3]
+
+[ext_resource type="Script" path="res://src/audio/sfx_cue_tuning.gd" id="1_1q837"]
+[ext_resource type="Script" path="res://src/audio/audio_tuning.gd" id="2_hyb37"]
+
+[sub_resource type="Resource" id="Resource_lb771"]
+script = ExtResource("1_1q837")
+id = &"ui_hover"
+bus = &"UI"
+volume_db = -27.5
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.04
+priority = 1
+
+[sub_resource type="Resource" id="Resource_ky68g"]
+script = ExtResource("1_1q837")
+id = &"ui_press"
+bus = &"UI"
+volume_db = -13.0
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.03
+priority = 3
+
+[sub_resource type="Resource" id="Resource_bmdqf"]
+script = ExtResource("1_1q837")
+id = &"item_select"
+bus = &"UI"
+volume_db = -16.5
+pitch_variation_semitones = 0.4
+min_interval_seconds = 0.03
+priority = 2
+
+[sub_resource type="Resource" id="Resource_rpr2g"]
+script = ExtResource("1_1q837")
+id = &"pause"
+bus = &"UI"
+volume_db = -16.0
+min_interval_seconds = 0.1
+priority = 6
+
+[sub_resource type="Resource" id="Resource_xocwf"]
+script = ExtResource("1_1q837")
+id = &"resume"
+bus = &"UI"
+volume_db = -16.0
+min_interval_seconds = 0.1
+priority = 6
+
+[sub_resource type="Resource" id="Resource_gcffn"]
+script = ExtResource("1_1q837")
+id = &"ui_confirm"
+bus = &"UI"
+volume_db = -16.5
+min_interval_seconds = 0.2
+priority = 8
+
+[sub_resource type="Resource" id="Resource_xju6p"]
+script = ExtResource("1_1q837")
+id = &"jump"
+volume_db = -14.5
+volume_variation_db = 1.0
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.05
+priority = 3
+
+[sub_resource type="Resource" id="Resource_js62y"]
+script = ExtResource("1_1q837")
+id = &"air_jump"
+volume_db = -15.5
+volume_variation_db = 1.0
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.05
+priority = 3
+
+[sub_resource type="Resource" id="Resource_uirpc"]
+script = ExtResource("1_1q837")
+id = &"land_soft"
+volume_db = -9.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.0
+min_interval_seconds = 0.09
+priority = 2
+
+[sub_resource type="Resource" id="Resource_jfypb"]
+script = ExtResource("1_1q837")
+id = &"land_heavy"
+volume_db = -7.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.09
+priority = 4
+
+[sub_resource type="Resource" id="Resource_da05t"]
+script = ExtResource("1_1q837")
+id = &"hook_launch"
+volume_db = -15.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.7
+min_interval_seconds = 0.04
+priority = 4
+
+[sub_resource type="Resource" id="Resource_nxf0q"]
+script = ExtResource("1_1q837")
+id = &"hook_attach"
+volume_db = -8.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.04
+
+[sub_resource type="Resource" id="Resource_mxord"]
+script = ExtResource("1_1q837")
+id = &"hook_attach_moving"
+volume_db = -6.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.04
+
+[sub_resource type="Resource" id="Resource_itp0s"]
+script = ExtResource("1_1q837")
+id = &"hook_miss"
+volume_db = -11.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.04
+priority = 3
+
+[sub_resource type="Resource" id="Resource_is5eo"]
+script = ExtResource("1_1q837")
+id = &"hook_release"
+volume_db = -13.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 1.0
+min_interval_seconds = 0.04
+priority = 3
+
+[sub_resource type="Resource" id="Resource_jkxfn"]
+script = ExtResource("1_1q837")
+id = &"hook_snap"
+volume_db = -6.0
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.08
+
+[sub_resource type="Resource" id="Resource_x6cfk"]
+script = ExtResource("1_1q837")
+id = &"throw_light"
+volume_db = -15.0
+volume_variation_db = 0.8
+pitch_variation_semitones = 1.0
+min_interval_seconds = 0.05
+priority = 4
+
+[sub_resource type="Resource" id="Resource_ql8jv"]
+script = ExtResource("1_1q837")
+id = &"throw_heavy"
+volume_db = -13.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.05
+priority = 4
+
+[sub_resource type="Resource" id="Resource_wv3ju"]
+script = ExtResource("1_1q837")
+id = &"throw_flag"
+volume_db = -11.0
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.5
+min_interval_seconds = 0.05
+priority = 6
+
+[sub_resource type="Resource" id="Resource_0l3ya"]
+script = ExtResource("1_1q837")
+id = &"tool_pickaxe"
+volume_db = -6.5
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.0
+min_interval_seconds = 0.05
+
+[sub_resource type="Resource" id="Resource_7xlgb"]
+script = ExtResource("1_1q837")
+id = &"tool_shovel"
+volume_db = -9.5
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.0
+min_interval_seconds = 0.05
+
+[sub_resource type="Resource" id="Resource_xvi7c"]
+script = ExtResource("1_1q837")
+id = &"bounce_metal"
+volume_db = -9.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.2
+min_interval_seconds = 0.07
+priority = 2
+
+[sub_resource type="Resource" id="Resource_rwifk"]
+script = ExtResource("1_1q837")
+id = &"bounce_glass"
+volume_db = -9.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.2
+min_interval_seconds = 0.07
+priority = 2
+
+[sub_resource type="Resource" id="Resource_qr81l"]
+script = ExtResource("1_1q837")
+id = &"bounce_wood"
+volume_db = -4.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.2
+min_interval_seconds = 0.07
+priority = 2
+
+[sub_resource type="Resource" id="Resource_6j4hq"]
+script = ExtResource("1_1q837")
+id = &"barrel_bump"
+volume_db = -3.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 1.2
+min_interval_seconds = 0.12
+priority = 3
+
+[sub_resource type="Resource" id="Resource_20xmh"]
+script = ExtResource("1_1q837")
+id = &"splash_in"
+volume_db = -7.5
+volume_variation_db = 1.0
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.15
+priority = 4
+
+[sub_resource type="Resource" id="Resource_gnnwb"]
+script = ExtResource("1_1q837")
+id = &"splash_out"
+volume_db = -15.0
+volume_variation_db = 1.0
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.15
+priority = 3
+
+[sub_resource type="Resource" id="Resource_hlksy"]
+script = ExtResource("1_1q837")
+id = &"sand_burrow_in"
+volume_db = -14.0
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.12
+priority = 4
+
+[sub_resource type="Resource" id="Resource_fu0nq"]
+script = ExtResource("1_1q837")
+id = &"sand_burrow_out"
+volume_db = -13.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.12
+priority = 3
+
+[sub_resource type="Resource" id="Resource_otjmj"]
+script = ExtResource("1_1q837")
+id = &"flare_fizzle"
+volume_db = -14.0
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.6
+min_interval_seconds = 0.1
+priority = 3
+
+[sub_resource type="Resource" id="Resource_8q4pu"]
+script = ExtResource("1_1q837")
+id = &"item_sizzle"
+volume_db = -11.0
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.6
+min_interval_seconds = 0.1
+priority = 3
+
+[sub_resource type="Resource" id="Resource_2awpv"]
+script = ExtResource("1_1q837")
+id = &"bottle_burst"
+volume_db = -10.5
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.06
+priority = 6
+
+[sub_resource type="Resource" id="Resource_f44oh"]
+script = ExtResource("1_1q837")
+id = &"fuse_armed"
+volume_db = -15.0
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.08
+
+[sub_resource type="Resource" id="Resource_gateh"]
+script = ExtResource("1_1q837")
+id = &"debris_wood"
+volume_db = -5.0
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.06
+priority = 6
+
+[sub_resource type="Resource" id="Resource_lwmsv"]
+script = ExtResource("1_1q837")
+id = &"debris_metal"
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.06
+priority = 6
+
+[sub_resource type="Resource" id="Resource_ixrkr"]
+script = ExtResource("1_1q837")
+id = &"debris_crystal"
+volume_db = -9.0
+volume_variation_db = 0.8
+pitch_variation_semitones = 0.8
+min_interval_seconds = 0.06
+priority = 6
+
+[sub_resource type="Resource" id="Resource_p3j7v"]
+script = ExtResource("1_1q837")
+id = &"explosion_small"
+volume_db = -6.5
+volume_variation_db = 0.6
+pitch_variation_semitones = 0.7
+min_interval_seconds = 0.05
+priority = 9
+
+[sub_resource type="Resource" id="Resource_5plek"]
+script = ExtResource("1_1q837")
+id = &"explosion_large"
+volume_db = -5.0
+volume_variation_db = 0.6
+pitch_variation_semitones = 0.6
+min_interval_seconds = 0.05
+priority = 10
+
+[sub_resource type="Resource" id="Resource_pvgpe"]
+script = ExtResource("1_1q837")
+id = &"excavator_deploy"
+volume_db = -9.5
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.5
+min_interval_seconds = 0.1
+
+[sub_resource type="Resource" id="Resource_jnneh"]
+script = ExtResource("1_1q837")
+id = &"excavator_drill"
+volume_db = -17.0
+volume_variation_db = 1.5
+pitch_variation_semitones = 1.5
+min_interval_seconds = 0.2
+priority = 1
+
+[sub_resource type="Resource" id="Resource_bmnbj"]
+script = ExtResource("1_1q837")
+id = &"excavator_idle"
+volume_db = -19.5
+volume_variation_db = 1.5
+pitch_variation_semitones = 1.5
+min_interval_seconds = 0.2
+priority = 0
+
+[sub_resource type="Resource" id="Resource_xi606"]
+script = ExtResource("1_1q837")
+id = &"terrain_pulse"
+volume_db = -6.0
+volume_variation_db = 0.5
+pitch_variation_semitones = 0.5
+min_interval_seconds = 0.2
+priority = 7
+
+[sub_resource type="Resource" id="Resource_011j8"]
+script = ExtResource("1_1q837")
+id = &"hard_impact"
+volume_db = -8.0
+volume_variation_db = 0.6
+pitch_variation_semitones = 0.7
+min_interval_seconds = 0.1
+priority = 7
+
+[sub_resource type="Resource" id="Resource_ls58k"]
+script = ExtResource("1_1q837")
+id = &"knockout"
+volume_db = -14.5
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.3
+priority = 7
+
+[sub_resource type="Resource" id="Resource_hco8v"]
+script = ExtResource("1_1q837")
+id = &"hazard_warning"
+volume_db = -7.5
+min_interval_seconds = 0.25
+priority = 7
+
+[sub_resource type="Resource" id="Resource_cb7pj"]
+script = ExtResource("1_1q837")
+id = &"hazard_critical"
+volume_db = -7.0
+min_interval_seconds = 0.25
+priority = 8
+
+[sub_resource type="Resource" id="Resource_vmoyw"]
+script = ExtResource("1_1q837")
+id = &"chest_open"
+volume_db = -11.5
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.1
+priority = 7
+
+[sub_resource type="Resource" id="Resource_f0w8w"]
+script = ExtResource("1_1q837")
+id = &"geode_open"
+volume_db = -9.0
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.1
+priority = 7
+
+[sub_resource type="Resource" id="Resource_jjib3"]
+script = ExtResource("1_1q837")
+id = &"reward_choices"
+volume_db = -13.5
+min_interval_seconds = 0.2
+priority = 7
+
+[sub_resource type="Resource" id="Resource_clodl"]
+script = ExtResource("1_1q837")
+id = &"reward_perk"
+volume_db = -10.5
+min_interval_seconds = 0.1
+priority = 8
+
+[sub_resource type="Resource" id="Resource_puxmx"]
+script = ExtResource("1_1q837")
+id = &"reward_item"
+volume_db = -14.0
+pitch_variation_semitones = 0.3
+min_interval_seconds = 0.1
+priority = 8
+
+[sub_resource type="Resource" id="Resource_4xs31"]
+script = ExtResource("1_1q837")
+id = &"flag_flight"
+volume_db = -16.0
+min_interval_seconds = 0.2
+priority = 7
+
+[sub_resource type="Resource" id="Resource_5orw3"]
+script = ExtResource("1_1q837")
+id = &"flag_plant"
+volume_db = -6.0
+min_interval_seconds = 0.3
+priority = 10
+
+[sub_resource type="Resource" id="Resource_obns1"]
+script = ExtResource("1_1q837")
+id = &"flag_destroyed"
+volume_db = -7.0
+min_interval_seconds = 0.3
+priority = 10
+
+[sub_resource type="Resource" id="Resource_78ndb"]
+script = ExtResource("1_1q837")
+id = &"victory"
+volume_db = -9.5
+min_interval_seconds = 1.0
+priority = 10
+
+[sub_resource type="Resource" id="Resource_75rdm"]
+script = ExtResource("1_1q837")
+id = &"run_start"
+volume_db = -11.5
+min_interval_seconds = 0.5
+priority = 8
+
+[sub_resource type="Resource" id="Resource_csler"]
+script = ExtResource("1_1q837")
+id = &"game_over"
+volume_db = -8.0
+min_interval_seconds = 1.0
+priority = 10
+
+[sub_resource type="Resource" id="Resource_ul63v"]
+script = ExtResource("1_1q837")
+id = &"death_cooked"
+volume_db = -5.5
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_y47k8"]
+script = ExtResource("1_1q837")
+id = &"death_suffocation"
+volume_db = -6.5
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_eb00r"]
+script = ExtResource("1_1q837")
+id = &"death_acid"
+volume_db = -6.5
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_dr3md"]
+script = ExtResource("1_1q837")
+id = &"death_poison"
+volume_db = -4.0
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_knmob"]
+script = ExtResource("1_1q837")
+id = &"death_bomb"
+volume_db = -5.0
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_e65ad"]
+script = ExtResource("1_1q837")
+id = &"death_impact"
+volume_db = -2.5
+min_interval_seconds = 0.5
+priority = 10
+
+[sub_resource type="Resource" id="Resource_sq8h5"]
+script = ExtResource("1_1q837")
+id = &"death_fall"
+volume_db = -6.0
+min_interval_seconds = 0.5
+priority = 10
+
+[resource]
+script = ExtResource("2_hyb37")
+cues = Array[ExtResource("1_1q837")]([SubResource("Resource_lb771"), SubResource("Resource_ky68g"), SubResource("Resource_bmdqf"), SubResource("Resource_rpr2g"), SubResource("Resource_xocwf"), SubResource("Resource_gcffn"), SubResource("Resource_xju6p"), SubResource("Resource_js62y"), SubResource("Resource_uirpc"), SubResource("Resource_jfypb"), SubResource("Resource_da05t"), SubResource("Resource_nxf0q"), SubResource("Resource_mxord"), SubResource("Resource_itp0s"), SubResource("Resource_is5eo"), SubResource("Resource_jkxfn"), SubResource("Resource_x6cfk"), SubResource("Resource_ql8jv"), SubResource("Resource_wv3ju"), SubResource("Resource_0l3ya"), SubResource("Resource_7xlgb"), SubResource("Resource_xvi7c"), SubResource("Resource_rwifk"), SubResource("Resource_qr81l"), SubResource("Resource_6j4hq"), SubResource("Resource_20xmh"), SubResource("Resource_gnnwb"), SubResource("Resource_hlksy"), SubResource("Resource_fu0nq"), SubResource("Resource_otjmj"), SubResource("Resource_8q4pu"), SubResource("Resource_2awpv"), SubResource("Resource_f44oh"), SubResource("Resource_gateh"), SubResource("Resource_lwmsv"), SubResource("Resource_ixrkr"), SubResource("Resource_p3j7v"), SubResource("Resource_5plek"), SubResource("Resource_pvgpe"), SubResource("Resource_jnneh"), SubResource("Resource_bmnbj"), SubResource("Resource_xi606"), SubResource("Resource_011j8"), SubResource("Resource_ls58k"), SubResource("Resource_hco8v"), SubResource("Resource_cb7pj"), SubResource("Resource_vmoyw"), SubResource("Resource_f0w8w"), SubResource("Resource_jjib3"), SubResource("Resource_clodl"), SubResource("Resource_puxmx"), SubResource("Resource_4xs31"), SubResource("Resource_5orw3"), SubResource("Resource_obns1"), SubResource("Resource_78ndb"), SubResource("Resource_75rdm"), SubResource("Resource_csler"), SubResource("Resource_ul63v"), SubResource("Resource_y47k8"), SubResource("Resource_eb00r"), SubResource("Resource_dr3md"), SubResource("Resource_knmob"), SubResource("Resource_e65ad"), SubResource("Resource_sq8h5")])
+ui_cues = Dictionary[StringName, StringName]({
+&"hover": &"ui_hover",
+&"press": &"ui_press"
+})
+throw_cues = Dictionary[StringName, StringName]({
+&"excavator": &"throw_heavy",
+&"flag": &"throw_flag",
+&"flare": &"throw_light",
+&"fluid_bottle": &"throw_light",
+&"large_bomb": &"throw_heavy",
+&"small_bomb": &"throw_light"
+})
+default_throw_cue = &"throw_light"
+tool_cues = Dictionary[StringName, StringName]({
+&"pickaxe": &"tool_pickaxe",
+&"shovel": &"tool_shovel"
+})
+default_tool_cue = &"tool_pickaxe"
+bounce_cues = Dictionary[StringName, StringName]({
+&"excavator": &"bounce_metal",
+&"flag": &"bounce_wood",
+&"flare": &"bounce_wood",
+&"fluid_bottle": &"bounce_glass",
+&"large_bomb": &"bounce_metal",
+&"small_bomb": &"bounce_metal"
+})
+default_bounce_cue = &"bounce_wood"
+projectile_end_cues = Dictionary[StringName, StringName]({
+&"fuse": &"flare_fizzle",
+&"impact": &""
+})
+default_projectile_end_cue = &"item_sizzle"
+object_destroyed_cues = Dictionary[StringName, StringName]({
+&"explosive_barrel": &"debris_metal",
+&"item_chest": &"debris_wood",
+&"perk_geode": &"debris_crystal"
+})
+default_object_destroyed_cue = &"debris_wood"
+container_open_cues = Dictionary[StringName, StringName]({
+&"item_chest": &"chest_open",
+&"perk_geode": &"geode_open"
+})
+default_container_open_cue = &"chest_open"
+death_cues = Dictionary[StringName, StringName]({
+&"acid": &"death_acid",
+&"bomb": &"death_bomb",
+&"bounds": &"death_fall",
+&"cooked": &"death_cooked",
+&"impact": &"death_impact",
+&"poison": &"death_poison",
+&"suffocation": &"death_suffocation"
+})
+default_death_cue = &"death_fall"
