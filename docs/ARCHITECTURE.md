@@ -50,6 +50,7 @@ disposable session:
 | `AppRoot` | `AppUiController` | Persistent menu, HUD, pause, name entry, results, leaderboard rendering |
 | `AppRoot` | `ScoreController` | Saves, player profile, personal/global bests, leaderboard service |
 | `AppRoot` | `StatisticsController` | Lifetime statistics, the in-progress run record, and statistics persistence |
+| `AppRoot` | `FeedbackRouter` | Routing of gameplay and UI facts to `AudioDirector` and the session's `GameplayFeedback` |
 | `RunSession` | `RunWorldController` | Registries, generation, player lifetime, simulation, camera bounds, presenter |
 | `RunSession` | `RunItemController` | Inventory, selection, reward containers, explosive barrels, projectiles, explosions, flag flight |
 | `RunSession` | `RunPerkController` | Unique perk pool, selected perks, and compiled immutable modifier snapshot |
@@ -82,6 +83,44 @@ single phone gesture from producing duplicate gameplay actions.
 flag wins; later competing outcomes are ignored. Keep score persistence in
 `ScoreController`, not item or player code.
 
+## Feedback
+
+Audio and visual feedback is a one-way seam. Gameplay owners emit typed facts and
+never decide how a moment sounds or looks:
+
+| Owner | Facts |
+| --- | --- |
+| `PlayerController` | `jumped`, `landed`, `hard_impact`, `knocked_out`, `hook_launched`, `hook_attached`, `hook_missed`, `hook_released`, `liquid_entered`, `liquid_exited`, `sand_burrow_changed`, `hazard_warning` |
+| `RunItemController` | `item_thrown`, `tool_used`, `item_selected`, `projectile_bounced`, `projectile_resolved`, `fluid_bottle_burst`, `explosion_resolved`, `explosive_fuse_armed`, `world_object_destroyed`, `barrel_bumped`, `excavator_deployed`, `excavator_drilled`, `terrain_pulse_started`, `flag_flight_changed`, `flag_planted`, `flag_destroyed`, `reward_container_opened`, `reward_claimed` |
+| `AppUiController` | `ui_feedback_requested(kind)` for hover and press on every button, including toolbar slots and reward cards |
+| `AppRoot` | Run-state moments: run start, pause and resume, game over, score confirmed, player death, flag outcomes, victory, reward picker shown |
+
+Facts carry world positions, speeds in px/s, definitions, and resource-declared keys
+(`ItemDefinition.feedback_key`, container and barrel `statistics_key`).
+`RunWorldController` relays player facts as `player_*` signals and `RunSession`
+relays every fact unchanged. `HazardWarningTracker` rate-limits `hazard_warning`
+with the level and interval exported on `PlayerController`.
+
+`FeedbackRouter` (owned by `AppRoot`) is the only caller of the two sinks. It
+connects each session's facts, converts hex units to world units, and calls one
+named method per moment on both sinks; `AppRoot` calls its public methods for the
+run-state moments. `AudioDirector` exposes one `play_*` method per moment and
+`GameplayFeedback` one `spawn_*`/`show_*` method per moment that has a visual. The
+sinks own every tuning choice: thresholds on raw speeds, colors, sizes, volumes, and
+shake strength. Camera shake has one entry point,
+`GameplayFeedback.request_shake(intensity, world_position)`, which forwards to the
+run camera that `FeedbackRouter.use_camera` hands over when the player exists.
+
+To add a feedback moment:
+
+1. Emit a typed fact from the owner at the moment it happens; relay it through
+   `RunWorldController` (player facts) and `RunSession`.
+2. Add a documented `play_*` method to `AudioDirector` and, when it has a visual, a
+   `spawn_*`/`show_*` method to `GameplayFeedback`.
+3. Connect the fact in `FeedbackRouter.attach` and call both sinks from one handler.
+4. Test the fact on its owner and, for a new routing rule, in
+   `tests/integration/test_feedback_flow.gd`.
+
 ## Statistics
 
 `StatisticsController` is a persistent sibling of `ScoreController` with its
@@ -94,7 +133,7 @@ and at most one flag resolution, and both may occur because Relentless drops the
 flag on death.
 
 Data flow: `RunItemController` emits typed `item_used(ItemDefinition)`,
-`reward_claimed(RewardClaim)`, and `world_object_destroyed(statistics_key)` outcomes,
+`reward_claimed(RewardClaim)`, and `world_object_destroyed(statistics_key, position)` outcomes,
 which `RunSession` forwards. The last reports a chest, geode, or explosive barrel
 consumed by its own detonation, keyed by its definition's `statistics_key`. `AppRoot` maps
 those and its existing run outcomes to controller calls: `begin_run` when a run
@@ -680,6 +719,7 @@ branch is required.
 | Simulation/rendering/collision | Fast suite and performance suite |
 | Save/leaderboard | Offline fake-service tests plus fast suite |
 | Statistics | Controller/builder unit tests, statistics flow integration test, plus fast suite |
+| Feedback facts and routing | Owner signal tests, feedback flow integration test, plus fast suite |
 | Input/touch/gamepad/settings | Input unit/contract tests, run/UI integration tests, plus fast suite |
 | Export/browser/project settings | `tools/ci.ps1 -Milestone` |
 

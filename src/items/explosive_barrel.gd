@@ -272,6 +272,7 @@ func _step(delta: float) -> void:
 		var rebound := result.velocity_change * definition.bounce_damping
 		if rebound.length() > definition.gravity * delta * REBOUND_GRAVITY_FRAMES:
 			velocity += rebound
+			bounced.emit(result.velocity_change.length())
 	if _grounded and sprite != null:
 		sprite.rotation = wrapf(sprite.rotation + (global_position.x - previous_position.x) / body_radius(), -PI, PI)
 	if _detonate_on_terrain_contact():

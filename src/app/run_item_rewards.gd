@@ -96,6 +96,7 @@ func apply(choice_index: int, inventory: ItemInventory) -> ItemChest:
 	_last_claim = null
 	var claim := RewardClaim.new()
 	claim.container_key = _pending_chest.spawn_data.definition.statistics_key
+	claim.world_position = _pending_chest.global_position
 	if not _pending_perk_choices.is_empty():
 		if choice_index < 0 or choice_index >= _pending_perk_choices.size() or _perk_controller == null:
 			return null

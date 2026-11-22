@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 stable_id = 6
 display_name = "Flare"
+feedback_key = &"flare"
 description = "A bouncing 10-second light source."
 icon = ExtResource("3_icon")
 action_factory = ExtResource("2_factory")

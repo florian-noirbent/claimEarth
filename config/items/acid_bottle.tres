@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 stable_id = 9
 display_name = "Acid Bottle"
+feedback_key = &"fluid_bottle"
 description = "Breaks on impact to release Sulfuric Acid into nearby Air."
 icon = ExtResource("3_icon")
 action_factory = ExtResource("2_factory")

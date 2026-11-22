@@ -20,6 +20,11 @@ signal touch_aim_changed(vector: Vector2)
 signal touch_aim_released
 signal touch_hook_pressed(aim: Vector2)
 signal touch_hook_released
+## Feedback fact for every button: kind is UI_FEEDBACK_HOVER or UI_FEEDBACK_PRESS.
+signal ui_feedback_requested(kind: StringName)
+
+const UI_FEEDBACK_HOVER := &"hover"
+const UI_FEEDBACK_PRESS := &"press"
 
 @export var item_toolbar_slot_scene: PackedScene
 @export var reward_picker_card_scene: PackedScene
@@ -129,6 +134,7 @@ func _ready() -> void:
 	controls_label.visible = false
 	owner_label.text = "Best: Nobody yet"
 	_update_top_right_controls()
+	_connect_button_feedback(self)
 
 
 func apply_state(state: StringName, run_seed: int, storage_warning: String, pending_depth: int, player_name: String) -> void:
@@ -421,6 +427,7 @@ func _update_item_toolbar(items: Array) -> void:
 		for index in items.size():
 			var slot := item_toolbar_slot_scene.instantiate() as ItemToolbarSlot
 			item_toolbar_content.add_child(slot)
+			_connect_button_feedback(slot)
 			slot.pressed.connect(_on_item_slot_pressed.bind(int(items[index].get("catalog_index", index))))
 	for index in items.size():
 		var item: Dictionary = items[index]
@@ -466,6 +473,7 @@ func show_reward_choices(title: String, choices: Array) -> void:
 			continue
 		var card := reward_picker_card_scene.instantiate() as RewardPickerCard
 		reward_picker_cards.add_child(card)
+		_connect_button_feedback(card)
 		card.configure(choice, str(index + 1))
 		card.pressed.connect(_on_reward_card_pressed.bind(index))
 	if reward_picker_cards.get_child_count() > 0:
@@ -538,3 +546,18 @@ func _on_confirm_score_pressed() -> void:
 func show_submission_result(player_name: String, depth: int, personal_best: int, failed: bool, message: String) -> void:
 	var summary := "%s claimed depth %d. Personal best: %d." % [player_name, depth, personal_best]
 	show_result(summary + ("\nOnline submit failed: %s" % message if failed else "\nScore submitted."))
+
+
+## Reports hover and press feedback for every button at or below the node.
+func _connect_button_feedback(node: Node) -> void:
+	var button := node as BaseButton
+	if button != null:
+		button.mouse_entered.connect(_on_button_feedback_hover.bind(button))
+		button.pressed.connect(ui_feedback_requested.emit.bind(UI_FEEDBACK_PRESS))
+	for child in node.get_children():
+		_connect_button_feedback(child)
+
+
+func _on_button_feedback_hover(button: BaseButton) -> void:
+	if not button.disabled:
+		ui_feedback_requested.emit(UI_FEEDBACK_HOVER)

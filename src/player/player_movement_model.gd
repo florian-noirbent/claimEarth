@@ -6,6 +6,9 @@ extends RefCounted
 var config: PlayerMovementConfig
 var velocity := Vector2.ZERO
 var current_state: StringName = PlayerMovementState.IDLE
+## Whether the most recent step started a jump, and whether that jump spent an air jump.
+var jumped_last_step := false
+var air_jumped_last_step := false
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
 var _air_jumps_remaining := 0
@@ -23,6 +26,7 @@ func step(
 	horizontal_air_control_enabled: bool = true
 ) -> void:
 	var jumped_this_frame := false
+	air_jumped_last_step = false
 	if grounded:
 		_coyote_timer = config.coyote_time_seconds
 		_air_jumps_remaining = config.extra_air_jumps
@@ -45,7 +49,9 @@ func step(
 		_jump_buffer_timer = 0.0
 		_air_jumps_remaining -= 1
 		jumped_this_frame = true
+		air_jumped_last_step = true
 
+	jumped_last_step = jumped_this_frame
 	var target_speed := input_frame.move_axis * (config.max_ground_speed if grounded else config.max_air_speed)
 	var acceleration := config.ground_acceleration if grounded else config.air_acceleration
 	if not grounded and not horizontal_air_control_enabled:

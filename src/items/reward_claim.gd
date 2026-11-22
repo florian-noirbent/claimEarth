@@ -4,6 +4,8 @@ extends RefCounted
 
 
 var container_key: StringName
+## Where the claimed container stood, for feedback only.
+var world_position := Vector2.ZERO
 ## Registered item definitions offered by an item container; empty for perk containers.
 var offered_items: Array[ItemDefinition] = []
 var picked_item: ItemDefinition
