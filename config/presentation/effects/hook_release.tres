@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_lptql"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_vj0b1"]
+
+[sub_resource type="Gradient" id="Gradient_2li45"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(0.8, 0.82, 0.85, 0.85, 0.8, 0.82, 0.85, 0.6, 0.8, 0.82, 0.85, 0)
+
+[sub_resource type="Resource" id="Resource_j6dyh"]
+script = ExtResource("1_lptql")
+count = 2
+lifetime_min = 0.18
+spawn_radius = 3.0
+speed_min = 20.0
+speed_max = 50.0
+gravity = -30.0
+drag = 2.2
+size_start = 3.5
+size_end = 7.0
+size_ease = 0.5
+size_jitter = 0.3
+colors = SubResource("Gradient_2li45")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_vj0b1")
+emitters = Array[ExtResource("1_lptql")]([SubResource("Resource_j6dyh")])

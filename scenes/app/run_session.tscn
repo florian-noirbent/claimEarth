@@ -14,6 +14,8 @@
 [ext_resource type="Resource" uid="uid://dow2vhhcb5f5u" path="res://config/presentation/default_world_presentation.tres" id="15_presentation_config"]
 [ext_resource type="Script" path="res://src/perks/run_perk_controller.gd" id="16_perks"]
 [ext_resource type="Resource" path="res://config/perks/catalog.tres" id="17_perk_catalog"]
+[ext_resource type="Script" uid="uid://crandqxlaqf05" path="res://src/presentation/effects/world_effects.gd" id="18_world_effects"]
+[ext_resource type="Resource" path="res://config/presentation/gameplay_effects.tres" id="19_effect_library"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u8yu8"]
 shader = ExtResource("7_u8yu8")
@@ -71,3 +73,7 @@ script = ExtResource("5_markers")
 [node name="GameplayFeedback" type="Node2D" parent="." unique_id=1160356636]
 unique_name_in_owner = true
 script = ExtResource("6_feedback")
+
+[node name="WorldEffects" type="Node2D" parent="GameplayFeedback"]
+script = ExtResource("18_world_effects")
+library = ExtResource("19_effect_library")

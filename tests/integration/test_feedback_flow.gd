@@ -129,15 +129,18 @@ func test_explosion_reaches_both_sinks_in_world_units_and_shakes_through_the_sea
 	var visuals := app_root.gameplay_feedback as RecordingGameplayFeedback
 	var definition := load("res://config/items/explosions/large_bomb_explosion.tres") as ExplosionDefinition
 	var impact := app_root.get_player().global_position + Vector2(0.0, 400.0)
-	var effects_before := visuals.get_child_count()
+	var nodes_before := visuals.get_child_count()
 
 	app_root.item_controller.resolve_explosion(definition, impact)
 
 	var radius_world := definition.blast_radius * app_root.world_presenter.hex_radius
+	var shake := visuals.explosion_shake_intensity(radius_world)
 	assert_eq(audio.named(&"explosion"), [[&"explosion", impact, radius_world, true]] as Array[Array])
-	assert_eq(visuals.get_child_count(), effects_before + 1, "The explosion still spawns its ring")
-	assert_eq(visuals.named(&"shake"), [[&"shake", 10.0, impact]] as Array[Array])
-	assert_almost_eq(app_root.get_player().camera._shake_strength, 10.0, 0.001)
+	assert_gt(visuals.effects().live_particle_count(), 0, "The explosion plays its effect")
+	assert_eq(visuals.get_child_count(), nodes_before, "Effects share the particle layers instead of adding nodes")
+	assert_gt(shake, 0.0)
+	assert_eq(visuals.named(&"shake"), [[&"shake", shake, impact]] as Array[Array])
+	assert_gt(app_root.get_player().camera.shake_trauma(), 0.0)
 
 
 func test_knockout_and_death_reach_both_sinks() -> void:
@@ -160,7 +163,9 @@ func test_knockout_and_death_reach_both_sinks() -> void:
 
 	assert_eq(audio.named(&"death"), [[&"death", DeathCauseScript.COOKED]] as Array[Array])
 	assert_eq(audio.named(&"game_over").size(), 1)
-	assert_eq(visuals.named(&"shake"), [[&"shake", 14.0, player.global_position]] as Array[Array])
+	var death_shake := (load("res://config/presentation/gameplay_effects.tres") as GameplayEffectLibrary).death.shake_intensity
+	assert_gt(death_shake, 0.0)
+	assert_eq(visuals.named(&"shake").back(), [&"shake", death_shake, player.global_position])
 
 
 func test_flag_outcomes_reach_the_sinks() -> void:

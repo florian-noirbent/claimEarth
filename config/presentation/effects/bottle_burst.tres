@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_r3rlh"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_ois0e"]
+
+[sub_resource type="Gradient" id="Gradient_g3wug"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1.5, 1.5, 1.5, 0.9, 1.2, 1.2, 1.2, 0.5, 1.2, 1.2, 1.2, 0)
+
+[sub_resource type="Resource" id="Resource_xa0li"]
+script = ExtResource("1_r3rlh")
+shape = 2
+lifetime_min = 0.32
+lifetime_max = 0.32
+size_start = 8.0
+size_end = 38.0
+size_ease = 0.4
+thickness_start = 5.0
+thickness_end = 1.5
+colors = SubResource("Gradient_g3wug")
+tint_amount = 1.0
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_74mgw"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1.25, 1.25, 1.25, 1, 1.1, 1.1, 1.1, 0.9, 1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_ejrbq"]
+script = ExtResource("1_r3rlh")
+count = 12
+lifetime_min = 0.35
+lifetime_max = 0.65
+spawn_radius = 5.0
+spread_degrees = 220.0
+speed_min = 140.0
+speed_max = 360.0
+gravity = 900.0
+drag = 1.0
+size_start = 5.0
+size_end = 2.5
+size_jitter = 0.4
+colors = SubResource("Gradient_74mgw")
+tint_amount = 1.0
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_l5a66"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.88, 0.98, 1, 0.95, 0.88, 0.98, 1, 0.95, 0.88, 0.98, 1, 0)
+
+[sub_resource type="Resource" id="Resource_aj7qd"]
+script = ExtResource("1_r3rlh")
+shape = 5
+count = 7
+lifetime_min = 0.4
+lifetime_max = 0.7
+spread_degrees = 260.0
+speed_min = 160.0
+speed_max = 380.0
+gravity = 900.0
+drag = 0.8
+spin_degrees_min = -900.0
+spin_degrees_max = 900.0
+random_rotation = true
+size_start = 4.5
+size_end = 3.0
+size_jitter = 0.4
+colors = SubResource("Gradient_l5a66")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_ois0e")
+emitters = Array[ExtResource("1_r3rlh")]([SubResource("Resource_xa0li"), SubResource("Resource_ejrbq"), SubResource("Resource_aj7qd")])

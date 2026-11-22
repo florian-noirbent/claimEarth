@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_3q7nj"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_2s4wd"]
+
+[sub_resource type="Gradient" id="Gradient_8cw60"]
+colors = PackedColorArray(1, 0.84, 0.3, 0.7, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_2bgi0"]
+script = ExtResource("1_3q7nj")
+shape = 1
+blend = 1
+lifetime_min = 0.4
+lifetime_max = 0.4
+size_start = 26.0
+size_end = 62.0
+size_ease = 0.5
+colors = SubResource("Gradient_8cw60")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_ad2wr"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.84, 0.3, 0.6, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_xtd23"]
+script = ExtResource("1_3q7nj")
+shape = 2
+lifetime_min = 0.35
+lifetime_max = 0.35
+size_start = 10.0
+size_end = 46.0
+size_ease = 0.4
+thickness_start = 6.0
+thickness_end = 1.5
+colors = SubResource("Gradient_ad2wr")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_d0b22"]
+offsets = PackedFloat32Array(0, 0.3, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_1d5eu"]
+script = ExtResource("1_3q7nj")
+shape = 6
+count = 8
+lifetime_min = 0.6
+lifetime_max = 1.0
+spread_degrees = 110.0
+speed_min = 180.0
+speed_max = 380.0
+gravity = 380.0
+drag = 1.2
+spin_degrees_min = -360.0
+spin_degrees_max = 360.0
+random_rotation = true
+size_start = 8.0
+size_end = 3.0
+size_jitter = 0.3
+colors = SubResource("Gradient_d0b22")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_1u1e7"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(1, 0.84, 0.3, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_vwpxd"]
+script = ExtResource("1_3q7nj")
+count = 8
+lifetime_min = 0.5
+lifetime_max = 0.9
+spread_degrees = 100.0
+speed_min = 200.0
+speed_max = 400.0
+gravity = 900.0
+drag = 0.6
+size_end = 3.0
+colors = SubResource("Gradient_1u1e7")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_2s4wd")
+emitters = Array[ExtResource("1_3q7nj")]([SubResource("Resource_2bgi0"), SubResource("Resource_xtd23"), SubResource("Resource_1d5eu"), SubResource("Resource_vwpxd")])

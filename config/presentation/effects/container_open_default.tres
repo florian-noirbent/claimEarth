@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_0y3bi"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_r6yt5"]
+
+[sub_resource type="Gradient" id="Gradient_w11sj"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.84, 0.3, 0.6, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_le551"]
+script = ExtResource("1_0y3bi")
+shape = 2
+lifetime_min = 0.35
+lifetime_max = 0.35
+size_start = 10.0
+size_end = 46.0
+size_ease = 0.4
+thickness_start = 6.0
+thickness_end = 1.5
+colors = SubResource("Gradient_w11sj")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_d0b22"]
+offsets = PackedFloat32Array(0, 0.3, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 1, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_jwl6v"]
+script = ExtResource("1_0y3bi")
+shape = 6
+count = 6
+lifetime_min = 0.6
+lifetime_max = 1.0
+spread_degrees = 160.0
+speed_min = 120.0
+speed_max = 300.0
+gravity = 380.0
+drag = 1.2
+spin_degrees_min = -360.0
+spin_degrees_max = 360.0
+random_rotation = true
+size_start = 8.0
+size_end = 3.0
+size_jitter = 0.3
+colors = SubResource("Gradient_d0b22")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_r6yt5")
+emitters = Array[ExtResource("1_0y3bi")]([SubResource("Resource_le551"), SubResource("Resource_jwl6v")])

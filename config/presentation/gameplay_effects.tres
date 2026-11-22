@@ -1,0 +1,119 @@
+[gd_resource type="Resource" script_class="GameplayEffectLibrary" format=3]
+
+[ext_resource type="Resource" path="res://config/presentation/effects/air_jump.tres" id="1_bwdvd"]
+[ext_resource type="Resource" path="res://config/presentation/effects/barrel_bump.tres" id="2_glhbk"]
+[ext_resource type="Resource" path="res://config/presentation/effects/bottle_burst.tres" id="3_gwvig"]
+[ext_resource type="Resource" path="res://config/presentation/effects/bounce_spark.tres" id="4_6a4li"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="5_hnmkl"]
+[ext_resource type="Resource" path="res://config/presentation/effects/container_open_chest.tres" id="6_pw5v4"]
+[ext_resource type="Resource" path="res://config/presentation/effects/container_open_geode.tres" id="7_1rdg8"]
+[ext_resource type="Resource" path="res://config/presentation/effects/container_open_default.tres" id="8_ugyvx"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death.tres" id="9_k3thi"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_cooked.tres" id="10_x0ujl"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_acid.tres" id="11_ci8g2"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_poison.tres" id="12_qyy6w"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_suffocation.tres" id="13_dtftg"]
+[ext_resource type="Resource" path="res://config/presentation/effects/death_impact.tres" id="14_47cvw"]
+[ext_resource type="Resource" path="res://config/presentation/effects/drill_debris.tres" id="15_rr67s"]
+[ext_resource type="Resource" path="res://config/presentation/effects/excavator_deploy.tres" id="16_2fxsf"]
+[ext_resource type="Resource" path="res://config/presentation/effects/explosion.tres" id="17_7lx5i"]
+[ext_resource type="Resource" path="res://config/presentation/effects/explosion_large.tres" id="18_xmsq6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_lava.tres" id="19_p4nnd"]
+[ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_acid.tres" id="20_5sg7l"]
+[ext_resource type="Resource" path="res://config/presentation/effects/flag_destroyed_default.tres" id="21_fu6u7"]
+[ext_resource type="Texture2D" path="res://assets/objects/flag.svg" id="22_nwmxb"]
+[ext_resource type="Resource" path="res://config/presentation/effects/flag_planted.tres" id="23_esj43"]
+[ext_resource type="Resource" path="res://config/presentation/effects/fuse_warning.tres" id="24_ntcln"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hazard_warning.tres" id="25_v1cw8"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_launch.tres" id="26_p6nbn"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_miss.tres" id="27_1vucp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_release.tres" id="28_rwlxb"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_spark_moving.tres" id="29_m4yu5"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_spark_terrain.tres" id="30_u52k1"]
+[ext_resource type="Resource" path="res://config/presentation/effects/hook_torn_off.tres" id="31_jeftp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/impact_flash.tres" id="32_lle43"]
+[ext_resource type="Resource" path="res://config/presentation/effects/jump_dust.tres" id="33_fmgy6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/knockout_stars.tres" id="34_a8fmp"]
+[ext_resource type="Resource" path="res://config/presentation/effects/landing_dust.tres" id="35_xcclj"]
+[ext_resource type="Resource" path="res://config/presentation/effects/debris_chest.tres" id="36_3pvoc"]
+[ext_resource type="Resource" path="res://config/presentation/effects/debris_geode.tres" id="37_4ffyf"]
+[ext_resource type="Resource" path="res://config/presentation/effects/debris_barrel.tres" id="38_7lx7d"]
+[ext_resource type="Resource" path="res://config/presentation/effects/debris_default.tres" id="39_4omtv"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_end_fuse.tres" id="40_tj2k7"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_end_impact.tres" id="41_45cxm"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_end_lava.tres" id="42_okx18"]
+[ext_resource type="Resource" path="res://config/presentation/effects/projectile_end_default.tres" id="43_a2kio"]
+[ext_resource type="Resource" path="res://config/presentation/effects/reward_claimed_item.tres" id="44_w00c6"]
+[ext_resource type="Resource" path="res://config/presentation/effects/reward_claimed_perk.tres" id="45_bluli"]
+[ext_resource type="Resource" path="res://config/presentation/effects/sand_burst_enter.tres" id="46_n2yll"]
+[ext_resource type="Resource" path="res://config/presentation/effects/sand_burst_exit.tres" id="47_4c3lh"]
+[ext_resource type="Script" path="res://src/presentation/effects/gameplay_effect_library.gd" id="48_lo4x2"]
+[ext_resource type="Resource" path="res://config/presentation/effects/splash_enter.tres" id="49_ti8xr"]
+[ext_resource type="Resource" path="res://config/presentation/effects/splash_exit.tres" id="50_yjy1f"]
+[ext_resource type="Resource" path="res://config/presentation/effects/throw_whoosh.tres" id="51_jywpl"]
+[ext_resource type="Resource" path="res://config/presentation/effects/tool_swing.tres" id="52_ji1ct"]
+[ext_resource type="Resource" path="res://config/presentation/effects/victory.tres" id="53_drrkd"]
+
+[resource]
+script = ExtResource("48_lo4x2")
+jump_dust = ExtResource("33_fmgy6")
+air_jump = ExtResource("1_bwdvd")
+landing_dust = ExtResource("35_xcclj")
+impact_flash = ExtResource("32_lle43")
+knockout_stars = ExtResource("34_a8fmp")
+hook_launch = ExtResource("26_p6nbn")
+hook_spark_terrain = ExtResource("30_u52k1")
+hook_spark_moving = ExtResource("29_m4yu5")
+hook_miss = ExtResource("27_1vucp")
+hook_release = ExtResource("28_rwlxb")
+hook_torn_off = ExtResource("31_jeftp")
+splash_enter = ExtResource("49_ti8xr")
+splash_exit = ExtResource("50_yjy1f")
+sand_burst_enter = ExtResource("46_n2yll")
+sand_burst_exit = ExtResource("47_4c3lh")
+hazard_warning = ExtResource("25_v1cw8")
+death = ExtResource("9_k3thi")
+death_by_cause = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"acid": ExtResource("11_ci8g2"),
+&"cooked": ExtResource("10_x0ujl"),
+&"impact": ExtResource("14_47cvw"),
+&"poison": ExtResource("12_qyy6w"),
+&"suffocation": ExtResource("13_dtftg")
+})
+throw_whoosh = ExtResource("51_jywpl")
+tool_swing = ExtResource("52_ji1ct")
+bounce_spark = ExtResource("4_6a4li")
+projectile_end_by_kind = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"fuse": ExtResource("40_tj2k7"),
+&"impact": ExtResource("41_45cxm"),
+&"lava": ExtResource("42_okx18")
+})
+projectile_end_default = ExtResource("43_a2kio")
+bottle_burst = ExtResource("3_gwvig")
+fuse_warning = ExtResource("24_ntcln")
+object_debris_by_key = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"explosive_barrel": ExtResource("38_7lx7d"),
+&"item_chest": ExtResource("36_3pvoc"),
+&"perk_geode": ExtResource("37_4ffyf")
+})
+object_debris_default = ExtResource("39_4omtv")
+barrel_bump = ExtResource("2_glhbk")
+excavator_deploy = ExtResource("16_2fxsf")
+drill_debris = ExtResource("15_rr67s")
+explosion = ExtResource("17_7lx5i")
+explosion_large = ExtResource("18_xmsq6")
+flag_planted = ExtResource("23_esj43")
+flag_destroyed_by_cause = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"acid": ExtResource("20_5sg7l"),
+&"lava": ExtResource("19_p4nnd")
+})
+flag_destroyed_default = ExtResource("21_fu6u7")
+victory = ExtResource("53_drrkd")
+flag_marker_texture = ExtResource("22_nwmxb")
+container_open_by_key = Dictionary[StringName, ExtResource("5_hnmkl")]({
+&"item_chest": ExtResource("6_pw5v4"),
+&"perk_geode": ExtResource("7_1rdg8")
+})
+container_open_default = ExtResource("8_ugyvx")
+reward_claimed_item = ExtResource("44_w00c6")
+reward_claimed_perk = ExtResource("45_bluli")

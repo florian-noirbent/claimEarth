@@ -1,0 +1,104 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_x0vla"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_mp3pe"]
+
+[sub_resource type="Gradient" id="Gradient_33xa3"]
+offsets = PackedFloat32Array(0, 0.25, 1)
+colors = PackedColorArray(1, 1, 1, 0.9, 1, 1, 1, 0.9, 1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_bls01"]
+script = ExtResource("1_x0vla")
+shape = 2
+lifetime_min = 0.18
+lifetime_max = 0.18
+relative_to_direction = true
+direction_degrees = 0.0
+spread_degrees = 0.0
+size_start = 26.0
+size_end = 42.0
+thickness_start = 7.0
+thickness_end = 1.5
+arc_degrees = 120.0
+colors = SubResource("Gradient_33xa3")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_oa23t"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(0.52, 0.38, 0.25, 1, 0.52, 0.38, 0.25, 1, 0.52, 0.38, 0.25, 0)
+
+[sub_resource type="Resource" id="Resource_dunho"]
+script = ExtResource("1_x0vla")
+shape = 4
+count = 6
+lifetime_min = 0.35
+lifetime_max = 0.6
+spawn_offset = Vector2(44, 0)
+spawn_radius = 8.0
+relative_to_direction = true
+direction_degrees = 180.0
+spread_degrees = 130.0
+speed_min = 110.0
+speed_max = 260.0
+gravity = 900.0
+drag = 0.6
+spin_degrees_min = -720.0
+spin_degrees_max = 720.0
+random_rotation = true
+size_start = 3.5
+size_end = 2.4499999999999997
+size_jitter = 0.4
+colors = SubResource("Gradient_oa23t")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_7shdr"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(0.86, 0.8, 0.68, 0.85, 0.86, 0.8, 0.68, 0.6, 0.86, 0.8, 0.68, 0)
+
+[sub_resource type="Resource" id="Resource_g1xc3"]
+script = ExtResource("1_x0vla")
+count = 3
+lifetime_min = 0.25
+lifetime_max = 0.4
+spawn_offset = Vector2(44, 0)
+spawn_radius = 3.0
+relative_to_direction = true
+speed_min = 30.0
+speed_max = 90.0
+gravity = -30.0
+drag = 2.2
+size_start = 5.0
+size_end = 11.0
+size_ease = 0.5
+size_jitter = 0.3
+colors = SubResource("Gradient_7shdr")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_nybt8"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 0.92, 1, 1, 0.52, 0.12, 1, 1, 0.52, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_7xusd"]
+script = ExtResource("1_x0vla")
+shape = 3
+blend = 1
+count = 3
+lifetime_min = 0.12
+lifetime_max = 0.25
+spawn_offset = Vector2(44, 0)
+relative_to_direction = true
+speed_min = 120.0
+speed_max = 260.0
+gravity = 500.0
+drag = 2.5
+size_start = 3.75
+size_end = 2.5
+thickness_start = 2.5
+thickness_end = 1.0
+streak_seconds = 0.05
+colors = SubResource("Gradient_nybt8")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_mp3pe")
+emitters = Array[ExtResource("1_x0vla")]([SubResource("Resource_bls01"), SubResource("Resource_dunho"), SubResource("Resource_g1xc3"), SubResource("Resource_7xusd")])

@@ -1,0 +1,128 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_ymxw8"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_8ppjg"]
+
+[sub_resource type="Gradient" id="Gradient_2ugfh"]
+colors = PackedColorArray(1, 0.84, 0.3, 0.8, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_df6ep"]
+script = ExtResource("1_ymxw8")
+shape = 1
+blend = 1
+lifetime_min = 0.6
+lifetime_max = 0.6
+size_start = 80.0
+size_end = 190.0
+size_ease = 0.5
+colors = SubResource("Gradient_2ugfh")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_2n1bx"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(1, 1, 0.92, 1, 1, 0.84, 0.3, 1, 1, 0.52, 0.12, 0)
+
+[sub_resource type="Resource" id="Resource_85bm0"]
+script = ExtResource("1_ymxw8")
+shape = 3
+blend = 1
+count = 16
+lifetime_min = 0.5
+lifetime_max = 0.75
+speed_min = 420.0
+speed_max = 640.0
+drag = 3.5
+size_start = 20.0
+size_end = 6.0
+thickness_start = 7.0
+thickness_end = 1.5
+streak_seconds = 0.09
+colors = SubResource("Gradient_2n1bx")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_0lx5f"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.84, 0.3, 0.7, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_6suun"]
+script = ExtResource("1_ymxw8")
+shape = 2
+lifetime_min = 0.7
+lifetime_max = 0.7
+size_start = 20.0
+size_end = 150.0
+size_ease = 0.4
+thickness_start = 10.0
+colors = SubResource("Gradient_0lx5f")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_nr5a4"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 0.84, 0.3, 0.9, 1, 0.84, 0.3, 0.4, 1, 0.84, 0.3, 0)
+
+[sub_resource type="Resource" id="Resource_mg0t6"]
+script = ExtResource("1_ymxw8")
+shape = 2
+delay_min = 0.25
+delay_max = 0.25
+lifetime_min = 0.9
+lifetime_max = 0.9
+size_start = 14.0
+size_end = 110.0
+size_ease = 0.4
+thickness_start = 7.0
+colors = SubResource("Gradient_nr5a4")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_5mxsf"]
+offsets = PackedFloat32Array(0, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="Resource" id="Resource_p0mq8"]
+script = ExtResource("1_ymxw8")
+shape = 4
+count = 36
+lifetime_min = 1.4
+lifetime_max = 2.4
+spawn_radius = 10.0
+spread_degrees = 70.0
+speed_min = 380.0
+speed_max = 820.0
+gravity = 420.0
+drag = 1.9
+spin_degrees_min = -700.0
+spin_degrees_max = 700.0
+random_rotation = true
+size_start = 5.0
+size_jitter = 0.3
+aspect = 1.7
+colors = SubResource("Gradient_5mxsf")
+tint_palette = PackedColorArray(1, 0.3, 0.3, 1, 1, 0.82, 0.25, 1, 0.35, 0.85, 0.45, 1, 0.35, 0.7, 1, 1, 0.85, 0.5, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="Resource" id="Resource_me0rx"]
+script = ExtResource("1_ymxw8")
+shape = 4
+count = 26
+delay_min = 0.35
+delay_max = 0.6
+lifetime_min = 1.4
+lifetime_max = 2.4
+spawn_radius = 10.0
+spread_degrees = 110.0
+speed_min = 380.0
+speed_max = 820.0
+gravity = 420.0
+drag = 1.9
+spin_degrees_min = -700.0
+spin_degrees_max = 700.0
+random_rotation = true
+size_start = 5.0
+size_jitter = 0.3
+aspect = 1.7
+colors = SubResource("Gradient_5mxsf")
+tint_palette = PackedColorArray(1, 0.3, 0.3, 1, 1, 0.82, 0.25, 1, 0.35, 0.85, 0.45, 1, 0.35, 0.7, 1, 1, 0.85, 0.5, 1, 1, 1, 1, 1, 1)
+
+[resource]
+script = ExtResource("2_8ppjg")
+emitters = Array[ExtResource("1_ymxw8")]([SubResource("Resource_df6ep"), SubResource("Resource_85bm0"), SubResource("Resource_6suun"), SubResource("Resource_mg0t6"), SubResource("Resource_p0mq8"), SubResource("Resource_me0rx")])
+shake_intensity = 5.0
