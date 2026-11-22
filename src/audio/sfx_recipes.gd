@@ -336,17 +336,13 @@ static func _hard_impact(rate: int) -> PackedFloat32Array:
 
 
 static func _knockout(rate: int) -> PackedFloat32Array:
-	var mix := S.silence(_frames(0.85, rate))
-	var dizzy := S.tone(_frames(0.7, rate), rate, TRIANGLE, 720.0, 230.0, 0.8, 0.5, 9.0, 0.05)
-	S.env_points(dizzy, rate, PackedVector2Array([Vector2(0.0, 0.0), Vector2(0.02, 1.0), Vector2(0.2, 0.5), Vector2(0.45, 0.3), Vector2(0.7, 0.0)]))
-	S.low_pass(dizzy, rate, 2400.0)
-	mix = _layer(mix, dizzy, rate, 1.0)
-	var stars: Array[float] = [93.0, 89.0, 86.0]
-	for star_index in range(stars.size()):
-		var star := _bell(rate, 0.2, S.note_hz(stars[star_index]), 3.0, 0.8)
-		mix = S.mix_into(mix, star, rate, 0.3, 0.12 + 0.17 * star_index)
-	S.cave_tail(mix, rate, 0.053, 0.4, 0.3)
-	return _finish(mix, rate, 0.002, 0.03)
+	# A short, dull grunt under the impact thump: no ringing or wobble, since it repeats often.
+	var mix := S.silence(_frames(0.3, rate))
+	var grunt := _sweep(rate, 0.24, TRIANGLE, 210.0, 105.0, 0.7, 0.012, 0.2)
+	S.low_pass(grunt, rate, 650.0)
+	mix = _layer(mix, grunt, rate, 1.0)
+	mix = _layer(mix, _noise(rate, 0.16, 58, BAND, 700.0, 300.0, 0.7, 0.01, 0.14, true), rate, 0.35)
+	return _finish(mix, rate, 0.004, 0.03)
 
 
 static func _hook_launch(rate: int) -> PackedFloat32Array:
