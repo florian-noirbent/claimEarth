@@ -1,6 +1,8 @@
 extends GutTest
 
 const ScenarioDriverScript = preload("res://tests/helpers/scenario_driver.gd")
+## Height of one hex row at the test hex radius of 16.
+const HEX_ROW := 16.0 * sqrt(3.0)
 
 class FakeAnchorQuery extends GrappleAnchorQuery:
 	var anchor := GrappleAnchor.new(Vector2i(1, 1), Vector2(64, -24))
@@ -73,7 +75,8 @@ func test_player_scene_loads_with_camera_and_visual() -> void:
 	assert_lt(player.movement_config.impact_hazard_minimum_speed, player.movement_config.medium_impact_speed)
 	assert_gt(player.movement_config.medium_impact_speed, 0.0)
 	assert_gt(player.movement_config.lethal_impact_speed, player.movement_config.medium_impact_speed)
-	assert_almost_eq(player.movement_config.impact_hazard_recovery_seconds, 3.0, 0.001)
+	assert_almost_eq(player.movement_config.impact_hazard_recovery_seconds, 5.0, 0.001)
+	assert_gt(player.movement_config.terminal_velocity, player.movement_config.lethal_impact_speed, "A long fall can kill on its own")
 	assert_not_null(player.movement_config.impact_hazard_icon)
 
 
@@ -122,10 +125,15 @@ func test_consecutive_impacts_accumulate_into_knockout_and_death() -> void:
 	await wait_process_frames(1)
 	watch_signals(knockout_player)
 
-	knockout_player._handle_terrain_impact(600.0)
+	var config := knockout_player.movement_config
+	var span := config.lethal_impact_speed - config.impact_hazard_minimum_speed
+	var knockout_level := (config.medium_impact_speed - config.impact_hazard_minimum_speed) / span
+	# Each hit alone stays under the knockout mark; two together pass it.
+	var light_hit := config.impact_hazard_minimum_speed + span * knockout_level * 0.6
+	knockout_player._handle_terrain_impact(light_hit)
 	assert_false(knockout_player.is_ragdolling())
-	assert_almost_eq(knockout_player._environment_status.level_for(DeathCause.IMPACT), 0.2, 0.001)
-	knockout_player._handle_terrain_impact(600.0)
+	assert_almost_eq(knockout_player._environment_status.level_for(DeathCause.IMPACT), knockout_level * 0.6, 0.001)
+	knockout_player._handle_terrain_impact(light_hit)
 	assert_true(knockout_player.is_ragdolling())
 	assert_signal_not_emitted(knockout_player, "death_requested")
 
@@ -133,10 +141,76 @@ func test_consecutive_impacts_accumulate_into_knockout_and_death() -> void:
 	add_child_autofree(lethal_player)
 	await wait_process_frames(1)
 	watch_signals(lethal_player)
-	lethal_player._handle_terrain_impact(750.0)
+	var heavy_hit := config.impact_hazard_minimum_speed + span * 0.5
+	lethal_player._handle_terrain_impact(heavy_hit)
 	assert_signal_not_emitted(lethal_player, "death_requested")
-	lethal_player._handle_terrain_impact(750.0)
+	lethal_player._handle_terrain_impact(heavy_hit)
 	assert_signal_emitted_with_parameters(lethal_player, "death_requested", [DeathCause.IMPACT])
+
+
+func test_a_short_free_fall_is_harmless() -> void:
+	var player := await _player_above_floor(5.0)
+	watch_signals(player)
+
+	_fall_until_landed(player)
+
+	assert_signal_not_emitted(player, "hard_impact", "Five rows leave the impact meter alone")
+	assert_true(player._environment_status.statuses().is_empty())
+	assert_false(player.is_ragdolling())
+
+
+func test_a_free_fall_past_the_safe_height_hurts_without_a_knockout() -> void:
+	var player := await _player_above_floor(8.0)
+	watch_signals(player)
+
+	_fall_until_landed(player)
+
+	assert_signal_emitted(player, "hard_impact")
+	assert_gt(player._environment_status.level_for(DeathCause.IMPACT), 0.0)
+	assert_false(player.is_ragdolling())
+	assert_signal_not_emitted(player, "death_requested")
+
+
+func test_a_medium_free_fall_knocks_out_and_a_second_one_soon_after_kills() -> void:
+	var player := await _player_above_floor(12.0)
+	watch_signals(player)
+
+	_fall_until_landed(player)
+
+	assert_true(player.is_ragdolling(), "Twelve rows knock out")
+	assert_signal_not_emitted(player, "death_requested")
+	assert_gt(player._environment_status.level_for(DeathCause.IMPACT), 0.5, "The meter is left more than half full")
+
+	# Ten rows alone only knock out; on top of the first fall they kill.
+	player.global_position.y -= 10.0 * HEX_ROW
+	player.velocity = Vector2.ZERO
+	player._movement_model.velocity = Vector2.ZERO
+	player._grounded = false
+	_fall_until_landed(player)
+
+	assert_signal_emitted_with_parameters(player, "death_requested", [DeathCause.IMPACT])
+
+	var fresh := await _player_above_floor(10.0)
+	watch_signals(fresh)
+	_fall_until_landed(fresh)
+	assert_true(fresh.is_ragdolling())
+	assert_signal_not_emitted(fresh, "death_requested")
+
+
+func test_a_long_free_fall_kills_on_its_own() -> void:
+	var survivor := await _player_above_floor(13.0)
+	watch_signals(survivor)
+	_fall_until_landed(survivor)
+	assert_signal_not_emitted(survivor, "death_requested", "Thirteen rows are still survivable")
+	assert_true(survivor.is_ragdolling())
+
+	var player := await _player_above_floor(15.0)
+	watch_signals(player)
+	_fall_until_landed(player)
+
+	assert_signal_emitted_with_parameters(player, "death_requested", [DeathCause.IMPACT])
+	assert_almost_eq(player._lethal_impact.surface_normal, Vector2.UP, Vector2(0.05, 0.05), "The death knows the floor it hit")
+	assert_gt(player._lethal_impact.velocity.y, player.movement_config.lethal_impact_speed)
 
 
 func test_impact_hazard_starts_only_above_its_configured_safe_speed() -> void:
@@ -717,6 +791,48 @@ func test_glass_is_immune_to_acid_and_poison() -> void:
 
 	world.set_committed_by_offset(3, 3, FixtureLoader.terrain_id("Sulfur Dioxide"), 63)
 	assert_null(player._hazard_effect_at(player.global_position))
+
+
+## A player at rest in open air, rows hex rows above where it would stand on a flat
+## stone floor. Its physics is stepped by hand with _fall_until_landed.
+func _player_above_floor(rows: float) -> PlayerController:
+	var registry := FixtureLoader.terrain_registry()
+	var air := FixtureLoader.terrain_id("Air")
+	var stone := FixtureLoader.terrain_id("Stone")
+	var floor_row := 30
+	var world := WorldGrid.new(WorldDimensions.new(15, 34), air)
+	for row in range(floor_row, world.dimensions.depth):
+		for col in world.dimensions.width:
+			world.set_committed_by_offset(col, row, stone)
+	var player := (load("res://scenes/player/player.tscn") as PackedScene).instantiate() as PlayerController
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child_autofree(player)
+	await wait_process_frames(1)
+	player.set_physics_process(false)
+	player.process_mode = Node.PROCESS_MODE_INHERIT
+	player.configure_environment(world, registry, 16.0)
+	# Find where the body stands, then lift it from there.
+	var floor_center := HexMetrics.center_for_offset(7, floor_row, 16.0)
+	player.global_position = Vector2(floor_center.x, floor_center.y - 16.0 - player.horizontal_collision_radius - 2.0)
+	_fall_until_landed(player)
+	assert_true(player._grounded, "The fixture floor carries the player")
+	player.global_position.y -= rows * HEX_ROW
+	player.velocity = Vector2.ZERO
+	player._movement_model.velocity = Vector2.ZERO
+	player._grounded = false
+	return player
+
+
+## Steps the player's own physics until it stands on the floor or asks to die.
+func _fall_until_landed(player: PlayerController) -> void:
+	var died := [false]
+	var on_death := func(_cause: StringName) -> void: died[0] = true
+	player.death_requested.connect(on_death)
+	for _step in 600:
+		player._physics_process(1.0 / 60.0)
+		if died[0] or player._grounded:
+			break
+	player.death_requested.disconnect(on_death)
 
 
 func _player_embedded_in_sand(fill: int, initial_velocity: Vector2, surrounded := true) -> PlayerController:

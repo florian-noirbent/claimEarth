@@ -266,11 +266,18 @@ physics, projectiles, and input remain frame-responsive.
 - Terrain impacts use the magnitude of velocity removed or redirected by collision,
   grapple correction, or escape from newly solid terrain. The greatest change in a
   physics frame contributes its amount above the configured safe-impact speed to a
-  visible meter. The meter recovers to empty over three seconds from full, marks the
+  visible meter. The meter recovers to empty over five seconds from full, marks the
   knockout threshold within the bar, and marks death at its end. Repeated nearby
   impacts accumulate; reaching the medium threshold knocks the player into a
   one-second uncontrolled tumble and detaches the hook, while reaching the end kills
   the player. A single impact at either threshold retains the same outcome.
+- Falling is a real risk. Impacts are safe up to 700 px/s, knock out from 860, and
+  kill from 1040; falls accelerate up to 1200 px/s. In free fall under normal gravity
+  that makes a drop harmless up to about six hex rows, a knockout from about nine
+  and a half, and death from about fourteen. A knockout fall leaves the meter about
+  half full or more, so a second hard landing soon after kills. Water only takes
+  a little speed off a fall. A full swing on the longest normal rope into a wall
+  fills about a quarter of the meter.
 - When solid terrain overlaps the player, escape targets only an Air position where
   the complete player body fits. Cramped one-row gaps are skipped, and the push is
   applied over consecutive physics frames until the overlap is cleared. If no such
@@ -294,8 +301,8 @@ breathable terrain: a partially filled head hex samples the hex above it, while 
 non-breathable hex blocks breathing. Steam and Air are breathable; any Sulfur Dioxide
 blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
 fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
-over their respective fill durations; Cooked recovers in one second and both impact
-and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
+over their respective fill durations; Cooked recovers in one second, suffocation
+recovers from full in three, and impact in five. Sulfur Resistance makes SO₂ breathable,
 prevents Poison, and adds two seconds to Acid survival. Heat Resistance makes Steam
 harmless at any pressure and adds one second to Lava Cooked exposure; Glass Cannon is
 immune to all terrain hazards and suffocation. Death never records current depth.
