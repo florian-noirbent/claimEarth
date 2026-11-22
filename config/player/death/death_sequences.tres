@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DeathSequenceLibrary" format=3]
+
+[ext_resource type="Resource" path="res://config/player/death/default.tres" id="1_hco2v"]
+[ext_resource type="Script" path="res://src/player/death_sequence_library.gd" id="2_itgqk"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="3_cwog2"]
+[ext_resource type="Resource" path="res://config/player/death/bomb.tres" id="4_jsrge"]
+[ext_resource type="Resource" path="res://config/player/death/impact.tres" id="5_f3gur"]
+[ext_resource type="Resource" path="res://config/player/death/cooked.tres" id="6_mx2rf"]
+[ext_resource type="Resource" path="res://config/player/death/acid.tres" id="7_wohfx"]
+[ext_resource type="Resource" path="res://config/player/death/poison.tres" id="8_cjgq5"]
+[ext_resource type="Resource" path="res://config/player/death/suffocation.tres" id="9_dshv1"]
+
+[resource]
+script = ExtResource("2_itgqk")
+sequences = Dictionary[StringName, ExtResource("3_cwog2")]({
+&"acid": ExtResource("7_wohfx"),
+&"bomb": ExtResource("4_jsrge"),
+&"cooked": ExtResource("6_mx2rf"),
+&"impact": ExtResource("5_f3gur"),
+&"poison": ExtResource("8_cjgq5"),
+&"suffocation": ExtResource("9_dshv1")
+})
+default_sequence = ExtResource("1_hco2v")

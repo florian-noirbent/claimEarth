@@ -29,6 +29,8 @@ func attach(session: RunSession) -> void:
 	session.player_liquid_exited.connect(_on_player_liquid_changed.bind(false))
 	session.player_sand_burrow_changed.connect(_on_player_sand_burrow_changed)
 	session.player_hazard_warning.connect(_on_player_hazard_warning)
+	session.player_death_cue.connect(_on_player_death_cue)
+	session.player_gib_landed.connect(_on_player_gib_landed)
 	session.item_thrown.connect(_on_item_thrown)
 	session.tool_used.connect(_on_tool_used)
 	session.item_selected.connect(_audio.play_item_select)
@@ -171,6 +173,15 @@ func _on_player_hazard_warning(cause: StringName, level: float, color: Color) ->
 	var player := _session.world_controller.player()
 	if player != null:
 		_visuals.show_hazard_warning(player.global_position, cause, level, color)
+
+
+func _on_player_death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float) -> void:
+	_visuals.spawn_death_cue(key, world_position, direction, strength)
+
+
+func _on_player_gib_landed(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float) -> void:
+	_audio.play_gib_impact(world_position, impact_speed)
+	_visuals.spawn_gib_splat(key, world_position, normal, impact_speed)
 
 
 func _on_item_thrown(definition: ItemDefinition, origin: Vector2, direction: Vector2) -> void:

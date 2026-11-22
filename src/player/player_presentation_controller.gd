@@ -3,6 +3,10 @@ class_name PlayerPresentationController
 extends Node2D
 
 
+## Relayed from the death sequence; see PlayerDeathAnimator.
+signal death_cue_requested(key: StringName, world_position: Vector2, direction: Vector2, strength: float)
+signal gib_landed(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float)
+
 @export var hook_launch_animation_seconds := 0.08
 @export_group("Animation")
 ## Horizontal speed below which the grounded body idles.
@@ -33,6 +37,7 @@ extends Node2D
 @onready var body_visual: Node2D = %BodyVisual
 @onready var rig: PlayerRig = %Rig
 @onready var grapple: GrappleRopeVisual = %Grapple
+@onready var death: PlayerDeathAnimator = %Death
 
 var _selector := PlayerAnimationSelector.new()
 var _grapple_attached := false
@@ -46,6 +51,8 @@ func _ready() -> void:
 	_selector.run_speed = run_speed
 	_selector.land_speed = land_speed
 	_selector.land_seconds = land_seconds
+	death.cue_requested.connect(death_cue_requested.emit)
+	death.gib_landed.connect(gib_landed.emit)
 
 
 func animation_state() -> StringName:
@@ -133,6 +140,23 @@ func update_grapple(
 	rig.update_aim(grapple.is_out(), grapple.aim_target(), delta, centered)
 	# The rope leaves from the near hand, which the aim above has just moved.
 	grapple.pose(rig.grip_position(), delta)
+
+
+## Hands the body, the rope, and the hook to the death sequence of this cause. From here on
+## the sequence steps itself and update_body and update_grapple must not be called again.
+## terrain is what the loose body parts collide with.
+func begin_death(
+	cause: StringName,
+	duration_seconds: float,
+	context: DeathContext,
+	terrain: TerrainCollisionQuery
+) -> void:
+	death.begin(rig, body_visual, grapple, cause, duration_seconds, context, terrain)
+
+
+## Holds a running death sequence on its current frame, or lets it go on.
+func set_death_suspended(suspended: bool) -> void:
+	death.set_suspended(suspended)
 
 
 ## Shows the body through the sand it is burrowing in, or returns it to its normal look.

@@ -1,5 +1,6 @@
 ## Cutout skeleton of the player: plays animation states, aims both arms at the hook,
-## swings the limbs limply while knocked out, and shows through sand while burrowing.
+## swings the limbs limply while knocked out, shows through sand while burrowing, and
+## hands its parts over one by one when a death sequence takes the body apart.
 ##
 ## The rig has no process loop. Its owner calls play_state, advance, update_ragdoll,
 ## and update_aim once per step, in that order.
@@ -51,6 +52,10 @@ const CENTER_LOCK_ANGLE := 0.1
 ## Absolute draw layer of a burrowing rig; it must be above the terrain.
 @export var burrow_z_index := 10
 
+@export_group("Parts")
+## Transparent margin around every part texture, in texture pixels.
+@export var part_texture_margin := 32.0
+
 @onready var animation_tree: AnimationTree = %AnimationTree
 @onready var arm_aim: Node2D = %ArmAim
 @onready var arm_aim_left: Node2D = %ArmAimLeft
@@ -69,6 +74,7 @@ var _limp_speeds := PackedFloat32Array()
 var _limp_weight := 0.0
 var _limp_velocity := Vector2.ZERO
 var _burrowed := false
+var _raised := false
 
 
 func _ready() -> void:
@@ -104,12 +110,53 @@ func set_burrowed(burrowed: bool) -> void:
 	if burrowed == _burrowed:
 		return
 	_burrowed = burrowed
-	z_as_relative = not burrowed
-	z_index = burrow_z_index if burrowed else 0
+	_apply_draw_layer()
 	_sprites.modulate = burrow_body_tint if burrowed else Color.WHITE
 	var part_material := burrow_outline_material if burrowed else outline_material
 	for part: CanvasItem in _outline.get_children():
 		part.material = part_material
+
+
+## Draws the rig above the terrain, which normally covers it, without the burrow look.
+func set_raised_above_terrain(raised: bool) -> void:
+	_raised = raised
+	_apply_draw_layer()
+
+
+func _apply_draw_layer() -> void:
+	var above := _burrowed or _raised
+	z_as_relative = not above
+	z_index = burrow_z_index if above else 0
+
+
+## Number of drawn body parts, in draw order from back to front.
+func part_count() -> int:
+	return _sprites.get_child_count()
+
+
+func part_name(index: int) -> StringName:
+	return _sprites.get_child(index).name
+
+
+## The painted sprite of a part and the silhouette sprite behind it.
+func part_sprite(index: int) -> Sprite2D:
+	return _sprites.get_child(index) as Sprite2D
+
+
+func part_outline(index: int) -> Sprite2D:
+	return _outline.get_child(index) as Sprite2D
+
+
+## Stops a part's two sprites from following their bone, so the caller can move them
+## itself. A released part stays released.
+func release_part(index: int) -> void:
+	var bone := get_node_or_null("%%%s" % part_name(index))
+	if bone == null:
+		return
+	for child in bone.get_children():
+		var follower := child as RemoteTransform2D
+		if follower != null:
+			follower.remote_path = NodePath()
 
 
 ## Advances the animation clips; the limp limbs and the arm aim are then posed on top.

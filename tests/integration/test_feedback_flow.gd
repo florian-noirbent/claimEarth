@@ -54,6 +54,9 @@ class RecordingAudioDirector extends AudioDirector:
 	func play_hard_impact(impact_speed: float) -> void:
 		calls.append([&"hard_impact", impact_speed])
 
+	func play_gib_impact(world_position: Vector2, impact_speed: float) -> void:
+		calls.append([&"gib_impact", world_position, impact_speed])
+
 	func play_knockout(impact_speed: float) -> void:
 		calls.append([&"knockout", impact_speed])
 
@@ -84,6 +87,14 @@ class RecordingGameplayFeedback extends GameplayFeedback:
 
 	func spawn_flag_destroyed(world_position: Vector2, cause: StringName) -> void:
 		calls.append([&"flag_destroyed", world_position, cause])
+
+	func spawn_death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float) -> void:
+		calls.append([&"death_cue", key, world_position])
+		super.spawn_death_cue(key, world_position, direction, strength)
+
+	func spawn_gib_splat(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float) -> void:
+		calls.append([&"gib_splat", key, world_position, normal, impact_speed])
+		super.spawn_gib_splat(key, world_position, normal, impact_speed)
 
 	func named(moment: StringName) -> Array[Array]:
 		return calls.filter(func(entry: Array) -> bool: return entry[0] == moment)
@@ -223,10 +234,14 @@ func test_knockout_and_death_reach_both_sinks() -> void:
 		[[&"knockout_stars", player.global_position, player.movement_config.ragdoll_seconds]] as Array[Array]
 	)
 
+	var shakes_before := visuals.named(&"shake").size()
+	var death_position := player.global_position
 	app_root._on_player_death_requested(DeathCauseScript.COOKED)
 
 	assert_eq(audio.named(&"death"), [[&"death", DeathCauseScript.COOKED]] as Array[Array])
 	assert_eq(audio.named(&"game_over").size(), 0, "Game over sounds when the result panel opens.")
+	var sequence := (load("res://config/player/death/death_sequences.tres") as DeathSequenceLibrary).sequence_for(DeathCauseScript.COOKED)
+	assert_eq(visuals.named(&"death_cue")[0], [&"death_cue", sequence.cues[0].effect_key, death_position], "The death sequence opens with its first cue.")
 	await wait_until(func() -> bool:
 		return app_root.get_run_state() == RunPhase.DEATH
 	, 4.0)
@@ -234,7 +249,19 @@ func test_knockout_and_death_reach_both_sinks() -> void:
 	assert_eq(audio.named(&"game_over").size(), 1)
 	var death_shake := (load("res://config/presentation/gameplay_effects.tres") as GameplayEffectLibrary).death.shake_intensity
 	assert_gt(death_shake, 0.0)
-	assert_eq(visuals.named(&"shake").back(), [&"shake", death_shake, player.global_position])
+	assert_eq(visuals.named(&"shake")[shakes_before], [&"shake", death_shake, death_position], "The death itself shakes first.")
+	# Every later cue of the sequence arrived through the router while the beat ran.
+	await wait_until(func() -> bool:
+		return player.presentation.death.progress() >= 1.0
+	, 2.0)
+	var requested: Array[StringName] = []
+	for call in visuals.named(&"death_cue"):
+		if not requested.has(call[1]):
+			requested.append(call[1])
+	for cue in sequence.cues:
+		assert_true(requested.has(cue.effect_key), "Cue %s reached the visual sink" % cue.effect_key)
+	for shake in visuals.named(&"shake").slice(shakes_before):
+		assert_lte(float(shake[1]), death_shake, "No cue shakes harder than the death itself.")
 
 
 func test_flag_outcomes_reach_the_sinks() -> void:
@@ -303,6 +330,8 @@ func test_session_relays_every_player_feedback_fact() -> void:
 	player.liquid_exited.emit(Vector2.ONE, Color.BLUE, 3.0)
 	player.sand_burrow_changed.emit(Vector2.ONE, true)
 	player.hazard_warning.emit(DeathCauseScript.ACID, 0.7, Color.GREEN)
+	player.death_cue.emit(&"blood_burst", Vector2.ONE, Vector2.UP, 1.0)
+	player.gib_landed.emit(&"blood_splat", Vector2.ONE, Vector2.UP, 400.0)
 
 	assert_signal_emitted_with_parameters(session, "player_jumped", [Vector2.ONE, true])
 	assert_signal_emitted_with_parameters(session, "player_landed", [Vector2.ONE, 2.0, 0.5])
@@ -314,6 +343,13 @@ func test_session_relays_every_player_feedback_fact() -> void:
 	assert_signal_emitted_with_parameters(session, "player_liquid_exited", [Vector2.ONE, Color.BLUE, 3.0])
 	assert_signal_emitted_with_parameters(session, "player_sand_burrow_changed", [Vector2.ONE, true])
 	assert_signal_emitted_with_parameters(session, "player_hazard_warning", [DeathCauseScript.ACID, 0.7, Color.GREEN])
+	assert_signal_emitted_with_parameters(session, "player_death_cue", [&"blood_burst", Vector2.ONE, Vector2.UP, 1.0])
+	assert_signal_emitted_with_parameters(session, "player_gib_landed", [&"blood_splat", Vector2.ONE, Vector2.UP, 400.0])
+	var audio := app_root.audio_director as RecordingAudioDirector
+	var visuals := app_root.gameplay_feedback as RecordingGameplayFeedback
+	assert_eq(visuals.named(&"death_cue"), [[&"death_cue", &"blood_burst", Vector2.ONE]] as Array[Array])
+	assert_eq(visuals.named(&"gib_splat"), [[&"gib_splat", &"blood_splat", Vector2.ONE, Vector2.UP, 400.0]] as Array[Array])
+	assert_eq(audio.named(&"gib_impact"), [[&"gib_impact", Vector2.ONE, 400.0]] as Array[Array])
 
 
 func _app(suffix: String) -> AppRoot:

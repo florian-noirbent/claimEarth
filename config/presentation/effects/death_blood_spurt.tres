@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_s5e5o"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_24v5b"]
+
+[sub_resource type="Gradient" id="Gradient_eunrv"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1, 0.25, 0.22, 1, 0.93, 0.05, 0.07, 1, 0.93, 0.05, 0.07, 0)
+
+[sub_resource type="Resource" id="Resource_n5h16"]
+script = ExtResource("1_s5e5o")
+count = 4
+lifetime_max = 0.6
+spawn_radius = 2.0
+relative_to_direction = true
+direction_degrees = 0.0
+spread_degrees = 55.0
+speed_min = 150.0
+speed_max = 430.0
+gravity = 1300.0
+drag = 0.7
+size_start = 9.0
+size_end = 3.6
+size_jitter = 0.5
+colors = SubResource("Gradient_eunrv")
+tint_palette = PackedColorArray()
+
+[sub_resource type="Gradient" id="Gradient_63rq4"]
+offsets = PackedFloat32Array(0, 0.6, 1)
+colors = PackedColorArray(1, 0.25, 0.22, 1, 0.55, 0, 0.04, 1, 0.55, 0, 0.04, 0)
+
+[sub_resource type="Resource" id="Resource_u1klb"]
+script = ExtResource("1_s5e5o")
+shape = 3
+lifetime_min = 0.22
+lifetime_max = 0.42
+spawn_radius = 6.0
+relative_to_direction = true
+direction_degrees = 0.0
+spread_degrees = 30.0
+speed_min = 260.0
+speed_max = 520.0
+gravity = 600.0
+drag = 3.0
+size_start = 8.0
+thickness_start = 4.0
+thickness_end = 1.4
+streak_seconds = 0.06
+colors = SubResource("Gradient_63rq4")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_24v5b")
+emitters = Array[ExtResource("1_s5e5o")]([SubResource("Resource_n5h16"), SubResource("Resource_u1klb")])

@@ -165,7 +165,7 @@ func _connect_session_signals(session: RunSession) -> void:
 	session.run_ready.connect(_on_run_ready)
 	session.player_died.connect(_on_player_death_requested)
 	session.player_hazard_status_changed.connect(ui.show_hazard_statuses)
-	session.player_killed.connect(_on_player_death_requested)
+	session.player_killed.connect(_on_player_killed)
 	session.flag_planted.connect(_on_flag_planted)
 	session.flag_destroyed.connect(_on_flag_destroyed)
 	session.flag_flight_changed.connect(_on_flag_flight_changed)
@@ -560,7 +560,13 @@ func _on_flag_flight_changed(in_flight: bool) -> void:
 		transition_to(RunPhase.PLAYING)
 
 
-func _on_player_death_requested(cause: StringName) -> void:
+## Something in the world killed the player from source_position.
+func _on_player_killed(cause: StringName, source_position: Vector2) -> void:
+	_on_player_death_requested(cause, DeathContext.from_source(source_position))
+
+
+## context carries the facts the reporter knows about the death; null when it has none.
+func _on_player_death_requested(cause: StringName, context: DeathContext = null) -> void:
 	if _terminal_outcome_locked:
 		return
 	# Recorded before the Relentless early returns: the death counts even while the dropped
@@ -576,7 +582,7 @@ func _on_player_death_requested(cause: StringName) -> void:
 	# The death is final from here on: the one place the player learns it died.
 	var beat_seconds := _outcome_beat_for(death_beat_seconds)
 	if is_instance_valid(_session):
-		_session.begin_player_death(cause, beat_seconds)
+		_session.begin_player_death(cause, beat_seconds, context)
 	_complete_terminal_outcome("Cause: %s" % String(cause).capitalize(), RunPhase.DEATH, beat_seconds)
 
 

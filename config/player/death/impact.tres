@@ -1,0 +1,71 @@
+[gd_resource type="Resource" script_class="DeathSequence" format=3]
+
+[ext_resource type="Script" path="res://src/player/death_cue.gd" id="1_g6hod"]
+[ext_resource type="Script" path="res://src/player/death_sequence.gd" id="2_sba8x"]
+
+[sub_resource type="Resource" id="Resource_hk8ee"]
+script = ExtResource("1_g6hod")
+effect_key = &"impact_burst"
+at = 0.07
+aim = 1
+
+[sub_resource type="Resource" id="Resource_dt2b4"]
+script = ExtResource("1_g6hod")
+effect_key = &"blood_spurt"
+at = 0.07
+anchor = 1
+aim = 2
+
+[sub_resource type="Resource" id="Resource_y3x34"]
+script = ExtResource("1_g6hod")
+effect_key = &"blood_spurt"
+at = 0.16
+plays = 5
+anchor = 3
+aim = 3
+
+[sub_resource type="Curve" id="Curve_nidd7"]
+bake_resolution = 200
+_data = [Vector2(0, 0.9), 0.0, -5.7142854, 1, 1, Vector2(0.07, 0.5), -5.7142854, -16.666666, 1, 1, Vector2(0.1, 0), -16.666666, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_g6dgb"]
+bake_resolution = 200
+_data = [Vector2(0, 1), 0.0, -15.555555, 1, 1, Vector2(0.045, 0.3), -15.555555, 0.0, 1, 1, Vector2(0.07, 0.3), 0.0, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_fysm6"]
+bake_resolution = 200
+_data = [Vector2(0.07, 0), 0.0, 5.6000004, 1, 1, Vector2(0.12, 0.28), 5.6000004, 0.0, 1, 1, Vector2(1, 0.28), 0.0, 0.0, 1, 1]
+point_count = 3
+
+[resource]
+script = ExtResource("2_sba8x")
+burst_at = 0.07
+squash = SubResource("Curve_g6dgb")
+inherit_velocity = 0.6
+radial_speed_min = 60.0
+radial_speed_max = 260.0
+push_speed_min = 140.0
+push_speed_max = 460.0
+push_spread_degrees = 60.0
+surface_scatter_speed = 520.0
+lift_speed_min = 60.0
+lift_speed_max = 220.0
+spin_degrees_min = 600.0
+spin_degrees_max = 1400.0
+gib_scale = 1.8
+featured_parts = Array[StringName]([&"Head", &"Boot", &"BootLeft"])
+featured_speed_scale = 1.4
+featured_restitution = 0.78
+gravity = 1700.0
+restitution = 0.5
+friction = 0.28
+flash = SubResource("Curve_nidd7")
+tint = SubResource("Curve_fysm6")
+tint_color = Color(1, 0.2, 0.2, 1)
+cues = Array[ExtResource("1_g6hod")]([SubResource("Resource_hk8ee"), SubResource("Resource_dt2b4"), SubResource("Resource_y3x34")])
+trail_effect_key = &"blood_trail"
+trail_interval_seconds = 0.04
+trail_until = 0.5
+splat_effect_key = &"blood_splat"

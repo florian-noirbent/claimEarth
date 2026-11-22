@@ -33,10 +33,14 @@ extends Resource
 @export var sand_burst_enter: EffectRecipe
 @export var sand_burst_exit: EffectRecipe
 @export var hazard_warning: EffectRecipe
-## Effect played at every permanent death.
+## Effect played at every permanent death, the moment it happens.
 @export var death: EffectRecipe
-## Extra effect by DeathCause value; causes without an entry only play death.
-@export var death_by_cause: Dictionary[StringName, EffectRecipe] = {}
+## Effects the player's death sequences ask for by key (DeathCue.effect_key and the trail
+## and splat keys of a DeathSequence); keys without an entry show nothing.
+@export var death_cue_by_key: Dictionary[StringName, EffectRecipe] = {}
+## Speed range over which a body part hitting terrain goes from the weakest to the full splat.
+@export_range(0.0, 2000.0, 1.0) var gib_splat_min_speed := 120.0
+@export_range(1.0, 4000.0, 1.0) var gib_splat_full_speed := 600.0
 
 @export_group("Items")
 @export var throw_whoosh: EffectRecipe

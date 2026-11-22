@@ -7,7 +7,8 @@ signal generation_progressed(progress: float, label: String)
 signal run_ready(next_seed: int)
 signal player_died(cause: StringName)
 signal player_hazard_status_changed(statuses: Array)
-signal player_killed(cause: StringName)
+## source_position is where the killing force came from, such as the blast center.
+signal player_killed(cause: StringName, source_position: Vector2)
 signal explosion_resolved(impact_position: Vector2, color: Color, blast_radius: int, is_large: bool)
 signal flag_planted(depth: int, landing_position: Vector2)
 signal flag_destroyed(cause: StringName, world_position: Vector2)
@@ -33,6 +34,8 @@ signal player_liquid_entered(world_position: Vector2, color: Color, speed: float
 signal player_liquid_exited(world_position: Vector2, color: Color, speed: float)
 signal player_sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
 signal player_hazard_warning(cause: StringName, level: float, color: Color)
+signal player_death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float)
+signal player_gib_landed(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float)
 signal item_selected(definition: ItemDefinition)
 signal item_use_refused(reason: StringName, catalog_index: int)
 signal tool_used(definition: ItemDefinition, origin: Vector2, direction: Vector2)
@@ -98,6 +101,8 @@ func configure(profile: GenerationProfile, player_scene: PackedScene) -> void:
 	world_controller.player_liquid_exited.connect(player_liquid_exited.emit)
 	world_controller.player_sand_burrow_changed.connect(player_sand_burrow_changed.emit)
 	world_controller.player_hazard_warning.connect(player_hazard_warning.emit)
+	world_controller.player_death_cue.connect(player_death_cue.emit)
+	world_controller.player_gib_landed.connect(player_gib_landed.emit)
 	item_controller.item_selected.connect(item_selected.emit)
 	item_controller.use_refused.connect(item_use_refused.emit)
 	item_controller.tool_used.connect(tool_used.emit)
@@ -126,6 +131,8 @@ func set_active(is_active: bool) -> void:
 	item_controller.set_active(is_active)
 	if gameplay_feedback != null:
 		gameplay_feedback.set_active(is_active)
+		# The death sequence asks for effects as it goes, so it holds exactly when they do.
+		world_controller.set_player_death_suspended(gameplay_feedback.is_suspended())
 
 
 ## Stops the player's own simulation while the rest of the session keeps running.
@@ -134,10 +141,11 @@ func freeze_player() -> void:
 
 
 ## Tells the player its death is final; the result panel opens beat_seconds later.
-func begin_player_death(cause: StringName, beat_seconds: float) -> void:
+## context carries what the caller knows about the death and may be null.
+func begin_player_death(cause: StringName, beat_seconds: float, context: DeathContext = null) -> void:
 	var player := world_controller.player()
 	if player != null:
-		player.begin_death(cause, beat_seconds)
+		player.begin_death(cause, beat_seconds, context)
 
 
 func apply_pending_reward(choice_index: int) -> bool:

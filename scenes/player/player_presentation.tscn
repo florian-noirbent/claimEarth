@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://src/player/player_presentation_controller.gd" id="1_presentation"]
 [ext_resource type="PackedScene" path="res://scenes/player/player_rig.tscn" id="2_rig"]
@@ -7,6 +7,10 @@
 [ext_resource type="Texture2D" path="res://assets/objects/grapple/rope.svg" id="4_rope"]
 [ext_resource type="Texture2D" path="res://assets/objects/grapple/claw_jaw.svg" id="5_jaw"]
 [ext_resource type="Texture2D" path="res://assets/objects/grapple/claw_hub.svg" id="6_hub"]
+[ext_resource type="Script" path="res://src/player/player_death_animator.gd" id="7_death"]
+[ext_resource type="Resource" path="res://config/player/death/death_sequences.tres" id="8_death_library"]
+[ext_resource type="Shader" path="res://src/player/player_gib.gdshader" id="9_gib_shader"]
+[ext_resource type="Shader" path="res://src/player/player_gib_outline.gdshader" id="10_gib_outline_shader"]
 
 [node name="PlayerPresentation" type="Node2D"]
 script = ExtResource("1_presentation")
@@ -66,3 +70,10 @@ offset = Vector2(-10, -41)
 texture = ExtResource("6_hub")
 centered = false
 offset = Vector2(-42, -24)
+
+[node name="Death" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_death")
+library = ExtResource("8_death_library")
+gib_shader = ExtResource("9_gib_shader")
+gib_outline_shader = ExtResource("10_gib_outline_shader")

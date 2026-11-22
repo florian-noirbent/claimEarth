@@ -20,6 +20,8 @@ signal player_liquid_entered(world_position: Vector2, color: Color, speed: float
 signal player_liquid_exited(world_position: Vector2, color: Color, speed: float)
 signal player_sand_burrow_changed(world_position: Vector2, is_burrowing: bool)
 signal player_hazard_warning(cause: StringName, level: float, color: Color)
+signal player_death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float)
+signal player_gib_landed(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float)
 
 const WorldGrappleAnchorQueryScript = preload("res://src/player/world_grapple_anchor_query.gd")
 const RenderTextureSimulationBackendScript = preload("res://src/simulation/render_texture_simulation_backend.gd")
@@ -94,6 +96,12 @@ func set_active(is_active: bool) -> void:
 func set_player_active(is_active: bool) -> void:
 	if _player != null:
 		_player.set_physics_process(is_active and not _player.is_dead())
+
+
+## Holds the player's death sequence on its current frame, or lets it go on.
+func set_player_death_suspended(suspended: bool) -> void:
+	if _player != null:
+		_player.set_death_suspended(suspended)
 
 
 func advance(delta: float) -> void:
@@ -220,6 +228,8 @@ func _ensure_player() -> void:
 	_player.liquid_exited.connect(player_liquid_exited.emit)
 	_player.sand_burrow_changed.connect(player_sand_burrow_changed.emit)
 	_player.hazard_warning.connect(player_hazard_warning.emit)
+	_player.death_cue.connect(player_death_cue.emit)
+	_player.gib_landed.connect(player_gib_landed.emit)
 	var spawn_col := _generation_result.spawn_rect.position.x + int(_generation_result.spawn_rect.size.x / 2)
 	var spawn_row := _generation_result.spawn_rect.position.y
 	_player.set_spawn_position(HexMetrics.center_for_offset(spawn_col, spawn_row, _world_presenter.hex_radius))

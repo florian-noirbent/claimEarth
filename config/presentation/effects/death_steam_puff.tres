@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EffectRecipe" format=3]
+
+[ext_resource type="Script" path="res://src/presentation/effects/effect_emitter.gd" id="1_j05pm"]
+[ext_resource type="Script" path="res://src/presentation/effects/effect_recipe.gd" id="2_h27il"]
+
+[sub_resource type="Gradient" id="Gradient_qw1o0"]
+offsets = PackedFloat32Array(0, 0.12, 0.55, 1)
+colors = PackedColorArray(0.96, 0.97, 1, 0, 0.96, 0.97, 1, 0.65, 0.96, 0.97, 1, 0.455, 0.96, 0.97, 1, 0)
+
+[sub_resource type="Resource" id="Resource_03jjp"]
+script = ExtResource("1_j05pm")
+lifetime_min = 0.5
+lifetime_max = 0.9
+spawn_radius = 3.0
+spread_degrees = 50.0
+speed_min = 15.0
+speed_max = 55.0
+gravity = -160.0
+drag = 2.6
+size_start = 4.5
+size_end = 14.0
+size_ease = 0.5
+size_jitter = 0.35
+colors = SubResource("Gradient_qw1o0")
+tint_palette = PackedColorArray()
+
+[resource]
+script = ExtResource("2_h27il")
+emitters = Array[ExtResource("1_j05pm")]([SubResource("Resource_03jjp")])

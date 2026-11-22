@@ -27,6 +27,7 @@ func test_every_feedback_moment_plays_without_a_camera() -> void:
 		func() -> void: feedback.spawn_sand_burst(HERE, false),
 		func() -> void: feedback.show_hazard_warning(HERE, DeathCause.ACID, 0.8, Color.GREEN),
 		func() -> void: feedback.spawn_death(HERE, DeathCause.BOUNDS),
+		func() -> void: feedback.spawn_gib_splat(&"blood_splat", HERE, Vector2.UP, 500.0),
 		func() -> void: feedback.spawn_throw(HERE, Vector2.RIGHT, item),
 		func() -> void: feedback.spawn_tool_swing(HERE, Vector2.DOWN, item),
 		func() -> void: feedback.spawn_bounce_spark(HERE, 500.0),
@@ -60,6 +61,17 @@ func test_every_feedback_moment_plays_without_a_camera() -> void:
 		moments[index].call()
 		assert_gt(feedback.effects().live_particle_count(), 0, "Moment %d shows an effect" % index)
 		feedback.effects().advance(STEP)
+
+	# Every effect a death sequence can ask for by key.
+	for key: StringName in (load(LIBRARY_PATH) as GameplayEffectLibrary).death_cue_by_key:
+		feedback.effects().clear()
+		feedback.spawn_death_cue(key, HERE, Vector2.RIGHT, 1.0)
+		assert_gt(feedback.effects().live_particle_count(), 0, "Death cue %s shows an effect" % key)
+	feedback.effects().clear()
+	feedback.spawn_death_cue(&"no_such_cue", HERE, Vector2.RIGHT, 1.0)
+	feedback.spawn_gib_splat(&"no_such_cue", HERE, Vector2.UP, 900.0)
+	feedback.spawn_gib_splat(&"blood_splat", HERE, Vector2.UP, 20.0)
+	assert_eq(feedback.effects().live_particle_count(), 0, "Unknown cues and soft landings show nothing")
 
 	feedback.show_flag_flight(true)
 	feedback.show_flag_flight(false)

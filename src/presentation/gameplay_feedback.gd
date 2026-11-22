@@ -170,11 +170,27 @@ func show_hazard_warning(world_position: Vector2, _cause: StringName, level: flo
 	_play(_library.hazard_warning, world_position, lerpf(0.8, 1.25, clampf(level, 0.0, 1.0)), color)
 
 
-## The player died for good here; cause is a DeathCause value.
-func spawn_death(world_position: Vector2, cause: StringName) -> void:
+## The player died for good here; cause is a DeathCause value. This is the hit every death
+## shares; what follows for the cause arrives as cues from the player's death sequence.
+func spawn_death(world_position: Vector2, _cause: StringName) -> void:
 	_end_run()
 	_play(_library.death, world_position)
-	_play(GameplayEffectLibrary.keyed(_library.death_by_cause, cause, null), world_position)
+
+
+## The player's death sequence reached a moment that asks for the effect declared under
+## key: a burst, a trail behind a flying body part, smoke, bubbles. direction is the way
+## the moment points (a part's flight, the push of a blast); strength is 1 for the
+## authored look. Keys without an entry show nothing.
+func spawn_death_cue(key: StringName, world_position: Vector2, direction: Vector2, strength: float) -> void:
+	_play(GameplayEffectLibrary.keyed(_library.death_cue_by_key, key, null), world_position, 1.0, Color.WHITE, direction, strength)
+
+
+## A loose body part hit terrain here; key is the death sequence's splat effect, normal
+## points away from the surface, impact_speed is the speed the hit stopped.
+func spawn_gib_splat(key: StringName, world_position: Vector2, normal: Vector2, impact_speed: float) -> void:
+	var strength := _strength(impact_speed, _library.gib_splat_min_speed, _library.gib_splat_full_speed)
+	if strength > 0.0:
+		_play(GameplayEffectLibrary.keyed(_library.death_cue_by_key, key, null), world_position, 1.0, Color.WHITE, normal, strength)
 
 
 # --- Items and world objects ---
