@@ -19,6 +19,7 @@ var sand_passable := false
 var sand_breathable := false
 var sulfur_dioxide_breathable := false
 var sulfur_dioxide_immune := false
+var steam_immune := false
 var all_hazards_immune := false
 var heat_duration_seconds_add := 0.0
 var suffocation_duration_seconds_add := 0.0
@@ -95,6 +96,9 @@ static func compile(
 	)
 	tuning.sulfur_dioxide_immune = bool(
 		modifiers.hazards.value("sulfur_dioxide_immune", false)
+	)
+	tuning.steam_immune = bool(
+		modifiers.hazards.value("steam_immune", false)
 	)
 	tuning.all_hazards_immune = bool(
 		modifiers.hazards.value("all_hazards_immune", false)

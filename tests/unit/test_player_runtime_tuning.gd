@@ -97,10 +97,29 @@ func test_glass_sand_and_hazard_modifiers_compile_to_typed_policy() -> void:
 	assert_true(tuning.sand_passable)
 	assert_true(tuning.sand_breathable)
 	assert_eq(tuning.heat_duration_seconds_add, 1.0)
+	assert_true(tuning.steam_immune)
 	assert_eq(tuning.suffocation_duration_seconds_add, 5.0)
 	assert_eq(
 		tuning.movement.lethal_impact_speed,
 		_base_movement.medium_impact_speed
+	)
+
+
+func test_heat_resistance_compiles_to_steam_immunity_and_a_heat_delay() -> void:
+	var heat_resistance := load("res://config/perks/heat_resistance.tres") as PerkDefinition
+	assert_eq(heat_resistance.description, "Immune to steam and +1s lava exposure delay.")
+	var tuning := PlayerRuntimeTuning.compile(
+		_base_movement,
+		_base_grapple,
+		_modifiers(["res://config/perks/heat_resistance.tres"])
+	)
+
+	assert_true(tuning.steam_immune)
+	assert_eq(tuning.heat_duration_seconds_add, 1.0)
+	assert_false(tuning.all_hazards_immune)
+	assert_false(tuning.sulfur_dioxide_immune)
+	assert_false(
+		PlayerRuntimeTuning.compile(_base_movement, _base_grapple, _modifiers([])).steam_immune
 	)
 
 

@@ -228,9 +228,9 @@ blocks breathing. Acid fills in 1.5 seconds from 10% fill and Poison
 fills in 10 seconds from any amount, reaching full rate at one SO₂ bar. Both recover
 over their respective fill durations; Cooked recovers in one second and both impact
 and suffocation recover from full in three. Sulfur Resistance makes SO₂ breathable,
-prevents Poison, and adds two seconds to Acid survival. Heat Resistance adds one second
-to both Lava and Steam Cooked exposure; Glass Cannon is immune to
-all terrain hazards and suffocation. Death never records current depth.
+prevents Poison, and adds two seconds to Acid survival. Heat Resistance makes Steam
+harmless at any pressure and adds one second to Lava Cooked exposure; Glass Cannon is
+immune to all terrain hazards and suffocation. Death never records current depth.
 
 ## Items
 
