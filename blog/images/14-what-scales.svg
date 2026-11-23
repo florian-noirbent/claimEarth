@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" width="800" height="320" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>What a bigger map costs</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="318" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">What a bigger map costs</text>
+<rect x="30.0" y="65.0" width="360.0" height="190.0" rx="8" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="1" opacity="1.0"/>
+<rect x="410.0" y="65.0" width="360.0" height="190.0" rx="8" fill="#fff1e0" stroke="#e09a3e" stroke-width="1" opacity="1.0"/>
+<text x="210.0" y="95.0" font-size="16" font-weight="700" fill="#2e9e5b" text-anchor="middle">Stays the same</text>
+<text x="590.0" y="95.0" font-size="16" font-weight="700" fill="#b36b12" text-anchor="middle">Grows with cell count</text>
+<text x="60.0" y="140.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">✓  1 terrain quad, 1 shader</text>
+<text x="60.0" y="178.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">✓  0 scene Nodes per cell</text>
+<text x="60.0" y="216.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">✓  0 physics colliders per cell</text>
+<text x="440.0" y="140.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">↑  texture memory (4 bytes / cell)</text>
+<text x="440.0" y="178.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">↑  work in each simulation pass</text>
+<text x="440.0" y="216.0" font-size="15" font-weight="400" fill="#1f2933" text-anchor="start">↑  CPU readback every tick</text>
+<text x="400.0" y="288.0" font-size="14" font-weight="400" fill="#5f6b7a" text-anchor="middle">Drawing cost follows screen pixels: one draw call doesn't mean free shading.</text>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" width="800" height="330" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Terrain speed follows time, not frame rate</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="328" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Terrain speed follows time, not frame rate</text>
+<line x1="300.0" y1="82.0" x2="300.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="390.0" y1="82.0" x2="390.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="480.0" y1="82.0" x2="480.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="570.0" y1="82.0" x2="570.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="660.0" y1="82.0" x2="660.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="750.0" y1="82.0" x2="750.0" y2="262.0" stroke="#2f6fde" stroke-width="1.2" stroke-dasharray="4 4"/>
+<text x="195.0" y="105.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="end">passes due</text>
+<text x="195.0" y="175.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="end">fast: 120 fps</text>
+<text x="195.0" y="245.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="end">slow: 20 fps</text>
+<polygon points="300.0,88 309.0,100 300.0,112 291.0,100" fill="#2f6fde"/>
+<polygon points="390.0,88 399.0,100 390.0,112 381.0,100" fill="#2f6fde"/>
+<polygon points="480.0,88 489.0,100 480.0,112 471.0,100" fill="#2f6fde"/>
+<polygon points="570.0,88 579.0,100 570.0,112 561.0,100" fill="#2f6fde"/>
+<polygon points="660.0,88 669.0,100 660.0,112 651.0,100" fill="#2f6fde"/>
+<polygon points="750.0,88 759.0,100 750.0,112 741.0,100" fill="#2f6fde"/>
+<rect x="211.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="232.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="256.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="277.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="301.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="322.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="346.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="367.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="391.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="412.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="436.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="457.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="481.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="502.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="526.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="547.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="571.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="592.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="616.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="637.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="661.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="682.5" y="175.0" font-size="13" font-weight="600" fill="#5f6b7a" text-anchor="middle">0</text>
+<rect x="706.0" y="152.0" width="43.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="727.5" y="175.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">1</text>
+<rect x="211.0" y="222.0" width="268.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="345.0" y="245.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">3 passes in one frame</text>
+<rect x="481.0" y="222.0" width="268.0" height="36.0" rx="4" fill="#e6efff" stroke="#2f6fde" stroke-width="1" opacity="1.0"/>
+<text x="615.0" y="245.0" font-size="13" font-weight="600" fill="#1f2933" text-anchor="middle">3 passes in one frame</text>
+<line x1="210.0" y1="278.0" x2="750.0" y2="278.0" stroke="#5f6b7a" stroke-width="1.5"/>
+<line x1="210.0" y1="273.0" x2="210.0" y2="283.0" stroke="#5f6b7a" stroke-width="1.5"/>
+<text x="210.0" y="298.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">0 ms</text>
+<line x1="480.0" y1="273.0" x2="480.0" y2="283.0" stroke="#5f6b7a" stroke-width="1.5"/>
+<text x="480.0" y="298.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">50 ms</text>
+<line x1="750.0" y1="273.0" x2="750.0" y2="283.0" stroke="#5f6b7a" stroke-width="1.5"/>
+<text x="750.0" y="298.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">100 ms</text>
+<text x="400.0" y="320.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">Numbers = passes submitted in that frame. Both rows finish one full tick.</text>
+</svg>

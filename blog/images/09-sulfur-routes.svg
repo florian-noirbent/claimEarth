@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="800" height="380" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Sulfur's two routes</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="378" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Sulfur's two routes</text>
+<text x="40.0" y="85.0" font-size="14" font-weight="700" fill="#2f6fde" text-anchor="start">With water: acid</text>
+<polygon points="110.0,150.0 95.0,176.0 65.0,176.0 50.0,150.0 65.0,124.0 95.0,124.0" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="80.0" y="202.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">water</text>
+<text x="135.0" y="156.0" font-size="22" font-weight="700" fill="#5f6b7a" text-anchor="middle">+</text>
+<polygon points="220.0,150.0 205.0,176.0 175.0,176.0 160.0,150.0 175.0,124.0 205.0,124.0" fill="#e9d43b" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="190.0" y="202.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">sulfur</text>
+<line x1="232.0" y1="150.0" x2="358.0" y2="150.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="295.0" y="138.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">slowly</text>
+<polygon points="430.0,150.0 415.0,176.0 385.0,176.0 370.0,150.0 385.0,124.0 415.0,124.0" fill="#9ccc3c" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="400.0" y="202.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">acid (sinks)</text>
+<line x1="442.0" y1="150.0" x2="608.0" y2="150.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="525.0" y="138.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">eats sand below it</text>
+<polygon points="680.0,150.0 665.0,176.0 635.0,176.0 620.0,150.0 635.0,124.0 665.0,124.0" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="650.0" y="202.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">back to water</text>
+<line x1="40.0" y1="230.0" x2="760.0" y2="230.0" stroke="#e3e7ec" stroke-width="1.5"/>
+<text x="40.0" y="262.0" font-size="14" font-weight="700" fill="#2f6fde" text-anchor="start">With lava: poison gas</text>
+<polygon points="110.0,310.0 95.0,336.0 65.0,336.0 50.0,310.0 65.0,284.0 95.0,284.0" fill="#e8572a" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="80.0" y="362.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">lava</text>
+<text x="135.0" y="316.0" font-size="22" font-weight="700" fill="#5f6b7a" text-anchor="middle">+</text>
+<polygon points="220.0,310.0 205.0,336.0 175.0,336.0 160.0,310.0 175.0,284.0 205.0,284.0" fill="#e9d43b" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="190.0" y="362.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">sulfur</text>
+<line x1="232.0" y1="310.0" x2="358.0" y2="310.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="295.0" y="298.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">ignites</text>
+<polygon points="430.0,310.0 415.0,336.0 385.0,336.0 370.0,310.0 385.0,284.0 415.0,284.0" fill="#e9d43b" stroke="#e8572a" stroke-width="3" opacity="1.0"/>
+<text x="400.0" y="362.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">burning sulfur</text>
+<line x1="442.0" y1="310.0" x2="608.0" y2="310.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="525.0" y="298.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">keeps burning,</text>
+<text x="525.0" y="332.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">even after the lava leaves</text>
+<polygon points="680.0,310.0 665.0,336.0 635.0,336.0 620.0,310.0 635.0,284.0 665.0,284.0" fill="#b08ad8" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<text x="650.0" y="362.0" font-size="14" font-weight="600" fill="#1f2933" text-anchor="middle">SO₂: poisons player</text>
+</svg>

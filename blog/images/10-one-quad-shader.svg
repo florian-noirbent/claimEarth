@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>How the shader colors one pixel</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="298" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">How the shader colors one pixel</text>
+<rect x="30.0" y="70.0" width="160.0" height="160.0" rx="8" fill="#f5f7fa" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<text x="110.0" y="96.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">1. A screen pixel</text>
+<rect x="70.0" y="112.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="70.0" y="132.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="70.0" y="152.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="90.0" y="112.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="90.0" y="132.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="90.0" y="152.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="110.0" y="112.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="110.0" y="132.0" width="18.0" height="18.0" rx="1" fill="#2f6fde" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="110.0" y="152.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="130.0" y="112.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="130.0" y="132.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<rect x="130.0" y="152.0" width="18.0" height="18.0" rx="1" fill="#ffffff" stroke="#9aa5b1" stroke-width="1" opacity="1.0"/>
+<text x="110.0" y="198.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">for every pixel</text>
+<text x="110.0" y="214.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">of the one quad</text>
+<line x1="193.0" y1="150.0" x2="217.0" y2="150.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<rect x="220.0" y="70.0" width="160.0" height="160.0" rx="8" fill="#f5f7fa" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<text x="300.0" y="96.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">2. Which hex?</text>
+<polygon points="332.0,142.0 316.0,169.7 284.0,169.7 268.0,142.0 284.0,114.3 316.0,114.3" fill="#eef2f6" stroke="#9aa5b1" stroke-width="2" opacity="1.0"/>
+<circle cx="312" cy="150" r="5" fill="#2f6fde"/>
+<text x="300.0" y="198.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">hex coordinate +</text>
+<text x="300.0" y="214.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">spot inside it</text>
+<line x1="383.0" y1="150.0" x2="407.0" y2="150.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<rect x="410.0" y="70.0" width="160.0" height="160.0" rx="8" fill="#f5f7fa" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<text x="490.0" y="96.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">3. Read the texel</text>
+<rect x="446.0" y="124.0" width="20.0" height="36.0" rx="3" fill="#ffffff" stroke="#8a63c9" stroke-width="2" opacity="1.0"/>
+<text x="456.0" y="147.0" font-size="12" font-weight="700" fill="#8a63c9" text-anchor="middle">R</text>
+<rect x="469.0" y="124.0" width="20.0" height="36.0" rx="3" fill="#ffffff" stroke="#2e9e5b" stroke-width="2" opacity="1.0"/>
+<text x="479.0" y="147.0" font-size="12" font-weight="700" fill="#2e9e5b" text-anchor="middle">G</text>
+<rect x="492.0" y="124.0" width="20.0" height="36.0" rx="3" fill="#ffffff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="502.0" y="147.0" font-size="12" font-weight="700" fill="#2f6fde" text-anchor="middle">B</text>
+<rect x="515.0" y="124.0" width="20.0" height="36.0" rx="3" fill="#ffffff" stroke="#e09a3e" stroke-width="2" opacity="1.0"/>
+<text x="525.0" y="147.0" font-size="12" font-weight="700" fill="#e09a3e" text-anchor="middle">A</text>
+<text x="490.0" y="198.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">material, fill,</text>
+<text x="490.0" y="214.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">light</text>
+<line x1="573.0" y1="150.0" x2="597.0" y2="150.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<rect x="600.0" y="70.0" width="160.0" height="160.0" rx="8" fill="#f5f7fa" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<text x="680.0" y="96.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">4. Pick a color</text>
+<clipPath id="clip-10-one-quad-shader-1"><polygon points="712.0,142.0 696.0,169.7 664.0,169.7 648.0,142.0 664.0,114.3 696.0,114.3"/></clipPath>
+<polygon points="712.0,142.0 696.0,169.7 664.0,169.7 648.0,142.0 664.0,114.3 696.0,114.3" fill="#eef2f6" stroke="none" stroke-width="0" opacity="1.0"/>
+<rect x="648.0" y="128.1" width="64.0" height="42.6" fill="#e2b65a" clip-path="url(#clip-10-one-quad-shader-1)"/>
+<polygon points="712.0,142.0 696.0,169.7 664.0,169.7 648.0,142.0 664.0,114.3 696.0,114.3" fill="none" stroke="#8d6a4a" stroke-width="3" opacity="1.0"/>
+<text x="680.0" y="198.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">atlas art, edges,</text>
+<text x="680.0" y="214.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">shading</text>
+<text x="400.0" y="272.0" font-size="15" font-weight="400" fill="#5f6b7a" text-anchor="middle">No terrain mesh: after a bomb, the next frame simply reads the new bytes.</text>
+</svg>

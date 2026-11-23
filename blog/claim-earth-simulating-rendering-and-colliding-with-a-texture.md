@@ -12,6 +12,8 @@ collision code lets the player stand on the resulting cells. There is no
 terrain mesh to rebuild when a bomb changes the map, and no terrain collider mesh to
 regenerate.
 
+![One world texture feeds simulation, drawing, and collision](images/00-overview.svg)
+
 Here is how those pieces fit together in Godot's Compatibility renderer, with a
 single-threaded Web export as the baseline.
 
@@ -29,6 +31,8 @@ rather than display colors.
 - `B`: Lighting.
 - `A`: Secondary material quantity.
 
+![Each hex is one texel whose RGBA bytes store material IDs, quantities, and light](images/01-four-bytes-per-hex.svg)
+
 That makes one raw world snapshot 200 KiB. Intermediate render targets, material
 artwork, and other lookup textures are additional allocations.
 
@@ -40,6 +44,8 @@ For sand, water, and lava, 127 quantity represents visible fullness. Higher
 values, up to 255, store overpressure without making the hex look larger. Gases have
 their own normal pressure values: air uses 64, for example. This gives the
 simulation room to compress material when it cannot immediately escape.
+
+![Quantities up to 127 show fill; higher values store pressure](images/02-quantity-and-pressure.svg)
 
 ## Simulating terrain with render passes
 
@@ -58,6 +64,8 @@ destination capacity. The simulation instead divides connections into independen
 pairs for each pass. Each fragment resolves its pair from the same two source
 cells and writes its own cell's result.
 
+![Pushing independently over-claims space; fixed pairs cannot collide](images/03-why-pairs.svg)
+
 A complete tick contains six ordered passes:
 
 1. Vertical even pairs.
@@ -71,6 +79,10 @@ The even and odd pairings alternate which connections participate. Across the
 sequence, material can move through the hex grid without competing writes within a
 pass.
 
+![Even and odd pairings alternate so material crosses every boundary](images/04-even-and-odd-pairs.svg)
+
+![One tick runs six passes: vertical, down-right, down-left for even then odd pairs](images/05-six-pass-tick.svg)
+
 The backend has two banks of six render targets. Each scheduled pass reads the
 previous pass's output, and alternating banks protect the textures still used for
 presentation.
@@ -80,6 +92,8 @@ ten complete six-pass ticks per second. A fast presentation frame may have no
 simulation work due. A slower frame can submit several ordered passes together,
 up to the end of the current tick. Terrain speed therefore follows elapsed
 gameplay time rather than the number of frames drawn.
+
+![Fast and slow frame rates submit the same passes over the same time](images/06-time-not-frame-rate.svg)
 
 Before a run begins, the generated map also settles for 50 complete ticks.
 Water, sand, and gases can move into place before the player enters.
@@ -93,6 +107,8 @@ whenever something denser arrived.
 The secondary component provides temporary storage. As sand displaces water,
 sand becomes the denser primary material and displaced water can remain in the cell
 as secondary content. It becomes invisible, but its quantity is still tracked.
+
+![Sand displaces water, which hides as secondary content and later moves out](images/07-hidden-secondary-material.svg)
 
 Later pair passes try to move that secondary water into compatible neighboring
 capacity. If it is trapped, pressure can redistribute into full cells of the same
@@ -152,6 +168,8 @@ reaction consumes ten steam quantity and leaves one water quantity, which can
 drip back down. A smaller remaining amount of steam disappears without producing
 water.
 
+![Water and lava make steam, steam condenses back to water, and lava cools to stone](images/08-water-lava-steam.svg)
+
 These chance reactions use integer hashes of the run seed, tick, cell position,
 and a salt. The same simulation inputs produce the same reaction decisions.
 
@@ -176,6 +194,8 @@ overpressure can drive it upward. It also blocks breathing and builds the player
 meter. Steam remains breathable but contributes heat damage. Material identity
 therefore connects the simulation to distinct player hazards.
 
+![Sulfur with water makes acid; sulfur with lava burns into poisonous gas](images/09-sulfur-routes.svg)
+
 The interaction matters when terrain changes. Opening a wall can redirect water
 toward sulfur, release a trapped gas pocket, or let lava reach a mineral
 deposit. Those outcomes follow from the cells and their local rules.
@@ -190,6 +210,8 @@ From there it samples the world data and the material lookup textures. The
 shader determines the visible material, partial fill, boundary shape, outline, and
 lighting. Material artwork comes from an atlas, while additional shader effects
 animate liquid surfaces.
+
+![The shader maps each pixel to a hex, reads its texel, and picks a color](images/10-one-quad-shader.svg)
 
 This separates simulation resolution from display resolution. A single
 simulation texel can become a large, textured hex on screen.
@@ -222,12 +244,16 @@ The data flow is: committed CPU cells -> GPU simulation passes -> completed GPU
 texture -> terrain presentation shader. After each complete tick, readback updates
 the CPU cells used by collision and gameplay queries.
 
+![CPU cells upload to GPU passes; completed texture is drawn and read back for collision](images/11-gpu-cpu-loop.svg)
+
 TerrainCollisionQuery converts a body's position into a small range of nearby
 candidate cells. It checks material solidity and quantity, then performs geometric
 tests against the corresponding hex polygons.
 
 Those polygons are calculated for the query. They are not stored as a terrain
 physics mesh or registered as thousands of collider objects.
+
+![Collision checks only nearby solid hexes against the body shape](images/12-collision-query.svg)
 
 The movement solver uses the contacts to resolve motion, floor support, and
 stepping over low terrain. Related queries handle circular and convex polygon
@@ -254,6 +280,8 @@ cancels unfinished simulation work, uploads the patched world state, and
 restarts from it. Stale render callbacks are invalidated so abandoned work cannot
 publish a later result.
 
+![A bomb cancels the unfinished tick, uploads the patched world, and restarts](images/13-explosion-restart.svg)
+
 This gives gameplay mutations a clear priority while keeping partially simulated
 states out of collision queries. The player, item code, and terrain shader all
 consume completed states.
@@ -269,6 +297,8 @@ the completed texture back to the CPU introduces synchronization and transfer
 work. The presentation shader spends GPU time on material sampling, boundaries,
 lighting, and fluid effects. One terrain draw call does not make that fragment work
 free.
+
+![What stays constant and what grows with map size](images/14-what-scales.svg)
 
 The cell format also shapes the rules: four-bit material IDs, two components per
 cell, and byte-sized quantities are deliberate limits. The hidden component

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="800" height="380" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Even and odd pairings take turns</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="378" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Even and odd pairings take turns</text>
+<text x="260.0" y="72.0" font-size="16" font-weight="700" fill="#1f2933" text-anchor="middle">Even pass</text>
+<polygon points="281.0,100.0 270.5,118.2 249.5,118.2 239.0,100.0 249.5,81.8 270.5,81.8" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="105.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 0</text>
+<polygon points="281.0,136.4 270.5,154.6 249.5,154.6 239.0,136.4 249.5,118.2 270.5,118.2" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="141.4" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 1</text>
+<polygon points="281.0,172.7 270.5,190.9 249.5,190.9 239.0,172.7 249.5,154.6 270.5,154.6" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="177.7" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 2</text>
+<polygon points="281.0,209.1 270.5,227.3 249.5,227.3 239.0,209.1 249.5,190.9 270.5,190.9" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="214.1" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 3</text>
+<polygon points="281.0,245.5 270.5,263.7 249.5,263.7 239.0,245.5 249.5,227.3 270.5,227.3" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="250.5" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 4</text>
+<polygon points="281.0,281.9 270.5,300.1 249.5,300.1 239.0,281.9 249.5,263.7 270.5,263.7" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="220.0" y="286.9" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 5</text>
+<line x1="260" y1="106.0" x2="260" y2="130.4" stroke="#2f6fde" stroke-width="2.5" marker-start="url(#ah-accent)" marker-end="url(#ah-accent)"/>
+<line x1="260" y1="178.7" x2="260" y2="203.1" stroke="#2e9e5b" stroke-width="2.5" marker-start="url(#ah-good)" marker-end="url(#ah-good)"/>
+<line x1="260" y1="251.5" x2="260" y2="275.9" stroke="#2f6fde" stroke-width="2.5" marker-start="url(#ah-accent)" marker-end="url(#ah-accent)"/>
+<text x="540.0" y="72.0" font-size="16" font-weight="700" fill="#1f2933" text-anchor="middle">Odd pass</text>
+<polygon points="561.0,100.0 550.5,118.2 529.5,118.2 519.0,100.0 529.5,81.8 550.5,81.8" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1.5" opacity="0.6"/>
+<text x="500.0" y="105.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 0</text>
+<polygon points="561.0,136.4 550.5,154.6 529.5,154.6 519.0,136.4 529.5,118.2 550.5,118.2" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="500.0" y="141.4" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 1</text>
+<polygon points="561.0,172.7 550.5,190.9 529.5,190.9 519.0,172.7 529.5,154.6 550.5,154.6" fill="#e6efff" stroke="#2f6fde" stroke-width="2" opacity="1.0"/>
+<text x="500.0" y="177.7" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 2</text>
+<polygon points="561.0,209.1 550.5,227.3 529.5,227.3 519.0,209.1 529.5,190.9 550.5,190.9" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="2" opacity="1.0"/>
+<text x="500.0" y="214.1" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 3</text>
+<polygon points="561.0,245.5 550.5,263.7 529.5,263.7 519.0,245.5 529.5,227.3 550.5,227.3" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="2" opacity="1.0"/>
+<text x="500.0" y="250.5" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 4</text>
+<polygon points="561.0,281.9 550.5,300.1 529.5,300.1 519.0,281.9 529.5,263.7 550.5,263.7" fill="#f7f7f7" stroke="#9aa5b1" stroke-width="1.5" opacity="0.6"/>
+<text x="500.0" y="286.9" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="end">row 5</text>
+<line x1="540" y1="142.4" x2="540" y2="166.7" stroke="#2f6fde" stroke-width="2.5" marker-start="url(#ah-accent)" marker-end="url(#ah-accent)"/>
+<line x1="540" y1="215.1" x2="540" y2="239.5" stroke="#2e9e5b" stroke-width="2.5" marker-start="url(#ah-good)" marker-end="url(#ah-good)"/>
+<text x="572.0" y="105.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="start" font-style="italic">sits out</text>
+<text x="572.0" y="286.9" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="start" font-style="italic">sits out</text>
+<text x="400.0" y="340.0" font-size="15" font-weight="400" fill="#5f6b7a" text-anchor="middle">Alternating the pairs lets material cross every boundary between rows.</text>
+<text x="400.0" y="362.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">The same trick is used for the two diagonal directions.</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 370" width="800" height="370" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Why cells trade material in pairs</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="368" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Why cells trade material in pairs</text>
+<rect x="20.0" y="60.0" width="370.0" height="250.0" rx="8" fill="#fde8e8" stroke="#d64545" stroke-width="1" opacity="1.0"/>
+<rect x="410.0" y="60.0" width="370.0" height="250.0" rx="8" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="1" opacity="1.0"/>
+<text x="205.0" y="88.0" font-size="15" font-weight="700" fill="#d64545" text-anchor="middle">If every cell pushes on its own…</text>
+<text x="595.0" y="88.0" font-size="15" font-weight="700" fill="#2e9e5b" text-anchor="middle">…fixed pairs can't collide</text>
+<polygon points="190.0,199.0 175.0,225.0 145.0,225.0 130.0,199.0 145.0,173.0 175.0,173.0" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<polygon points="235.0,173.0 220.0,199.0 190.0,199.0 175.0,173.0 190.0,147.1 220.0,147.1" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<polygon points="280.0,199.0 265.0,225.0 235.0,225.0 220.0,199.0 235.0,173.0 265.0,173.0" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<clipPath id="clip-03-why-pairs-1"><polygon points="235.0,225.0 220.0,251.0 190.0,251.0 175.0,225.0 190.0,199.0 220.0,199.0"/></clipPath>
+<polygon points="235.0,225.0 220.0,251.0 190.0,251.0 175.0,225.0 190.0,199.0 220.0,199.0" fill="#eef2f6" stroke="none" stroke-width="0" opacity="1.0"/>
+<rect x="175.0" y="230.2" width="60.0" height="21.8" fill="#4a90d9" clip-path="url(#clip-03-why-pairs-1)"/>
+<polygon points="235.0,225.0 220.0,251.0 190.0,251.0 175.0,225.0 190.0,199.0 220.0,199.0" fill="none" stroke="#d64545" stroke-width="3" opacity="1.0"/>
+<line x1="171.2" y1="205.5" x2="193.8" y2="218.5" stroke="#d64545" stroke-width="3" marker-end="url(#ah-bad)"/>
+<line x1="205.0" y1="186.0" x2="205.0" y2="212.0" stroke="#d64545" stroke-width="3" marker-end="url(#ah-bad)"/>
+<line x1="238.8" y1="205.5" x2="216.2" y2="218.5" stroke="#d64545" stroke-width="3" marker-end="url(#ah-bad)"/>
+<text x="205.0" y="280.0" font-size="13" font-weight="600" fill="#d64545" text-anchor="middle">room for 1 unit, but 3 neighbors</text>
+<text x="205.0" y="297.0" font-size="13" font-weight="600" fill="#d64545" text-anchor="middle">each send 1 at the same time</text>
+<polygon points="569.0,118.0 557.0,138.8 533.0,138.8 521.0,118.0 533.0,97.2 557.0,97.2" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<clipPath id="clip-03-why-pairs-2"><polygon points="569.0,159.6 557.0,180.4 533.0,180.4 521.0,159.6 533.0,138.8 557.0,138.8"/></clipPath>
+<polygon points="569.0,159.6 557.0,180.4 533.0,180.4 521.0,159.6 533.0,138.8 557.0,138.8" fill="#eef2f6" stroke="none" stroke-width="0" opacity="1.0"/>
+<rect x="521.0" y="167.9" width="48.0" height="13.5" fill="#4a90d9" clip-path="url(#clip-03-why-pairs-2)"/>
+<polygon points="569.0,159.6 557.0,180.4 533.0,180.4 521.0,159.6 533.0,138.8 557.0,138.8" fill="none" stroke="#9aa5b1" stroke-width="2" opacity="1.0"/>
+<polygon points="569.0,223.1 557.0,243.9 533.0,243.9 521.0,223.1 533.0,202.4 557.0,202.4" fill="#4a90d9" stroke="#ffffff" stroke-width="2" opacity="1.0"/>
+<clipPath id="clip-03-why-pairs-3"><polygon points="569.0,264.7 557.0,285.5 533.0,285.5 521.0,264.7 533.0,243.9 557.0,243.9"/></clipPath>
+<polygon points="569.0,264.7 557.0,285.5 533.0,285.5 521.0,264.7 533.0,243.9 557.0,243.9" fill="#eef2f6" stroke="none" stroke-width="0" opacity="1.0"/>
+<rect x="521.0" y="273.0" width="48.0" height="13.5" fill="#4a90d9" clip-path="url(#clip-03-why-pairs-3)"/>
+<polygon points="569.0,264.7 557.0,285.5 533.0,285.5 521.0,264.7 533.0,243.9 557.0,243.9" fill="none" stroke="#9aa5b1" stroke-width="2" opacity="1.0"/>
+<rect x="513.0" y="92.0" width="64.0" height="93.6" rx="16" fill="none" stroke="#2e9e5b" stroke-width="2.5" stroke-dasharray="6 5" opacity="1.0"/>
+<line x1="545.0" y1="126.0" x2="545.0" y2="151.6" stroke="#2e9e5b" stroke-width="2.5" marker-end="url(#ah-good)"/>
+<text x="595.0" y="143.8" font-size="14" font-weight="600" fill="#2e9e5b" text-anchor="start">pair A</text>
+<rect x="513.0" y="197.1" width="64.0" height="93.6" rx="16" fill="none" stroke="#2e9e5b" stroke-width="2.5" stroke-dasharray="6 5" opacity="1.0"/>
+<line x1="545.0" y1="231.1" x2="545.0" y2="256.7" stroke="#2e9e5b" stroke-width="2.5" marker-end="url(#ah-good)"/>
+<text x="595.0" y="248.9" font-size="14" font-weight="600" fill="#2e9e5b" text-anchor="start">pair B</text>
+<text x="690.0" y="210.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">only the two</text>
+<text x="690.0" y="225.6" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">cells of a pair</text>
+<text x="690.0" y="241.2" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">decide what</text>
+<text x="690.0" y="256.8" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">moves between</text>
+<text x="690.0" y="272.4" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="middle">them</text>
+<text x="400.0" y="345.0" font-size="15" font-weight="400" fill="#5f6b7a" text-anchor="middle">Each cell belongs to exactly one pair per pass, so no space is claimed twice.</text>
+</svg>

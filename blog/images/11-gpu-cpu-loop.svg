@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 370" width="800" height="370" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Two copies of the world</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="368" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Two copies of the world</text>
+<rect x="40.0" y="150.0" width="190.0" height="70.0" rx="8" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="1.5" opacity="1.0"/>
+<text x="135.0" y="180.5" font-size="15" font-weight="600" fill="#1f2933" text-anchor="middle">CPU cells</text>
+<text x="135.0" y="200.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">WorldGrid (committed)</text>
+<rect x="305.0" y="70.0" width="190.0" height="70.0" rx="8" fill="#e6efff" stroke="#2f6fde" stroke-width="1.5" opacity="1.0"/>
+<text x="400.0" y="100.5" font-size="15" font-weight="600" fill="#1f2933" text-anchor="middle">GPU passes</text>
+<text x="400.0" y="120.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">6 per tick</text>
+<rect x="570.0" y="150.0" width="190.0" height="70.0" rx="8" fill="#e6efff" stroke="#2f6fde" stroke-width="1.5" opacity="1.0"/>
+<text x="665.0" y="180.5" font-size="15" font-weight="600" fill="#1f2933" text-anchor="middle">Completed texture</text>
+<text x="665.0" y="200.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">on the GPU</text>
+<line x1="200.0" y1="148.0" x2="300.0" y2="112.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="232.0" y="118.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">upload</text>
+<line x1="498.0" y1="112.0" x2="598.0" y2="148.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="570.0" y="118.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">after pass 6</text>
+<line x1="566.0" y1="200.0" x2="234.0" y2="200.0" stroke="#2e9e5b" stroke-width="2.5" marker-end="url(#ah-good)"/>
+<text x="400.0" y="192.0" font-size="13" font-weight="600" fill="#2e9e5b" text-anchor="middle">read back after every complete tick</text>
+<rect x="570.0" y="280.0" width="190.0" height="56.0" rx="8" fill="#fff1e0" stroke="#e09a3e" stroke-width="1.5" opacity="1.0"/>
+<text x="665.0" y="313.2" font-size="15" font-weight="600" fill="#1f2933" text-anchor="middle">Draw the cave</text>
+<line x1="665.0" y1="222.0" x2="665.0" y2="276.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="675.0" y="255.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="start">every frame</text>
+<rect x="40.0" y="280.0" width="190.0" height="56.0" rx="8" fill="#e3f5ea" stroke="#2e9e5b" stroke-width="1.5" opacity="1.0"/>
+<text x="135.0" y="313.2" font-size="15" font-weight="600" fill="#1f2933" text-anchor="middle">Collision &amp; gameplay</text>
+<line x1="135.0" y1="222.0" x2="135.0" y2="276.0" stroke="#1f2933" stroke-width="2" marker-end="url(#ah-ink)"/>
+<text x="145.0" y="255.0" font-size="12" font-weight="400" fill="#5f6b7a" text-anchor="start">queries</text>
+<text x="400.0" y="290.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">Physics only ever sees</text>
+<text x="400.0" y="306.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">finished ticks.</text>
+</svg>
