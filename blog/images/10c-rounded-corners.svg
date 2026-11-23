@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Smoothing the hex corners</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="418" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Smoothing the hex corners</text>
+<text x="40.0" y="110.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="start">Outside corner</text>
+<text x="40.0" y="132.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="start">denser than both</text>
+<text x="40.0" y="149.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="start">neighbors: round it off</text>
+<polygon points="350.0,125.0 325.0,168.3 275.0,168.3 250.0,125.0 275.0,81.7 325.0,81.7" fill="#8d6a4a" stroke="#8d6a4a" stroke-width="1.5" opacity="1.0"/>
+<line x1="375.0" y1="125.0" x2="505.0" y2="125.0" stroke="#2f6fde" stroke-width="2.5" marker-end="url(#ah-accent)"/>
+<path d="M 623.1 137.0 L 611.9 156.3 A 24 24 0 0 1 591.1 168.3 L 568.9 168.3 A 24 24 0 0 1 548.1 156.3 L 536.9 137.0 A 24 24 0 0 1 536.9 113.0 L 548.1 93.7 A 24 24 0 0 1 568.9 81.7 L 591.1 81.7 A 24 24 0 0 1 611.9 93.7 L 623.1 113.0 A 24 24 0 0 1 623.1 137.0 Z" fill="#8d6a4a"/>
+<polygon points="630.0,125.0 605.0,168.3 555.0,168.3 530.0,125.0 555.0,81.7 605.0,81.7" fill="none" stroke="#2f6fde" stroke-width="1.5" stroke-dasharray="5 4" opacity="1.0"/>
+<line x1="40.0" y1="200.0" x2="760.0" y2="200.0" stroke="#e3e7ec" stroke-width="1.5"/>
+<text x="40.0" y="290.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="start">Inside corner</text>
+<text x="40.0" y="312.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="start">both neighbors are denser</text>
+<text x="40.0" y="329.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="start">dirt: fill the gap in</text>
+<polygon points="305.0,301.7 280.0,345.0 230.0,345.0 205.0,301.7 230.0,258.4 280.0,258.4" fill="#8d6a4a" stroke="#8d6a4a" stroke-width="1.5" opacity="1.0"/>
+<polygon points="380.0,258.4 355.0,301.7 305.0,301.7 280.0,258.4 305.0,215.1 355.0,215.1" fill="#8d6a4a" stroke="#8d6a4a" stroke-width="1.5" opacity="1.0"/>
+<polygon points="380.0,345.0 355.0,388.3 305.0,388.3 280.0,345.0 305.0,301.7 355.0,301.7" fill="#eef2f6" stroke="#9aa5b1" stroke-width="1.5" opacity="1.0"/>
+<text x="330.0" y="353.0" font-size="13" font-weight="700" fill="#5f6b7a" text-anchor="middle">air</text>
+<polygon points="585.0,301.7 560.0,345.0 510.0,345.0 485.0,301.7 510.0,258.4 560.0,258.4" fill="#8d6a4a" stroke="#8d6a4a" stroke-width="1.5" opacity="1.0"/>
+<polygon points="660.0,258.4 635.0,301.7 585.0,301.7 560.0,258.4 585.0,215.1 635.0,215.1" fill="#8d6a4a" stroke="#8d6a4a" stroke-width="1.5" opacity="1.0"/>
+<polygon points="660.0,345.0 635.0,388.3 585.0,388.3 560.0,345.0 585.0,301.7 635.0,301.7" fill="#eef2f6" stroke="#9aa5b1" stroke-width="1.5" opacity="1.0"/>
+<path d="M 563.3 339.2 L 585.0 301.7 L 628.3 301.7 A 75 75 0 0 0 563.3 339.2 Z" fill="#c08a5a" stroke="#2f6fde" stroke-width="2"/>
+<text x="610.0" y="353.0" font-size="13" font-weight="700" fill="#5f6b7a" text-anchor="middle">air</text>
+<line x1="395.0" y1="302.0" x2="470.0" y2="302.0" stroke="#2f6fde" stroke-width="2.5" marker-end="url(#ah-accent)"/>
+</svg>

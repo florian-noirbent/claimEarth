@@ -670,9 +670,166 @@ def d14_costs():
     s.save()
 
 
+# ---------------------------------------------------------------------------
+# Turning hex edges into cave walls
+# ---------------------------------------------------------------------------
+def hex_vertices(cx, cy, r):
+    return [(cx + r * math.cos(math.radians(60 * i)), cy + r * math.sin(math.radians(60 * i)))
+            for i in range(6)]
+
+
+def _unit(ax, ay, bx, by):
+    d = math.hypot(bx - ax, by - ay)
+    return (bx - ax) / d, (by - ay) / d
+
+
+def rounded_hex_path(cx, cy, r, rad):
+    v = hex_vertices(cx, cy, r)
+    t = rad * 0.57735027
+    segs = []
+    for i in range(6):
+        vx, vy = v[i]
+        px, py = v[(i + 5) % 6]
+        nx, ny = v[(i + 1) % 6]
+        ux, uy = _unit(vx, vy, px, py)
+        wx, wy = _unit(vx, vy, nx, ny)
+        a = (vx + ux * t, vy + uy * t)
+        b = (vx + wx * t, vy + wy * t)
+        segs.append((a, b))
+    d = f"M {segs[0][1][0]:.1f} {segs[0][1][1]:.1f} "
+    for i in list(range(1, 6)) + [0]:
+        a, b = segs[i]
+        d += f"L {a[0]:.1f} {a[1]:.1f} A {rad} {rad} 0 0 1 {b[0]:.1f} {b[1]:.1f} "
+    return d + "Z"
+
+
+def fillet_path(cx, cy, r, corner, rad):
+    """Region between a hex corner and the circle tangent to its two edges."""
+    v = hex_vertices(cx, cy, r)
+    vx, vy = v[corner]
+    px, py = v[(corner + 5) % 6]
+    nx, ny = v[(corner + 1) % 6]
+    t = rad * 0.57735027
+    ux, uy = _unit(vx, vy, px, py)
+    wx, wy = _unit(vx, vy, nx, ny)
+    a = (vx + ux * t, vy + uy * t)
+    b = (vx + wx * t, vy + wy * t)
+    ix, iy = _unit(vx, vy, cx, cy)
+    c = (vx + ix * rad * 1.15470054, vy + iy * rad * 1.15470054)
+    cross = (b[0] - c[0]) * (a[1] - c[1]) - (b[1] - c[1]) * (a[0] - c[0])
+    sweep = 1 if cross > 0 else 0
+    return (f"M {a[0]:.1f} {a[1]:.1f} L {vx:.1f} {vy:.1f} L {b[0]:.1f} {b[1]:.1f} "
+            f"A {rad} {rad} 0 0 {sweep} {a[0]:.1f} {a[1]:.1f} Z")
+
+
+def d10a_edge_band():
+    s = Svg("10a-edge-band", "Which pixels need edge work?", 430)
+    r = 64
+    h = SQ3 / 2 * r
+    cx, cy = 210, 242
+    neighbours = {
+        "up": (cx, cy - 2 * h, "dirt"), "up-left": (cx - 1.5 * r, cy - h, "dirt"),
+        "up-right": (cx + 1.5 * r, cy - h, "dirt"), "down": (cx, cy + 2 * h, "air"),
+        "down-left": (cx - 1.5 * r, cy + h, "air"), "down-right": (cx + 1.5 * r, cy + h, "air"),
+    }
+    for x, y, m in neighbours.values():
+        if m == "dirt":
+            s.hexagon(x, y, r, C["dirt"], C["dirt"], 1.5)
+        else:
+            s.hexagon(x, y, r, C["air"], C["line"], 1.5)
+    s.hexagon(cx, cy, r, C["dirt"], C["dirt"], 1.5)
+    inner = r * 0.55
+    s.add(f'<path d="M {Svg.hex_points(cx, cy, r).replace(" ", " L ")} Z '
+          f'M {Svg.hex_points(cx, cy, inner).replace(" ", " L ")} Z" fill="#ffb347" '
+          f'fill-opacity="0.8" fill-rule="evenodd"/>')
+    s.hexagon(cx, cy, r, "none", C["accent"], 2.5)
+    dots = [(cx, cy, "1"), (cx, cy - h * 0.78, "2"), (cx, cy + h * 0.78, "3")]
+    for x, y, n in dots:
+        s.add(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="9" fill="#ffffff" stroke="{C["ink"]}" stroke-width="2"/>')
+        s.text(x, y + 4.5, n, 12, 700)
+
+    s.rect(420, 72, 18, 18, "#ffb347", "#ffb347", rx=3, opacity=0.8)
+    s.text(446, 86, "edge band of the highlighted hex", 13, fill=C["muted"], anchor="start")
+    items = [
+        ("1", "Far from every edge", ["draw this cell's material", "(most pixels stop here)"]),
+        ("2", "Same material across the edge", ["draw this cell's material:", "no seam between dirt cells"]),
+        ("3", "Different material across the edge", ["decide which material owns", "the pixel (next diagram)"]),
+    ]
+    for i, (n, t, sub) in enumerate(items):
+        y = 150 + i * 85
+        s.add(f'<circle cx="432" cy="{y - 5}" r="11" fill="#ffffff" stroke="{C["ink"]}" stroke-width="2"/>')
+        s.text(432, y, n, 13, 700)
+        s.text(454, y, t, 15, 700, anchor="start")
+        s.lines(454, y + 20, sub, 13, 400, C["muted"], "start", gap=17)
+    s.save()
+
+
+def wave_x(mid, y, amp):
+    return mid + amp * (0.6 * math.sin(y * 0.075 + 0.4) + 0.4 * math.sin(y * 0.19 + 1.3))
+
+
+def d10b_edge_owner():
+    s = Svg("10b-edge-owner", "Drawing a boundary between two materials", 310)
+    steps = [("1. The hex edge", ["dirt is denser,", "so dirt owns the edge"]),
+             ("2. Noise moves it", ["same noise on both sides,", "so both cells agree"]),
+             ("3. The owner's outline", ["color and width come", "from the dirt resource"])]
+    for i, (title, cap) in enumerate(steps):
+        px = 20 + i * 260
+        s.text(px + 120, 82, title, 15, 700)
+        x0, y0, w, hgt = px + 20, 98, 200, 130
+        mid = x0 + w / 2
+        s.rect(x0, y0, w, hgt, C["air"], C["border"], rx=6)
+        if i == 0:
+            pts = [(mid, y0), (mid, y0 + hgt)]
+        else:
+            pts = [(wave_x(mid, y, 14), y) for y in range(int(y0), int(y0 + hgt) + 1, 3)]
+        d = f"M {x0} {y0} " + " ".join(f"L {x:.1f} {y:.1f}" for x, y in pts) + f" L {x0} {y0 + hgt} Z"
+        s.add(f'<path d="{d}" fill="{C["dirt"]}"/>')
+        if i >= 1:
+            s.line(mid, y0, mid, y0 + hgt, "ink", 1.5, dash=True)
+        if i == 2:
+            line = " ".join(f"{x - 3:.1f},{y:.1f}" for x, y in pts)
+            s.add(f'<polyline points="{line}" fill="none" stroke="#2a1a0e" stroke-width="6" '
+                  f'stroke-linejoin="round"/>')
+        s.text(x0 + 45, y0 + hgt / 2 + 5, "dirt", 14, 700, "#ffffff")
+        s.text(x0 + w - 40, y0 + hgt / 2 + 5, "air", 14, 700, C["muted"])
+        s.lines(px + 120, 254, cap, 13, 400, C["muted"])
+    s.save()
+
+
+def d10c_corners():
+    s = Svg("10c-rounded-corners", "Smoothing the hex corners", 420)
+    r, rad, fill_rad = 50, 24, 75
+    h = SQ3 / 2 * r
+    s.text(40, 110, "Outside corner", 15, 700, anchor="start")
+    s.lines(40, 132, ["denser than both", "neighbors: round it off"], 13, 400, C["muted"], "start", gap=17)
+    y = 125
+    s.hexagon(300, y, r, C["dirt"], C["dirt"], 1.5)
+    s.arrow(375, y, 505, y, "accent", 2.5)
+    s.add(f'<path d="{rounded_hex_path(580, y, r, rad)}" fill="{C["dirt"]}"/>')
+    s.hexagon(580, y, r, "none", C["accent"], 1.5, dash=True)
+
+    s.line(40, 200, 760, 200, "border", 1.5)
+    s.text(40, 290, "Inside corner", 15, 700, anchor="start")
+    s.lines(40, 312, ["both neighbors are denser", "dirt: fill the gap in"], 13, 400, C["muted"], "start", gap=17)
+    for ox, after in ((330, False), (610, True)):
+        ay = 345
+        up = (ox, ay - 2 * h)
+        up_left = (ox - 1.5 * r, ay - h)
+        s.hexagon(*up_left, r, C["dirt"], C["dirt"], 1.5)
+        s.hexagon(*up, r, C["dirt"], C["dirt"], 1.5)
+        s.hexagon(ox, ay, r, C["air"], C["line"], 1.5)
+        if after:
+            s.add(f'<path d="{fillet_path(ox, ay, r, 4, fill_rad)}" fill="#c08a5a" '
+                  f'stroke="{C["accent"]}" stroke-width="2"/>')
+        s.text(ox, ay + 8, "air", 13, 700, C["muted"])
+    s.arrow(395, 302, 470, 302, "accent", 2.5)
+    s.save()
+
+
 if __name__ == "__main__":
     for fn in (d00_overview, d01_cell_bytes, d02_quantity, d03_why_pairs, d04_even_odd, d05_six_passes,
-               d06_time_not_fps, d07_displaced, d08_water_lava, d09_sulfur, d10_one_quad,
+               d06_time_not_fps, d07_displaced, d08_water_lava, d09_sulfur, d10_one_quad, d10a_edge_band, d10b_edge_owner, d10c_corners,
                d11_two_copies, d12_collision_query, d13_explosion, d14_costs):
         fn()
     print("wrote diagrams to", OUT)

@@ -231,6 +231,50 @@ without generating new terrain polygons. The terrain itself remains one quad
 and one shader material; players, items, backgrounds, and effects have their own
 rendering.
 
+## Turning hex edges into cave walls
+
+Drawn naively, the terrain would look like a board game: every cell a crisp
+hexagon. The presenter treats hex edges as material boundaries instead, and does
+that work only where the material actually changes.
+
+Most fragments never reach that step. The shader measures how far the fragment is
+from the nearest edge of its hex. Outside a narrow band along the edges, the pixel
+takes its own cell's material and skips boundary work entirely.
+
+![Only pixels in the edge band check their neighbor, and only different materials need a boundary](images/10a-edge-band.svg)
+
+Inside the band, the shader samples the neighbor across that edge. If the neighbor
+holds the same material, there is still nothing to do. Two dirt cells merge into
+one continuous surface with no seam, so a wall made of hundreds of dirt hexes reads
+as one wall.
+
+When the materials differ, one of them owns the boundary. The denser material wins:
+dirt owns its edge against air, and sand owns its edge against water. Equal
+densities fall back to a fixed ID order, so the decision never flips between
+frames.
+
+The boundary is not drawn on the straight hex edge. A smooth value-noise function,
+sampled at the fragment's world position, pushes it a few pixels into one cell or
+the other. Both cells evaluate the same noise at the same world position, so they
+agree on exactly where the wavy line falls. The owning material then draws its
+outline along that line, with a color and width taken from its
+`TerrainEdgeDefinition` resource.
+
+![A straight hex edge becomes a noisy boundary, then the denser material draws its outline](images/10b-edge-owner.svg)
+
+Noise alone would still leave the hexes' sharp 120° corners visible. Near a
+vertex, the shader therefore looks at the two neighbors that share that corner. If
+the current cell is denser than both, the corner is exposed and gets rounded off:
+pixels outside a corner circle are handed to a neighbor. If both neighbors hold the
+same denser material, it is an inside corner, and that material fills it with the
+matching curve.
+
+![Exposed corners are rounded off, and inside corners between two denser cells are filled in](images/10c-rounded-corners.svg)
+
+None of this is stored. Every boundary is decided per pixel from the world
+texture, so when a bomb removes a cell, the next frame finds new neighbors and
+draws a fresh, rounded edge around the crater.
+
 ## Colliding with the committed world
 
 The player still needs solid ground, wall contacts, and reliable landings. Those

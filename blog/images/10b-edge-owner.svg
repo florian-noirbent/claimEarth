@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 310" width="800" height="310" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img">
+<title>Drawing a boundary between two materials</title>
+<defs><marker id="ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2933"/></marker><marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker><marker id="ah-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker><marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5f6b7a"/></marker></defs>
+<rect x="1" y="1" width="798" height="308" rx="14" fill="#ffffff" stroke="#e3e7ec" stroke-width="2"/>
+<text x="28" y="40" font-size="21" font-weight="700" fill="#1f2933">Drawing a boundary between two materials</text>
+<text x="140.0" y="82.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">1. The hex edge</text>
+<rect x="40.0" y="98.0" width="200.0" height="130.0" rx="6" fill="#eef2f6" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<path d="M 40 98 L 140.0 98.0 L 140.0 228.0 L 40 228 Z" fill="#8d6a4a"/>
+<text x="85.0" y="168.0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">dirt</text>
+<text x="200.0" y="168.0" font-size="14" font-weight="700" fill="#5f6b7a" text-anchor="middle">air</text>
+<text x="140.0" y="254.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">dirt is denser,</text>
+<text x="140.0" y="270.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">so dirt owns the edge</text>
+<text x="400.0" y="82.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">2. Noise moves it</text>
+<rect x="300.0" y="98.0" width="200.0" height="130.0" rx="6" fill="#eef2f6" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<path d="M 300 98 L 413.3 98.0 L 413.9 101.0 L 412.4 104.0 L 409.0 107.0 L 404.7 110.0 L 400.5 113.0 L 397.2 116.0 L 395.6 119.0 L 395.5 122.0 L 396.7 125.0 L 398.1 128.0 L 398.9 131.0 L 398.4 134.0 L 396.6 137.0 L 393.7 140.0 L 390.6 143.0 L 388.2 146.0 L 387.5 149.0 L 388.9 152.0 L 392.2 155.0 L 396.9 158.0 L 401.8 161.0 L 406.0 164.0 L 408.5 167.0 L 409.2 170.0 L 408.2 173.0 L 406.2 176.0 L 404.2 179.0 L 402.9 182.0 L 403.0 185.0 L 404.3 188.0 L 406.4 191.0 L 408.3 194.0 L 409.1 197.0 L 408.1 200.0 L 405.3 203.0 L 401.0 206.0 L 396.0 209.0 L 391.5 212.0 L 388.5 215.0 L 387.4 218.0 L 388.4 221.0 L 390.9 224.0 L 394.1 227.0 L 300 228 Z" fill="#8d6a4a"/>
+<line x1="400.0" y1="98.0" x2="400.0" y2="228.0" stroke="#1f2933" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="345.0" y="168.0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">dirt</text>
+<text x="460.0" y="168.0" font-size="14" font-weight="700" fill="#5f6b7a" text-anchor="middle">air</text>
+<text x="400.0" y="254.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">same noise on both sides,</text>
+<text x="400.0" y="270.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">so both cells agree</text>
+<text x="660.0" y="82.0" font-size="15" font-weight="700" fill="#1f2933" text-anchor="middle">3. The owner's outline</text>
+<rect x="560.0" y="98.0" width="200.0" height="130.0" rx="6" fill="#eef2f6" stroke="#e3e7ec" stroke-width="1.5" opacity="1.0"/>
+<path d="M 560 98 L 673.3 98.0 L 673.9 101.0 L 672.4 104.0 L 669.0 107.0 L 664.7 110.0 L 660.5 113.0 L 657.2 116.0 L 655.6 119.0 L 655.5 122.0 L 656.7 125.0 L 658.1 128.0 L 658.9 131.0 L 658.4 134.0 L 656.6 137.0 L 653.7 140.0 L 650.6 143.0 L 648.2 146.0 L 647.5 149.0 L 648.9 152.0 L 652.2 155.0 L 656.9 158.0 L 661.8 161.0 L 666.0 164.0 L 668.5 167.0 L 669.2 170.0 L 668.2 173.0 L 666.2 176.0 L 664.2 179.0 L 662.9 182.0 L 663.0 185.0 L 664.3 188.0 L 666.4 191.0 L 668.3 194.0 L 669.1 197.0 L 668.1 200.0 L 665.3 203.0 L 661.0 206.0 L 656.0 209.0 L 651.5 212.0 L 648.5 215.0 L 647.4 218.0 L 648.4 221.0 L 650.9 224.0 L 654.1 227.0 L 560 228 Z" fill="#8d6a4a"/>
+<line x1="660.0" y1="98.0" x2="660.0" y2="228.0" stroke="#1f2933" stroke-width="1.5" stroke-dasharray="4 4"/>
+<polyline points="670.3,98.0 670.9,101.0 669.4,104.0 666.0,107.0 661.7,110.0 657.5,113.0 654.2,116.0 652.6,119.0 652.5,122.0 653.7,125.0 655.1,128.0 655.9,131.0 655.4,134.0 653.6,137.0 650.7,140.0 647.6,143.0 645.2,146.0 644.5,149.0 645.9,152.0 649.2,155.0 653.9,158.0 658.8,161.0 663.0,164.0 665.5,167.0 666.2,170.0 665.2,173.0 663.2,176.0 661.2,179.0 659.9,182.0 660.0,185.0 661.3,188.0 663.4,191.0 665.3,194.0 666.1,197.0 665.1,200.0 662.3,203.0 658.0,206.0 653.0,209.0 648.5,212.0 645.5,215.0 644.4,218.0 645.4,221.0 647.9,224.0 651.1,227.0" fill="none" stroke="#2a1a0e" stroke-width="6" stroke-linejoin="round"/>
+<text x="605.0" y="168.0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">dirt</text>
+<text x="720.0" y="168.0" font-size="14" font-weight="700" fill="#5f6b7a" text-anchor="middle">air</text>
+<text x="660.0" y="254.0" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">color and width come</text>
+<text x="660.0" y="270.9" font-size="13" font-weight="400" fill="#5f6b7a" text-anchor="middle">from the dirt resource</text>
+</svg>
